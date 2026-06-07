@@ -2172,6 +2172,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                                          "cats": defaultdict(int), "mechanics": defaultdict(int),
                                          "victims": set(), "bosses": set()})
     mc_now    = set()              # player GUIDs currently Mind Controlled
+    mc_save_credit = defaultdict(set)  # MC'd GUID → casters already credited a save this episode
     mc_count  = defaultdict(int)   # times each player was MC'd (by name)
     mc_source = {}                 # player name → who controlled them (last seen)
     consum_use = defaultdict(lambda: defaultdict(int))  # [player][category] = use count
@@ -2227,6 +2228,8 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
             # aura name so it generalizes (Kael'thas, Fel Reaver room, etc.).
             if ev == "SPELL_AURA_APPLIED" and len(fields) > 10 and "Player-" in fields[5] \
                     and fields[10].strip('"') in MC_AURAS:
+                if fields[5] not in mc_now:        # fresh control episode → reset save credits
+                    mc_save_credit.pop(fields[5], None)
                 mc_now.add(fields[5])
                 dn = player_names.get(fields[5], fields[5])
                 mc_count[dn] += 1
@@ -2234,6 +2237,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
             elif ev == "SPELL_AURA_REMOVED" and len(fields) > 10 and "Player-" in fields[5] \
                     and fields[10].strip('"') in MC_AURAS:
                 mc_now.discard(fields[5])
+                mc_save_credit.pop(fields[5], None)
 
             # MC SAVE — a raider lands CC on a currently-controlled teammate, parking
             # them harmlessly (Cyclone et al.). Credit the caster. Cyclone is the marquee.
@@ -2244,11 +2248,15 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                 caster = player_names.get(fields[1], fields[1])
                 tgt    = player_names.get(fields[5], fields[5])
                 spell  = fields[10].strip('"')
-                rec = mc_saves[caster]
-                rec["count"] += 1; rec["spells"][spell] += 1; rec["targets"][tgt] += 1
-                if len(rec["hits"]) < 40:
-                    rec["hits"].append({"t": ts_str.split()[1][:8] if " " in ts_str else "",
-                                        "spell": spell, "target": tgt})
+                # Dedupe: one save per caster per controlled ally per MC episode — re-casting
+                # CC to keep them parked isn't a second save.
+                if caster not in mc_save_credit[fields[5]]:
+                    mc_save_credit[fields[5]].add(caster)
+                    rec = mc_saves[caster]
+                    rec["count"] += 1; rec["spells"][spell] += 1; rec["targets"][tgt] += 1
+                    if len(rec["hits"]) < 40:
+                        rec["hits"].append({"t": ts_str.split()[1][:8] if " " in ts_str else "",
+                                            "spell": spell, "target": tgt})
 
             # Consumables — flask / food / elixirs from buff auras. Any apply/refresh/
             # remove means the player had it (flasks persist through death; food/elixirs
