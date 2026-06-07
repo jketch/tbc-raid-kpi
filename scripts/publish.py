@@ -21,6 +21,12 @@ Only stdlib used (urllib/json/subprocess) — no extra pip installs required.
 import os, sys, json, shutil, subprocess
 from pathlib import Path
 
+# Windows cp1252 console can't encode the ✓/⚠/emoji glyphs we print — force UTF-8.
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 ROOT      = Path(__file__).resolve().parent.parent
 DASH      = ROOT / "dashboard" / "raid_kpi_dashboard.html"
 DEPLOY    = ROOT / ".deploy"            # netlify serves index.html at the site root
