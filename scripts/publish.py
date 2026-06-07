@@ -77,20 +77,50 @@ def hsk(n) -> str:
     return f"{n/1e6:.2f}M" if n >= 1e6 else f"{round(n/1e3)}K"
 
 
+def _killtime(wd: dict) -> str:
+    secs = round(sum((wd.get("boss_times") or {}).values()))
+    return f"{secs // 60}:{secs % 60:02d}"
+
+
 def build_summary(wd: dict) -> str:
+    """Celebratory recap that matches the dashboard's tone.
+
+    Positive individual call-outs (top dmg/healer) are fine — they're recognition.
+    The accountability angle is RAID-WIDE aggregates (total avoidable, interrupt
+    breadth, drum coverage), never naming-and-shaming a single raider.
+    """
     meta = wd.get("meta", {})
-    head = f"📊 **Raid KPI — {meta.get('date','?')}**  ·  {meta.get('zone','')}  ·  {meta.get('kills','?')}/10 kills"
-    bits = []
+    head = (f"📊 **Raid KPI — {meta.get('date','?')}**  ·  {meta.get('zone','')}"
+            f"  ·  {meta.get('kills','?')}/10 kills  ·  ⏱ {_killtime(wd)} on bosses")
+
+    # ── Shout-outs — positive individual recognition ──
+    leaders = []
     dmg = wd.get("damage", [])
     if dmg:
-        bits.append(f"⚔️ Top dmg **{dmg[0]['name']}** {hsk(dmg[0].get('total_dmg'))}")
-    deaths = sorted(wd.get("deaths", []), key=lambda p: -p.get("total", 0))
-    if deaths:
-        bits.append(f"💀 Most deaths **{deaths[0]['name']}** {deaths[0].get('total')}")
-    av = sorted(wd.get("avoidableDmg", []), key=lambda p: -p.get("dmg", 0))
-    if av:
-        bits.append(f"💥 Most floor **{av[0]['name']}** {hsk(av[0].get('dmg'))}")
-    return head + ("\n" + "  ·  ".join(bits) if bits else "")
+        leaders.append(f"⚔️ Top dmg **{dmg[0]['name']}** {hsk(dmg[0].get('total_dmg'))}")
+    heal = wd.get("healing", [])
+    if heal:
+        leaders.append(f"💚 Top healer **{heal[0]['name']}** {round(heal[0].get('eff_hps') or 0):,} HPS")
+
+    # ── Raid-wide stats — cohort accountability, no individual names ──
+    stats = []
+    av_total = sum(p.get("dmg", 0) for p in wd.get("avoidableDmg", []))
+    if av_total:
+        stats.append(f"💥 {hsk(av_total)} raid avoidable")
+    breadth = sum(1 for i in wd.get("interrupts", []) if i.get("count", 0) > 0)
+    if breadth:
+        stats.append(f"🎯 {breadth} raiders interrupted")
+    bpds = [d.get("buffs_per_drum") or 0 for d in wd.get("drums", []) if (d.get("buffs_per_drum") or 0) > 0]
+    if bpds:
+        cov = min(100, round(sum(bpds) / len(bpds) / 4 * 100))   # avg allies buffed / drum ÷ 4 (matches dashboard)
+        stats.append(f"🥁 {cov}% drum coverage")
+
+    lines = [head]
+    if leaders:
+        lines.append("  ·  ".join(leaders))
+    if stats:
+        lines.append("  ·  ".join(stats))
+    return "\n".join(lines)
 
 
 def deploy_netlify():
