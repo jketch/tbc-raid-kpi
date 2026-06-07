@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shame-Card Template — Direction C + Drill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0e0e12; --surface:#16161d; --surface2:#1e1e28; --border:#2a2a3a;
+    --accent:#c89b3c; --amber:#d8924a; --text:#e2e2e8; --muted:#6b6b80;
+    --red:#ef4444; --orange:#f97316; --yellow:#eab308; --green:#22c55e;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; font-size:14px; padding:26px 30px 60px; }
+  .mono { font-family:'IBM Plex Mono',monospace; font-variant-numeric:tabular-nums; }
+  .cname { font-weight:600; text-shadow:0 1px 2px rgba(0,0,0,.9); }
+  .page-head { border-bottom:2px solid var(--accent); padding-bottom:14px; margin-bottom:18px; }
+  .page-head h1 { font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:1px; color:var(--accent); font-weight:400; }
+  .page-head p { color:var(--muted); font-size:12.5px; margin-top:4px; max-width:780px; line-height:1.5; }
+  .wrap { display:grid; grid-template-columns:repeat(auto-fit,minmax(420px,1fr)); gap:18px; align-items:start; max-width:1100px; }
+
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:15px 16px; position:relative; overflow:hidden; }
+  .card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--red); opacity:.85; }
+  .card-title { font-size:11px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--text); display:flex; align-items:center; gap:7px; }
+  .summary { font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--muted); line-height:1.55; margin:6px 0 13px; padding:8px 10px; background:var(--surface2); border-radius:6px; border-left:2px solid var(--amber); }
+  .summary b { color:var(--text); font-weight:600; }
+  .foot { margin-top:13px; font-size:11px; color:var(--muted); font-style:italic; }
+  .hint { font-size:10px; color:var(--muted); }
+
+  /* ── by player / by boss toggle ── */
+  .seg { display:inline-flex; background:var(--surface2); border:1px solid var(--border); border-radius:7px; padding:2px; margin-bottom:11px; }
+  .seg-btn { background:none; border:none; color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; padding:5px 11px; border-radius:5px; cursor:pointer; }
+  .seg-btn.on { background:var(--amber); color:#1a1209; }
+  .hide { display:none; }
+  /* ── boss table (by-boss view) ── */
+  .brow { display:flex; align-items:center; gap:11px; padding:8px 8px; border-radius:7px; cursor:pointer; border:1px solid transparent; transition:background .12s; }
+  .brow:hover { background:var(--surface2); }
+  .brow.sel { background:var(--surface2); border-color:var(--amber); }
+  .bmeta { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); }
+  .detail-h { font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin:13px 0 8px; padding-top:11px; border-top:1px dashed var(--border); }
+
+  .strip { display:flex; align-items:center; gap:11px; padding:8px 6px; border-radius:7px; margin-bottom:2px; cursor:pointer; transition:background .12s; }
+  .strip:hover { background:var(--surface2); }
+  .strip.lead { background:var(--surface2); box-shadow:inset 3px 0 0 var(--amber); }
+  .ico { width:34px; height:34px; border-radius:6px; flex-shrink:0; box-shadow:0 0 0 1px var(--border); background:#262633 center/cover; }
+
+  /* ── drill modal ── */
+  .ov { position:fixed; inset:0; background:rgba(6,6,10,.74); display:none; align-items:center; justify-content:center; z-index:50; padding:24px; }
+  .ov.on { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:12px; width:min(560px,100%); max-height:84vh; overflow:auto; box-shadow:0 24px 70px rgba(0,0,0,.6); }
+  .modal-h { position:sticky; top:0; background:linear-gradient(180deg,var(--surface) 70%,transparent); padding:16px 18px 10px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .modal-h .x { cursor:pointer; color:var(--muted); font-size:20px; line-height:1; background:none; border:none; }
+  .modal-h .x:hover { color:var(--text); }
+  .m-title { font-size:15px; font-weight:700; }
+  .m-sub { font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--muted); margin-top:3px; }
+  .drow { display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; padding:9px 18px; border-top:1px solid rgba(255,255,255,.05); }
+  .drow.click { cursor:pointer; }
+  .drow.click:hover { background:var(--surface2); }
+  .kind { font-family:'IBM Plex Mono',monospace; font-size:8.5px; font-weight:600; letter-spacing:.5px; padding:2px 6px; border-radius:3px; flex-shrink:0; }
+  .kind.boss { color:var(--amber); border:1px solid var(--amber); }
+  .kind.trash { color:var(--muted); border:1px solid var(--border); }
+  .enc { font-size:12.5px; }
+  .mech { font-size:11px; color:var(--muted); margin-top:1px; display:flex; align-items:center; gap:6px; }
+  .mech .mi { width:15px; height:15px; border-radius:3px; background:#262633 center/cover; flex-shrink:0; }
+  .amt { font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; text-align:right; flex-shrink:0; }
+  .back { cursor:pointer; background:none; border:none; color:var(--amber); font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.5px; padding:0 0 6px; }
+  .back:hover { color:var(--gold-soft,#e3c373); }
+
+  /* ── death recap (layer 3) ── */
+  .verdict { font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.5; color:var(--text); margin:0 18px 12px; padding:9px 11px; background:var(--surface2); border-radius:6px; border-left:2px solid var(--red); }
+  .verdict b { color:var(--amber); }
+  .hptrack { margin:0 18px 6px; }
+  .hptrack .axl { display:flex; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-size:8.5px; color:var(--muted); margin-top:2px; }
+  .rrow { display:grid; grid-template-columns:46px 1fr 92px; gap:10px; align-items:center; padding:6px 18px; border-top:1px solid rgba(255,255,255,.045); }
+  .rrow.kill { background:rgba(239,68,68,.07); }
+  .rt { font-size:10.5px; color:var(--muted); text-align:right; }
+  .ramt { font-size:12px; font-weight:600; }
+  .rab { font-size:11.5px; }
+  .rhp { display:flex; align-items:center; gap:6px; }
+  .rhpbar { flex:1; height:5px; border-radius:2px; background:#262633; overflow:hidden; }
+  .rhpbar > span { display:block; height:100%; }
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Direction C · Mechanic-Forward + Drill</h1>
+  <p>Icon-anchored ranked strips. <b>Click any row</b> to open the breakdown — every line labeled <b>Boss/Trash · Encounter — Mechanic</b>, so no detail is lost behind a "+N more". Deaths drill the same way (the skill that matters most). Summary line up top stays scientific and concise.</p>
+</div>
+
+<div class="wrap" id="wrap"></div>
+
+<!-- drill modal -->
+<div class="ov" id="ov" onclick="if(event.target===this)closeDrill()">
+  <div class="modal">
+    <div class="modal-h">
+      <div><button class="back" id="mBack" style="display:none"></button><div class="m-title" id="mTitle"></div><div class="m-sub" id="mSub"></div></div>
+      <button class="x" onclick="closeDrill()">✕</button>
+    </div>
+    <div id="mBody"></div>
+  </div>
+</div>
+
+<script>
+const CLASS_COLORS = { Warrior:"#C79C6E", Paladin:"#F58CBA", Hunter:"#ABD473", Rogue:"#FFF569", Priest:"#F0EBE0", Shaman:"#0070DE", Mage:"#69CCF0", Warlock:"#9482C9", Druid:"#FF7D0A" };
+const ROLE_COLORS = { Tank:"#3b82f6", Healer:"#22c55e", Caster:"#a855f7", Physical:"#f97316" };
+const ICON = s => `https://wow.zamimg.com/images/wow/icons/large/${s}.jpg`;
+const nameColor = (cls,role) => CLASS_COLORS[cls] || ROLE_COLORS[role] || "#6b6b80";
+const hsK = n => n>=1e6 ? (n/1e6).toFixed(2)+"M" : Math.round(n/1e3)+"K";
+const cn = (n,cls,role,sz=13,w=600) => `<span class="cname" style="color:${nameColor(cls,role)};font-weight:${w};font-size:${sz}px">${n}</span>`;
+const MI = { "Static Charge":"spell_nature_lightning", "Spout":"spell_frost_frostbolt02", "Arcane Orb":"spell_arcane_arcane03", "Flame Patch":"spell_fire_flamebolt", "Whirlwind":"ability_whirlwind", "Pyroblast":"spell_fire_fireball02", "Shadow Bolt Volley":"spell_shadow_shadowbolt", "Tidal Surge":"spell_frost_summonwaterelemental", "Geyser":"spell_frost_frostnova", "Saber Lash":"ability_warrior_savageblow" };
+
+// ── AVOIDABLE — each player carries itemized `sources` (mechanic · encounter · kind · dmg · hits)
+const AVOID = [
+  { name:"Areso", cls:"Warrior", role:"Physical", sources:[
+      {mech:"Static Charge", enc:"Lady Vashj",       kind:"boss",  dmg:292000, hits:4},
+      {mech:"Spout",         enc:"The Lurker Below",  kind:"boss",  dmg:84000,  hits:2},
+      {mech:"Arcane Orb",    enc:"Void Reaver",       kind:"boss",  dmg:36000,  hits:1} ]},
+  { name:"Marvels", cls:"Warlock", role:"Caster", sources:[
+      {mech:"Spout",         enc:"The Lurker Below",  kind:"boss",  dmg:318000, hits:5} ]},
+  { name:"Philliam", cls:"Mage", role:"Caster", sources:[
+      {mech:"Arcane Orb",    enc:"Void Reaver",       kind:"boss",  dmg:164000, hits:3},
+      {mech:"Flame Patch",   enc:"Al'ar",             kind:"boss",  dmg:110000, hits:2} ]},
+  { name:"Moojerked", cls:"Druid", role:"Healer", sources:[
+      {mech:"Flame Patch",   enc:"Al'ar",             kind:"boss",  dmg:198000, hits:3} ]},
+  { name:"Blunderdin", cls:"Paladin", role:"Physical", sources:[
+      {mech:"Whirlwind",     enc:"Leotheras",         kind:"boss",  dmg:155000, hits:2},
+      {mech:"Static Charge", enc:"Lady Vashj",        kind:"boss",  dmg:21000,  hits:1} ]},
+  { name:"Faeriefireqt", cls:"Druid", role:"Tank", sources:[
+      {mech:"Shadow Bolt Volley", enc:"Coilfang Strider", kind:"trash", dmg:90000, hits:3},
+      {mech:"Pyroblast",     enc:"Al'ar",             kind:"boss",  dmg:64000,  hits:1} ]},
+  { name:"Snackrifice", cls:"Priest", role:"Healer", sources:[
+      {mech:"Shadow Bolt Volley", enc:"Leotheras",    kind:"boss",  dmg:121000, hits:4} ]},
+  { name:"Bonkers", cls:"Shaman", role:"Caster", sources:[
+      {mech:"Static Charge", enc:"Lady Vashj",        kind:"boss",  dmg:98000,  hits:2} ]},
+  { name:"Quickjab", cls:"Rogue", role:"Physical", sources:[
+      {mech:"Spout",         enc:"The Lurker Below",  kind:"boss",  dmg:54000,  hits:1},
+      {mech:"Tidal Surge",   enc:"Fathom Guard trash",kind:"trash", dmg:22000,  hits:1} ]},
+  { name:"Healabull", cls:"Paladin", role:"Healer", sources:[
+      {mech:"Flame Patch",   enc:"Al'ar",             kind:"boss",  dmg:54000,  hits:1} ]},
+  { name:"Trapznap", cls:"Hunter", role:"Physical", sources:[
+      {mech:"Arcane Orb",    enc:"Void Reaver",       kind:"boss",  dmg:38000,  hits:1} ]},
+  { name:"Stormcyka", cls:"Shaman", role:"Caster", sources:[
+      {mech:"Whirlwind",     enc:"Leotheras",         kind:"boss",  dmg:21000,  hits:1} ]},
+];
+AVOID.forEach(p => { p.sources.sort((a,b)=>b.dmg-a.dmg); p.dmg = p.sources.reduce((s,x)=>s+x.dmg,0); });
+AVOID.sort((a,b)=>b.dmg-a.dmg);
+
+// ── DEATHS — each death carries `recap`: the last ~10s of damage+healing (hp = HP after event)
+const DEATHS = [
+  { name:"Quickjab", cls:"Rogue", role:"Physical", events:[
+      {enc:"Lady Vashj", kind:"boss", killer:"Static Charge", t:"1:42", hp:"chained — 0 HP", max:9800, recap:[
+        {t:-8.0, type:"heal", amt:2200, over:1400, ability:"Renew",        src:"Healabull",   hp:9800},
+        {t:-5.5, type:"dmg",  amt:1800,            ability:"Static Charge",src:"Lady Vashj",  hp:8000},
+        {t:-3.0, type:"heal", amt:1500, over:0,    ability:"Lesser Heal",  src:"Snackrifice", hp:9500},
+        {t:-0.0, type:"dmg",  amt:9500,            ability:"Static Charge",src:"Lady Vashj",  hp:0, killing:true} ]},
+      {enc:"Void Reaver",     kind:"boss",  killer:"Arcane Orb",    t:"0:58", hp:"full → dead"},
+      {enc:"The Lurker Below",kind:"boss",  killer:"Spout",         t:"3:10", hp:"caught mid-swim"},
+      {enc:"Coilfang Strider",kind:"trash", killer:"Shadow Bolt Volley", t:"—", hp:"pull aggro"} ]},
+  { name:"Areso", cls:"Warrior", role:"Physical", events:[
+      {enc:"Leotheras", kind:"boss", killer:"Whirlwind", t:"2:21", hp:"stood in melee", max:12000, recap:[
+        {t:-6.0, type:"dmg", amt:3500, ability:"Whirlwind", src:"Leotheras", hp:8500},
+        {t:-4.0, type:"dmg", amt:3800, ability:"Whirlwind", src:"Leotheras", hp:4700},
+        {t:-2.0, type:"dmg", amt:2400, ability:"Melee",     src:"Leotheras", hp:2300},
+        {t:-0.0, type:"dmg", amt:3000, ability:"Whirlwind", src:"Leotheras", hp:0, killing:true} ]},
+      {enc:"Lady Vashj",      kind:"boss",  killer:"Static Charge", t:"4:05", hp:"chain target"},
+      {enc:"Al'ar",           kind:"boss",  killer:"Flame Patch",   t:"1:33", hp:"slow to move"} ]},
+  { name:"Philliam", cls:"Mage", role:"Caster", events:[
+      {enc:"Void Reaver",     kind:"boss",  killer:"Arcane Orb",    t:"1:12", hp:"orb to the face"},
+      {enc:"Al'ar",           kind:"boss",  killer:"Flame Patch",   t:"2:48", hp:"patch overlap"} ]},
+  { name:"Faeriefireqt", cls:"Druid", role:"Tank", events:[
+      {enc:"Al'ar", kind:"boss", killer:"Crushing Blow", t:"3:30", hp:"healing fell behind", max:14500, recap:[
+        {t:-9.5, type:"dmg",  amt:2600, ability:"Melee",      src:"Al'ar",       hp:11000},
+        {t:-8.8, type:"heal", amt:3000, over:0, ability:"Holy Light",  src:"Healabull",   hp:14000},
+        {t:-7.9, type:"dmg",  amt:2400, ability:"Melt Armor", src:"Al'ar",       hp:11600},
+        {t:-6.5, type:"dmg",  amt:2800, ability:"Crushing Blow", src:"Al'ar",    hp:8800},
+        {t:-5.0, type:"heal", amt:2600, over:0, ability:"Flash Heal", src:"Snackrifice", hp:11400},
+        {t:-3.9, type:"dmg",  amt:3100, ability:"Crushing Blow", src:"Al'ar",    hp:8300},
+        {t:-2.6, type:"dmg",  amt:2500, ability:"Melt Armor", src:"Al'ar",       hp:5800},
+        {t:-1.4, type:"dmg",  amt:3000, ability:"Melee",      src:"Al'ar",       hp:2800},
+        {t:-0.0, type:"dmg",  amt:3200, ability:"Crushing Blow", src:"Al'ar",    hp:0, killing:true} ]},
+      {enc:"Fathom Guard trash", kind:"trash", killer:"Tidal Surge", t:"—", hp:"overpull"} ]},
+  { name:"Marvels", cls:"Warlock", role:"Caster", events:[
+      {enc:"The Lurker Below", kind:"boss", killer:"Spout", t:"2:55", hp:"greedy lifetap", max:8600, recap:[
+        {t:-7.2, type:"dmg",  amt:900,  ability:"Drain Life backlash", src:"Self", hp:6500},
+        {t:-4.5, type:"heal", amt:0,    over:0, ability:"(no heals in range)", src:"—", hp:6500},
+        {t:-2.1, type:"dmg",  amt:3000, ability:"Spout", src:"The Lurker Below", hp:3500},
+        {t:-0.0, type:"dmg",  amt:4200, ability:"Spout", src:"The Lurker Below", hp:0, killing:true} ]},
+      ]},
+];
+DEATHS.forEach(p => { p.boss = p.events.filter(e=>e.kind==="boss").length; p.trash = p.events.filter(e=>e.kind==="trash").length; p.total = p.events.length; });
+DEATHS.sort((a,b)=>b.total-a.total);
+
+// ── scientific summary helpers ────────────────────────────────────────
+function median(a){ const s=[...a].sort((x,y)=>x-y), m=s.length>>1; return s.length%2 ? s[m] : (s[m-1]+s[m])/2; }
+function avoidSummary(){
+  const vals = AVOID.map(p=>p.dmg), tot = vals.reduce((a,b)=>a+b,0);
+  const med = median(vals), top3 = vals.slice(0,3).reduce((a,b)=>a+b,0);
+  return `Raid total <b>${hsK(tot)}</b> across <b>${AVOID.length}/25</b> raiders · median <b>${hsK(med)}</b> · top 3 = <b>${Math.round(top3/tot*100)}%</b> of it. Bottom half is rounding error; the top three are the conversation.`;
+}
+function deathSummary(){
+  const tot = DEATHS.reduce((s,p)=>s+p.total,0), boss = DEATHS.reduce((s,p)=>s+p.boss,0);
+  const byMech = {};
+  DEATHS.forEach(p=>p.events.forEach(e=>byMech[e.killer]=(byMech[e.killer]||0)+1));
+  const worst = Object.entries(byMech).sort((a,b)=>b[1]-a[1])[0];
+  return `<b>${tot}</b> deaths · <b>${boss}</b> on bosses, <b>${tot-boss}</b> on trash · most-fatal mechanic: <b>${worst[0]}</b> (${worst[1]}).`;
+}
+
+// ── render: avoidable strips ──────────────────────────────────────────
+function blocks(mag,color){ const f=Math.max(1,Math.round(mag*12)); let s=''; for(let i=0;i<12;i++) s+=`<span style="width:6px;height:11px;border-radius:1px;background:${i<f?color:'#262633'}"></span>`; return `<span style="display:inline-flex;gap:2px;align-items:center">${s}</span>`; }
+// generic offender strip (rank · mechanic icon · name · dmg · per-context meter · ctx)
+function stripRow(rank, name, cls, role, dmg, max, mech, ctx, onclick){
+  const lead = rank===1;
+  return `<div class="strip ${lead?'lead':''}" onclick="${onclick}" title="click for every source">
+    <span class="mono" style="font-size:10px;color:var(--muted);width:13px;text-align:right;flex-shrink:0">${rank}</span>
+    <span class="ico" style="background-image:url('${ICON(MI[mech])}')"></span>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        ${cn(name,cls,role)}
+        <span class="mono" style="font-size:13.5px;font-weight:600;color:var(--amber);flex-shrink:0">${hsK(dmg)}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+        ${blocks(dmg/max, lead?'var(--amber)':'#9c7340')}
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ctx}</span>
+      </div>
+    </div></div>`;
+}
+
+// ── BY PLAYER pivot (accountability roll-up) ──
+function byPlayerRows(){
+  const MAX=AVOID[0].dmg;
+  return AVOID.map((p,i)=>{
+    const dom=p.sources[0], more=p.sources.length-1;
+    const ctx = more>0
+      ? `<b style="color:var(--text)">${dom.mech}</b> ${Math.round(dom.dmg/p.dmg*100)}% · <span style="color:var(--amber)">+${more} more →</span>`
+      : `all from <b style="color:var(--text)">${dom.mech}</b>`;
+    return stripRow(i+1, p.name, p.cls, p.role, p.dmg, MAX, dom.mech, ctx, `drillAvoid(${i})`);
+  }).join("");
+}
+
+// ── BY BOSS pivot (triage: which fight bleeds us, and who on it) ──
+function buildByBoss(){
+  const idx={}; AVOID.forEach((p,i)=>idx[p.name]=i);
+  const B={};
+  AVOID.forEach(p=>p.sources.forEach(s=>{
+    const b=B[s.enc]||(B[s.enc]={enc:s.enc,kind:s.kind,dmg:0,mechs:{},pl:{}});
+    b.dmg+=s.dmg; b.mechs[s.mech]=(b.mechs[s.mech]||0)+s.dmg;
+    const q=b.pl[p.name]||(b.pl[p.name]={name:p.name,cls:p.cls,role:p.role,dmg:0,mechs:{},i:idx[p.name]});
+    q.dmg+=s.dmg; q.mechs[s.mech]=(q.mechs[s.mech]||0)+s.hits;
+  }));
+  return Object.values(B).map(b=>{
+    b.domMech=Object.entries(b.mechs).sort((a,c)=>c[1]-a[1])[0][0];
+    b.count=Object.keys(b.pl).length;
+    b.players=Object.values(b.pl).sort((a,c)=>c.dmg-a.dmg);
+    b.players.forEach(q=>q.domMech=Object.entries(q.mechs).sort((a,c)=>c[1]-a[1])[0][0]);
+    return b;
+  }).sort((a,c)=>c.dmg-a.dmg);
+}
+let BYBOSS=[], BSEL=0;
+function bossTable(){
+  return BYBOSS.map((b,i)=>`<div class="brow ${i===BSEL?'sel':''}" onclick="selBoss(${i})">
+    <span class="ico" style="width:30px;height:30px;background-image:url('${ICON(MI[b.domMech])}')"></span>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+        <span style="font-size:13px;font-weight:600">${b.enc} <span class="kind ${b.kind}" style="vertical-align:middle">${b.kind==="boss"?"BOSS":"TRASH"}</span></span>
+        <span class="mono" style="font-size:13.5px;font-weight:600;color:var(--amber)">${hsK(b.dmg)}</span>
+      </div>
+      <div class="bmeta" style="margin-top:3px">${b.count} raiders hit · mostly <b style="color:var(--text)">${b.domMech}</b></div>
+    </div></div>`).join("");
+}
+function bossDetail(){
+  const b=BYBOSS[BSEL], max=b.players[0].dmg;
+  const top=b.players.slice(0,5);
+  const rows=top.map((q,i)=>{
+    const mechBits=Object.entries(q.mechs).sort((a,c)=>c[1]-a[1]).map(([m,h])=>`${m}${h>1?` ×${h}`:''}`).join(" · ");
+    return stripRow(i+1, q.name, q.cls, q.role, q.dmg, max, q.domMech, mechBits, `drillAvoid(${q.i})`);
+  }).join("");
+  const more=b.players.length-top.length;
+  return `<div class="detail-h">Top offenders · ${b.enc} (${hsK(b.dmg)})</div>${rows}` +
+    (more>0?`<div class="hint" style="margin-top:6px">+${more} more raider${more>1?'s':''} took avoidable damage here.</div>`:'');
+}
+function selBoss(i){ BSEL=i; document.getElementById("bossTable").innerHTML=bossTable(); document.getElementById("bossDetail").innerHTML=bossDetail(); }
+function avView(v){
+  document.querySelectorAll("#avSeg .seg-btn").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+  document.getElementById("avPlayer").classList.toggle("hide",v!=="player");
+  document.getElementById("avBoss").classList.toggle("hide",v!=="boss");
+}
+function renderAvoid(){
+  BYBOSS=buildByBoss();
+  return `<div class="card">
+    <div class="card-title"><span>💥</span> Avoidable Damage Taken</div>
+    <div class="seg" id="avSeg">
+      <button class="seg-btn on" data-v="player" onclick="avView('player')">By Player</button>
+      <button class="seg-btn" data-v="boss" onclick="avView('boss')">By Boss</button>
+    </div>
+    <div id="avPlayer">
+      <div class="summary">${avoidSummary()}</div>
+      ${byPlayerRows()}
+      <div class="foot">Click any row → every source labeled Boss/Trash · Encounter — Mechanic. <span class="hint">Accountability roll-up: who to talk to.</span></div>
+    </div>
+    <div id="avBoss" class="hide">
+      <div class="summary">Triage view — which fight is bleeding the raid, and who on it. Worst fight first; <b>click a boss</b> to pin its top 5. Meters normalize <b>per boss</b>, so #1 = that fight's worst.</div>
+      <div id="bossTable">${bossTable()}</div>
+      <div id="bossDetail">${bossDetail()}</div>
+    </div>
+  </div>`;
+}
+
+// ── render: deaths strips ─────────────────────────────────────────────
+function renderDeaths(){
+  const MAX=DEATHS[0].total;
+  const rows = DEATHS.map((p,i)=>{
+    const last=p.events[0], lead=i===0;
+    return `<div class="strip ${lead?'lead':''}" onclick="drillDeath(${i})" title="click for each death">
+      <span class="mono" style="font-size:10px;color:var(--muted);width:13px;text-align:right;flex-shrink:0">${i+1}</span>
+      <span class="ico" style="display:flex;align-items:center;justify-content:center;font-size:18px;background-image:none">💀</span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          ${cn(p.name,p.cls,p.role)}
+          <span class="mono" style="font-size:13.5px;font-weight:600;color:var(--amber)">${p.total}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+          ${blocks(p.total/MAX, lead?'var(--amber)':'#9c7340')}
+          <span style="font-size:10px;color:var(--muted)">${p.boss} boss · ${p.trash} trash · last: <b style="color:var(--text)">${last.killer}</b> →</span>
+        </div>
+      </div></div>`;
+  }).join("");
+  return `<div class="card">
+    <div class="card-title"><span>💀</span> Deaths — what actually killed them</div>
+    <div class="summary">${deathSummary()}</div>
+    ${rows}
+    <div class="foot">Click any row → every death: Boss/Trash · Encounter — killing blow · time. <span class="hint">Not dying is the skill; here's the evidence.</span></div>
+  </div>`;
+}
+
+// ── drill modals ──────────────────────────────────────────────────────
+function srcRow(s){
+  return `<div class="drow">
+    <span class="kind ${s.kind}">${s.kind==="boss"?"BOSS":"TRASH"}</span>
+    <div style="min-width:0">
+      <div class="enc">${s.enc}</div>
+      <div class="mech"><span class="mi" style="background-image:url('${ICON(MI[s.mech])}')"></span>${s.mech} · ${s.hits} hit${s.hits>1?'s':''}</div>
+    </div>
+    <span class="amt" style="color:var(--amber)">${hsK(s.dmg)}</span></div>`;
+}
+function deathRow(e,pi,ei){
+  const has = !!e.recap;
+  return `<div class="drow ${has?'click':''}" ${has?`onclick="openRecap(${pi},${ei})"`:''}>
+    <span class="kind ${e.kind}">${e.kind==="boss"?"BOSS":"TRASH"}</span>
+    <div style="min-width:0">
+      <div class="enc">${e.enc} <span style="color:var(--muted);font-size:11px">— killed by <b style="color:var(--red)">${e.killer}</b></span></div>
+      <div class="mech">${has?'<span style="color:var(--amber)">inspect last 10s →</span>':e.hp}</div>
+    </div>
+    <span class="amt" style="color:var(--muted)">${e.t}</span></div>`;
+}
+function drillAvoid(i){
+  const p=AVOID[i];
+  setHeader(`${cn(p.name,p.cls,p.role,15)} · Avoidable Damage`,
+            `${hsK(p.dmg)} total · ${p.sources.length} source${p.sources.length>1?'s':''} · ${p.sources.reduce((s,x)=>s+x.hits,0)} hits`, null);
+  document.getElementById("mBody").innerHTML = p.sources.map(srcRow).join("");
+  document.getElementById("ov").classList.add("on");
+}
+function drillDeath(i){
+  const p=DEATHS[i];
+  setHeader(`${cn(p.name,p.cls,p.role,15)} · Deaths`, `${p.total} total · ${p.boss} boss · ${p.trash} trash`, null);
+  document.getElementById("mBody").innerHTML = p.events.map((e,ei)=>deathRow(e,i,ei)).join("");
+  document.getElementById("ov").classList.add("on");
+}
+
+// ── LAYER 3: single-death recap (last ~10s, damage + healing interleaved) ──
+function verdict(p,e){
+  const r=e.recap, kb=r[r.length-1];
+  const dmgEvts=r.filter(x=>x.type==="dmg");
+  const lastHeal=[...r].reverse().find(x=>x.type==="heal" && x.amt>0);
+  const gap = lastHeal ? Math.abs(kb.t - lastHeal.t) : 99;
+  const kbShare = Math.round(kb.amt/e.max*100);
+  if (kbShare>=55) return `<b>Effective one-shot.</b> ${hsK(kb.amt)} ${kb.ability} = ${kbShare}% of max HP in a single hit. Heals were ${gap<3?'keeping up':'irrelevant at that magnitude'} — not a healing failure.`;
+  if (gap>=4)      return `<b>Healing fell behind.</b> ${dmgEvts.length} hits over ${Math.abs(r[0].t).toFixed(0)}s; last heal landed <b>${gap.toFixed(1)}s</b> before death. Bled out — pressure outpaced throughput.`;
+  return `<b>Avoidable / self-inflicted.</b> ${dmgEvts.length} hits from <b>${kb.ability}</b> with no realistic heal window — should have been sidestepped.`;
+}
+function hpTrack(e){
+  const r=e.recap, W=476,H=54,pad=5, t0=-10,t1=0.4;
+  const xs=t=>pad+(t-t0)/(t1-t0)*(W-2*pad);
+  const ys=hp=>pad+(1-hp/e.max)*(H-2*pad);
+  const pts=[{t:r[0].t-1.2,hp:e.max},...r.map(x=>({t:x.t,hp:x.hp}))];
+  const line=pts.map((p,i)=>`${i?'L':'M'} ${xs(p.t).toFixed(1)} ${ys(p.hp).toFixed(1)}`).join(" ");
+  const dots=r.map(x=>{ const c = x.killing?'var(--red)': x.type==='heal'?'var(--green)':'#9c7340';
+    return `<circle cx="${xs(x.t).toFixed(1)}" cy="${ys(x.hp).toFixed(1)}" r="${x.killing?4:2.6}" fill="${c}"/>`; }).join("");
+  return `<div class="hptrack">
+    <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">
+      <line x1="${pad}" y1="${ys(0)}" x2="${W-pad}" y2="${ys(0)}" stroke="#262633" stroke-width="1"/>
+      <line x1="${pad}" y1="${ys(e.max)}" x2="${W-pad}" y2="${ys(e.max)}" stroke="#262633" stroke-width="1" stroke-dasharray="2 3"/>
+      <path d="${line}" fill="none" stroke="var(--amber)" stroke-width="1.6"/>${dots}
+    </svg>
+    <div class="axl"><span>−10s</span><span>HP over final 10s · ● dmg ● heal ● killing blow</span><span>death</span></div>
+  </div>`;
+}
+function recapRow(x){
+  const dmg=x.type==="dmg", col=dmg?'var(--red)':'var(--green)', sign=dmg?'−':'+';
+  const pct=Math.max(0,Math.round(x.hp/DEATHS_MAX*100));
+  const fill=pct>50?'var(--green)':pct>20?'var(--orange)':'var(--red)';
+  const over=x.over?` <span style="color:var(--muted);font-size:10px">(${hsK(x.over)} over)</span>`:'';
+  const amt=x.amt>0?`${sign}${hsK(x.amt)}`:'·';
+  return `<div class="rrow ${x.killing?'kill':''}">
+    <span class="rt mono">${x.t.toFixed(1)}s</span>
+    <div class="rev">
+      <span class="ramt mono" style="color:${col}">${amt}</span>
+      <span class="rab"> ${x.ability} <span style="color:var(--muted)">${dmg?'from':'←'} ${x.src}</span>${over}${x.killing?' <b style="color:var(--red)">· killing blow</b>':''}</span>
+    </div>
+    <div class="rhp"><span class="rhpbar"><span style="width:${pct}%;background:${fill}"></span></span><span class="mono" style="color:var(--muted);font-size:10px">${hsK(x.hp)}</span></div>
+  </div>`;
+}
+let DEATHS_MAX=1;
+function openRecap(pi,ei){
+  const p=DEATHS[pi], e=p.events[ei];
+  DEATHS_MAX=e.max;
+  setHeader(`${cn(p.name,p.cls,p.role,15)} · ${e.enc}`, `death at ${e.t} · killed by ${e.killer}`,
+            `‹ back to ${p.name}'s deaths`, ()=>drillDeath(pi));
+  document.getElementById("mBody").innerHTML =
+    `<div class="verdict">${verdict(p,e)}</div>` + hpTrack(e) + e.recap.map(recapRow).join("");
+}
+
+// ── shared modal header (title · sub · optional back breadcrumb) ──
+function setHeader(title, sub, backLabel, backFn){
+  document.getElementById("mTitle").innerHTML = title;
+  document.getElementById("mSub").textContent = sub;
+  const bEl=document.getElementById("mBack");
+  if (backLabel){ bEl.textContent=backLabel; bEl.style.display="block"; bEl.onclick=backFn; }
+  else { bEl.style.display="none"; }
+}
+function closeDrill(){ document.getElementById("ov").classList.remove("on"); }
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeDrill(); });
+
+document.getElementById("wrap").innerHTML = renderAvoid() + renderDeaths();
+</script>
+</body>
+</html>
