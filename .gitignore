@@ -26,7 +26,7 @@ cache/*.json
 node_modules/
 
 # Local scratch prompt files (pasted into Claude Code, not source)
-DASHBOARD_REDESIGN_PROMPT.md
+prompts/
 
 # OS cruft
 .DS_Store
