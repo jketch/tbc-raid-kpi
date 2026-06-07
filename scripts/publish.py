@@ -5,16 +5,22 @@ Run at the end of run_weekly.bat. SAFE to run before setup is finished — every
 warns and skips if it isn't configured yet, so it never breaks the weekly run.
 
 ────────────────────────────────────────────────────────────────────────────────
-ONE-TIME SETUP (do these once, at your workstation):
-  1. (already installed for you)  npm install -g netlify-cli
+ONE-TIME SETUP — already done. Recorded here in case the link is ever lost:
+  1. (already installed)  npm install -g netlify-cli
   2. netlify login                       # opens a browser — click Authorize
-  3. netlify init                        # "create & configure a new site"; when it asks
-                                         #   for build command, leave blank; publish dir → .deploy
-                                         # (this writes a .netlify/ folder that links the site)
-  4. Discord:  your channel → Edit Channel → Integrations → Webhooks → New Webhook → Copy URL
-  5. Put it in .env:   DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/XXXX/YYYY
-After that, every run_weekly.bat auto-deploys the latest dashboard and drops the link
-in your raid channel. Zero manual steps.
+  3. netlify sites:create                # creates + auto-links a new site; pick your
+                                         #   team (Marvels) and a site name. This writes
+                                         #   .netlify/state.json, which deploy_netlify()
+                                         #   checks for. (We use sites:create, NOT
+                                         #   `netlify init` — init is for git-based CI we
+                                         #   don't use; this script deploys --dir manually.)
+Live site:  https://clinquant-taffy-c345c2.netlify.app
+Admin:      https://app.netlify.com/projects/clinquant-taffy-c345c2
+After that, every run_weekly.bat auto-deploys the latest dashboard to that URL.
+
+Discord auto-post is DISABLED (guild has webhooks locked). The script prints a
+copy/paste blurb instead. To re-enable later: add DISCORD_WEBHOOK_URL to .env and
+uncomment the three lines at the bottom of main().
 ────────────────────────────────────────────────────────────────────────────────
 Only stdlib used (urllib/json/subprocess) — no extra pip installs required.
 """
