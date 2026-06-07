@@ -89,7 +89,10 @@ Pipeline functions (in execution order):
   mcLiable:      [{ name, role, dmg, hits, kills, spells:{}, events:[] }],// AoE'd into a charmed ally
   consumableUsage: [{ name, role, flask, elixirs:[], food, weapon_oil, potion, rune, ... }], // raw audit
   healing:       [{ name, eff_hps, overheal_pct, activity_pct, vs_replacement, spells:[], ... }],
-  tankScorecard: [{ name, dtps, taken, hps_recv, fights_tanked, fights_total, deaths }],
+  tankScorecard: [{ name, dtps, taken, hps_recv, fights_tanked, fights_total, deaths,    // v2 (all WCL except lowest_hp):
+                    phys_pct, magic_pct, crush_count, crit_count, avoid_pct,
+                    biggest_hit:{amount,ability,boss}, cooldowns:{}, per_boss:[{boss,dtps,taken,seconds}],
+                    lowest_hp:{[boss]:pct}/*log enrichment*/, delta_dtps/*trend*/ }],
   roleSpells:    { [role]: [{ability, casts, players}] },
   playerSpells:  { [role]: [{name, role, total, abilities:[{ability,casts}]}] },
   damage:        [{ name, role, total_dmg, active_pct, uptime_by_fight }],  // top 10
@@ -98,7 +101,8 @@ Pipeline functions (in execution order):
   luckKPI:       [{ name, role, actual, expected, luck, series, ... }],     // key is `luck`
   engineering:   [{ name, role, eng:{ [abilityName]: count }, dmg }],       // eng is a DICT
   interrupts:    [{ name, count }],
-  boss_times:    { [bossName]: seconds },                                   // powers Overview boss tiles
+  boss_times:    { [bossName]: seconds },                                   // flat; HTML reads as a number
+  boss_meta:     { [bossName]: { seconds, encounter_id, deaths, raid_dps?, delta_seconds? } }, // ADDITIVE — powers boss tiles (portrait/delta/chips)
   healReaction:  { ...per-raider/boss reaction medians... },
 }
 ```
@@ -156,6 +160,41 @@ The WCL Buffs/Casts tables are not a per-player consumable source.*
 
 ---
 
+## WCL-Durability Principle  ★ APPLIES TO EVERY KPI
+
+Combat logs are 180 MB+ and frequently **don't get transferred** between raiders, but **WCL always
+has 1–2 loggers**. So the load-bearing rule for the whole dashboard:
+
+> **Every KPI gets a WCL-sourced "headline" that runs every week. The combat log is *additive
+> enrichment* (drill-downs, HP timelines, attribution) — never the sole source for a whole section.**
+> A missing combat log may thin a KPI; it must never blank one.
+
+Concretely: WCL is the **source of record**; combat-log overlays **degrade silently** when absent
+(guard every log read, default to the WCL value). When adding/retrofitting a KPI, find its durable
+WCL path first, then layer the log on top.
+
+### Tiering (where each KPI stands)
+- **WCL-durable today:** DPS/HPS, deaths (+ per-boss tile counts), crit/luck, healer WAR, boss
+  times + portraits, consumables-at-pull, **tank scorecard v2** (DTPS, per-boss, phys/magic school
+  split, crush/crit mitigation, avoidance, defensive-cooldown casts, biggest hit — all WCL).
+- **Log-only today but with a known WCL path (ROADMAP — not yet built):** interrupts → WCL
+  `Interrupts` table (high confidence); avoidable damage → WCL `DamageTaken` by ability-ID (unify
+  with backlog #2 Mechanic Compliance); engineering → WCL `Casts`; drums → evaluate WCL
+  `Casts`/`Buffs` (lower confidence — WCL is less reliable here). Combat log stays as the
+  drill-down layer for each.
+- **Genuinely log-only (accept graceful degradation):** MC saves/liabilities, consumables-used
+  mid-fight (TBC `Casts` has no potion/rune rows), friendly-fire clumping, death-recap HP%-timeline
+  + reaction heatmap, tank **lowest-HP%-survived**.
+
+> **hitType enum (LOCKED via live probe — don't trust memory):** WCL `DamageTaken` events expose
+> `hitType` — `1` hit · `2` crit · `4` blocked(partial) · `15` crushing; `0`/`7`/`8` = miss/dodge/parry
+> (zero damage = avoided). Confirmed by a crit-immune bear showing only `{0,1,7,15}`. The `DamageTaken`
+> *table* also gives a per-ability `type` = damage **school** (`1` = physical) → phys/magic split is
+> WCL-durable, no log needed. Boss portrait CDN uses the **de-prefixed** encounter id
+> (`assets.rpglogs.com/img/warcraft/bosses/{encounterID − 100000}-icon.jpg`).
+
+---
+
 ## Current KPI Status (honest)
 
 | KPI | Source | Status |
@@ -170,8 +209,9 @@ The WCL Buffs/Casts tables are not a per-player consumable source.*
 | MC accountability | combat log | ✅ saves (deduped) + liabilities bar chart |
 | Friendly Fire (clumping) | combat log | ✅ (mostly fires only on Vashj Static Charge) |
 | Healer scorecard + WAR | WCL healing tables + cohort baseline | ✅ |
-| Tank scorecard | combat log (DTPS) + WCL | ✅ |
-| Uptime / Reaction heatmaps, Boss tiles, Cohort cards, Spell usage | mixed | ✅ |
+| Tank scorecard **v2** | **WCL `DamageTaken` table+events (primary)** + log lowest-HP | ✅ per-boss DTPS, phys/magic split, crush/crit + avoid%, defensive CDs, biggest hit |
+| **Boss tiles** (Overview) | **WCL** fight objects + Deaths + DamageDone | ✅ portraits + kill-time delta pill + 💀 deaths / ⚔ raid-DPS chips |
+| Uptime / Reaction heatmaps, Cohort cards, Spell usage | mixed | ✅ |
 | Trinket usage / Gear flags | — | ❌ not built, not in `WEEK_DATA` |
 
 **Raid Prep scoring (0–10):** flask **+4** (= both elixir slots) *else* battle-elixir **+2** / guardian-elixir **+2**;
@@ -195,6 +235,11 @@ COMBATANT_INFO (API-only, always works); the +3 bonus needs the weekly combat lo
 6. **Trend / Progression reporting** (active next direction — see `prompts/TREND_DATA_PROMPT.md`) —
    week-over-week KPIs from the SQLite history DB; appends into the HTML (read existing `WEEK_DATA` via
    the brace-counter, push, write back).
+7. **Harden log-only KPIs onto WCL headlines** (per the WCL-Durability Principle above) — give each
+   combat-log-only KPI a durable WCL source so a missing log thins but never blanks it: **interrupts →
+   WCL `Interrupts` table** (high confidence), **avoidable → WCL `DamageTaken` by ability-ID** (unify
+   with #2), **engineering → WCL `Casts`**, **drums → evaluate WCL `Casts`/`Buffs`**. Combat log stays
+   the drill-down/enrichment layer.
 
 ---
 
@@ -263,7 +308,10 @@ python scripts\wcl_auto_dashboard.py REPORTCODE --dry-run  # no HTML, no DB — 
 | `engineering` | 1 row/player/week | `dmg`, `abilities` (JSON dict) |
 | `interrupts` | 1 row/player/week | `count` |
 | `crit` | 1 row/player/type/week | `crit_type` ∈ {caster,physical,healer,tank}, `crit_pct` |
-| `boss_times` | 1 row/boss/week | `seconds` |
+| `boss_times` | 1 row/boss/week | `seconds`, `encounter_id` |
+| `dps` | 1 row/player/week | `dps`, `total`, `pct_raid`, `uptime` |
+| `tank_scorecard` | 1 row/player/week | `dtps`, `taken`, `hps_recv`, `deaths`, `phys_pct`, `magic_pct`, `crush_count`, `crit_count`, `avoid_pct`, `biggest_hit`, `cooldowns` (JSON) |
+| `tank_boss_dtps` | 1 row/player/boss/week | `dtps`, `taken`, `seconds` |
 
 All inserts use `INSERT OR REPLACE` — re-running a report code is safe/idempotent. **Additive schema
 changes use a guarded `try: ALTER TABLE … ADD COLUMN … except sqlite3.OperationalError: pass`** (so

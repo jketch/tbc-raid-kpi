@@ -266,6 +266,25 @@ POTION_NAME = {
     "Insane Strength": "Insane Strength Potion",
     "Fel Regeneration": "Fel Regeneration Potion",
 }
+# Combat pots whose effect-buff NAME is ambiguous (shared by trinket procs / drums), so we
+# match the POTION'S buff SPELL ID instead of the name to avoid massive over-counting. Verified
+# live: "Haste" maps to 4 spell IDs — only 28507 is the Haste Potion (item 22838); the rest are
+# trinket procs (Dragonspine Trophy 34775, etc.). Free Action (6615) is the Vashj-Entangle escape
+# pot. Keys are strings — combat-log spell-ID fields are strings. Share the combat-pot CD slot.
+POTION_BUFF_IDS = {
+    "28507": "Haste Potion",        # item 22838 — melee/caster haste combat pot
+    "6615":  "Free Action Potion",  # situational survival (e.g. Lady Vashj Entangle)
+}
+# Protection (resist) potions — share the potion CD, used on T5 resist mechanics (Hydross
+# nature/frost, Vashj, Leotheras, etc.). Their absorb-buff NAME is potion-exclusive EXCEPT
+# "Shadow Protection", which collides with the Priest buff — so we exclude the known Priest
+# spell IDs. (None appeared in the reference log, so these are wired by name from item data;
+# the ID exclusion keeps the one real collision — the Priest buff — out of the count.)
+PROTECTION_BUFFS = {
+    "Nature Protection", "Frost Protection", "Fire Protection",
+    "Arcane Protection", "Holy Protection", "Shadow Protection",
+}
+PROTECTION_EXCLUDE_IDS = {"25433", "39374"}   # Priest Shadow Protection / Prayer of Shadow Protection
 
 # Approx base mana cost of common TBC heal spells (max rank, pre-talent). Used to
 # ESTIMATE mana spent on healing = casts × cost, for a healing-per-mana efficiency.
@@ -879,82 +898,215 @@ def compute_healing_metrics(heal_by_fight: dict, fight_roles: dict, fight_durs: 
     return out
 
 
-def fetch_tank_metrics(token: str, report_code: str, kills: list, fight_roles: dict,
-                       fight_durs: dict, heal_by_fight: dict) -> dict:
-    """Tank survivability SCOPED to the fights each player TANKED (prot/ret-swap aware).
-    DTPS (damage taken/sec) and healing-received/sec over their tank-fights, plus the
-    fight count. Healing received is reused from the per-fight Healing tables (targets).
-    Avoidance% (dodge/parry/block/miss) is a planned fast-follow — needs combat-log swing
-    parsing scoped to tank windows, not in the WCL DamageTaken table."""
+# Tank defensive cooldowns — WCL spell IDs → display name. Counted from Casts events
+# scoped to kill-fight windows. Frenzied Regen (26999) has no aura, so Casts is the only
+# source; Barkskin/Shield Wall/Last Stand/Lay on Hands likewise tracked by cast.
+TANK_CD_IDS = [871, 12975, 26999, 22812, 27154]
+CD_NAMES = {871: "Shield Wall", 12975: "Last Stand", 26999: "Frenzied Regen",
+            22812: "Barkskin", 27154: "Lay on Hands"}
+
+# WCL melee hitType enum (LOCKED against live data, not memory — see CLAUDE.md rule).
+# Confirmed by probing this report's tanks: a crit-immune bear shows only {miss, hit,
+# dodge, crushing}; paladins add {blocked, parry, crit}.
+#   1 = normal hit   2 = crit            4 = blocked (partial, reduced)
+#   15 = crushing    0/7/8 = miss/dodge/parry (zero damage)
+HITTYPE_CRUSH = 15
+HITTYPE_CRIT  = 2
+
+
+def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
+                                  fight_roles: dict, fight_durs: dict,
+                                  heal_by_fight: dict, actors: list):
+    """WCL-durable tank survivability — the source of record, run EVERY week (no combat
+    log needed). One consolidated kill-fight pass, scoped to the fights each player TANKED
+    (prot/ret-swap aware):
+      • DamageTaken tables (aliased)  → DTPS, dmg taken, phys/magic school split, per-boss
+      • DamageTaken events (one fightID-scoped paginated query) → melee mitigation
+        (crushing/crit counts + avoidance%) and the single biggest hit taken
+      • Casts events (one query)      → defensive cooldown counts (TANK_CD_IDS)
+      • DamageDone tables (aliased)   → per-boss RAID DPS (feeds the Overview boss tiles)
+    Healing received is reused from the per-fight Healing tables (targets). The combat log,
+    when present, adds lowest-HP%-survived as enrichment in build_week_data — it is never
+    load-bearing here. Returns (tank_metrics: {name: {...}}, boss_raid_dps: {boss: dps})."""
     tanks = {n for n, fr in fight_roles.items() if fr.get("Tank")}
     if not tanks:
-        return {}
-    agg = defaultdict(lambda: {"taken": 0, "dur": 0.0, "hrecv": 0, "fights": 0})
-    QD = """query($c:String!,$f:Int!){reportData{report(code:$c){
-        table(dataType: DamageTaken, fightIDs:[$f])}}}"""
-    for f in kills:
-        fid = f["id"]
-        dur = fight_durs.get(fid, 0)
-        fight_tanks = {n for n in tanks if fid in fight_roles.get(n, {}).get("Tank", [])}
-        if not fight_tanks:
-            continue
+        return {}, {}
+    id2name  = {a["id"]: a["name"] for a in actors}
+    name2id  = {a["name"]: a["id"] for a in actors}
+    tank_ids = {name2id[n] for n in tanks if n in name2id}
+    # fights each tank actually TANKED — scopes mitigation + biggest hit to the same window
+    # as DTPS/per-boss, so a bear's off-tank cleave doesn't pollute his survivability stats.
+    tank_fids = {n: set(fr.get("Tank", [])) for n, fr in fight_roles.items() if fr.get("Tank")}
+    fid_boss = {f["id"]: f["name"] for f in kills}
+    fids     = [f["id"] for f in kills]
+    win_s    = min(f["startTime"] for f in kills)
+    win_e    = max(f["endTime"]   for f in kills)
+
+    # ability gameID → name, for labeling the biggest hit
+    abil_name = {}
+    try:
+        md = gql(token, """query($c:String!){reportData{report(code:$c){masterData{
+            abilities{ gameID name }}}}}""", {"c": report_code})["reportData"]["report"]["masterData"]
+        abil_name = {a["gameID"]: a.get("name", "") for a in (md.get("abilities") or []) if a.get("gameID")}
+    except Exception:
+        pass
+
+    agg = defaultdict(lambda: {"taken": 0, "dur": 0.0, "hrecv": 0, "fights": 0,
+                               "phys": 0, "magic": 0, "per_boss": [],
+                               "crush": 0, "crit": 0, "avoid": 0, "melee": 0,
+                               "biggest": {"amount": 0, "ability": "", "boss": ""},
+                               "cooldowns": {}})
+
+    # ── 1) DamageTaken TABLES — DTPS / taken / school split / per-boss (aliased, batch 5) ──
+    for i in range(0, len(kills), 5):
+        chunk = kills[i:i + 5]
+        aliases = "\n".join(
+            f'f{f["id"]}: table(dataType: DamageTaken, fightIDs:[{int(f["id"])}], hostilityType: Friendlies)'
+            for f in chunk)
+        Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
         try:
-            t = gql(token, QD, {"c": report_code, "f": fid})["reportData"]["report"]["table"]
+            rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+        except Exception as ex:
+            print(f"  Warning: tank DamageTaken batch failed: {ex}")
+            continue
+        for f in chunk:
+            fid = f["id"]
+            dur = fight_durs.get(fid, 0)
+            fight_tanks = {n for n in tanks if fid in fight_roles.get(n, {}).get("Tank", [])}
+            if not fight_tanks:
+                continue
+            t = rep.get(f'f{fid}')
             if isinstance(t, str):
                 t = json.loads(t)
-        except Exception:
-            t = {}
-        for e in t.get("data", {}).get("entries", []):
-            nm = e.get("name")
-            if nm in fight_tanks:
+            for e in (t or {}).get("data", {}).get("entries", []):
+                nm = e.get("name")
+                if nm not in fight_tanks:
+                    continue
+                total = e.get("total", 0)
                 a = agg[nm]
-                a["taken"]  += e.get("total", 0)
+                a["taken"]  += total
                 a["dur"]    += dur
                 a["fights"] += 1
-        # healing received this fight (sum across every healer's targets that are tanks)
-        for e in heal_by_fight.get(fid, []):
-            for x in (e.get("targets") or []):
-                if x.get("name") in fight_tanks:
-                    agg[x["name"]]["hrecv"] += x.get("total", 0)
+                # school split: ability `type` is the damage school (1 = physical)
+                phys = sum(ab.get("total", 0) for ab in (e.get("abilities") or [])
+                           if ab.get("type") == 1)
+                a["phys"]  += phys
+                a["magic"] += max(total - phys, 0)
+                if dur > 0:
+                    a["per_boss"].append({"boss": fid_boss.get(fid, ""),
+                                          "dtps": round(total / dur), "taken": total,
+                                          "seconds": round(dur)})
+            # healing received this fight (across every healer's tank targets)
+            for e in heal_by_fight.get(fid, []):
+                for x in (e.get("targets") or []):
+                    if x.get("name") in fight_tanks:
+                        agg[x["name"]]["hrecv"] += x.get("total", 0)
+
+    # ── 2) DamageTaken EVENTS — mitigation + biggest hit (one paginated, fight-scoped) ──
+    QE = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: DamageTaken,
+               hostilityType: Friendlies, limit: 10000){ data nextPageTimestamp }}}}"""
+    st = win_s
+    while True:
+        try:
+            ev = gql(token, QE, {"c": report_code, "ids": fids, "st": st, "en": win_e}
+                     )["reportData"]["report"]["events"]
+        except Exception as ex:
+            print(f"  Warning: tank DamageTaken events failed: {ex}")
+            break
+        for d in ev.get("data", []):
+            tid = d.get("targetID")
+            if tid not in tank_ids:
+                continue
+            nm = id2name.get(tid)
+            if not nm or d.get("fight") not in tank_fids.get(nm, ()):
+                continue   # only fights this player actually tanked
+            a = agg[nm]
+            amt = d.get("amount", 0) or 0
+            if amt > a["biggest"]["amount"]:
+                a["biggest"] = {"amount": amt,
+                                "ability": abil_name.get(d.get("abilityGameID")) or "Melee",
+                                "boss": fid_boss.get(d.get("fight"), "")}
+            if d.get("abilityGameID") == 1:          # boss white melee — where crush/crit/avoid live
+                a["melee"] += 1
+                ht = d.get("hitType")
+                if ht == HITTYPE_CRUSH: a["crush"] += 1
+                elif ht == HITTYPE_CRIT: a["crit"] += 1
+                if amt == 0:            a["avoid"] += 1
+        nx = ev.get("nextPageTimestamp")
+        if not nx:
+            break
+        st = nx
+
+    # ── 3) Casts EVENTS — defensive cooldown counts (one paginated query) ──
+    QC = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts,
+               limit: 10000){ data nextPageTimestamp }}}}"""
+    st = win_s
+    while True:
+        try:
+            ev = gql(token, QC, {"c": report_code, "ids": fids, "st": st, "en": win_e}
+                     )["reportData"]["report"]["events"]
+        except Exception as ex:
+            print(f"  Warning: tank Casts events failed: {ex}")
+            break
+        for d in ev.get("data", []):
+            if d.get("type") != "cast":
+                continue
+            gid = d.get("abilityGameID")
+            sid = d.get("sourceID")
+            if gid in CD_NAMES and sid in tank_ids:
+                nm = id2name.get(sid)
+                if nm:
+                    cd = CD_NAMES[gid]
+                    agg[nm]["cooldowns"][cd] = agg[nm]["cooldowns"].get(cd, 0) + 1
+        nx = ev.get("nextPageTimestamp")
+        if not nx:
+            break
+        st = nx
+
+    # ── 4) DamageDone TABLES — per-boss raid DPS for the Overview tiles (aliased) ──
+    boss_raid_dps = {}
+    for i in range(0, len(kills), 5):
+        chunk = kills[i:i + 5]
+        aliases = "\n".join(
+            f'f{f["id"]}: table(dataType: DamageDone, fightIDs:[{int(f["id"])}])' for f in chunk)
+        Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
+        try:
+            rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+        except Exception as ex:
+            print(f"  Warning: raid-DPS batch failed: {ex}")
+            continue
+        for f in chunk:
+            t = rep.get(f'f{f["id"]}')
+            if isinstance(t, str):
+                t = json.loads(t)
+            dur = fight_durs.get(f["id"], 0) or 1
+            tot = sum(e.get("total", 0) for e in (t or {}).get("data", {}).get("entries", []))
+            if tot:
+                boss_raid_dps[fid_boss[f["id"]]] = round(tot / dur)
+
+    # ── assemble ──
     out = {}
     for nm, a in agg.items():
         if a["dur"] <= 0:
             continue
+        school = a["phys"] + a["magic"]
         out[nm] = {
             "dtps":          round(a["taken"] / a["dur"]),
             "taken":         a["taken"],
             "hps_recv":      round(a["hrecv"] / a["dur"]),
             "fights_tanked": a["fights"],
+            "phys_pct":      round(a["phys"]  / school * 100, 1) if school else 0,
+            "magic_pct":     round(a["magic"] / school * 100, 1) if school else 0,
+            "crush_count":   a["crush"],
+            "crit_count":    a["crit"],
+            "avoid_pct":     round(a["avoid"] / a["melee"] * 100, 1) if a["melee"] else 0,
+            "biggest_hit":   a["biggest"] if a["biggest"]["amount"] > 0 else None,
+            "cooldowns":     a["cooldowns"],
+            "per_boss":      a["per_boss"],   # pull order; HTML sorts to encounter order
         }
-    return out
-
-
-def compute_tank_metrics_from_log(log_data: dict, fight_roles: dict, fight_durs: dict,
-                                  kills: list) -> dict:
-    """Tank survivability from COMBAT-LOG tallies (zero API cost) — damage taken and
-    healing received are already scoped per fight in parse_combat_log, so a prot/ret
-    swapper's ret-fight damage never pollutes his tank DTPS. Boss-name keyed → fid."""
-    dmg_taken = log_data.get("fight_dmg_taken", {})   # [boss][player]
-    heal_recv = log_data.get("fight_heal_recv", {})   # [boss][player]
-    fid_to_boss = {f["id"]: f["name"] for f in kills}
-    tanks = {n for n, fr in fight_roles.items() if fr.get("Tank")}
-    out = {}
-    for nm in tanks:
-        tank_fids = fight_roles[nm].get("Tank", [])
-        dur = sum(fight_durs.get(fid, 0) for fid in tank_fids)
-        if dur <= 0:
-            continue
-        taken = hrecv = 0
-        for boss in {fid_to_boss.get(fid) for fid in tank_fids if fid_to_boss.get(fid)}:
-            taken += dmg_taken.get(boss, {}).get(nm, 0)
-            hrecv += heal_recv.get(boss, {}).get(nm, 0)
-        out[nm] = {
-            "dtps":          round(taken / dur),
-            "taken":         taken,
-            "hps_recv":      round(hrecv / dur),
-            "fights_tanked": len(tank_fids),
-        }
-    return out
+    return out, boss_raid_dps
 
 
 def _median(xs):
@@ -1166,9 +1318,10 @@ def fetch_role_spell_usage(token, report_code, fight_ids, players):
             total = sum(abils.values())
             by_player[role].append({
                 "name": nm0, "role": role, "total": total,
+                # keep a fuller list (cards show the top 3; the click-through drill shows all)
                 "abilities": sorted(
                     [{"ability": a, "casts": c} for a, c in abils.items()],
-                    key=lambda x: -x["casts"])[:8],
+                    key=lambda x: -x["casts"])[:20],
             })
         for role in by_player:
             by_player[role].sort(key=lambda x: -x["total"])
@@ -1287,39 +1440,51 @@ def compute_healer_war(token, heal_by_fight, kills, players, fight_roles, refres
 
 
 def fetch_ability_icons(token: str, report_code: str, fight_ids: list) -> dict:
-    """Map ability name → real WCL icon slug (no .jpg) from the DamageTaken table.
-    This is the authoritative icon for whatever actually hit the raid, so it
-    sidesteps the wrong-spell-ID / reused-asset problem."""
-    if not fight_ids:
-        return {}
-    Q = """query($c:String!,$f:[Int]){reportData{report(code:$c){
-        table(dataType: DamageTaken, fightIDs:$f, hostilityType:Friendlies)}}}"""
+    """Map ability name → real WCL icon slug (no .jpg). Two layers:
+    1. masterData abilities — covers EVERY ability in the report, including casts that
+       never hit the raid (heals, interrupted spells like Holy Smite / Great Heal).
+    2. DamageTaken table — authoritative icon for whatever actually hit the raid; overrides
+       layer 1 to sidestep the wrong-spell-ID / reused-asset problem for raid-facing hits."""
+    icons = {}
+    # layer 1 — masterData (so interrupted/healing casts resolve an icon too)
     try:
-        t = gql(token, Q, {"c": report_code, "f": fight_ids})["reportData"]["report"]["table"]
-        if isinstance(t, str):
-            t = json.loads(t)
-        icons = {}
-        for e in t.get("data", {}).get("entries", []):
-            for ab in (e.get("abilities") or []):
-                nm = ab.get("name")
-                ic = ab.get("icon")
-                if nm and ic and nm not in icons:
-                    icons[nm] = ic.replace(".jpg", "")
-        return icons
+        md = gql(token, """query($c:String!){reportData{report(code:$c){masterData{
+            abilities{ name icon }}}}}""", {"c": report_code})["reportData"]["report"]["masterData"]
+        for a in (md.get("abilities") or []):
+            nm, ic = a.get("name"), a.get("icon")
+            if nm and ic and nm not in icons:
+                icons[nm] = ic.replace(".jpg", "")
     except Exception as e:
-        print(f"  Warning: ability-icon fetch failed: {e}")
-        return {}
+        print(f"  Warning: masterData ability-icon fetch failed: {e}")
+    # layer 2 — DamageTaken (authoritative for raid hits; overrides layer 1)
+    if fight_ids:
+        Q = """query($c:String!,$f:[Int]){reportData{report(code:$c){
+            table(dataType: DamageTaken, fightIDs:$f, hostilityType:Friendlies)}}}"""
+        try:
+            t = gql(token, Q, {"c": report_code, "f": fight_ids})["reportData"]["report"]["table"]
+            if isinstance(t, str):
+                t = json.loads(t)
+            for e in t.get("data", {}).get("entries", []):
+                for ab in (e.get("abilities") or []):
+                    nm, ic = ab.get("name"), ab.get("icon")
+                    if nm and ic:
+                        icons[nm] = ic.replace(".jpg", "")
+        except Exception as e:
+            print(f"  Warning: ability-icon fetch failed: {e}")
+    return icons
 
 
 def fetch_deaths_split(token: str, report_code: str):
     """Curated deaths from the WCL Deaths table (WCL excludes Hunter Feign Death,
     unlike raw combat-log UNIT_DIED). Split boss vs trash by each death's fight —
     boss fights carry an encounterID, trash fights don't.
-    Returns (boss_deaths, trash_deaths, recaps): counts per player, plus a per-player
-    list of killing blows {boss, killer, amount, overkill} for the death drill-down."""
-    Qf = """query($c:String!){reportData{report(code:$c){fights{ id name encounterID }}}}"""
+    Returns (boss_deaths, trash_deaths, recaps, deaths_by_boss): per-PLAYER boss/trash
+    counts, a per-player list of killing blows {boss, killer, amount, overkill} for the
+    death drill-down, and a per-BOSS death tally {boss_name: count} for the Overview tiles."""
+    Qf = """query($c:String!){reportData{report(code:$c){fights{ id name encounterID kill }}}}"""
     fights = gql(token, Qf, {"c": report_code})["reportData"]["report"]["fights"]
     fid_is_boss = {f["id"]: bool(f["encounterID"]) for f in fights}
+    fid_is_kill = {f["id"]: bool(f.get("kill")) for f in fights}
     fid_name    = {f["id"]: f.get("name", "") for f in fights}
 
     # id → name maps to label the per-death recap timeline (abilities + ALL actors,
@@ -1340,12 +1505,17 @@ def fetch_deaths_split(token: str, report_code: str):
     if isinstance(t, str):
         t = json.loads(t)
     boss, trash = {}, {}
+    deaths_by_boss = defaultdict(int)   # per-encounter tally for the Overview boss tiles
     recaps = defaultdict(list)
     for e in t.get("data", {}).get("entries", []):
         nm  = e.get("name")
         fid = e.get("fight")
         d = boss if fid_is_boss.get(fid) else trash
         d[nm] = d.get(nm, 0) + 1
+        # tile tally counts the KILL pull only — wipe-attempt deaths would inflate it
+        # (a 25-man wipe is 25 deaths), which reads as alarm rather than signal.
+        if fid_is_kill.get(fid):
+            deaths_by_boss[fid_name.get(fid, "")] += 1
         kb  = e.get("killingBlow") or {}
         evs = e.get("events") or []
         # events are NEWEST-first → the fatal hit is the LATEST timestamp, not evs[-1]
@@ -1364,7 +1534,7 @@ def fetch_deaths_split(token: str, report_code: str):
                 # the final-seconds blow-by-blow (damage + healing), HP reconstructed
                 "timeline":    _build_death_timeline(evs, abil_name, actor_name),
             })
-    return boss, trash, dict(recaps)
+    return boss, trash, dict(recaps), dict(deaths_by_boss)
 
 
 def _build_death_timeline(evs, abil_name, actor_name, max_events=22):
@@ -1423,11 +1593,17 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     kills     = [f for f in report["fights"] if f.get("kill")]
     fight_ids = [f["id"] for f in kills]
 
-    # Group kill times by zone for the header pills
+    # Group kill times by zone for the header pills. `boss_times` stays a flat
+    # {name: seconds} (the HTML reads it as a number); `boss_meta` is the additive parallel
+    # key carrying portrait/encounter id, per-boss deaths and raid DPS for the new tiles.
     boss_times: dict[str, int] = {}
+    boss_meta:  dict[str, dict] = {}
     for f in kills:
         duration_s = (f["endTime"] - f["startTime"]) // 1000
         boss_times[f["name"]] = duration_s
+        boss_meta[f["name"]] = {"seconds": duration_s,
+                                "encounter_id": f.get("encounterID"),
+                                "deaths": 0}
     print(f"   Zone: {zone}  |  {len(kills)} kills  |  Fights: {fight_ids}")
 
     # ── Player details + gear ──────────────────────────────────────────────
@@ -1540,7 +1716,10 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     crit_by_name      = merge_actor_names(crit_counts_by_id, actors)
 
     # Curated deaths (no Feign Death) from WCL, split boss vs trash by fight, + killing blows.
-    death_boss, death_trash, death_recaps = fetch_deaths_split(token, report_code)
+    death_boss, death_trash, death_recaps, deaths_by_boss = fetch_deaths_split(token, report_code)
+    for b, n in deaths_by_boss.items():
+        if b in boss_meta:
+            boss_meta[b]["deaths"] = n
 
     # Overlay real HP% (from the combat log) onto each death recap, and build the healer
     # reaction-time heatmap — both from parse_combat_log's hp_samples / log_deaths (zero API).
@@ -1628,13 +1807,22 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     healer_mana     = fetch_healer_mana(token, report_code, fight_ids)
     healer_war      = compute_healer_war(token, heal_by_fight, kills, players,
                                          fight_roles, refresh=refresh_baseline)
-    # Tank metrics: prefer combat-log tallies (free + naturally per-fight scoped);
-    # fall back to the WCL DamageTaken API only when no log.
-    if log_data and log_data.get("fight_dmg_taken"):
-        tank_metrics = compute_tank_metrics_from_log(log_data, fight_roles, fight_durs, kills)
-    else:
-        tank_metrics = fetch_tank_metrics(token, report_code, kills, fight_roles,
-                                          fight_durs, heal_by_fight)
+    # Tank scorecard — WCL is the durable source of record, run EVERY week (per-boss DTPS,
+    # mitigation, school split, cooldowns, biggest hit, raid DPS for the boss tiles). The
+    # combat log, when present, only adds lowest-HP%-survived; a missing log never blanks it.
+    tank_metrics, boss_raid_dps = build_tank_scorecard_extended(
+        token, report_code, kills, fight_roles, fight_durs, heal_by_fight, actors)
+    for b, d in boss_raid_dps.items():
+        if b in boss_meta:
+            boss_meta[b]["raid_dps"] = d
+    if log_data:
+        # enrichment: lowest HP% each tank dropped to per boss (from the HP%-sample timeline)
+        hp_samples = log_data.get("hp_samples", {})
+        for nm, tm in tank_metrics.items():
+            lows = {b: min(s[1] for s in samples)
+                    for b, samples in hp_samples.get(nm, {}).items() if samples}
+            if lows:
+                tm["lowest_hp"] = lows
     role_spells     = fetch_role_spell_usage(token, report_code, fight_ids, players)
     uptime_by_fight = fetch_uptime_by_fight(token, report_code, kills)   # {name: {boss: uptime%}}
     for p in players:
@@ -1677,6 +1865,7 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
             "log_missing": log_missing,   # report bosses absent from the combat log
         },
         "boss_times": boss_times,
+        "boss_meta":  boss_meta,   # additive: portrait/encounter id + per-boss deaths/raid DPS
         "crit_casters":  crit_list("Caster"),
         "crit_physical": crit_list("Physical"),
         "crit_tanks":    crit_list("Tank"),
@@ -1737,9 +1926,32 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
 # Map WCL data → WEEK_DATA format expected by the HTML dashboard
 # ══════════════════════════════════════════════════════════════════════════════
 
+def _tally_spells(names, icons=None):
+    """Tally a list of interrupted spell NAMES into [{spell, n, icon}], most-kicked first.
+    `icons` is the ability-name → WCL icon-slug map, so each cast carries its real game icon."""
+    icons = icons or {}
+    agg = {}
+    for s in (names or []):
+        agg[s] = agg.get(s, 0) + 1
+    return sorted(({"spell": s, "n": n, "icon": icons.get(s, "")} for s, n in agg.items()),
+                  key=lambda x: -x["n"])
+
+
+def _ice_player_spells(player_spells, icons):
+    """Attach a WCL icon slug to every ability in the per-player spell-usage map, so the
+    'Spell Usage by Player' card can render the same icon pills as the interrupt list."""
+    icons = icons or {}
+    return {
+        role: [{**pl, "abilities": [{**a, "icon": icons.get(a.get("ability"), "")}
+                                     for a in (pl.get("abilities") or [])]}
+               for pl in plist]
+        for role, plist in (player_spells or {}).items()
+    }
+
+
 def build_consumable_compliance(consumable_usage):
     """Reshape consumableUsage into the role-split compliance grid shape — a pure transform,
-    no new queries. Each row → {name, role, flask, food, weapon, combat_pot, alt_pot}.
+    no new queries. Each row → {name, role, flask, food, weapon, combat_pots, alt_pot}.
     Flask/Elixirs passes on a flask OR both elixir slots (battle AND guardian)."""
     out = []
     for e in consumable_usage:
@@ -1757,9 +1969,12 @@ def build_consumable_compliance(consumable_usage):
             "name":  e["name"],
             "role":  e.get("role", ""),
             "flask": flask_ok,
+            # show-our-work: the SPECIFIC items behind each ✓, so the grid is auditable
+            "flask_name": e.get("flask") or None,      # the flask, when one is present
+            "elixirs":    elixirs,                     # the 2-elixir path (battle + guardian)
             "food":  bool(e.get("food")),
             "weapon": bool(e.get("weapon_oil")),
-            "combat_pot": e.get("combat_pot_name"),   # specific potion name or None
+            "combat_pots": e.get("combat_pots", []),   # all combat pots popped (may be empty)
             "alt_pot": alt_pot,
         })
     return out
@@ -1889,7 +2104,7 @@ def map_to_week_data(wcl: dict) -> dict:
             "potion": u.get("potion", 0), "rune": u.get("rune", 0),
             "healthstone": u.get("healthstone", 0),
             # specific item names for the compliance grid (None if unused)
-            "combat_pot_name": lb.get("combat_pot"),
+            "combat_pots": lb.get("combat_pots", []),   # all combat pots popped (Haste/Destruction/Free Action…)
             "rune_name": lb.get("rune"),
             "flamecap": bool(u.get("flamecap")),
             "nightmare_seed": bool(u.get("nightmare_seed")),
@@ -1935,7 +2150,15 @@ def map_to_week_data(wcl: dict) -> dict:
           "hps_recv": tm.get("hps_recv", 0),
           "fights_tanked": tm.get("fights_tanked", 0),
           "fights_total":  roster_idx.get(nm, {}).get("fights_total", 0),
-          "deaths": roster_idx.get(nm, {}).get("deaths", 0)}
+          "deaths": roster_idx.get(nm, {}).get("deaths", 0),
+          # v2 — survivability depth (all WCL-durable except lowest_hp, which is log enrichment)
+          "phys_pct": tm.get("phys_pct", 0), "magic_pct": tm.get("magic_pct", 0),
+          "crush_count": tm.get("crush_count", 0), "crit_count": tm.get("crit_count", 0),
+          "avoid_pct": tm.get("avoid_pct", 0),
+          "biggest_hit": tm.get("biggest_hit"),
+          "cooldowns": tm.get("cooldowns", {}),
+          "per_boss": tm.get("per_boss", []),
+          "lowest_hp": tm.get("lowest_hp", {})}
          for nm, tm in tank_metrics.items()),
         key=lambda x: -x["dtps"])
 
@@ -1966,7 +2189,7 @@ def map_to_week_data(wcl: dict) -> dict:
         "healing":             healing,
         "tankScorecard":       tank_scorecard,
         "roleSpells":          wcl.get("role_spells", {}),
-        "playerSpells":        wcl.get("player_spells", {}),
+        "playerSpells":        _ice_player_spells(wcl.get("player_spells", {}), _icons),
         "damage": sorted(
             ({"name": p["name"], "role": p["role"], "total_dmg": p.get("total_dmg", 0),
               "active_pct": p.get("active_pct", 0),
@@ -1986,11 +2209,14 @@ def map_to_week_data(wcl: dict) -> dict:
             key=lambda x: -x["dmg"]
         ),
         "interrupts":   sorted(
-            [{"name": p["name"], "count": p.get("interrupt_count", 0)}
+            [{"name": p["name"], "count": p.get("interrupt_count", 0),
+              # which casts they actually stopped (combat-log interrupt_list → spell tally)
+              "spells": _tally_spells(p.get("interrupt_list"), _icons)}
              for p in players if p.get("interrupt_count", 0) > 0],
             key=lambda x: -x["count"]
         ),
         "boss_times":   wcl.get("boss_times", {}),
+        "boss_meta":    wcl.get("boss_meta", {}),
         "healReaction": wcl.get("heal_reaction", {}),
     }
 
@@ -2069,9 +2295,12 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
             #    design — luck is derived at render time from the multi-week crit baseline,
             #    not persisted — so a week-over-week DB delta is meaningless.)
             for wk_key, table, cur_field, db_col, delta_field in (
-                ("avoidableDmg", "avoidable_dmg", "dmg",   "dmg",   "delta_dmg"),
-                ("deaths",       "deaths",        "total", "total", "delta_deaths"),
-                ("drums",        "drums",         "score", "score", "delta_drums"),
+                ("avoidableDmg",  "avoidable_dmg",  "dmg",   "dmg",   "delta_dmg"),
+                ("deaths",        "deaths",         "total", "total", "delta_deaths"),
+                ("drums",         "drums",          "score", "score", "delta_drums"),
+                # tank DTPS (lower better → HTML renders ▼ green via fmtDelta(...,false)).
+                # Absent until 2 weeks of the new tank_scorecard table exist (no backfill).
+                ("tankScorecard", "tank_scorecard", "dtps",  "dtps",  "delta_dtps"),
             ):
                 for it in (week_data.get(wk_key) or []):
                     p = pv(table, it.get("name"), db_col)
@@ -2086,6 +2315,12 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
                 "SELECT boss, seconds FROM boss_times WHERE report_code=?", (prev,)).fetchall()}
             cur_bt  = week_data.get("boss_times") or {}
             common  = [b for b in cur_bt if b in prev_bt]
+            # Per-boss kill-time delta for the Overview tiles (negative = faster this week).
+            # Folded in here — same start_ms-ordered prior week as the header pill — rather
+            # than a separate ORDER BY date pass (which misorders; see memory).
+            for b, meta in (week_data.get("boss_meta") or {}).items():
+                if b in prev_bt and meta.get("seconds") is not None:
+                    meta["delta_seconds"] = round(meta["seconds"] - prev_bt[b], 1)
             prev_ctx = {"report_code": prev, "date": prev_date, "kills": prev_kills}
             if common:
                 prev_ctx["delta_kill_secs"] = round(
@@ -2295,6 +2530,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
     mc_source = {}                 # player name → who controlled them (last seen)
     consum_use = defaultdict(lambda: defaultdict(int))  # [player][category] = use count
     consum_label = defaultdict(dict)  # [player][category] = specific item name (first seen)
+    melee_swings = defaultdict(int)   # [player] = auto-attack swings in boss windows
     # MC accountability — blame flips onto the raid when a teammate is controlled.
     mc_saves  = defaultdict(lambda: {"count": 0, "spells": defaultdict(int),
                                      "targets": defaultdict(int), "hits": []})  # by caster
@@ -2400,14 +2636,24 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                     consum_use[_pn][_cat] += 1
                     consum_label[_pn].setdefault(_cat, _spell)   # specific name: Dark Rune / Flame Cap / Nightmare Seed
 
-            # Combat potions (Destruction, Haste, …) log only their effect BUFF, not a "… Potion"
-            # cast — count each APPLIED as one potion use.
-            if ev == "SPELL_AURA_APPLIED" and len(fields) > 10 and "Player-" in fields[5] \
-                    and fields[10].strip('"') in POTION_BUFFS:
+            # Combat potions (Destruction, Insane Strength, Haste, Free Action, …) log only their
+            # effect BUFF, not a "… Potion" cast — count each APPLIED as one potion use. Unambiguous
+            # buff names match by name; ambiguous ones (Haste / Free Action collide with trinket
+            # procs) match by the potion's SPELL ID so proc spam doesn't inflate the count.
+            if ev == "SPELL_AURA_APPLIED" and len(fields) > 10 and "Player-" in fields[5]:
                 _eff = fields[10].strip('"')
-                _pn = player_names.get(fields[5], fields[5])
-                consum_use[_pn]["potion"] += 1
-                consum_label[_pn].setdefault("combat_pot", POTION_NAME.get(_eff, _eff + " Potion"))
+                _potname = (POTION_NAME.get(_eff, _eff + " Potion") if _eff in POTION_BUFFS
+                            else POTION_BUFF_IDS.get(fields[9]))
+                if not _potname and _eff in PROTECTION_BUFFS and fields[9] not in PROTECTION_EXCLUDE_IDS:
+                    _potname = _eff + " Potion"   # e.g. "Nature Protection" → "Nature Protection Potion"
+                if _potname:
+                    _pn = player_names.get(fields[5], fields[5])
+                    consum_use[_pn]["potion"] += 1
+                    # all DISTINCT combat pots they popped across the night (shared CD → a
+                    # player legitimately swaps e.g. Haste on most pulls, Free Action on Vashj)
+                    _cp = consum_label[_pn].setdefault("combat_pots", [])
+                    if _potname not in _cp:
+                        _cp.append(_potname)
 
             # Player→player damage. Two distinct accountability paths:
             #   (1) TARGET is Mind Controlled → a raider AoE'd the controlled ally.
@@ -2504,6 +2750,10 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                     idx = 27 if ev == "SWING_DAMAGE" else 30
                     try:    fight_damage_done[_boss][src_name] += int(fields[idx])
                     except: pass
+                    # melee auto-attack swings (the Casts table omits these) — feeds the
+                    # "Melee" row the spell-usage breakdown is otherwise missing
+                    if ev == "SWING_DAMAGE":
+                        melee_swings[src_name] += 1
 
                 # HP% sample — the advanced block carries the relevant unit's HP as a percent
                 # (maxHP field == "100" for players). SWING → source unit; SPELL/RANGE/HEAL →
@@ -2709,6 +2959,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
             "fight_heal_recv": {b: dict(v) for b, v in fight_heal_recv.items()},
             "consum_use": {n: dict(v) for n, v in consum_use.items()},
             "consum_label": {n: dict(v) for n, v in consum_label.items()},
+            "melee_swings": dict(melee_swings),
             "hp_samples": {n: {b: list(s) for b, s in bs.items()} for n, bs in hp_samples.items()},
             "log_deaths": {n: list(d) for n, d in log_deaths.items()}}
 
@@ -2770,6 +3021,44 @@ def merge_log_into_wcl(wcl_data: dict, log_data: dict) -> dict:
     wcl_data["mc_liable"]           = log_data.get("mc_liable", [])
     wcl_data["consum_use"]          = log_data.get("consum_use", {})
     wcl_data["consum_label"]        = log_data.get("consum_label", {})
+
+    # Melee auto-attack swings → into the spell-usage breakdown. The WCL Casts table omits
+    # auto-attacks, so melee classes were missing their single biggest "action". Combat-log
+    # only (degrades silently without a log). Inject a "Melee" row per player + per role.
+    swings = log_data.get("melee_swings", {})
+    if swings:
+        role_of = {p["name"]: p.get("role", "") for p in wcl_data.get("players", [])}
+        # force the conventional white-melee icon (the WCL layer maps "Melee" to a specific
+        # weapon icon, which reads oddly as a generic auto-attack row)
+        wcl_data.setdefault("ability_icons", {})["Melee"] = "ability_meleedamage"
+        pspells = wcl_data.get("player_spells", {})
+        rspells = wcl_data.get("role_spells", {})
+        role_melee = defaultdict(lambda: {"casts": 0, "players": set()})
+        for nm, sw in swings.items():
+            if sw <= 0:
+                continue
+            role = role_of.get(nm)
+            if role not in ("Physical", "Tank", "Caster", "Healer"):
+                continue
+            plist = pspells.setdefault(role, [])
+            entry = next((p for p in plist if p["name"] == nm), None)
+            if entry is None:
+                entry = {"name": nm, "role": role, "total": 0, "abilities": []}
+                plist.append(entry)
+            abils = [a for a in entry.get("abilities", []) if a.get("ability") != "Melee"]
+            abils.append({"ability": "Melee", "casts": sw})
+            entry["abilities"] = sorted(abils, key=lambda x: -x["casts"])[:20]
+            entry["total"] = entry.get("total", 0) + sw
+            role_melee[role]["casts"]  += sw
+            role_melee[role]["players"].add(nm)
+        for role, mm in role_melee.items():
+            rlist = [a for a in rspells.get(role, []) if a.get("ability") != "Melee"]
+            rlist.append({"ability": "Melee", "casts": mm["casts"], "players": len(mm["players"])})
+            rspells[role] = sorted(rlist, key=lambda x: -x["casts"])[:12]
+        for role in pspells:
+            pspells[role].sort(key=lambda x: -x.get("total", 0))
+        wcl_data["player_spells"] = pspells
+        wcl_data["role_spells"]   = rspells
 
     return wcl_data
 

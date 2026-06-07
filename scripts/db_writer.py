@@ -193,6 +193,33 @@ CREATE TABLE IF NOT EXISTS dps (
     uptime       REAL,      -- active-time % (from week_data 'active_pct')
     PRIMARY KEY (report_code, player)
 );
+
+CREATE TABLE IF NOT EXISTS tank_scorecard (
+    report_code  TEXT,
+    player       TEXT,
+    dtps         REAL,      -- damage taken/sec on tank fights (the trended headline)
+    taken        INTEGER,
+    hps_recv     REAL,
+    deaths       INTEGER,
+    phys_pct     REAL,
+    magic_pct    REAL,
+    crush_count  INTEGER,   -- crushing blows taken
+    crit_count   INTEGER,   -- crits taken (~0 = defense-capped)
+    avoid_pct    REAL,      -- melee swings avoided (miss/dodge/parry/full block)
+    biggest_hit  INTEGER,
+    cooldowns    TEXT,      -- JSON dict {cd_name: count}
+    PRIMARY KEY (report_code, player)
+);
+
+CREATE TABLE IF NOT EXISTS tank_boss_dtps (
+    report_code  TEXT,
+    player       TEXT,
+    boss         TEXT,
+    dtps         REAL,
+    taken        INTEGER,
+    seconds      REAL,
+    PRIMARY KEY (report_code, player, boss)
+);
 """
 
 
@@ -229,6 +256,11 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
                 con.execute(f"ALTER TABLE consumables ADD COLUMN {_col} {_type}")
             except sqlite3.OperationalError:
                 pass   # column already exists
+        # migrate older DBs that predate the boss portrait/encounter id
+        try:
+            con.execute("ALTER TABLE boss_times ADD COLUMN encounter_id INTEGER")
+        except sqlite3.OperationalError:
+            pass   # column already exists
 
         meta = week_data.get("meta", {})
         rc   = meta.get("report_code") or week_data.get("reportCode", "unknown")
@@ -365,12 +397,13 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
                     VALUES (?, ?, ?, ?)
                 """, (rc, p["name"], crit_type, p.get("crit")))
 
-        # ── boss_times ─────────────────────────────────────────────────────────
+        # ── boss_times (+ encounter_id for portraits) ──────────────────────────
+        _bmeta = week_data.get("boss_meta") or {}
         for boss, seconds in (week_data.get("boss_times") or {}).items():
             con.execute("""
-                INSERT OR REPLACE INTO boss_times (report_code, boss, seconds)
-                VALUES (?, ?, ?)
-            """, (rc, boss, seconds))
+                INSERT OR REPLACE INTO boss_times (report_code, boss, seconds, encounter_id)
+                VALUES (?, ?, ?, ?)
+            """, (rc, boss, seconds, _bmeta.get(boss, {}).get("encounter_id")))
 
         # ── dps ────────────────────────────────────────────────────────────────
         # Persist per-player damage so it can be trended week-over-week. Store DPS
@@ -390,6 +423,26 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
                   total,
                   round(total / raid_tot * 100, 2) if raid_tot else 0,
                   p.get("active_pct")))
+
+        # ── tank scorecard v2 (summary + per-boss) ─────────────────────────────
+        for t in (week_data.get("tankScorecard") or []):
+            bh = t.get("biggest_hit") or {}
+            con.execute("""
+                INSERT OR REPLACE INTO tank_scorecard
+                  (report_code, player, dtps, taken, hps_recv, deaths, phys_pct, magic_pct,
+                   crush_count, crit_count, avoid_pct, biggest_hit, cooldowns)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (rc, t["name"], t.get("dtps"), t.get("taken"), t.get("hps_recv"),
+                  t.get("deaths"), t.get("phys_pct"), t.get("magic_pct"),
+                  t.get("crush_count"), t.get("crit_count"), t.get("avoid_pct"),
+                  bh.get("amount"), json.dumps(t.get("cooldowns") or {})))
+            for pb in (t.get("per_boss") or []):
+                con.execute("""
+                    INSERT OR REPLACE INTO tank_boss_dtps
+                      (report_code, player, boss, dtps, taken, seconds)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (rc, t["name"], pb.get("boss"), pb.get("dtps"),
+                      pb.get("taken"), pb.get("seconds")))
 
         con.commit()
         print(f"  ✓ DB written → {target.name}  (report: {rc})")
