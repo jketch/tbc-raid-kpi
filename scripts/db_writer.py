@@ -130,8 +130,9 @@ CREATE TABLE IF NOT EXISTS consumables (
     report_code  TEXT,
     player       TEXT,
     role         TEXT,
-    score        REAL,
-    suboptimal   TEXT,   -- JSON list of missing buffs
+    score        REAL,   -- Raid-Prep tryhard score, 0–10 (was 0–1 before the rework)
+    suboptimal   TEXT,   -- legacy JSON list of missing buffs (unused since the rework)
+    badges       TEXT,   -- JSON list of prep badges earned (flask/food/weapon/…)
     PRIMARY KEY (report_code, player)
 );
 
@@ -198,6 +199,11 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
         # migrate older DBs that predate the start_ms sort key
         try:
             con.execute("ALTER TABLE weeks ADD COLUMN start_ms INTEGER")
+        except sqlite3.OperationalError:
+            pass   # column already exists
+        # migrate older DBs that predate the Raid-Prep badges column
+        try:
+            con.execute("ALTER TABLE consumables ADD COLUMN badges TEXT")
         except sqlite3.OperationalError:
             pass   # column already exists
 
@@ -289,10 +295,11 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
         # ── consumables ────────────────────────────────────────────────────────
         for p in (week_data.get("consumables") or []):
             con.execute("""
-                INSERT OR REPLACE INTO consumables (report_code, player, role, score, suboptimal)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO consumables (report_code, player, role, score, suboptimal, badges)
+                VALUES (?, ?, ?, ?, ?, ?)
             """, (rc, p["name"], p.get("role"), p.get("score"),
-                  json.dumps(p.get("suboptimal") or [])))
+                  json.dumps(p.get("suboptimal") or []),
+                  json.dumps(p.get("badges") or [])))
 
         # ── drums ──────────────────────────────────────────────────────────────
         for p in (week_data.get("drums") or []):

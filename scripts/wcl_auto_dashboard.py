@@ -232,12 +232,21 @@ ELIXIR_BUFFS = {
     "Elixir of Ironskin", "Elixir of Major Defense",
 }
 
+# Guardian (defensive/utility) elixirs — everything else in ELIXIR_BUFFS is a battle elixir.
+# Used by the Raid-Prep score: flask = both slots (+4); else battle +2 / guardian +2.
+GUARDIAN_ELIXIRS = {
+    "Elixir of Draenic Wisdom", "Elixir of Major Defense", "Elixir of Major Fortitude",
+    "Elixir of Major Mageblood", "Elixir of Empowerment", "Elixir of Ironskin",
+    "Elixir of Mastery", "Earthen Elixir",
+}
+
 # Consumable usage — surfaced as an informational call-out (who's actually popping their
 # cooldowns), NOT a compliance threshold. Detected from SPELL_CAST_SUCCESS by name.
 def _consumable_category(spell: str) -> str:
     if spell.startswith("Create "):           return ""        # warlock making stones, not using
     if "Healthstone" in spell:                 return "healthstone"
     if spell in ("Dark Rune", "Demonic Rune"): return "rune"
+    if "Flame Cap" in spell:                   return "flamecap"
     if "Potion" in spell:                      return "potion"
     if spell.startswith("Scroll of"):          return "scroll"
     return ""
@@ -1765,23 +1774,40 @@ def map_to_week_data(wcl: dict) -> dict:
         if p["actual_crit"] > 0
     ]
 
-    # Consumables — flask / food / elixirs detected from buff auras in the combat log.
-    # Score = 60% flask-axis (flask=1.0, 2 elixirs=0.7, 1 elixir=0.35) + 40% food.
-    log_cons = wcl.get("log_consumables", {})   # mid-raid buff events
+    # Raid-Prep "tryhard" score (0–10) — celebrate who came loaded. All per-player data
+    # already exists: flask/elixir/food/weapon from the COMBATANT_INFO pull snapshot
+    # (API-based, catches pre-applied buffs that buff-EVENTS can't see), pots/runes/flamecap
+    # from the combat-log cast counts. Base 7: flask +4 (= both elixir slots), else
+    # battle-elixir +2 / guardian-elixir +2; food +2; weapon oil +1. Bonus 3: flamecap,
+    # combat pot, mana rune — +1 each. (The old "score 0–1 + suboptimal" shape was a broken
+    # potionUse proxy; this replaces it. consumableUsage below keeps the raw audit.)
+    log_cons = wcl.get("log_consumables", {})   # mid-raid buff events (re-applications)
     ci_cons  = wcl.get("ci_consumables", {})    # pull-time snapshot (catches pre-applied)
+    use_cons = wcl.get("consum_use", {})        # combat-log cast counts (pots/runes/flamecap)
     def _consum(p):
-        lc, cc = log_cons.get(p["name"], {}), ci_cons.get(p["name"], {})
-        flask = bool(lc.get("flask")) or bool(cc.get("flask"))
-        food  = bool(lc.get("food"))  or bool(cc.get("food"))
-        n_elix = len(set(lc.get("elixirs") or []) | set(cc.get("elixirs") or []))
-        flask_axis = 1.0 if flask else (0.7 if n_elix >= 2 else (0.35 if n_elix else 0.0))
-        score = round(0.6 * flask_axis + 0.4 * (1.0 if food else 0.0), 2)
-        missing = []
-        if not (flask or n_elix >= 2): missing.append("flask")
-        if not food:                   missing.append("food")
+        cc, lc = ci_cons.get(p["name"], {}), log_cons.get(p["name"], {})
+        uu = use_cons.get(p["name"], {})
+        flask   = bool(cc.get("flask")) or bool(lc.get("flask"))
+        food    = bool(cc.get("food"))  or bool(lc.get("food"))
+        weapon  = bool(cc.get("weapon_oil"))
+        elixirs = set(cc.get("elixirs") or []) | set(lc.get("elixirs") or [])
+        has_guardian = any(e in GUARDIAN_ELIXIRS for e in elixirs)
+        has_battle   = any(e not in GUARDIAN_ELIXIRS for e in elixirs)
+        score, badges = 0, []
+        if flask:
+            score += 4; badges.append("flask")
+        else:
+            if has_battle:   score += 2; badges.append("battle_elixir")
+            if has_guardian: score += 2; badges.append("guardian_elixir")
+        if food:   score += 2; badges.append("food")
+        if weapon: score += 1; badges.append("weapon")
+        if uu.get("flamecap", 0) > 0: score += 1; badges.append("flamecap")
+        if uu.get("potion", 0)   > 0: score += 1; badges.append("combat_pot")
+        if uu.get("rune", 0)     > 0: score += 1; badges.append("dark_rune")
         return {"name": p["name"], "role": p["role"], "class": p.get("class", ""),
-                "score": score, "suboptimal": missing or None}
-    consum_list = [_consum(p) for p in players] if (log_cons or ci_cons) else []
+                "score": score, "max_score": 10, "badges": badges}
+    consum_list = sorted((_consum(p) for p in players), key=lambda x: -x["score"]) \
+        if (log_cons or ci_cons) else []
 
     # ── Hall of Shame: avoidable damage (per-mechanic) + legend + friendly fire ──
     roster_idx = {p["name"]: p for p in players}
