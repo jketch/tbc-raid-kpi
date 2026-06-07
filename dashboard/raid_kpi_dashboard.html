@@ -210,6 +210,11 @@
   }
   /* Class-colored player name — dark shadow keeps pale colors (Priest, Rogue) legible */
   .cname { font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.9); }
+  /* WoW CDN icons (replace emoji) — small inline images, sized per context */
+  .ticon    { width:14px; height:14px; border-radius:3px; vertical-align:-2px; object-fit:cover; display:inline-block; }
+  .ticon-sm { width:13px; height:13px; border-radius:2px; vertical-align:-2px; object-fit:cover; display:inline-block; }
+  .ticon-lg { width:17px; height:17px; border-radius:3px; vertical-align:-3px; object-fit:cover; display:inline-block; }
+  .ticon-hdr{ width:30px; height:30px; border-radius:6px; object-fit:cover; display:block; }
   .bar-wrap { flex: 1; background: var(--surface2); border-radius: 4px; height: 18px; position: relative; overflow: hidden; }
   .bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; display: flex; align-items: center; padding-left: 6px; }
   .bar-val { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.9); white-space: nowrap; }
@@ -481,7 +486,7 @@
 
 <!-- ═══════════════ HEADER ═══════════════ -->
 <div class="header">
-  <div class="header-icon">⚔️</div>
+  <div class="header-icon"><img class="ticon-hdr" src="https://wow.zamimg.com/images/wow/icons/large/inv_sword_27.jpg" alt=""></div>
   <div>
     <div class="header-title">Raid KPI Dashboard — TBC Anniversary</div>
     <div class="header-sub" id="headerSub">25-Man</div>
@@ -501,7 +506,7 @@
 
   <!-- ═══════════════ STAT TILES ═══════════════ -->
   <div class="tsec" data-tab="overview">
-  <div class="section-label">⭐ Night at a Glance</div>
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_spyglass_02.jpg" alt=""> Night at a Glance</div>
 
   <div class="stat-row">
     <div class="stat-tile">
@@ -531,7 +536,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title"><span class="icon">🗡</span> Bosses Down</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_head_dragon_01.jpg" alt=""> Bosses Down</div>
     <div class="boss-zones">
       <div>
         <div class="subsection-label">Serpentshrine Cavern</div>
@@ -547,36 +552,36 @@
   <div class="grid-4" id="cohortCards"></div>
 
   <div class="card">
-    <div class="card-title"><span class="icon">🏆</span> Tonight's Leaders</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/achievement_pvp_a_a.jpg" alt=""> Tonight's Leaders</div>
     <div id="highlights"></div>
   </div>
 
   <!-- ═══════════════ CONSUMABLES + DRUMS ═══════════════ -->
   </div>
   <div class="tsec" data-tab="utility">
-  <div class="section-label">🥁 Drums of Battle</div>
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_drum_03.jpg" alt=""> Drums of Battle</div>
   <div class="card">
-    <div class="card-title"><span class="icon">🥁</span> Drums of Battle Efficiency</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_drum_03.jpg" alt=""> Drums of Battle Efficiency</div>
     <div class="drum-card" id="drumRows"></div>
   </div>
 
   <!-- ═══════════════ ACCOUNTABILITY ═══════════════ -->
   </div>
   <div class="tsec" data-tab="shame">
-  <div class="section-label">🐀 Accountability — across all 25 raiders</div>
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/ability_creature_disease_02.jpg" alt=""> Accountability — across all 25 raiders</div>
   <div id="logCoverageNote"></div>
   <div class="hs-grid">
 
     <!-- Avoidable damage taken -->
     <div class="card hs-wide">
-      <div class="card-title"><span class="icon">💥</span> Avoidable Damage Taken</div>
+      <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_shadow_shadowfury.jpg" alt=""> Avoidable Damage Taken</div>
       <div class="hs-sub">Damage from mechanics you could've sidestepped. <b>One block</b> = a bad moment · <b>several stacked</b> = a pattern.</div>
       <div id="avoidShame"></div>
     </div>
 
     <!-- Deaths -->
     <div class="card">
-      <div class="card-title"><span class="icon">💀</span> Deaths — what actually killed them</div>
+      <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_bone_humanskull_01.jpg" alt=""> Deaths — what actually killed them</div>
       <div class="hs-sub"><b>Click a raider</b> → each death: encounter, killing blow, the final seconds. Not dying is the skill.</div>
       <div id="deathStrips"></div>
     </div>
@@ -590,14 +595,14 @@
 
     <!-- Friendly fire (clumping/positioning only) -->
     <div class="card hs-wide">
-      <div class="card-title"><span class="icon">🔥</span> Friendly Fire — Clumping</div>
+      <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_fire_selfdestruct.jpg" alt=""> Friendly Fire — Clumping</div>
       <div class="hs-sub">Splash damage dealt <b>to teammates</b> by clumping on spread mechanics — it hits whoever's near you.</div>
       <div id="friendlyFire"></div>
     </div>
 
     <!-- Mind Control (moved here) -->
     <div class="card hs-wide">
-      <div class="card-title"><span class="icon">🧠</span> Mind Control — saves &amp; liabilities</div>
+      <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_shadow_shadowworddominate.jpg" alt=""> Mind Control — saves &amp; liabilities</div>
       <div class="hs-sub">Charmed ≠ their fault — blame flips to the raid. <b style="color:var(--green)">Saves</b> = you CC'd them safely · <b style="color:var(--red)">Liabilities</b> = you AoE'd into them (a <b>💀 killing blow</b> is the cardinal sin).</div>
       <div class="grid-2" style="margin-top:8px">
         <div>
@@ -614,9 +619,9 @@
   </div>
 
   <!-- ═══════════════ RAID PREP ═══════════════ -->
-  <div class="section-label" style="margin-top:24px">🧪 Raid Prep</div>
+  <div class="section-label" style="margin-top:24px"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/trade_alchemy.jpg" alt=""> Raid Prep</div>
   <div class="card gold">
-    <div class="card-title"><span class="icon">🏅</span> Raid Prep — Who Came Loaded</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_alchemy_endlessflask_06.jpg" alt=""> Raid Prep — Who Came Loaded</div>
     <div class="hs-sub">A prep score out of <b>10</b>: flask <b>+4</b> (or battle/guardian elixir <b>+2</b> each), food <b>+2</b>, weapon oil <b>+1</b> · bonus for flame cap, combat pot, mana rune <b>+1</b> each. Tryhards up top. 🏅</div>
     <div id="consumUsage"></div>
   </div>
@@ -624,9 +629,9 @@
   <!-- ═══════════════ CRIT KPI + LUCK ═══════════════ -->
   </div>
   <div class="tsec" data-tab="dps">
-  <div class="section-label">⚔️ DPS — Damage Output</div>
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/ability_dualwield.jpg" alt=""> DPS — Damage Output</div>
   <div class="card physical">
-    <div class="card-title"><span class="icon">⚔️</span> Damage per Second</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/ability_dualwield.jpg" alt=""> Damage per Second</div>
     <div class="hs-sub">DPS over total boss time. <b>Uptime</b> = % of fight actively attacking — low = mechanics, gaps, or downtime.</div>
     <div class="scroll-x">
       <table class="mini-table" id="dpsTable">
@@ -637,13 +642,13 @@
   </div>
 
   <div class="card physical">
-    <div class="card-title"><span class="icon">📊</span> Uptime by Fight</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_pocketwatch_01.jpg" alt=""> Uptime by Fight</div>
     <div class="hs-sub">Per-boss attack uptime. <b>Whole column low</b> = structural (submerge/phase, not on them) · <b>one red cell</b> = that player's gap.</div>
     <div class="scroll-x"><div id="uptimeHeatmap"></div></div>
   </div>
 
   <div class="card" style="margin-top:22px">
-    <div class="card-title"><span class="icon">🍀</span> Crit Luck — or a Gear Upgrade?</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_dice_01.jpg" alt=""> Crit Luck — or a Gear Upgrade?</div>
     <div class="hs-sub">Big number = this week's crit vs <b>your own multi-week average</b> (controls for gear/spec/buffs). <b>Spike</b> 🎲 = hot dice · <b>sustained step</b> 🔼 = gear upgrade — the sparkline shows which.</div>
     <div id="luckGrid" class="luck-grid"></div>
     <div id="luckDisclaimer" style="margin-top:10px;font-size:10px;color:var(--muted);"></div>
@@ -652,9 +657,9 @@
   <!-- ═══════════════ HEALER SCORECARD ═══════════════ -->
   </div>
   <div class="tsec" data-tab="healing">
-  <div class="section-label">💚 Healer Scorecard</div>
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_flashheal.jpg" alt=""> Healer Scorecard</div>
   <div class="card">
-    <div class="card-title"><span class="icon">💚</span> Throughput &amp; Efficiency</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_flashheal.jpg" alt=""> Throughput &amp; Efficiency</div>
     <div class="hs-sub"><b>Eff HPS</b> = contribution · <b>Overheal %</b> = efficiency (lower better; HoT specs run higher) · <b>Activity %</b> = casting uptime. Scoped to each player's <b>healing fights only</b> (see <b>Fights</b>).</div>
     <div class="scroll-x">
       <table class="mini-table" id="healTable">
@@ -666,17 +671,17 @@
     </div>
   </div>
 
-  <div class="section-label">🩹 Heal Reaction Time</div>
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_bandage_08.jpg" alt=""> Heal Reaction Time</div>
   <div class="card">
-    <div class="card-title"><span class="icon">🩹</span> Time to Be Healed — by raider &amp; boss</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_bandage_08.jpg" alt=""> Time to Be Healed — by raider &amp; boss</div>
     <div class="hs-sub">Median seconds from dropping <b>below 50% HP</b> to the next <b>direct heal</b> — how fast the team responds. <b style="color:#3fa45f">Green</b> = fast · <b style="color:#c25a3a">red</b> = left waiting · <b>☠</b> = died first. HoT ticks don't count (insurance, not a response); HoT-only recoveries are excluded. <b>Team responsiveness</b> per raider, not healer blame · <b>click</b> a cell for the drops.</div>
     <div class="scroll-x"><div id="reactionHeatmap"></div></div>
   </div>
 
   <div style="border-top:2px solid var(--accent);opacity:.55;margin:28px 0 4px"></div>
-  <div class="section-label">🛡 Tank Scorecard</div>
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_shield_06.jpg" alt=""> Tank Scorecard</div>
   <div class="card" style="padding-top:16px;padding-bottom:18px">
-    <div class="card-title"><span class="icon">🛡</span> Survivability &amp; Mitigation</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_shield_06.jpg" alt=""> Survivability &amp; Mitigation</div>
     <div class="hs-sub">Scoped to <b>tank fights only</b> (prot/ret handled — see <b>Fights</b>). <b>DTPS</b> = damage taken/sec (lower = better mitigation) · <b>Heal Recv</b> = soaked/sec · <b>Deaths</b> = on tank fights.</div>
     <div class="scroll-x">
       <table class="mini-table" id="tankTable">
@@ -691,9 +696,9 @@
   <!-- ═══════════════ ENGINEERING ═══════════════ -->
   </div>
   <div class="tsec" data-tab="utility">
-  <div class="section-label">⚙️ Engineering — Bombs & Sappers</div>
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg" alt=""> Engineering — Bombs & Sappers</div>
   <div class="card physical">
-    <div class="card-title"><span class="icon">🧨</span> Sapper/Grenade Usage &amp; Damage by Player</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_gizmo_supersappercharge.jpg" alt=""> Sapper/Grenade Usage &amp; Damage by Player</div>
     <div class="hs-sub">Engineering explosives = free DPS. <b>Damage</b> is the contribution · counts show what they pressed.</div>
     <div class="scroll-x">
       <table class="mini-table" id="engTable" style="table-layout:fixed;width:100%">
@@ -706,9 +711,9 @@
   <!-- ═══════════════ INTERRUPTS ═══════════════ -->
   </div>
   <div class="tsec" data-tab="utility">
-  <div class="section-label">🔇 Spell Interrupts</div>
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_silence.jpg" alt=""> Spell Interrupts</div>
   <div class="card">
-    <div class="card-title"><span class="icon">🔇</span> Interrupted Spells by Player</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_silence.jpg" alt=""> Interrupted Spells by Player</div>
     <div id="interruptBars"></div>
     <div style="font-size:10.5px;color:var(--muted);margin-top:10px">Players with 0 interrupts not shown.</div>
   </div>
@@ -716,14 +721,14 @@
   <!-- ═══════════════ SPELL USAGE BY ROLE ═══════════════ -->
   </div>
   <div class="tsec" data-tab="utility">
-  <div class="section-label">🎯 Action / Spell Usage by Role</div>
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_book_09.jpg" alt=""> Action / Spell Usage by Role</div>
   <div class="card">
     <div class="hs-sub">Top abilities cast by each role — what everyone's actually pressing.</div>
     <div id="roleSpellsGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px"></div>
   </div>
 
   <div class="card">
-    <div class="card-title"><span class="icon">👥</span> Spell Usage by Player</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_grouplooking.jpg" alt=""> Spell Usage by Player</div>
     <div class="hs-sub">Compare players within a role — <b>pick a role</b> to see each one's top abilities and casts.</div>
     <div id="playerSpellsTabs" style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 14px"></div>
     <div id="playerSpellsGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px"></div>
@@ -18384,15 +18389,15 @@ function renderOverview(){
     // (which already covers floor / friendly fire / interrupts). Raw output isn't a "shine",
     // so it lives here, not in the feed. Raid totals are the stat tiles above.
     const items = [];
-    const dmg   = WEEK_DATA.damage||[];   if(dmg.length)  items.push(["⚔️","Top damage",dmg[0].name,dmg[0].role,hsK(dmg[0].total_dmg)]);
-    const heal  = WEEK_DATA.healing||[];  if(heal.length) items.push(["💚","Top healer",heal[0].name,heal[0].role,`${heal[0].eff_hps.toLocaleString()} HPS`]);
+    const dmg   = WEEK_DATA.damage||[];   if(dmg.length)  items.push(["inv_sword_27","Top damage",dmg[0].name,dmg[0].role,hsK(dmg[0].total_dmg)]);
+    const heal  = WEEK_DATA.healing||[];  if(heal.length) items.push(["spell_holy_flashheal","Top healer",heal[0].name,heal[0].role,`${heal[0].eff_hps.toLocaleString()} HPS`]);
     const tanks = [...(WEEK_DATA.tankScorecard||[])].filter(t=>t.taken>0).sort((a,b)=>b.taken-a.taken);
-    if(tanks.length) items.push(["🛡","Tanked most",tanks[0].name,"Tank",hsK(tanks[0].taken)]);
+    if(tanks.length) items.push(["inv_shield_06","Tanked most",tanks[0].name,"Tank",hsK(tanks[0].taken)]);
     const drums = [...(WEEK_DATA.drums||[])].sort((a,b)=>((b.total||b.casts||0)-(a.total||a.casts||0)));
-    if(drums.length && (drums[0].total||drums[0].casts)) items.push(["🥁","Most drums",drums[0].name,"",`${drums[0].total||drums[0].casts} casts`]);
+    if(drums.length && (drums[0].total||drums[0].casts)) items.push(["inv_misc_drum_03","Most drums",drums[0].name,"",`${drums[0].total||drums[0].casts} casts`]);
     hl.innerHTML = items.length ? items.map(([i,l,n,r,v]) =>
       `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)">
-         <span style="font-size:15px">${i}</span>
+         ${gicon(i, "ticon-lg")}
          <span style="flex:1;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">${l}</span>
          <span style="font-weight:600;font-size:12.5px">${n?`<span class="cname" style="color:${nameColor(n,r)}">${n}</span> `:""}${v}</span></div>`).join("")
       : '<div style="color:var(--muted);font-size:12px">No highlights.</div>';
@@ -18666,6 +18671,8 @@ function classIcon(name){
   const r = WEEK_DATA.roster && WEEK_DATA.roster[name];
   return r && r.class ? `https://wow.zamimg.com/images/wow/icons/large/classicon_${r.class.toLowerCase()}.jpg` : null;
 }
+const ICON_BASE = "https://wow.zamimg.com/images/wow/icons/large/";
+function gicon(slug, cls){ return `<img class="${cls||'ticon'}" src="${ICON_BASE}${slug}.jpg" alt="">`; }
 
 // ── DRILL-DOWN: click an avoidable bar segment → the exact timestamped hits
 function showDrill(name, ability){
@@ -19025,9 +19032,9 @@ function renderRaidPrep() {
     return;
   }
   const BADGE = {
-    flask: "🧪 Flask", battle_elixir: "⚔️ Battle Elix", guardian_elixir: "🛡 Guard Elix",
-    food: "🍖 Food", weapon: "⚗️ Weapon", flamecap: "🔥 Flamecap",
-    combat_pot: "💥 Combat Pot", dark_rune: "🌑 Rune",
+    flask: ["inv_potion_41", "Flask"], battle_elixir: ["inv_potion_94", "Battle Elix"], guardian_elixir: ["inv_potion_24", "Guard Elix"],
+    food: ["inv_misc_food_15", "Food"], weapon: ["inv_potion_98", "Weapon"], flamecap: ["inv_misc_herb_flamecap", "Flamecap"],
+    combat_pot: ["inv_potion_54", "Combat Pot"], dark_rune: ["inv_misc_rune_04", "Rune"],
   };
   const col = s => s >= 9 ? "var(--green)" : s >= 6 ? "var(--accent)" : "var(--muted)";
   el.innerHTML = data.map((p, i) => {
@@ -19035,7 +19042,7 @@ function renderRaidPrep() {
     let segs = "";
     for (let k = 0; k < max; k++)
       segs += `<span style="flex:1;height:100%;background:${k < p.score ? c : 'var(--surface2)'};border-radius:1px"></span>`;
-    const pills = (p.badges || []).map(b => `<span class="pill">${BADGE[b] || b}</span>`).join("");
+    const pills = (p.badges || []).map(b => { const x = BADGE[b]; return x ? `<span class="pill">${gicon(x[0], "ticon-sm")} ${x[1]}</span>` : `<span class="pill">${b}</span>`; }).join("");
     return `<div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)">
       <span style="width:18px;text-align:right;color:var(--muted);font-size:11px;flex-shrink:0">${i + 1}</span>
       <div style="flex:1;min-width:0">
@@ -19144,7 +19151,7 @@ function renderDeaths() {
     const onclick = recap.length ? `onclick="showDeathDrill('${encodeURIComponent(p.name)}')" title="click for each death"` : "";
     return `<div class="strip-row ${click} ${lead?'lead':''}" ${onclick}>
       <span class="strip-rank">${i+1}</span>
-      <span class="strip-ico">💀</span>
+      <span class="strip-ico" style="background-image:url('https://wow.zamimg.com/images/wow/icons/large/inv_misc_bone_humanskull_01.jpg')"></span>
       <div style="flex:1;min-width:0">
         <div style="display:flex;justify-content:space-between;align-items:baseline">
           <span class="cname" style="color:${cc};font-weight:600;font-size:12.5px">${p.name}</span>
