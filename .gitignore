@@ -20,6 +20,11 @@ cache/*.json
 # Claude Code machine-local settings
 .claude/settings.local.json
 
+# Netlify (deploy state + the staged copy of the dashboard) and node deps
+.netlify/
+.deploy/
+node_modules/
+
 # OS cruft
 .DS_Store
 Thumbs.db

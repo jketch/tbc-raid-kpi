@@ -34,6 +34,9 @@ python scripts\wcl_auto_dashboard.py %REPORT_CODE%
 
 if %ERRORLEVEL% EQU 0 (
     echo.
+    echo Publishing to Netlify + Discord...
+    python scripts\publish.py
+    echo.
     echo Done! Opening dashboard...
     start "" "dashboard\raid_kpi_dashboard.html"
     echo.
