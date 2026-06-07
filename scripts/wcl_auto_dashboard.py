@@ -247,6 +247,7 @@ def _consumable_category(spell: str) -> str:
     if "Healthstone" in spell:                 return "healthstone"
     if spell in ("Dark Rune", "Demonic Rune"): return "rune"
     if "Flame Cap" in spell:                   return "flamecap"
+    if "Nightmare Seed" in spell:              return "nightmare_seed"
     if "Potion" in spell:                      return "potion"
     if spell.startswith("Scroll of"):          return "scroll"
     return ""
@@ -258,6 +259,12 @@ POTION_BUFFS = {
     "Destruction",       # Destruction Potion (+120 spell dmg)
     "Insane Strength",   # Insane Strength Potion (+120 str, −crit)
     "Fel Regeneration",  # Fel Regeneration Potion
+}
+# Combat-pot effect buff → display name (for the compliance grid's Combat Pot cell).
+POTION_NAME = {
+    "Destruction": "Destruction Potion",
+    "Insane Strength": "Insane Strength Potion",
+    "Fel Regeneration": "Fel Regeneration Potion",
 }
 
 # Approx base mana cost of common TBC heal spells (max rank, pre-talent). Used to
@@ -1730,6 +1737,34 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
 # Map WCL data → WEEK_DATA format expected by the HTML dashboard
 # ══════════════════════════════════════════════════════════════════════════════
 
+def build_consumable_compliance(consumable_usage):
+    """Reshape consumableUsage into the role-split compliance grid shape — a pure transform,
+    no new queries. Each row → {name, role, flask, food, weapon, combat_pot, alt_pot}.
+    Flask/Elixirs passes on a flask OR both elixir slots (battle AND guardian)."""
+    out = []
+    for e in consumable_usage:
+        elixirs = e.get("elixirs") or []
+        has_guardian = any(x in GUARDIAN_ELIXIRS for x in elixirs)
+        has_battle   = any(x not in GUARDIAN_ELIXIRS for x in elixirs)
+        flask_ok = bool(e.get("flask")) or (has_battle and has_guardian)
+        # Alt pot priority: Nightmare Seed > Flame Cap > Dark/Demonic Rune (show the item name)
+        if   e.get("nightmare_seed"): alt_pot = "Nightmare Seed"
+        elif e.get("flamecap"):       alt_pot = "Flame Cap"
+        elif e.get("rune_name"):      alt_pot = e["rune_name"]
+        elif e.get("rune"):           alt_pot = "Mana Rune"   # used but specific name not captured
+        else:                         alt_pot = None
+        out.append({
+            "name":  e["name"],
+            "role":  e.get("role", ""),
+            "flask": flask_ok,
+            "food":  bool(e.get("food")),
+            "weapon": bool(e.get("weapon_oil")),
+            "combat_pot": e.get("combat_pot_name"),   # specific potion name or None
+            "alt_pot": alt_pot,
+        })
+    return out
+
+
 def map_to_week_data(wcl: dict) -> dict:
     """Convert WCL API output to the WEEK_DATA structure the HTML renders from."""
     players = wcl.get("players", [])
@@ -1774,40 +1809,9 @@ def map_to_week_data(wcl: dict) -> dict:
         if p["actual_crit"] > 0
     ]
 
-    # Raid-Prep "tryhard" score (0–10) — celebrate who came loaded. All per-player data
-    # already exists: flask/elixir/food/weapon from the COMBATANT_INFO pull snapshot
-    # (API-based, catches pre-applied buffs that buff-EVENTS can't see), pots/runes/flamecap
-    # from the combat-log cast counts. Base 7: flask +4 (= both elixir slots), else
-    # battle-elixir +2 / guardian-elixir +2; food +2; weapon oil +1. Bonus 3: flamecap,
-    # combat pot, mana rune — +1 each. (The old "score 0–1 + suboptimal" shape was a broken
-    # potionUse proxy; this replaces it. consumableUsage below keeps the raw audit.)
-    log_cons = wcl.get("log_consumables", {})   # mid-raid buff events (re-applications)
-    ci_cons  = wcl.get("ci_consumables", {})    # pull-time snapshot (catches pre-applied)
-    use_cons = wcl.get("consum_use", {})        # combat-log cast counts (pots/runes/flamecap)
-    def _consum(p):
-        cc, lc = ci_cons.get(p["name"], {}), log_cons.get(p["name"], {})
-        uu = use_cons.get(p["name"], {})
-        flask   = bool(cc.get("flask")) or bool(lc.get("flask"))
-        food    = bool(cc.get("food"))  or bool(lc.get("food"))
-        weapon  = bool(cc.get("weapon_oil"))
-        elixirs = set(cc.get("elixirs") or []) | set(lc.get("elixirs") or [])
-        has_guardian = any(e in GUARDIAN_ELIXIRS for e in elixirs)
-        has_battle   = any(e not in GUARDIAN_ELIXIRS for e in elixirs)
-        score, badges = 0, []
-        if flask:
-            score += 4; badges.append("flask")
-        else:
-            if has_battle:   score += 2; badges.append("battle_elixir")
-            if has_guardian: score += 2; badges.append("guardian_elixir")
-        if food:   score += 2; badges.append("food")
-        if weapon: score += 1; badges.append("weapon")
-        if uu.get("flamecap", 0) > 0: score += 1; badges.append("flamecap")
-        if uu.get("potion", 0)   > 0: score += 1; badges.append("combat_pot")
-        if uu.get("rune", 0)     > 0: score += 1; badges.append("dark_rune")
-        return {"name": p["name"], "role": p["role"], "class": p.get("class", ""),
-                "score": score, "max_score": 10, "badges": badges}
-    consum_list = sorted((_consum(p) for p in players), key=lambda x: -x["score"]) \
-        if (log_cons or ci_cons) else []
+    # Consumables → role-split COMPLIANCE grid (binary ✓/✗ per role). A pure reshape of
+    # consumableUsage via build_consumable_compliance — consum_list is assigned just after
+    # consum_usage is built (below).
 
     # ── Hall of Shame: avoidable damage (per-mechanic) + legend + friendly fire ──
     roster_idx = {p["name"]: p for p in players}
@@ -1866,11 +1870,13 @@ def map_to_week_data(wcl: dict) -> dict:
     # items (pots/runes/healthstones) come from cast counts. One row per raider.
     ci_use = wcl.get("ci_consumables", {})
     cu_use = wcl.get("consum_use", {})
+    lbl_use = wcl.get("consum_label", {})
     consum_names = set(ci_use) | set(cu_use)
     consum_usage = []
     for n in consum_names:
         c = ci_use.get(n, {})
         u = cu_use.get(n, {})
+        lb = lbl_use.get(n, {})
         flask = c.get("flask", "")
         elixirs = c.get("elixirs", [])
         food = bool(c.get("food"))
@@ -1882,12 +1888,19 @@ def map_to_week_data(wcl: dict) -> dict:
             "scrolls": c.get("scrolls", []), "weapon_oil": bool(c.get("weapon_oil")),
             "potion": u.get("potion", 0), "rune": u.get("rune", 0),
             "healthstone": u.get("healthstone", 0),
+            # specific item names for the compliance grid (None if unused)
+            "combat_pot_name": lb.get("combat_pot"),
+            "rune_name": lb.get("rune"),
+            "flamecap": bool(u.get("flamecap")),
+            "nightmare_seed": bool(u.get("nightmare_seed")),
             # prepared = has a flask (or 2 elixirs) AND food — the BiS baseline
             "prepared": bool(flask or len(elixirs) >= 2) and food,
         })
     # least-prepared first (missing flask/food bubbles up — that's the accountability angle)
     consum_usage.sort(key=lambda x: (x["prepared"], bool(x["flask"] or x["elixirs"]), x["food"],
                                      x["name"]))
+    # Role-split compliance grid (binary ✓/✗) — replaces the old prep score.
+    consum_list = build_consumable_compliance(consum_usage)
 
     # Healer scorecard — actual healers only (role=Healer), ranked by effective HPS.
     # Throughput + overheal% (efficiency) + activity% differentiate them; crit luck doesn't.
@@ -2176,6 +2189,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
     mc_count  = defaultdict(int)   # times each player was MC'd (by name)
     mc_source = {}                 # player name → who controlled them (last seen)
     consum_use = defaultdict(lambda: defaultdict(int))  # [player][category] = use count
+    consum_label = defaultdict(dict)  # [player][category] = specific item name (first seen)
     # MC accountability — blame flips onto the raid when a teammate is controlled.
     mc_saves  = defaultdict(lambda: {"count": 0, "spells": defaultdict(int),
                                      "targets": defaultdict(int), "hits": []})  # by caster
@@ -2274,15 +2288,21 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
             # Consumable USAGE (informational call-out): healthstones, runes, pots, scrolls.
             # One SPELL_CAST_SUCCESS per activation = a clean use count.
             if ev == "SPELL_CAST_SUCCESS" and "Player-" in fields[1] and len(fields) > 10:
-                _cat = _consumable_category(fields[10].strip('"'))
+                _spell = fields[10].strip('"')
+                _cat = _consumable_category(_spell)
                 if _cat:
-                    consum_use[player_names.get(fields[1], fields[1])][_cat] += 1
+                    _pn = player_names.get(fields[1], fields[1])
+                    consum_use[_pn][_cat] += 1
+                    consum_label[_pn].setdefault(_cat, _spell)   # specific name: Dark Rune / Flame Cap / Nightmare Seed
 
             # Combat potions (Destruction, Haste, …) log only their effect BUFF, not a "… Potion"
             # cast — count each APPLIED as one potion use.
             if ev == "SPELL_AURA_APPLIED" and len(fields) > 10 and "Player-" in fields[5] \
                     and fields[10].strip('"') in POTION_BUFFS:
-                consum_use[player_names.get(fields[5], fields[5])]["potion"] += 1
+                _eff = fields[10].strip('"')
+                _pn = player_names.get(fields[5], fields[5])
+                consum_use[_pn]["potion"] += 1
+                consum_label[_pn].setdefault("combat_pot", POTION_NAME.get(_eff, _eff + " Potion"))
 
             # Player→player damage. Two distinct accountability paths:
             #   (1) TARGET is Mind Controlled → a raider AoE'd the controlled ally.
@@ -2583,6 +2603,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
             "fight_dmg_taken": {b: dict(v) for b, v in fight_dmg_taken.items()},
             "fight_heal_recv": {b: dict(v) for b, v in fight_heal_recv.items()},
             "consum_use": {n: dict(v) for n, v in consum_use.items()},
+            "consum_label": {n: dict(v) for n, v in consum_label.items()},
             "hp_samples": {n: {b: list(s) for b, s in bs.items()} for n, bs in hp_samples.items()},
             "log_deaths": {n: list(d) for n, d in log_deaths.items()}}
 
@@ -2643,6 +2664,7 @@ def merge_log_into_wcl(wcl_data: dict, log_data: dict) -> dict:
     wcl_data["mc_saves"]            = log_data.get("mc_saves", [])
     wcl_data["mc_liable"]           = log_data.get("mc_liable", [])
     wcl_data["consum_use"]          = log_data.get("consum_use", {})
+    wcl_data["consum_label"]        = log_data.get("consum_label", {})
 
     return wcl_data
 

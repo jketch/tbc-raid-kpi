@@ -573,11 +573,11 @@
 
   </div>
 
-  <!-- ═══════════════ RAID PREP ═══════════════ -->
-  <div class="section-label" style="margin-top:24px"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/trade_alchemy.jpg" alt=""> Raid Prep</div>
-  <div class="card gold">
-    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_alchemy_endlessflask_06.jpg" alt=""> Raid Prep — Who Came Loaded</div>
-    <div class="hs-sub">A prep score out of <b>10</b>: flask <b>+4</b> (or battle/guardian elixir <b>+2</b> each), food <b>+2</b>, weapon oil <b>+1</b> · bonus for flame cap, combat pot, mana rune <b>+1</b> each. Tryhards up top. 🏅</div>
+  <!-- ═══════════════ CONSUMABLE COMPLIANCE ═══════════════ -->
+  <div class="section-label" style="margin-top:24px"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/trade_alchemy.jpg" alt=""> Consumable Compliance</div>
+  <div class="card">
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_alchemy_endlessflask_06.jpg" alt=""> Consumable Compliance</div>
+    <div class="hs-sub">What each raider brought vs. what's expected for their role. <b>Flask/Elix</b> = a flask or both elixir slots · <b>Alt Pot</b> = a mana rune, Flame Cap, or Nightmare Seed.</div>
     <div id="consumUsage"></div>
   </div>
 
@@ -735,22 +735,7 @@ const WEEK_DATA = {
       "spec": "Justicar",
       "role": "Tank"
     },
-    "Pewpslurper": {
-      "class": "Druid",
-      "spec": "Restoration",
-      "role": "Healer"
-    },
-    "Sweetheart": {
-      "class": "Priest",
-      "spec": "Holy",
-      "role": "Healer"
-    },
     "Moojerked": {
-      "class": "Shaman",
-      "spec": "Restoration",
-      "role": "Healer"
-    },
-    "Ohshiz": {
       "class": "Shaman",
       "spec": "Restoration",
       "role": "Healer"
@@ -760,24 +745,24 @@ const WEEK_DATA = {
       "spec": "Holy",
       "role": "Healer"
     },
-    "Marvels": {
-      "class": "Warlock",
-      "spec": "Destruction",
-      "role": "Caster"
-    },
-    "Boogiez": {
+    "Ohshiz": {
       "class": "Shaman",
-      "spec": "Enhancement",
-      "role": "Physical"
+      "spec": "Restoration",
+      "role": "Healer"
     },
-    "Mmtoast": {
-      "class": "Warrior",
-      "spec": "Arms",
-      "role": "Physical"
-    },
-    "Shovelpriest": {
+    "Sweetheart": {
       "class": "Priest",
-      "spec": "Shadow",
+      "spec": "Holy",
+      "role": "Healer"
+    },
+    "Pewpslurper": {
+      "class": "Druid",
+      "spec": "Restoration",
+      "role": "Healer"
+    },
+    "Feelsbaldman": {
+      "class": "Shaman",
+      "spec": "Elemental",
       "role": "Caster"
     },
     "Bahguul": {
@@ -785,24 +770,19 @@ const WEEK_DATA = {
       "spec": "Balance",
       "role": "Caster"
     },
+    "Mucoid": {
+      "class": "Hunter",
+      "spec": "BeastMastery",
+      "role": "Physical"
+    },
+    "Boogiez": {
+      "class": "Shaman",
+      "spec": "Enhancement",
+      "role": "Physical"
+    },
     "Alldorin": {
       "class": "Warlock",
       "spec": "Affliction",
-      "role": "Caster"
-    },
-    "Areso": {
-      "class": "Warrior",
-      "spec": "Fury",
-      "role": "Physical"
-    },
-    "Jadyx": {
-      "class": "Hunter",
-      "spec": "Survival",
-      "role": "Physical"
-    },
-    "Feelsbaldman": {
-      "class": "Shaman",
-      "spec": "Elemental",
       "role": "Caster"
     },
     "Skeptxo": {
@@ -810,29 +790,39 @@ const WEEK_DATA = {
       "spec": "Combat",
       "role": "Physical"
     },
+    "Jadyx": {
+      "class": "Hunter",
+      "spec": "Survival",
+      "role": "Physical"
+    },
     "Philliam": {
       "class": "Paladin",
       "spec": "Retribution",
       "role": "Physical"
+    },
+    "Areso": {
+      "class": "Warrior",
+      "spec": "Fury",
+      "role": "Physical"
+    },
+    "Shovelpriest": {
+      "class": "Priest",
+      "spec": "Shadow",
+      "role": "Caster"
     },
     "Seedemup": {
       "class": "Warlock",
       "spec": "Destruction",
       "role": "Caster"
     },
-    "Zetla": {
-      "class": "Mage",
-      "spec": "Arcane",
-      "role": "Caster"
+    "Mmtoast": {
+      "class": "Warrior",
+      "spec": "Arms",
+      "role": "Physical"
     },
     "Cindybrooke": {
       "class": "Rogue",
       "spec": "Combat",
-      "role": "Physical"
-    },
-    "Mucoid": {
-      "class": "Hunter",
-      "spec": "BeastMastery",
       "role": "Physical"
     },
     "Zyph": {
@@ -840,333 +830,247 @@ const WEEK_DATA = {
       "spec": "BeastMastery",
       "role": "Physical"
     },
+    "Zetla": {
+      "class": "Mage",
+      "spec": "Arcane",
+      "role": "Caster"
+    },
     "Juricc": {
       "class": "Shaman",
       "spec": "Enhancement",
       "role": "Physical"
+    },
+    "Marvels": {
+      "class": "Warlock",
+      "spec": "Destruction",
+      "role": "Caster"
     }
   },
   "consumables": [
     {
-      "name": "Marvels",
+      "name": "Feelsbaldman",
       "role": "Caster",
-      "class": "Warlock",
-      "score": 9,
-      "max_score": 10,
-      "badges": [
-        "flask",
-        "food",
-        "weapon",
-        "combat_pot",
-        "dark_rune"
-      ]
-    },
-    {
-      "name": "Ohshiz",
-      "role": "Healer",
-      "class": "Shaman",
-      "score": 8,
-      "max_score": 10,
-      "badges": [
-        "battle_elixir",
-        "guardian_elixir",
-        "food",
-        "weapon",
-        "dark_rune"
-      ]
-    },
-    {
-      "name": "Mmtoast",
-      "role": "Physical",
-      "class": "Warrior",
-      "score": 8,
-      "max_score": 10,
-      "badges": [
-        "flask",
-        "food",
-        "weapon",
-        "combat_pot"
-      ]
-    },
-    {
-      "name": "Shovelpriest",
-      "role": "Caster",
-      "class": "Priest",
-      "score": 8,
-      "max_score": 10,
-      "badges": [
-        "flask",
-        "food",
-        "weapon",
-        "dark_rune"
-      ]
-    },
-    {
-      "name": "Bahguul",
-      "role": "Caster",
-      "class": "Druid",
-      "score": 8,
-      "max_score": 10,
-      "badges": [
-        "battle_elixir",
-        "guardian_elixir",
-        "food",
-        "weapon",
-        "combat_pot"
-      ]
-    },
-    {
-      "name": "Alldorin",
-      "role": "Caster",
-      "class": "Warlock",
-      "score": 8,
-      "max_score": 10,
-      "badges": [
-        "flask",
-        "food",
-        "weapon",
-        "combat_pot"
-      ]
-    },
-    {
-      "name": "Skeptxo",
-      "role": "Physical",
-      "class": "Rogue",
-      "score": 8,
-      "max_score": 10,
-      "badges": [
-        "flask",
-        "food",
-        "weapon",
-        "combat_pot"
-      ]
-    },
-    {
-      "name": "Philliam",
-      "role": "Physical",
-      "class": "Paladin",
-      "score": 8,
-      "max_score": 10,
-      "badges": [
-        "flask",
-        "food",
-        "weapon",
-        "dark_rune"
-      ]
-    },
-    {
-      "name": "Seedemup",
-      "role": "Caster",
-      "class": "Warlock",
-      "score": 8,
-      "max_score": 10,
-      "badges": [
-        "flask",
-        "food",
-        "weapon",
-        "combat_pot"
-      ]
-    },
-    {
-      "name": "Zetla",
-      "role": "Caster",
-      "class": "Mage",
-      "score": 8,
-      "max_score": 10,
-      "badges": [
-        "battle_elixir",
-        "guardian_elixir",
-        "food",
-        "weapon",
-        "combat_pot"
-      ]
-    },
-    {
-      "name": "Dmbp",
-      "role": "Tank",
-      "class": "Paladin",
-      "score": 7,
-      "max_score": 10,
-      "badges": [
-        "flask",
-        "food",
-        "weapon"
-      ]
-    },
-    {
-      "name": "Pewpslurper",
-      "role": "Healer",
-      "class": "Druid",
-      "score": 7,
-      "max_score": 10,
-      "badges": [
-        "battle_elixir",
-        "guardian_elixir",
-        "food",
-        "weapon"
-      ]
-    },
-    {
-      "name": "Shieldwagon",
-      "role": "Healer",
-      "class": "Priest",
-      "score": 7,
-      "max_score": 10,
-      "badges": [
-        "battle_elixir",
-        "guardian_elixir",
-        "food",
-        "weapon"
-      ]
-    },
-    {
-      "name": "Boogiez",
-      "role": "Physical",
-      "class": "Shaman",
-      "score": 7,
-      "max_score": 10,
-      "badges": [
-        "flask",
-        "food",
-        "weapon"
-      ]
-    },
-    {
-      "name": "Areso",
-      "role": "Physical",
-      "class": "Warrior",
-      "score": 7,
-      "max_score": 10,
-      "badges": [
-        "flask",
-        "food",
-        "weapon"
-      ]
-    },
-    {
-      "name": "Jadyx",
-      "role": "Physical",
-      "class": "Hunter",
-      "score": 7,
-      "max_score": 10,
-      "badges": [
-        "battle_elixir",
-        "food",
-        "weapon",
-        "combat_pot",
-        "dark_rune"
-      ]
-    },
-    {
-      "name": "Cindybrooke",
-      "role": "Physical",
-      "class": "Rogue",
-      "score": 7,
-      "max_score": 10,
-      "badges": [
-        "flask",
-        "food",
-        "weapon"
-      ]
-    },
-    {
-      "name": "Juricc",
-      "role": "Physical",
-      "class": "Shaman",
-      "score": 7,
-      "max_score": 10,
-      "badges": [
-        "flask",
-        "food",
-        "weapon"
-      ]
+      "flask": false,
+      "food": true,
+      "weapon": true,
+      "combat_pot": "Destruction Potion",
+      "alt_pot": "Dark Rune"
     },
     {
       "name": "Blunderdin",
       "role": "Tank",
-      "class": "Paladin",
-      "score": 6,
-      "max_score": 10,
-      "badges": [
-        "flask",
-        "food"
-      ]
-    },
-    {
-      "name": "Sweetheart",
-      "role": "Healer",
-      "class": "Priest",
-      "score": 6,
-      "max_score": 10,
-      "badges": [
-        "battle_elixir",
-        "food",
-        "weapon",
-        "dark_rune"
-      ]
-    },
-    {
-      "name": "Moojerked",
-      "role": "Healer",
-      "class": "Shaman",
-      "score": 6,
-      "max_score": 10,
-      "badges": [
-        "battle_elixir",
-        "food",
-        "weapon",
-        "dark_rune"
-      ]
-    },
-    {
-      "name": "Mucoid",
-      "role": "Physical",
-      "class": "Hunter",
-      "score": 6,
-      "max_score": 10,
-      "badges": [
-        "battle_elixir",
-        "food",
-        "weapon",
-        "dark_rune"
-      ]
+      "flask": true,
+      "food": false,
+      "weapon": false,
+      "combat_pot": null,
+      "alt_pot": null
     },
     {
       "name": "Faeriefireqt",
       "role": "Tank",
-      "class": "Druid",
-      "score": 5,
-      "max_score": 10,
-      "badges": [
-        "battle_elixir",
-        "food",
-        "weapon"
-      ]
+      "flask": false,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": null
     },
     {
-      "name": "Feelsbaldman",
+      "name": "Jadyx",
+      "role": "Physical",
+      "flask": false,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": "Demonic Rune"
+    },
+    {
+      "name": "Sweetheart",
+      "role": "Healer",
+      "flask": false,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": "Dark Rune"
+    },
+    {
+      "name": "Alldorin",
       "role": "Caster",
-      "class": "Shaman",
-      "score": 5,
-      "max_score": 10,
-      "badges": [
-        "food",
-        "weapon",
-        "combat_pot",
-        "dark_rune"
-      ]
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": "Destruction Potion",
+      "alt_pot": null
+    },
+    {
+      "name": "Areso",
+      "role": "Physical",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": null
+    },
+    {
+      "name": "Bahguul",
+      "role": "Caster",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": "Destruction Potion",
+      "alt_pot": null
+    },
+    {
+      "name": "Boogiez",
+      "role": "Physical",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": null
+    },
+    {
+      "name": "Cindybrooke",
+      "role": "Physical",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": null
+    },
+    {
+      "name": "Dmbp",
+      "role": "Tank",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": null
+    },
+    {
+      "name": "Juricc",
+      "role": "Physical",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": null
+    },
+    {
+      "name": "Marvels",
+      "role": "Caster",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": "Destruction Potion",
+      "alt_pot": "Dark Rune"
+    },
+    {
+      "name": "Mmtoast",
+      "role": "Physical",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": null
+    },
+    {
+      "name": "Moojerked",
+      "role": "Healer",
+      "flask": false,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": "Dark Rune"
+    },
+    {
+      "name": "Mucoid",
+      "role": "Physical",
+      "flask": false,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": "Dark Rune"
+    },
+    {
+      "name": "Ohshiz",
+      "role": "Healer",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": "Dark Rune"
+    },
+    {
+      "name": "Pewpslurper",
+      "role": "Healer",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": null
+    },
+    {
+      "name": "Philliam",
+      "role": "Physical",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": "Dark Rune"
+    },
+    {
+      "name": "Seedemup",
+      "role": "Caster",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": "Destruction Potion",
+      "alt_pot": null
+    },
+    {
+      "name": "Shieldwagon",
+      "role": "Healer",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": null
+    },
+    {
+      "name": "Shovelpriest",
+      "role": "Caster",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": "Dark Rune"
+    },
+    {
+      "name": "Skeptxo",
+      "role": "Physical",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": null
+    },
+    {
+      "name": "Zetla",
+      "role": "Caster",
+      "flask": true,
+      "food": true,
+      "weapon": true,
+      "combat_pot": "Destruction Potion",
+      "alt_pot": null
     },
     {
       "name": "Zyph",
       "role": "Physical",
-      "class": "Hunter",
-      "score": 5,
-      "max_score": 10,
-      "badges": [
-        "battle_elixir",
-        "food",
-        "weapon"
-      ]
+      "flask": false,
+      "food": true,
+      "weapon": true,
+      "combat_pot": null,
+      "alt_pot": null
     }
   ],
   "drums": [
@@ -9048,73 +8952,73 @@ const WEEK_DATA = {
     }
   ],
   "avoidableMechanics": {
-    "Blinding Light": {
-      "boss": "High Astromancer Solarian",
-      "icon": ""
-    },
-    "Flame Patch": {
-      "boss": "Al'ar",
-      "icon": "spell_fire_lavaspawn"
+    "Arcane Orb": {
+      "boss": "Void Reaver",
+      "icon": "spell_nature_wispsplode"
     },
     "Whirl": {
       "boss": "The Lurker Below",
       "icon": "spell_nature_cyclone"
     },
-    "Conflagration": {
-      "boss": "Kael'thas Sunstrider",
-      "icon": "spell_fire_incinerate"
-    },
-    "Arcane Disruption": {
-      "boss": "Kael'thas Sunstrider",
+    "Flame Buffet": {
+      "boss": "Al'ar",
       "icon": ""
     },
     "Sear Nova": {
       "boss": "Fathom-Lord Karathress",
       "icon": "spell_fire_sealoffire"
     },
-    "Nether Beam": {
+    "Nether Vapor": {
       "boss": "Kael'thas Sunstrider",
-      "icon": "spell_nature_chainlightning"
-    },
-    "Spout": {
-      "boss": "The Lurker Below",
-      "icon": ""
-    },
-    "Whirlwind": {
-      "boss": "Leotheras the Blind",
-      "icon": "ability_whirlwind"
-    },
-    "Entangle": {
-      "boss": "Lady Vashj",
-      "icon": ""
-    },
-    "Geyser": {
-      "boss": "The Lurker Below",
       "icon": ""
     },
     "Chaos Blast": {
       "boss": "Leotheras the Blind",
       "icon": "spell_fire_felflamebolt"
     },
-    "Nether Vapor": {
-      "boss": "Kael'thas Sunstrider",
+    "Entangle": {
+      "boss": "Lady Vashj",
       "icon": ""
     },
-    "Arcane Orb": {
-      "boss": "Void Reaver",
-      "icon": "spell_nature_wispsplode"
-    },
-    "Flame Buffet": {
-      "boss": "Al'ar",
+    "Spout": {
+      "boss": "The Lurker Below",
       "icon": ""
     },
     "Shock Barrier": {
       "boss": "Kael'thas Sunstrider",
       "icon": ""
     },
+    "Nether Beam": {
+      "boss": "Kael'thas Sunstrider",
+      "icon": "spell_nature_chainlightning"
+    },
+    "Flame Patch": {
+      "boss": "Al'ar",
+      "icon": "spell_fire_lavaspawn"
+    },
+    "Whirlwind": {
+      "boss": "Leotheras the Blind",
+      "icon": "ability_whirlwind"
+    },
+    "Blinding Light": {
+      "boss": "High Astromancer Solarian",
+      "icon": ""
+    },
+    "Conflagration": {
+      "boss": "Kael'thas Sunstrider",
+      "icon": "spell_fire_incinerate"
+    },
     "Scalding Water": {
       "boss": "The Lurker Below",
       "icon": "spell_fire_masterofelements"
+    },
+    "Geyser": {
+      "boss": "The Lurker Below",
+      "icon": ""
+    },
+    "Arcane Disruption": {
+      "boss": "Kael'thas Sunstrider",
+      "icon": ""
     }
   },
   "friendlyFire": [
@@ -9771,6 +9675,10 @@ const WEEK_DATA = {
       "potion": 20,
       "rune": 11,
       "healthstone": 0,
+      "combat_pot_name": "Destruction Potion",
+      "rune_name": "Dark Rune",
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": false
     },
     {
@@ -9785,6 +9693,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 0,
       "healthstone": 0,
+      "combat_pot_name": null,
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": false
     },
     {
@@ -9801,6 +9713,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 0,
       "healthstone": 0,
+      "combat_pot_name": null,
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": false
     },
     {
@@ -9817,6 +9733,10 @@ const WEEK_DATA = {
       "potion": 2,
       "rune": 1,
       "healthstone": 1,
+      "combat_pot_name": null,
+      "rune_name": "Demonic Rune",
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": false
     },
     {
@@ -9833,6 +9753,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 5,
       "healthstone": 2,
+      "combat_pot_name": null,
+      "rune_name": "Dark Rune",
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": false
     },
     {
@@ -9847,6 +9771,10 @@ const WEEK_DATA = {
       "potion": 14,
       "rune": 0,
       "healthstone": 8,
+      "combat_pot_name": "Destruction Potion",
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -9861,6 +9789,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 0,
       "healthstone": 4,
+      "combat_pot_name": null,
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -9878,6 +9810,10 @@ const WEEK_DATA = {
       "potion": 1,
       "rune": 0,
       "healthstone": 0,
+      "combat_pot_name": "Destruction Potion",
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -9892,6 +9828,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 0,
       "healthstone": 1,
+      "combat_pot_name": null,
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -9906,6 +9846,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 0,
       "healthstone": 1,
+      "combat_pot_name": null,
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -9920,6 +9864,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 0,
       "healthstone": 3,
+      "combat_pot_name": null,
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -9934,6 +9882,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 0,
       "healthstone": 3,
+      "combat_pot_name": null,
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -9948,6 +9900,10 @@ const WEEK_DATA = {
       "potion": 10,
       "rune": 1,
       "healthstone": 3,
+      "combat_pot_name": "Destruction Potion",
+      "rune_name": "Dark Rune",
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -9962,6 +9918,10 @@ const WEEK_DATA = {
       "potion": 1,
       "rune": 0,
       "healthstone": 0,
+      "combat_pot_name": null,
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -9979,6 +9939,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 3,
       "healthstone": 2,
+      "combat_pot_name": null,
+      "rune_name": "Dark Rune",
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -9996,6 +9960,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 6,
       "healthstone": 1,
+      "combat_pot_name": null,
+      "rune_name": "Dark Rune",
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -10013,6 +9981,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 6,
       "healthstone": 0,
+      "combat_pot_name": null,
+      "rune_name": "Dark Rune",
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -10030,6 +10002,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 0,
       "healthstone": 2,
+      "combat_pot_name": null,
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -10044,6 +10020,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 8,
       "healthstone": 0,
+      "combat_pot_name": null,
+      "rune_name": "Dark Rune",
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -10058,6 +10038,10 @@ const WEEK_DATA = {
       "potion": 2,
       "rune": 0,
       "healthstone": 1,
+      "combat_pot_name": "Destruction Potion",
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -10075,6 +10059,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 0,
       "healthstone": 2,
+      "combat_pot_name": null,
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -10089,6 +10077,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 5,
       "healthstone": 1,
+      "combat_pot_name": null,
+      "rune_name": "Dark Rune",
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -10103,6 +10095,10 @@ const WEEK_DATA = {
       "potion": 1,
       "rune": 0,
       "healthstone": 2,
+      "combat_pot_name": null,
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -10120,6 +10116,10 @@ const WEEK_DATA = {
       "potion": 3,
       "rune": 0,
       "healthstone": 0,
+      "combat_pot_name": "Destruction Potion",
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     },
     {
@@ -10137,6 +10137,10 @@ const WEEK_DATA = {
       "potion": 0,
       "rune": 0,
       "healthstone": 1,
+      "combat_pot_name": null,
+      "rune_name": null,
+      "flamecap": false,
+      "nightmare_seed": false,
       "prepared": true
     }
   ],
@@ -10567,130 +10571,6 @@ const WEEK_DATA = {
     }
   ],
   "roleSpells": {
-    "Physical": [
-      {
-        "ability": "Auto Shot",
-        "casts": 2352,
-        "players": 3
-      },
-      {
-        "ability": "Steady Shot",
-        "casts": 1884,
-        "players": 3
-      },
-      {
-        "ability": "Kill Command",
-        "casts": 646,
-        "players": 3
-      },
-      {
-        "ability": "Stormstrike",
-        "casts": 593,
-        "players": 2
-      },
-      {
-        "ability": "Heroic Strike",
-        "casts": 497,
-        "players": 1
-      },
-      {
-        "ability": "Arcane Shot",
-        "casts": 349,
-        "players": 3
-      },
-      {
-        "ability": "Stormstrike Off-Hand",
-        "casts": 291,
-        "players": 2
-      },
-      {
-        "ability": "Slam",
-        "casts": 274,
-        "players": 1
-      },
-      {
-        "ability": "Whirlwind",
-        "casts": 253,
-        "players": 2
-      },
-      {
-        "ability": "Windfury Totem",
-        "casts": 234,
-        "players": 2
-      },
-      {
-        "ability": "Bloodthirst",
-        "casts": 224,
-        "players": 1
-      },
-      {
-        "ability": "Multi-Shot",
-        "casts": 221,
-        "players": 2
-      }
-    ],
-    "Tank": [
-      {
-        "ability": "Lacerate",
-        "casts": 380,
-        "players": 1
-      },
-      {
-        "ability": "Judgment",
-        "casts": 321,
-        "players": 2
-      },
-      {
-        "ability": "Maul",
-        "casts": 281,
-        "players": 1
-      },
-      {
-        "ability": "Seal of Command",
-        "casts": 218,
-        "players": 1
-      },
-      {
-        "ability": "Seal of Righteousness",
-        "casts": 218,
-        "players": 1
-      },
-      {
-        "ability": "Seal of the Martyr",
-        "casts": 212,
-        "players": 1
-      },
-      {
-        "ability": "Mangle (Bear)",
-        "casts": 200,
-        "players": 1
-      },
-      {
-        "ability": "Crusader Strike",
-        "casts": 194,
-        "players": 1
-      },
-      {
-        "ability": "Consecration",
-        "casts": 135,
-        "players": 1
-      },
-      {
-        "ability": "Seals of Command",
-        "casts": 116,
-        "players": 1
-      },
-      {
-        "ability": "Swipe (Bear)",
-        "casts": 101,
-        "players": 1
-      },
-      {
-        "ability": "Shred",
-        "casts": 93,
-        "players": 1
-      }
-    ],
     "Caster": [
       {
         "ability": "Shadow Bolt",
@@ -10814,9 +10694,453 @@ const WEEK_DATA = {
         "casts": 58,
         "players": 1
       }
+    ],
+    "Physical": [
+      {
+        "ability": "Auto Shot",
+        "casts": 2352,
+        "players": 3
+      },
+      {
+        "ability": "Steady Shot",
+        "casts": 1884,
+        "players": 3
+      },
+      {
+        "ability": "Kill Command",
+        "casts": 646,
+        "players": 3
+      },
+      {
+        "ability": "Stormstrike",
+        "casts": 593,
+        "players": 2
+      },
+      {
+        "ability": "Heroic Strike",
+        "casts": 497,
+        "players": 1
+      },
+      {
+        "ability": "Arcane Shot",
+        "casts": 349,
+        "players": 3
+      },
+      {
+        "ability": "Stormstrike Off-Hand",
+        "casts": 291,
+        "players": 2
+      },
+      {
+        "ability": "Slam",
+        "casts": 274,
+        "players": 1
+      },
+      {
+        "ability": "Whirlwind",
+        "casts": 253,
+        "players": 2
+      },
+      {
+        "ability": "Windfury Totem",
+        "casts": 234,
+        "players": 2
+      },
+      {
+        "ability": "Bloodthirst",
+        "casts": 224,
+        "players": 1
+      },
+      {
+        "ability": "Multi-Shot",
+        "casts": 221,
+        "players": 2
+      }
+    ],
+    "Tank": [
+      {
+        "ability": "Lacerate",
+        "casts": 380,
+        "players": 1
+      },
+      {
+        "ability": "Judgment",
+        "casts": 321,
+        "players": 2
+      },
+      {
+        "ability": "Maul",
+        "casts": 281,
+        "players": 1
+      },
+      {
+        "ability": "Seal of Command",
+        "casts": 218,
+        "players": 1
+      },
+      {
+        "ability": "Seal of Righteousness",
+        "casts": 218,
+        "players": 1
+      },
+      {
+        "ability": "Seal of the Martyr",
+        "casts": 212,
+        "players": 1
+      },
+      {
+        "ability": "Mangle (Bear)",
+        "casts": 200,
+        "players": 1
+      },
+      {
+        "ability": "Crusader Strike",
+        "casts": 194,
+        "players": 1
+      },
+      {
+        "ability": "Consecration",
+        "casts": 135,
+        "players": 1
+      },
+      {
+        "ability": "Seals of Command",
+        "casts": 116,
+        "players": 1
+      },
+      {
+        "ability": "Swipe (Bear)",
+        "casts": 101,
+        "players": 1
+      },
+      {
+        "ability": "Shred",
+        "casts": 93,
+        "players": 1
+      }
     ]
   },
   "playerSpells": {
+    "Caster": [
+      {
+        "name": "Zetla",
+        "role": "Caster",
+        "total": 1151,
+        "abilities": [
+          {
+            "ability": "Arcane Blast",
+            "casts": 1032
+          },
+          {
+            "ability": "Fire Blast",
+            "casts": 41
+          },
+          {
+            "ability": "Arcane Explosion",
+            "casts": 36
+          },
+          {
+            "ability": "Icy Veins",
+            "casts": 22
+          },
+          {
+            "ability": "Replenish Mana",
+            "casts": 20
+          }
+        ]
+      },
+      {
+        "name": "Feelsbaldman",
+        "role": "Caster",
+        "total": 834,
+        "abilities": [
+          {
+            "ability": "Lightning Bolt",
+            "casts": 614
+          },
+          {
+            "ability": "Chain Lightning",
+            "casts": 145
+          },
+          {
+            "ability": "Frost Shock",
+            "casts": 28
+          },
+          {
+            "ability": "Totem of Wrath",
+            "casts": 24
+          },
+          {
+            "ability": "Mana Spring Totem",
+            "casts": 23
+          }
+        ]
+      },
+      {
+        "name": "Marvels",
+        "role": "Caster",
+        "total": 823,
+        "abilities": [
+          {
+            "ability": "Shadow Bolt",
+            "casts": 549
+          },
+          {
+            "ability": "Life Tap",
+            "casts": 110
+          },
+          {
+            "ability": "Curse of Agony",
+            "casts": 60
+          },
+          {
+            "ability": "Immolate",
+            "casts": 60
+          },
+          {
+            "ability": "Corruption",
+            "casts": 44
+          }
+        ]
+      },
+      {
+        "name": "Shovelpriest",
+        "role": "Caster",
+        "total": 797,
+        "abilities": [
+          {
+            "ability": "Mind Flay",
+            "casts": 248
+          },
+          {
+            "ability": "Vampiric Touch",
+            "casts": 171
+          },
+          {
+            "ability": "Mind Blast",
+            "casts": 168
+          },
+          {
+            "ability": "Shadow Word: Pain",
+            "casts": 121
+          },
+          {
+            "ability": "Shadow Word: Death",
+            "casts": 89
+          }
+        ]
+      },
+      {
+        "name": "Bahguul",
+        "role": "Caster",
+        "total": 792,
+        "abilities": [
+          {
+            "ability": "Starfire",
+            "casts": 392
+          },
+          {
+            "ability": "Moonfire",
+            "casts": 176
+          },
+          {
+            "ability": "Insect Swarm",
+            "casts": 86
+          },
+          {
+            "ability": "Faerie Fire",
+            "casts": 74
+          },
+          {
+            "ability": "Wrath",
+            "casts": 64
+          }
+        ]
+      },
+      {
+        "name": "Seedemup",
+        "role": "Caster",
+        "total": 792,
+        "abilities": [
+          {
+            "ability": "Shadow Bolt",
+            "casts": 560
+          },
+          {
+            "ability": "Life Tap",
+            "casts": 94
+          },
+          {
+            "ability": "Immolate",
+            "casts": 75
+          },
+          {
+            "ability": "Searing Pain",
+            "casts": 36
+          },
+          {
+            "ability": "Curse of Recklessness",
+            "casts": 27
+          }
+        ]
+      },
+      {
+        "name": "Alldorin",
+        "role": "Caster",
+        "total": 755,
+        "abilities": [
+          {
+            "ability": "Shadow Bolt",
+            "casts": 430
+          },
+          {
+            "ability": "Corruption",
+            "casts": 115
+          },
+          {
+            "ability": "Life Tap",
+            "casts": 90
+          },
+          {
+            "ability": "Immolate",
+            "casts": 78
+          },
+          {
+            "ability": "Curse of the Elements",
+            "casts": 42
+          }
+        ]
+      }
+    ],
+    "Healer": [
+      {
+        "name": "Pewpslurper",
+        "role": "Healer",
+        "total": 1115,
+        "abilities": [
+          {
+            "ability": "Rejuvenation",
+            "casts": 570
+          },
+          {
+            "ability": "Lifebloom",
+            "casts": 460
+          },
+          {
+            "ability": "Swiftmend",
+            "casts": 39
+          },
+          {
+            "ability": "Regrowth",
+            "casts": 32
+          },
+          {
+            "ability": "Endless Blessings",
+            "casts": 14
+          }
+        ]
+      },
+      {
+        "name": "Sweetheart",
+        "role": "Healer",
+        "total": 1001,
+        "abilities": [
+          {
+            "ability": "Flash Heal",
+            "casts": 456
+          },
+          {
+            "ability": "Circle of Healing",
+            "casts": 375
+          },
+          {
+            "ability": "Prayer of Mending",
+            "casts": 85
+          },
+          {
+            "ability": "Renew",
+            "casts": 85
+          }
+        ]
+      },
+      {
+        "name": "Ohshiz",
+        "role": "Healer",
+        "total": 847,
+        "abilities": [
+          {
+            "ability": "Chain Heal",
+            "casts": 571
+          },
+          {
+            "ability": "Lesser Healing Wave",
+            "casts": 243
+          },
+          {
+            "ability": "Earth Shield",
+            "casts": 21
+          },
+          {
+            "ability": "Ancestral Swiftness",
+            "casts": 12
+          }
+        ]
+      },
+      {
+        "name": "Shieldwagon",
+        "role": "Healer",
+        "total": 794,
+        "abilities": [
+          {
+            "ability": "Flash Heal",
+            "casts": 276
+          },
+          {
+            "ability": "Circle of Healing",
+            "casts": 177
+          },
+          {
+            "ability": "Renew",
+            "casts": 142
+          },
+          {
+            "ability": "Greater Heal",
+            "casts": 141
+          },
+          {
+            "ability": "Power Word: Shield",
+            "casts": 58
+          }
+        ]
+      },
+      {
+        "name": "Moojerked",
+        "role": "Healer",
+        "total": 763,
+        "abilities": [
+          {
+            "ability": "Lightning Bolt",
+            "casts": 475
+          },
+          {
+            "ability": "Chain Lightning",
+            "casts": 182
+          },
+          {
+            "ability": "Mental Protection Field",
+            "casts": 40
+          },
+          {
+            "ability": "Healing Wave",
+            "casts": 36
+          },
+          {
+            "ability": "Chain Heal",
+            "casts": 30
+          }
+        ]
+      }
+    ],
     "Physical": [
       {
         "name": "Mucoid",
@@ -11160,326 +11484,6 @@ const WEEK_DATA = {
           {
             "ability": "Hammer of Wrath",
             "casts": 21
-          }
-        ]
-      }
-    ],
-    "Caster": [
-      {
-        "name": "Zetla",
-        "role": "Caster",
-        "total": 1151,
-        "abilities": [
-          {
-            "ability": "Arcane Blast",
-            "casts": 1032
-          },
-          {
-            "ability": "Fire Blast",
-            "casts": 41
-          },
-          {
-            "ability": "Arcane Explosion",
-            "casts": 36
-          },
-          {
-            "ability": "Icy Veins",
-            "casts": 22
-          },
-          {
-            "ability": "Replenish Mana",
-            "casts": 20
-          }
-        ]
-      },
-      {
-        "name": "Feelsbaldman",
-        "role": "Caster",
-        "total": 834,
-        "abilities": [
-          {
-            "ability": "Lightning Bolt",
-            "casts": 614
-          },
-          {
-            "ability": "Chain Lightning",
-            "casts": 145
-          },
-          {
-            "ability": "Frost Shock",
-            "casts": 28
-          },
-          {
-            "ability": "Totem of Wrath",
-            "casts": 24
-          },
-          {
-            "ability": "Mana Spring Totem",
-            "casts": 23
-          }
-        ]
-      },
-      {
-        "name": "Marvels",
-        "role": "Caster",
-        "total": 823,
-        "abilities": [
-          {
-            "ability": "Shadow Bolt",
-            "casts": 549
-          },
-          {
-            "ability": "Life Tap",
-            "casts": 110
-          },
-          {
-            "ability": "Immolate",
-            "casts": 60
-          },
-          {
-            "ability": "Curse of Agony",
-            "casts": 60
-          },
-          {
-            "ability": "Corruption",
-            "casts": 44
-          }
-        ]
-      },
-      {
-        "name": "Shovelpriest",
-        "role": "Caster",
-        "total": 797,
-        "abilities": [
-          {
-            "ability": "Mind Flay",
-            "casts": 248
-          },
-          {
-            "ability": "Vampiric Touch",
-            "casts": 171
-          },
-          {
-            "ability": "Mind Blast",
-            "casts": 168
-          },
-          {
-            "ability": "Shadow Word: Pain",
-            "casts": 121
-          },
-          {
-            "ability": "Shadow Word: Death",
-            "casts": 89
-          }
-        ]
-      },
-      {
-        "name": "Seedemup",
-        "role": "Caster",
-        "total": 792,
-        "abilities": [
-          {
-            "ability": "Shadow Bolt",
-            "casts": 560
-          },
-          {
-            "ability": "Life Tap",
-            "casts": 94
-          },
-          {
-            "ability": "Immolate",
-            "casts": 75
-          },
-          {
-            "ability": "Searing Pain",
-            "casts": 36
-          },
-          {
-            "ability": "Curse of Recklessness",
-            "casts": 27
-          }
-        ]
-      },
-      {
-        "name": "Bahguul",
-        "role": "Caster",
-        "total": 792,
-        "abilities": [
-          {
-            "ability": "Starfire",
-            "casts": 392
-          },
-          {
-            "ability": "Moonfire",
-            "casts": 176
-          },
-          {
-            "ability": "Insect Swarm",
-            "casts": 86
-          },
-          {
-            "ability": "Faerie Fire",
-            "casts": 74
-          },
-          {
-            "ability": "Wrath",
-            "casts": 64
-          }
-        ]
-      },
-      {
-        "name": "Alldorin",
-        "role": "Caster",
-        "total": 755,
-        "abilities": [
-          {
-            "ability": "Shadow Bolt",
-            "casts": 430
-          },
-          {
-            "ability": "Corruption",
-            "casts": 115
-          },
-          {
-            "ability": "Life Tap",
-            "casts": 90
-          },
-          {
-            "ability": "Immolate",
-            "casts": 78
-          },
-          {
-            "ability": "Curse of the Elements",
-            "casts": 42
-          }
-        ]
-      }
-    ],
-    "Healer": [
-      {
-        "name": "Pewpslurper",
-        "role": "Healer",
-        "total": 1115,
-        "abilities": [
-          {
-            "ability": "Rejuvenation",
-            "casts": 570
-          },
-          {
-            "ability": "Lifebloom",
-            "casts": 460
-          },
-          {
-            "ability": "Swiftmend",
-            "casts": 39
-          },
-          {
-            "ability": "Regrowth",
-            "casts": 32
-          },
-          {
-            "ability": "Endless Blessings",
-            "casts": 14
-          }
-        ]
-      },
-      {
-        "name": "Sweetheart",
-        "role": "Healer",
-        "total": 1001,
-        "abilities": [
-          {
-            "ability": "Flash Heal",
-            "casts": 456
-          },
-          {
-            "ability": "Circle of Healing",
-            "casts": 375
-          },
-          {
-            "ability": "Prayer of Mending",
-            "casts": 85
-          },
-          {
-            "ability": "Renew",
-            "casts": 85
-          }
-        ]
-      },
-      {
-        "name": "Ohshiz",
-        "role": "Healer",
-        "total": 847,
-        "abilities": [
-          {
-            "ability": "Chain Heal",
-            "casts": 571
-          },
-          {
-            "ability": "Lesser Healing Wave",
-            "casts": 243
-          },
-          {
-            "ability": "Earth Shield",
-            "casts": 21
-          },
-          {
-            "ability": "Ancestral Swiftness",
-            "casts": 12
-          }
-        ]
-      },
-      {
-        "name": "Shieldwagon",
-        "role": "Healer",
-        "total": 794,
-        "abilities": [
-          {
-            "ability": "Flash Heal",
-            "casts": 276
-          },
-          {
-            "ability": "Circle of Healing",
-            "casts": 177
-          },
-          {
-            "ability": "Renew",
-            "casts": 142
-          },
-          {
-            "ability": "Greater Heal",
-            "casts": 141
-          },
-          {
-            "ability": "Power Word: Shield",
-            "casts": 58
-          }
-        ]
-      },
-      {
-        "name": "Moojerked",
-        "role": "Healer",
-        "total": 763,
-        "abilities": [
-          {
-            "ability": "Lightning Bolt",
-            "casts": 475
-          },
-          {
-            "ability": "Chain Lightning",
-            "casts": 182
-          },
-          {
-            "ability": "Mental Protection Field",
-            "casts": 40
-          },
-          {
-            "ability": "Healing Wave",
-            "casts": 36
-          },
-          {
-            "ability": "Chain Heal",
-            "casts": 30
           }
         ]
       }
@@ -13571,223 +13575,6 @@ const WEEK_DATA = {
       ]
     },
     {
-      "name": "Marvels",
-      "role": "Caster",
-      "total": 5,
-      "trash": 2,
-      "recap": [
-        {
-          "boss": "Al'ar",
-          "killer": "Flame Buffet",
-          "amount": 1234,
-          "overkill": 1083,
-          "window_dmg": 12039,
-          "window_heal": 1243,
-          "window_s": 21.0,
-          "timeline": [
-            {
-              "t": -3.2,
-              "type": "dmg",
-              "amt": 1843,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Al'ar"
-            },
-            {
-              "t": -0.8,
-              "type": "dmg",
-              "amt": 2345,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Ember of Al'ar"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 1234,
-              "over": 1083,
-              "ability": "Melee",
-              "src": "Al'ar",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "killer": "Nether Beam",
-          "amount": 621,
-          "overkill": 1473,
-          "window_dmg": 12133,
-          "window_heal": 0,
-          "window_s": 17.4,
-          "timeline": [
-            {
-              "t": -3.2,
-              "type": "dmg",
-              "amt": 954,
-              "over": 0,
-              "ability": "Melee",
-              "src": "—"
-            },
-            {
-              "t": -0.0,
-              "type": "dmg",
-              "amt": 2149,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Kael'thas Sunstrider"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 621,
-              "over": 1473,
-              "ability": "Melee",
-              "src": "Kael'thas Sunstrider",
-              "killing": true
-            }
-          ],
-          "hp_timeline": [
-            {
-              "t": -11.0,
-              "hp": 71,
-              "kind": "dmg"
-            },
-            {
-              "t": -9.9,
-              "hp": 71,
-              "kind": "dmg"
-            },
-            {
-              "t": -9.5,
-              "hp": 70,
-              "kind": "dmg"
-            },
-            {
-              "t": -7.5,
-              "hp": 69,
-              "kind": "dmg"
-            },
-            {
-              "t": -7.4,
-              "hp": 68,
-              "kind": "dmg"
-            },
-            {
-              "t": -7.4,
-              "hp": 54,
-              "kind": "dmg"
-            },
-            {
-              "t": -6.9,
-              "hp": 53,
-              "kind": "dmg"
-            },
-            {
-              "t": -3.7,
-              "hp": 35,
-              "kind": "dmg"
-            },
-            {
-              "t": -0.1,
-              "hp": 6,
-              "kind": "dmg"
-            },
-            {
-              "t": -0.0,
-              "hp": 0,
-              "kind": "dmg",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "killer": "Melee",
-          "amount": 8841,
-          "overkill": 1016,
-          "window_dmg": 9857,
-          "window_heal": 0,
-          "window_s": 0.0,
-          "timeline": [
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 8841,
-              "over": 1016,
-              "ability": "Melee",
-              "src": "Hydross the Unstable",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 1026,
-          "overkill": 2501,
-          "window_dmg": 13495,
-          "window_heal": 1272,
-          "window_s": 9.1,
-          "timeline": [
-            {
-              "t": -0.9,
-              "type": "dmg",
-              "amt": 4150,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Coilfang Priestess"
-            },
-            {
-              "t": -0.6,
-              "type": "dmg",
-              "amt": 5818,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Coilfang Shatterer"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 1026,
-              "over": 2501,
-              "ability": "Melee",
-              "src": "Coilfang Shatterer",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 5753,
-          "overkill": 392,
-          "window_dmg": 10991,
-          "window_heal": 0,
-          "window_s": 0.0,
-          "timeline": [
-            {
-              "t": -0.0,
-              "type": "dmg",
-              "amt": 4846,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Colossus Lurker"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 5753,
-              "over": 392,
-              "ability": "Melee",
-              "src": "Colossus Lurker",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
       "name": "Shovelpriest",
       "role": "Caster",
       "total": 5,
@@ -14281,6 +14068,223 @@ const WEEK_DATA = {
               "t": -0.0,
               "hp": 0,
               "kind": "dmg",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Marvels",
+      "role": "Caster",
+      "total": 5,
+      "trash": 2,
+      "recap": [
+        {
+          "boss": "Al'ar",
+          "killer": "Flame Buffet",
+          "amount": 1234,
+          "overkill": 1083,
+          "window_dmg": 12039,
+          "window_heal": 1243,
+          "window_s": 21.0,
+          "timeline": [
+            {
+              "t": -3.2,
+              "type": "dmg",
+              "amt": 1843,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Al'ar"
+            },
+            {
+              "t": -0.8,
+              "type": "dmg",
+              "amt": 2345,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Ember of Al'ar"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 1234,
+              "over": 1083,
+              "ability": "Melee",
+              "src": "Al'ar",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "killer": "Nether Beam",
+          "amount": 621,
+          "overkill": 1473,
+          "window_dmg": 12133,
+          "window_heal": 0,
+          "window_s": 17.4,
+          "timeline": [
+            {
+              "t": -3.2,
+              "type": "dmg",
+              "amt": 954,
+              "over": 0,
+              "ability": "Melee",
+              "src": "—"
+            },
+            {
+              "t": -0.0,
+              "type": "dmg",
+              "amt": 2149,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Kael'thas Sunstrider"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 621,
+              "over": 1473,
+              "ability": "Melee",
+              "src": "Kael'thas Sunstrider",
+              "killing": true
+            }
+          ],
+          "hp_timeline": [
+            {
+              "t": -11.0,
+              "hp": 71,
+              "kind": "dmg"
+            },
+            {
+              "t": -9.9,
+              "hp": 71,
+              "kind": "dmg"
+            },
+            {
+              "t": -9.5,
+              "hp": 70,
+              "kind": "dmg"
+            },
+            {
+              "t": -7.5,
+              "hp": 69,
+              "kind": "dmg"
+            },
+            {
+              "t": -7.4,
+              "hp": 68,
+              "kind": "dmg"
+            },
+            {
+              "t": -7.4,
+              "hp": 54,
+              "kind": "dmg"
+            },
+            {
+              "t": -6.9,
+              "hp": 53,
+              "kind": "dmg"
+            },
+            {
+              "t": -3.7,
+              "hp": 35,
+              "kind": "dmg"
+            },
+            {
+              "t": -0.1,
+              "hp": 6,
+              "kind": "dmg"
+            },
+            {
+              "t": -0.0,
+              "hp": 0,
+              "kind": "dmg",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "killer": "Melee",
+          "amount": 8841,
+          "overkill": 1016,
+          "window_dmg": 9857,
+          "window_heal": 0,
+          "window_s": 0.0,
+          "timeline": [
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 8841,
+              "over": 1016,
+              "ability": "Melee",
+              "src": "Hydross the Unstable",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 1026,
+          "overkill": 2501,
+          "window_dmg": 13495,
+          "window_heal": 1272,
+          "window_s": 9.1,
+          "timeline": [
+            {
+              "t": -0.9,
+              "type": "dmg",
+              "amt": 4150,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Coilfang Priestess"
+            },
+            {
+              "t": -0.6,
+              "type": "dmg",
+              "amt": 5818,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Coilfang Shatterer"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 1026,
+              "over": 2501,
+              "ability": "Melee",
+              "src": "Coilfang Shatterer",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 5753,
+          "overkill": 392,
+          "window_dmg": 10991,
+          "window_heal": 0,
+          "window_s": 0.0,
+          "timeline": [
+            {
+              "t": -0.0,
+              "type": "dmg",
+              "amt": 4846,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Colossus Lurker"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 5753,
+              "over": 392,
+              "ability": "Melee",
+              "src": "Colossus Lurker",
               "killing": true
             }
           ]
@@ -15135,106 +15139,6 @@ const WEEK_DATA = {
       ]
     },
     {
-      "name": "Pewpslurper",
-      "role": "Healer",
-      "total": 3,
-      "trash": 1,
-      "recap": [
-        {
-          "boss": "Al'ar",
-          "killer": "Melee",
-          "amount": 1224,
-          "overkill": 1025,
-          "window_dmg": 18501,
-          "window_heal": 9082,
-          "window_s": 35.2,
-          "timeline": [
-            {
-              "t": -4.4,
-              "type": "dmg",
-              "amt": 2073,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Al'ar"
-            },
-            {
-              "t": -1.2,
-              "type": "dmg",
-              "amt": 2436,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Al'ar"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 1224,
-              "over": 1025,
-              "ability": "Melee",
-              "src": "Ember of Al'ar",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "killer": "Melee",
-          "amount": 1508,
-          "overkill": 3769,
-          "window_dmg": 12203,
-          "window_heal": 0,
-          "window_s": 0.5,
-          "timeline": [
-            {
-              "t": -0.5,
-              "type": "dmg",
-              "amt": 5197,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Pure Spawn of Hydross"
-            },
-            {
-              "t": -0.5,
-              "type": "dmg",
-              "amt": 1729,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Tainted Spawn of Hydross"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 1508,
-              "over": 3769,
-              "ability": "Melee",
-              "src": "Pure Spawn of Hydross",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 8434,
-          "overkill": 7079,
-          "window_dmg": 15513,
-          "window_heal": 0,
-          "window_s": 0.0,
-          "timeline": [
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 8434,
-              "over": 7079,
-              "ability": "Melee",
-              "src": "Coilfang Serpentguard",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
       "name": "Moojerked",
       "role": "Healer",
       "total": 3,
@@ -15478,6 +15382,327 @@ const WEEK_DATA = {
               "t": -0.9,
               "hp": 50,
               "kind": "hot"
+            },
+            {
+              "t": -0.0,
+              "hp": 0,
+              "kind": "dmg",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Pewpslurper",
+      "role": "Healer",
+      "total": 3,
+      "trash": 1,
+      "recap": [
+        {
+          "boss": "Al'ar",
+          "killer": "Melee",
+          "amount": 1224,
+          "overkill": 1025,
+          "window_dmg": 18501,
+          "window_heal": 9082,
+          "window_s": 35.2,
+          "timeline": [
+            {
+              "t": -4.4,
+              "type": "dmg",
+              "amt": 2073,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Al'ar"
+            },
+            {
+              "t": -1.2,
+              "type": "dmg",
+              "amt": 2436,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Al'ar"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 1224,
+              "over": 1025,
+              "ability": "Melee",
+              "src": "Ember of Al'ar",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "killer": "Melee",
+          "amount": 1508,
+          "overkill": 3769,
+          "window_dmg": 12203,
+          "window_heal": 0,
+          "window_s": 0.5,
+          "timeline": [
+            {
+              "t": -0.5,
+              "type": "dmg",
+              "amt": 5197,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Pure Spawn of Hydross"
+            },
+            {
+              "t": -0.5,
+              "type": "dmg",
+              "amt": 1729,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Tainted Spawn of Hydross"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 1508,
+              "over": 3769,
+              "ability": "Melee",
+              "src": "Pure Spawn of Hydross",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 8434,
+          "overkill": 7079,
+          "window_dmg": 15513,
+          "window_heal": 0,
+          "window_s": 0.0,
+          "timeline": [
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 8434,
+              "over": 7079,
+              "ability": "Melee",
+              "src": "Coilfang Serpentguard",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Feelsbaldman",
+      "role": "Caster",
+      "total": 3,
+      "trash": 1,
+      "recap": [
+        {
+          "boss": "Trash",
+          "killer": "Immolation",
+          "amount": 319,
+          "overkill": 1277,
+          "window_dmg": 11076,
+          "window_heal": 0,
+          "window_s": 24.7,
+          "timeline": [
+            {
+              "t": -4.8,
+              "type": "dmg",
+              "amt": 1496,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Tempest Falconer"
+            },
+            {
+              "t": -3.0,
+              "type": "dmg",
+              "amt": 1595,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Tempest Falconer"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 319,
+              "over": 1277,
+              "ability": "Melee",
+              "src": "Tempest Falconer",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Al'ar",
+          "killer": "Flame Buffet",
+          "amount": 1770,
+          "overkill": 1456,
+          "window_dmg": 16598,
+          "window_heal": 6113,
+          "window_s": 19.4,
+          "timeline": [
+            {
+              "t": -6.5,
+              "type": "dmg",
+              "amt": 2603,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Al'ar"
+            },
+            {
+              "t": -3.2,
+              "type": "dmg",
+              "amt": 2716,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Al'ar"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 1770,
+              "over": 1456,
+              "ability": "Melee",
+              "src": "Al'ar",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "killer": "Melee",
+          "amount": 1551,
+          "overkill": 6489,
+          "window_dmg": 15518,
+          "window_heal": 0,
+          "window_s": 1.5,
+          "timeline": [
+            {
+              "t": -1.5,
+              "type": "dmg",
+              "amt": 7478,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Hydross the Unstable"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 1551,
+              "over": 6489,
+              "ability": "Melee",
+              "src": "Hydross the Unstable",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Jadyx",
+      "role": "Physical",
+      "total": 3,
+      "trash": 0,
+      "recap": [
+        {
+          "boss": "Al'ar",
+          "killer": "Melee",
+          "amount": 2246,
+          "overkill": 0,
+          "window_dmg": 22611,
+          "window_heal": 10353,
+          "window_s": 38.0,
+          "timeline": [
+            {
+              "t": -4.1,
+              "type": "dmg",
+              "amt": 1813,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Al'ar"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 2246,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Ember of Al'ar"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 1032,
+              "over": 650,
+              "ability": "Melee",
+              "src": "Ember of Al'ar",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "killer": "Melee",
+          "amount": 1007,
+          "overkill": 2329,
+          "window_dmg": 3336,
+          "window_heal": 0,
+          "window_s": 0.0,
+          "timeline": [
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 1007,
+              "over": 2329,
+              "ability": "Melee",
+              "src": "Tainted Spawn of Hydross",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Lady Vashj",
+          "killer": "Forked Lightning",
+          "amount": 2074,
+          "overkill": 166,
+          "window_dmg": 11476,
+          "window_heal": 1948,
+          "window_s": 29.2,
+          "timeline": [
+            {
+              "t": -21.1,
+              "type": "dmg",
+              "amt": 2415,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Lady Vashj"
+            },
+            {
+              "t": -3.3,
+              "type": "dmg",
+              "amt": 2232,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Lady Vashj"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 2074,
+              "over": 166,
+              "ability": "Melee",
+              "src": "Lady Vashj",
+              "killing": true
+            }
+          ],
+          "hp_timeline": [
+            {
+              "t": -3.3,
+              "hp": 22,
+              "kind": "dmg"
             },
             {
               "t": -0.0,
@@ -15771,181 +15996,32 @@ const WEEK_DATA = {
       ]
     },
     {
-      "name": "Jadyx",
+      "name": "Mucoid",
       "role": "Physical",
-      "total": 3,
+      "total": 2,
       "trash": 0,
       "recap": [
         {
           "boss": "Al'ar",
-          "killer": "Melee",
-          "amount": 2246,
-          "overkill": 0,
-          "window_dmg": 22611,
-          "window_heal": 10353,
-          "window_s": 38.0,
-          "timeline": [
-            {
-              "t": -4.1,
-              "type": "dmg",
-              "amt": 1813,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Al'ar"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 2246,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Ember of Al'ar"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 1032,
-              "over": 650,
-              "ability": "Melee",
-              "src": "Ember of Al'ar",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "killer": "Melee",
-          "amount": 1007,
-          "overkill": 2329,
-          "window_dmg": 3336,
-          "window_heal": 0,
-          "window_s": 0.0,
-          "timeline": [
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 1007,
-              "over": 2329,
-              "ability": "Melee",
-              "src": "Tainted Spawn of Hydross",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Lady Vashj",
-          "killer": "Forked Lightning",
-          "amount": 2074,
-          "overkill": 166,
-          "window_dmg": 11476,
-          "window_heal": 1948,
-          "window_s": 29.2,
-          "timeline": [
-            {
-              "t": -21.1,
-              "type": "dmg",
-              "amt": 2415,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Lady Vashj"
-            },
-            {
-              "t": -3.3,
-              "type": "dmg",
-              "amt": 2232,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Lady Vashj"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 2074,
-              "over": 166,
-              "ability": "Melee",
-              "src": "Lady Vashj",
-              "killing": true
-            }
-          ],
-          "hp_timeline": [
-            {
-              "t": -3.3,
-              "hp": 22,
-              "kind": "dmg"
-            },
-            {
-              "t": -0.0,
-              "hp": 0,
-              "kind": "dmg",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Feelsbaldman",
-      "role": "Caster",
-      "total": 3,
-      "trash": 1,
-      "recap": [
-        {
-          "boss": "Trash",
-          "killer": "Immolation",
-          "amount": 319,
-          "overkill": 1277,
-          "window_dmg": 11076,
-          "window_heal": 0,
-          "window_s": 24.7,
-          "timeline": [
-            {
-              "t": -4.8,
-              "type": "dmg",
-              "amt": 1496,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Tempest Falconer"
-            },
-            {
-              "t": -3.0,
-              "type": "dmg",
-              "amt": 1595,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Tempest Falconer"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 319,
-              "over": 1277,
-              "ability": "Melee",
-              "src": "Tempest Falconer",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Al'ar",
           "killer": "Flame Buffet",
-          "amount": 1770,
-          "overkill": 1456,
-          "window_dmg": 16598,
-          "window_heal": 6113,
-          "window_s": 19.4,
+          "amount": 1539,
+          "overkill": 931,
+          "window_dmg": 11624,
+          "window_heal": 2080,
+          "window_s": 13.0,
           "timeline": [
             {
               "t": -6.5,
               "type": "dmg",
-              "amt": 2603,
+              "amt": 2358,
               "over": 0,
               "ability": "Melee",
               "src": "Al'ar"
             },
             {
-              "t": -3.2,
+              "t": -3.3,
               "type": "dmg",
-              "amt": 2716,
+              "amt": 2761,
               "over": 0,
               "ability": "Melee",
               "src": "Al'ar"
@@ -15953,8 +16029,8 @@ const WEEK_DATA = {
             {
               "t": 0.0,
               "type": "dmg",
-              "amt": 1770,
-              "over": 1456,
+              "amt": 1539,
+              "over": 931,
               "ability": "Melee",
               "src": "Al'ar",
               "killing": true
@@ -15963,17 +16039,25 @@ const WEEK_DATA = {
         },
         {
           "boss": "Hydross the Unstable",
-          "killer": "Melee",
-          "amount": 1551,
-          "overkill": 6489,
-          "window_dmg": 15518,
+          "killer": "Vile Sludge",
+          "amount": 1630,
+          "overkill": 115,
+          "window_dmg": 8728,
           "window_heal": 0,
-          "window_s": 1.5,
+          "window_s": 12.0,
           "timeline": [
             {
-              "t": -1.5,
+              "t": -6.0,
               "type": "dmg",
-              "amt": 7478,
+              "amt": 1746,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Hydross the Unstable"
+            },
+            {
+              "t": -3.0,
+              "type": "dmg",
+              "amt": 1746,
               "over": 0,
               "ability": "Melee",
               "src": "Hydross the Unstable"
@@ -15981,74 +16065,10 @@ const WEEK_DATA = {
             {
               "t": 0.0,
               "type": "dmg",
-              "amt": 1551,
-              "over": 6489,
+              "amt": 1630,
+              "over": 115,
               "ability": "Melee",
               "src": "Hydross the Unstable",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Mmtoast",
-      "role": "Physical",
-      "total": 2,
-      "trash": 0,
-      "recap": [
-        {
-          "boss": "Al'ar",
-          "killer": "Flame Quills",
-          "amount": 593,
-          "overkill": 7909,
-          "window_dmg": 21101,
-          "window_heal": 2779,
-          "window_s": 34.4,
-          "timeline": [
-            {
-              "t": -0.3,
-              "type": "dmg",
-              "amt": 8336,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Al'ar"
-            },
-            {
-              "t": -0.1,
-              "type": "dmg",
-              "amt": 1789,
-              "over": 0,
-              "ability": "Melee",
-              "src": "—"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 593,
-              "over": 7909,
-              "ability": "Melee",
-              "src": "Al'ar",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "killer": "Melee",
-          "amount": 5388,
-          "overkill": 8019,
-          "window_dmg": 13407,
-          "window_heal": 0,
-          "window_s": 0.0,
-          "timeline": [
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 5388,
-              "over": 8019,
-              "ability": "Melee",
-              "src": "Tainted Spawn of Hydross",
               "killing": true
             }
           ]
@@ -16136,6 +16156,70 @@ const WEEK_DATA = {
       ]
     },
     {
+      "name": "Mmtoast",
+      "role": "Physical",
+      "total": 2,
+      "trash": 0,
+      "recap": [
+        {
+          "boss": "Al'ar",
+          "killer": "Flame Quills",
+          "amount": 593,
+          "overkill": 7909,
+          "window_dmg": 21101,
+          "window_heal": 2779,
+          "window_s": 34.4,
+          "timeline": [
+            {
+              "t": -0.3,
+              "type": "dmg",
+              "amt": 8336,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Al'ar"
+            },
+            {
+              "t": -0.1,
+              "type": "dmg",
+              "amt": 1789,
+              "over": 0,
+              "ability": "Melee",
+              "src": "—"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 593,
+              "over": 7909,
+              "ability": "Melee",
+              "src": "Al'ar",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "killer": "Melee",
+          "amount": 5388,
+          "overkill": 8019,
+          "window_dmg": 13407,
+          "window_heal": 0,
+          "window_s": 0.0,
+          "timeline": [
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 5388,
+              "over": 8019,
+              "ability": "Melee",
+              "src": "Tainted Spawn of Hydross",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Cindybrooke",
       "role": "Physical",
       "total": 2,
@@ -16207,86 +16291,6 @@ const WEEK_DATA = {
               "type": "dmg",
               "amt": 2258,
               "over": 5691,
-              "ability": "Melee",
-              "src": "Hydross the Unstable",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Mucoid",
-      "role": "Physical",
-      "total": 2,
-      "trash": 0,
-      "recap": [
-        {
-          "boss": "Al'ar",
-          "killer": "Flame Buffet",
-          "amount": 1539,
-          "overkill": 931,
-          "window_dmg": 11624,
-          "window_heal": 2080,
-          "window_s": 13.0,
-          "timeline": [
-            {
-              "t": -6.5,
-              "type": "dmg",
-              "amt": 2358,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Al'ar"
-            },
-            {
-              "t": -3.3,
-              "type": "dmg",
-              "amt": 2761,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Al'ar"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 1539,
-              "over": 931,
-              "ability": "Melee",
-              "src": "Al'ar",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "killer": "Vile Sludge",
-          "amount": 1630,
-          "overkill": 115,
-          "window_dmg": 8728,
-          "window_heal": 0,
-          "window_s": 12.0,
-          "timeline": [
-            {
-              "t": -6.0,
-              "type": "dmg",
-              "amt": 1746,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Hydross the Unstable"
-            },
-            {
-              "t": -3.0,
-              "type": "dmg",
-              "amt": 1746,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Hydross the Unstable"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 1630,
-              "over": 115,
               "ability": "Melee",
               "src": "Hydross the Unstable",
               "killing": true
@@ -16450,21 +16454,6 @@ const WEEK_DATA = {
       "luck": null
     },
     {
-      "name": "Sweetheart",
-      "role": "Healer",
-      "actual": 9.1,
-      "expected": 16.36,
-      "baseline": 14.3,
-      "weeks": 1,
-      "std": 0.0,
-      "series": [
-        14.3,
-        9.1
-      ],
-      "prev": 14.3,
-      "luck": null
-    },
-    {
       "name": "Moojerked",
       "role": "Healer",
       "actual": 32.0,
@@ -16478,20 +16467,6 @@ const WEEK_DATA = {
         32.0
       ],
       "prev": 34.0,
-      "luck": null
-    },
-    {
-      "name": "Ohshiz",
-      "role": "Healer",
-      "actual": 20.0,
-      "expected": 16.08,
-      "baseline": null,
-      "weeks": 0,
-      "std": null,
-      "series": [
-        20.0
-      ],
-      "prev": null,
       "luck": null
     },
     {
@@ -16511,127 +16486,32 @@ const WEEK_DATA = {
       "luck": null
     },
     {
-      "name": "Marvels",
-      "role": "Caster",
-      "actual": 31.4,
-      "expected": 27.92,
+      "name": "Ohshiz",
+      "role": "Healer",
+      "actual": 20.0,
+      "expected": 16.08,
       "baseline": null,
       "weeks": 0,
       "std": null,
       "series": [
-        31.4
+        20.0
       ],
       "prev": null,
       "luck": null
     },
     {
-      "name": "Boogiez",
-      "role": "Physical",
-      "actual": 40.7,
-      "expected": 29.42,
-      "baseline": 42.0,
-      "weeks": 2,
-      "std": 0.6,
+      "name": "Sweetheart",
+      "role": "Healer",
+      "actual": 9.1,
+      "expected": 16.36,
+      "baseline": 14.3,
+      "weeks": 1,
+      "std": 0.0,
       "series": [
-        42.6,
-        41.4,
-        40.7
+        14.3,
+        9.1
       ],
-      "prev": 41.4,
-      "luck": null
-    },
-    {
-      "name": "Mmtoast",
-      "role": "Physical",
-      "actual": 42.4,
-      "expected": 32.7,
-      "baseline": 40.8,
-      "weeks": 2,
-      "std": 0.3,
-      "series": [
-        41.1,
-        40.5,
-        42.4
-      ],
-      "prev": 40.5,
-      "luck": null
-    },
-    {
-      "name": "Shovelpriest",
-      "role": "Caster",
-      "actual": 23.1,
-      "expected": 18.61,
-      "baseline": null,
-      "weeks": 0,
-      "std": null,
-      "series": [
-        23.1
-      ],
-      "prev": null,
-      "luck": null
-    },
-    {
-      "name": "Bahguul",
-      "role": "Caster",
-      "actual": 28.8,
-      "expected": 26.78,
-      "baseline": 30.4,
-      "weeks": 2,
-      "std": 1.4,
-      "series": [
-        31.8,
-        29.0,
-        28.8
-      ],
-      "prev": 29.0,
-      "luck": null
-    },
-    {
-      "name": "Alldorin",
-      "role": "Caster",
-      "actual": 28.3,
-      "expected": 25.11,
-      "baseline": 25.6,
-      "weeks": 2,
-      "std": 0.8,
-      "series": [
-        24.9,
-        26.4,
-        28.3
-      ],
-      "prev": 26.4,
-      "luck": null
-    },
-    {
-      "name": "Areso",
-      "role": "Physical",
-      "actual": 51.1,
-      "expected": 31.75,
-      "baseline": 51.5,
-      "weeks": 2,
-      "std": 0.1,
-      "series": [
-        51.6,
-        51.4,
-        51.1
-      ],
-      "prev": 51.4,
-      "luck": null
-    },
-    {
-      "name": "Jadyx",
-      "role": "Physical",
-      "actual": 35.2,
-      "expected": 37.54,
-      "baseline": 27.6,
-      "weeks": 2,
-      "std": 0.8,
-      "series": [
-        28.4,
-        26.9,
-        35.2
-      ],
-      "prev": 26.9,
+      "prev": 14.3,
       "luck": null
     },
     {
@@ -16651,83 +16531,19 @@ const WEEK_DATA = {
       "luck": null
     },
     {
-      "name": "Skeptxo",
-      "role": "Physical",
-      "actual": 28.1,
-      "expected": 36.52,
-      "baseline": 30.9,
-      "weeks": 2,
-      "std": 1.3,
-      "series": [
-        32.3,
-        29.6,
-        28.1
-      ],
-      "prev": 29.6,
-      "luck": null
-    },
-    {
-      "name": "Philliam",
-      "role": "Physical",
-      "actual": 39.1,
-      "expected": 28.38,
-      "baseline": 40.7,
-      "weeks": 2,
-      "std": 0.9,
-      "series": [
-        39.8,
-        41.6,
-        39.1
-      ],
-      "prev": 41.6,
-      "luck": null
-    },
-    {
-      "name": "Seedemup",
+      "name": "Bahguul",
       "role": "Caster",
-      "actual": 30.3,
-      "expected": 29.6,
-      "baseline": 34.1,
+      "actual": 28.8,
+      "expected": 26.78,
+      "baseline": 30.4,
       "weeks": 2,
-      "std": 3.9,
+      "std": 1.4,
       "series": [
-        30.2,
-        38.0,
-        30.3
+        31.8,
+        29.0,
+        28.8
       ],
-      "prev": 38.0,
-      "luck": null
-    },
-    {
-      "name": "Zetla",
-      "role": "Caster",
-      "actual": 41.9,
-      "expected": 37.21,
-      "baseline": 40.2,
-      "weeks": 2,
-      "std": 4.2,
-      "series": [
-        36.0,
-        44.4,
-        41.9
-      ],
-      "prev": 44.4,
-      "luck": null
-    },
-    {
-      "name": "Cindybrooke",
-      "role": "Physical",
-      "actual": 35.5,
-      "expected": 37.36,
-      "baseline": 33.2,
-      "weeks": 2,
-      "std": 2.4,
-      "series": [
-        30.8,
-        35.6,
-        35.5
-      ],
-      "prev": 35.6,
+      "prev": 29.0,
       "luck": null
     },
     {
@@ -16747,6 +16563,164 @@ const WEEK_DATA = {
       "luck": null
     },
     {
+      "name": "Boogiez",
+      "role": "Physical",
+      "actual": 40.7,
+      "expected": 29.42,
+      "baseline": 42.0,
+      "weeks": 2,
+      "std": 0.6,
+      "series": [
+        42.6,
+        41.4,
+        40.7
+      ],
+      "prev": 41.4,
+      "luck": null
+    },
+    {
+      "name": "Alldorin",
+      "role": "Caster",
+      "actual": 28.3,
+      "expected": 25.11,
+      "baseline": 25.6,
+      "weeks": 2,
+      "std": 0.8,
+      "series": [
+        24.9,
+        26.4,
+        28.3
+      ],
+      "prev": 26.4,
+      "luck": null
+    },
+    {
+      "name": "Skeptxo",
+      "role": "Physical",
+      "actual": 28.1,
+      "expected": 36.52,
+      "baseline": 30.9,
+      "weeks": 2,
+      "std": 1.3,
+      "series": [
+        32.3,
+        29.6,
+        28.1
+      ],
+      "prev": 29.6,
+      "luck": null
+    },
+    {
+      "name": "Jadyx",
+      "role": "Physical",
+      "actual": 35.2,
+      "expected": 37.54,
+      "baseline": 27.6,
+      "weeks": 2,
+      "std": 0.8,
+      "series": [
+        28.4,
+        26.9,
+        35.2
+      ],
+      "prev": 26.9,
+      "luck": null
+    },
+    {
+      "name": "Philliam",
+      "role": "Physical",
+      "actual": 39.1,
+      "expected": 28.38,
+      "baseline": 40.7,
+      "weeks": 2,
+      "std": 0.9,
+      "series": [
+        39.8,
+        41.6,
+        39.1
+      ],
+      "prev": 41.6,
+      "luck": null
+    },
+    {
+      "name": "Areso",
+      "role": "Physical",
+      "actual": 51.1,
+      "expected": 31.75,
+      "baseline": 51.5,
+      "weeks": 2,
+      "std": 0.1,
+      "series": [
+        51.6,
+        51.4,
+        51.1
+      ],
+      "prev": 51.4,
+      "luck": null
+    },
+    {
+      "name": "Shovelpriest",
+      "role": "Caster",
+      "actual": 23.1,
+      "expected": 18.61,
+      "baseline": null,
+      "weeks": 0,
+      "std": null,
+      "series": [
+        23.1
+      ],
+      "prev": null,
+      "luck": null
+    },
+    {
+      "name": "Seedemup",
+      "role": "Caster",
+      "actual": 30.3,
+      "expected": 29.6,
+      "baseline": 34.1,
+      "weeks": 2,
+      "std": 3.9,
+      "series": [
+        30.2,
+        38.0,
+        30.3
+      ],
+      "prev": 38.0,
+      "luck": null
+    },
+    {
+      "name": "Mmtoast",
+      "role": "Physical",
+      "actual": 42.4,
+      "expected": 32.7,
+      "baseline": 40.8,
+      "weeks": 2,
+      "std": 0.3,
+      "series": [
+        41.1,
+        40.5,
+        42.4
+      ],
+      "prev": 40.5,
+      "luck": null
+    },
+    {
+      "name": "Cindybrooke",
+      "role": "Physical",
+      "actual": 35.5,
+      "expected": 37.36,
+      "baseline": 33.2,
+      "weeks": 2,
+      "std": 2.4,
+      "series": [
+        30.8,
+        35.6,
+        35.5
+      ],
+      "prev": 35.6,
+      "luck": null
+    },
+    {
       "name": "Zyph",
       "role": "Physical",
       "actual": 27.5,
@@ -16763,6 +16737,22 @@ const WEEK_DATA = {
       "luck": null
     },
     {
+      "name": "Zetla",
+      "role": "Caster",
+      "actual": 41.9,
+      "expected": 37.21,
+      "baseline": 40.2,
+      "weeks": 2,
+      "std": 4.2,
+      "series": [
+        36.0,
+        44.4,
+        41.9
+      ],
+      "prev": 44.4,
+      "luck": null
+    },
+    {
       "name": "Juricc",
       "role": "Physical",
       "actual": 46.9,
@@ -16776,6 +16766,20 @@ const WEEK_DATA = {
         46.9
       ],
       "prev": 45.3,
+      "luck": null
+    },
+    {
+      "name": "Marvels",
+      "role": "Caster",
+      "actual": 31.4,
+      "expected": 27.92,
+      "baseline": null,
+      "weeks": 0,
+      "std": null,
+      "series": [
+        31.4
+      ],
+      "prev": null,
       "luck": null
     }
   ],
@@ -18832,38 +18836,47 @@ function renderFriendlyFire() {
 }
 
 // ── CONSUMABLE USAGE — informational (pots/stones/runes/scrolls popped), not a threshold
-// ── RAID PREP — "tryhard" leaderboard (0–10 prep score + badges). Celebratory:
-// top scorers pop gold/green, low scorers render neutral muted — no shame red.
-function renderRaidPrep() {
+// ── CONSUMABLE COMPLIANCE — role-split ✓/✗ grid vs each role's expectations
+function renderCompliance() {
   const el = document.getElementById("consumUsage");
   if (!el) return;
-  const data = [...(WEEK_DATA.consumables || [])].sort((a, b) => b.score - a.score);
+  const data = WEEK_DATA.consumables || [];
   if (!data.length) {
     el.innerHTML = '<div style="color:var(--muted);font-size:12px">No consumable data — needs COMBATANT_INFO + combat log.</div>';
     return;
   }
-  const BADGE = {
-    flask: ["inv_potion_41", "Flask"], battle_elixir: ["inv_potion_94", "Battle Elix"], guardian_elixir: ["inv_potion_24", "Guard Elix"],
-    food: ["inv_misc_food_15", "Food"], weapon: ["inv_potion_98", "Weapon"], flamecap: ["inv_misc_herb_flamecap", "Flamecap"],
-    combat_pot: ["inv_potion_54", "Combat Pot"], dark_rune: ["inv_misc_rune_04", "Rune"],
-  };
-  const col = s => s >= 9 ? "var(--green)" : s >= 6 ? "var(--accent)" : "var(--muted)";
-  el.innerHTML = data.map((p, i) => {
-    const max = p.max_score || 10, c = col(p.score);
-    let segs = "";
-    for (let k = 0; k < max; k++)
-      segs += `<span style="flex:1;height:100%;background:${k < p.score ? c : 'var(--surface2)'};border-radius:1px"></span>`;
-    const pills = (p.badges || []).map(b => { const x = BADGE[b]; return x ? `<span class="pill">${gicon(x[0], "ticon-sm")} ${x[1]}</span>` : `<span class="pill">${b}</span>`; }).join("");
-    return `<div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)">
-      <span style="width:18px;text-align:right;color:var(--muted);font-size:11px;flex-shrink:0">${i + 1}</span>
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:5px">
-          <span class="cname" style="color:${nameColor(p.name, p.role)};font-weight:600;font-size:12.5px">${i === 0 ? "🏅 " : ""}${p.name}</span>
-          <span style="font-weight:700;font-size:12.5px;color:${c};white-space:nowrap">${p.score}/${max}</span>
-        </div>
-        <div style="display:flex;gap:2px;height:8px;margin-bottom:6px">${segs}</div>
-        <div class="pill-row" style="margin-top:0">${pills || '<span style="color:var(--muted);font-size:11px">no buffs detected</span>'}</div>
+  const ROLES = [
+    { key: "Tank",     label: "Tanks",          combat: false },
+    { key: "Healer",   label: "Healers",        combat: false },
+    { key: "Physical", label: "DPS (Physical)", combat: true  },
+    { key: "Caster",   label: "DPS (Caster)",   combat: true  },
+  ];
+  const yes = '<span style="color:var(--green);font-weight:700">✓</span>';
+  const no  = '<span style="color:var(--red);font-weight:700">✗</span>';
+  const item = v => v ? `<span style="color:var(--green);font-size:10.5px;white-space:nowrap">${v}</span>` : no;
+  const filled = (p, combat) => (p.flask?1:0)+(p.food?1:0)+(p.weapon?1:0)+(p.alt_pot?1:0)+(combat&&p.combat_pot?1:0);
+  const expected = combat => combat ? 5 : 4;
+
+  el.innerHTML = ROLES.map(R => {
+    const rows = data.filter(p => p.role === R.key);
+    if (!rows.length) return "";
+    rows.sort((a, b) => filled(b, R.combat) - filled(a, R.combat) || a.name.localeCompare(b.name));
+    const nComp = rows.filter(p => filled(p, R.combat) === expected(R.combat)).length;
+    const cc = nComp === rows.length ? "var(--green)" : nComp > rows.length / 2 ? "var(--accent)" : "var(--red)";
+    const cols = ["Flask/Elix", "Food", "Weapon"].concat(R.combat ? ["Combat Pot"] : []).concat(["Alt Pot"]);
+    const head = `<thead><tr><th style="text-align:left">Player</th>${cols.map(c => `<th class="num">${c}</th>`).join("")}</tr></thead>`;
+    const body = "<tbody>" + rows.map(p => {
+      const cells = [p.flask ? yes : no, p.food ? yes : no, p.weapon ? yes : no]
+        .concat(R.combat ? [item(p.combat_pot)] : [])
+        .concat([item(p.alt_pot)]);
+      return `<tr><td><span class="cname" style="color:${nameColor(p.name, p.role)}">${p.name}</span></td>${cells.map(c => `<td class="num">${c}</td>`).join("")}</tr>`;
+    }).join("") + "</tbody>";
+    return `<div style="margin-top:14px">
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+        <span class="subsection-label" style="margin:0">${R.label}</span>
+        <span style="font-size:11px;font-weight:700;color:${cc}">${nComp} / ${rows.length} compliant</span>
       </div>
+      <div class="scroll-x"><table class="mini-table">${head}${body}</table></div>
     </div>`;
   }).join("");
 }
@@ -19225,7 +19238,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderInterruptBars();
   renderRoleSpells();
   renderPlayerSpells();
-  renderRaidPrep();
+  renderCompliance();
   (function(){
     const m = (WEEK_DATA.meta||{}).log_missing || [];
     const el = document.getElementById("logCoverageNote");

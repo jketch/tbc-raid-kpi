@@ -130,9 +130,14 @@ CREATE TABLE IF NOT EXISTS consumables (
     report_code  TEXT,
     player       TEXT,
     role         TEXT,
-    score        REAL,   -- Raid-Prep tryhard score, 0–10 (was 0–1 before the rework)
-    suboptimal   TEXT,   -- legacy JSON list of missing buffs (unused since the rework)
-    badges       TEXT,   -- JSON list of prep badges earned (flask/food/weapon/…)
+    score        REAL,   -- legacy Raid-Prep score (unused since the compliance rework)
+    suboptimal   TEXT,   -- legacy JSON list (unused)
+    badges       TEXT,   -- legacy JSON list (unused since the compliance rework)
+    flask        INTEGER,-- compliance: flask OR both elixir slots (0/1)
+    food         INTEGER,
+    weapon       INTEGER,
+    combat_pot   TEXT,   -- combat-pot item name, or NULL
+    alt_pot      TEXT,   -- alt-pot item name (Dark Rune / Flame Cap / Nightmare Seed), or NULL
     PRIMARY KEY (report_code, player)
 );
 
@@ -206,6 +211,13 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
             con.execute("ALTER TABLE consumables ADD COLUMN badges TEXT")
         except sqlite3.OperationalError:
             pass   # column already exists
+        # migrate older DBs to the compliance-grid columns
+        for _col, _type in (("flask", "INTEGER"), ("food", "INTEGER"), ("weapon", "INTEGER"),
+                            ("combat_pot", "TEXT"), ("alt_pot", "TEXT")):
+            try:
+                con.execute(f"ALTER TABLE consumables ADD COLUMN {_col} {_type}")
+            except sqlite3.OperationalError:
+                pass   # column already exists
 
         meta = week_data.get("meta", {})
         rc   = meta.get("report_code") or week_data.get("reportCode", "unknown")
@@ -295,11 +307,14 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
         # ── consumables ────────────────────────────────────────────────────────
         for p in (week_data.get("consumables") or []):
             con.execute("""
-                INSERT OR REPLACE INTO consumables (report_code, player, role, score, suboptimal, badges)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT OR REPLACE INTO consumables
+                (report_code, player, role, score, suboptimal, badges, flask, food, weapon, combat_pot, alt_pot)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (rc, p["name"], p.get("role"), p.get("score"),
                   json.dumps(p.get("suboptimal") or []),
-                  json.dumps(p.get("badges") or [])))
+                  json.dumps(p.get("badges") or []),
+                  int(bool(p.get("flask"))), int(bool(p.get("food"))), int(bool(p.get("weapon"))),
+                  p.get("combat_pot"), p.get("alt_pot")))
 
         # ── drums ──────────────────────────────────────────────────────────────
         for p in (week_data.get("drums") or []):
