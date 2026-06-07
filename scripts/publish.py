@@ -126,20 +126,26 @@ def post_discord(webhook: str, content: str):
 def main():
     if not DASH.exists():
         print("  ⚠ dashboard not found — run the weekly script first"); return
-    print("\n[publish] deploy + post …")
-    env     = load_env()
+    print("\n[publish] deploy …")
     url     = deploy_netlify()
     summary = build_summary(extract_week_data())
-    webhook = env.get("DISCORD_WEBHOOK_URL") or os.getenv("DISCORD_WEBHOOK_URL")
 
+    # Print the link + summary so you can paste it into the raid channel BY HAND
+    # (Discord auto-post is disabled below).
     if url:
         print(f"  ✓ live at: {url}")
-    if not webhook:
-        print("  ⚠ DISCORD_WEBHOOK_URL not in .env — skipping Discord post"); return
+    print("\n  ─── copy/paste into your raid channel ───")
+    print("  " + summary.replace("**", "").replace("\n", "\n  "))
+    if url:
+        print(f"  👉 {url}")
+    print("  ──────────────────────────────────────────")
 
-    link = f"\n\n👉 **This week's dashboard:** {url}" if url else \
-           "\n\n_(hosting not linked yet — see scripts/publish.py header)_"
-    post_discord(webhook, summary + link)
+    # ── Discord auto-post: DISABLED — guild has webhooks locked down. ────────────
+    # To re-enable once you have a webhook: add DISCORD_WEBHOOK_URL to .env and
+    # uncomment the three lines below.
+    # webhook = load_env().get("DISCORD_WEBHOOK_URL") or os.getenv("DISCORD_WEBHOOK_URL")
+    # if webhook:
+    #     post_discord(webhook, summary + (f"\n\n👉 **This week's dashboard:** {url}" if url else ""))
 
 
 if __name__ == "__main__":
