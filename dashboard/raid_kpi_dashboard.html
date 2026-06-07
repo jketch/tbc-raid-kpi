@@ -84,18 +84,28 @@
   /* consistent vertical rhythm — stacked cards/grids never touch, never sprawl */
   .tsec > .card, .tsec > .grid-2, .tsec > .grid-3, .tsec > .stat-row, .tsec > .scroll-x { margin-bottom: 12px; }
   .section-label {
-    font-size: 10px;
+    font-size: 15px;
     font-weight: 700;
-    letter-spacing: 1.5px;
+    letter-spacing: 1px;
     text-transform: uppercase;
-    color: var(--dim);
-    margin: 14px 0 8px;
+    color: var(--accent);
+    margin: 18px 0 10px;
+  }
+  /* Sub-section header — muted, no star; used inside cards (e.g. boss zones) */
+  .subsection-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 6px 0 8px;
   }
 
   /* ── CARD ── */
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
     border-radius: 10px;
     padding: 14px 15px;
     position: relative;
@@ -115,6 +125,13 @@
   .card.physical::before { background: var(--physical); opacity: 1; }
   .card.warn::before { background: var(--red); opacity: 1; }
   .card.gold::before { background: var(--accent); opacity: 1; }
+  /* Left accent matches the role/top-bar so the two edges stay coherent */
+  .card.tank { border-left-color: var(--tank); }
+  .card.healer { border-left-color: var(--healer); }
+  .card.caster { border-left-color: var(--caster); }
+  .card.physical { border-left-color: var(--physical); }
+  .card.warn { border-left-color: var(--red); }
+  .card.gold { border-left-color: var(--accent); }
 
   .card-title {
     font-size: 11px;
@@ -142,6 +159,37 @@
   }
   .stat-tile .val { font-size: 22px; font-weight: 700; color: var(--accent); line-height: 1; }
   .stat-tile .lbl { font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ── BOSS SUMMARY TILES ── */
+  .boss-zones { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 720px){ .boss-zones { grid-template-columns: 1fr; } }
+  .boss-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .boss-tile {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    min-height: 52px;
+    display: flex; flex-direction: column; justify-content: center; gap: 3px;
+  }
+  .boss-tile .bn { font-size: 11.5px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .boss-tile .bt { font-size: 13px; font-weight: 700; color: var(--accent); font-family: 'IBM Plex Mono', monospace; }
+  .boss-tile.down-no { opacity: .5; }
+  .boss-tile.down-no .bn { color: var(--muted); font-weight: 600; }
+  .boss-tile.down-no .bt { color: var(--muted); }
+
+  /* ── COHORT SCORECARDS ── */
+  .cohort-val { font-size: 26px; font-weight: 800; line-height: 1; color: var(--text); }
+  .cohort-sub { font-size: 10.5px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+  .seg-bar { display: flex; height: 16px; border-radius: 4px; overflow: hidden; background: var(--surface2); margin-top: 6px; }
+  .seg-bar > span { display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: rgba(255,255,255,.95); white-space: nowrap; }
+  .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .pill { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); white-space: nowrap; }
+  .pill .pv { font-family: 'IBM Plex Mono', monospace; margin-left: 4px; }
+  /* compact spell-usage cards (top-3 pills) */
+  .spell-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .spell-pill { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); white-space: nowrap; }
+  .spell-pill .sc { font-family: 'IBM Plex Mono', monospace; color: var(--muted); margin-left: 5px; }
 
   /* ── BAR ROWS ── */
   .bar-row {
@@ -319,7 +367,7 @@
   .chip.blue { background: rgba(59,130,246,0.2); color: var(--blue); }
 
   /* ════════ HALL OF SHAME ════════ */
-  .hs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  .hs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
   .hs-grid .hs-wide { grid-column: 1 / -1; }
   @media (max-width: 900px){ .hs-grid { grid-template-columns: 1fr; } }
   .hs-sub { color: var(--dim); font-size: 12px; line-height: 1.5; margin: 2px 0 10px; }
@@ -444,26 +492,25 @@
 <div class="main">
 
   <div class="tab-nav">
-    <button class="tab-btn" data-tab="overview" onclick="showTab('overview')">📊 Overview</button>
-    <button class="tab-btn" data-tab="shame" onclick="showTab('shame')">🐀 Accountability</button>
-    <button class="tab-btn" data-tab="healing" onclick="showTab('healing')">💚 Healers &amp; Tanks</button>
-    <button class="tab-btn" data-tab="dps" onclick="showTab('dps')">⚔️ DPS</button>
-    <button class="tab-btn" data-tab="utility" onclick="showTab('utility')">🛠 Utility</button>
+    <button class="tab-btn" data-tab="overview" onclick="showTab('overview')">Overview</button>
+    <button class="tab-btn" data-tab="shame" onclick="showTab('shame')">Accountability</button>
+    <button class="tab-btn" data-tab="healing" onclick="showTab('healing')">Healers &amp; Tanks</button>
+    <button class="tab-btn" data-tab="dps" onclick="showTab('dps')">DPS</button>
+    <button class="tab-btn" data-tab="utility" onclick="showTab('utility')">Utility</button>
   </div>
 
   <!-- ═══════════════ STAT TILES ═══════════════ -->
   <div class="tsec" data-tab="overview">
   <div class="section-label">⭐ Night at a Glance</div>
-  <div class="card gold">
-    <div class="card-title"><span class="icon">⭐</span> Highlights &amp; Lowlights</div>
-    <div class="hs-sub">The night's standout moments — good and bad, in one list.</div>
-    <div id="tonightReview"></div>
-  </div>
 
   <div class="stat-row">
     <div class="stat-tile">
       <div class="val" id="bossesKilled">—</div>
       <div class="lbl">Bosses Killed</div>
+    </div>
+    <div class="stat-tile">
+      <div class="val" id="totalKillTime">—</div>
+      <div class="lbl">Total Kill Time</div>
     </div>
     <div class="stat-tile">
       <div class="val" id="totalDeaths">—</div>
@@ -483,15 +530,25 @@
     </div>
   </div>
 
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title"><span class="icon">🗡</span> Bosses Down</div>
-      <div id="bossKills"></div>
+  <div class="card">
+    <div class="card-title"><span class="icon">🗡</span> Bosses Down</div>
+    <div class="boss-zones">
+      <div>
+        <div class="subsection-label">Serpentshrine Cavern</div>
+        <div class="boss-grid" id="bossZoneSSC"></div>
+      </div>
+      <div>
+        <div class="subsection-label">The Eye</div>
+        <div class="boss-grid" id="bossZoneTK"></div>
+      </div>
     </div>
-    <div class="card">
-      <div class="card-title"><span class="icon">🏆</span> Tonight's Leaders</div>
-      <div id="highlights"></div>
-    </div>
+  </div>
+
+  <div class="grid-4" id="cohortCards"></div>
+
+  <div class="card">
+    <div class="card-title"><span class="icon">🏆</span> Tonight's Leaders</div>
+    <div id="highlights"></div>
   </div>
 
   <!-- ═══════════════ CONSUMABLES + DRUMS ═══════════════ -->
@@ -616,8 +673,9 @@
     <div class="scroll-x"><div id="reactionHeatmap"></div></div>
   </div>
 
+  <div style="border-top:2px solid var(--accent);opacity:.55;margin:28px 0 4px"></div>
   <div class="section-label">🛡 Tank Scorecard</div>
-  <div class="card">
+  <div class="card" style="padding-top:16px;padding-bottom:18px">
     <div class="card-title"><span class="icon">🛡</span> Survivability &amp; Mitigation</div>
     <div class="hs-sub">Scoped to <b>tank fights only</b> (prot/ret handled — see <b>Fights</b>). <b>DTPS</b> = damage taken/sec (lower = better mitigation) · <b>Heal Recv</b> = soaked/sec · <b>Deaths</b> = on tank fights.</div>
     <div class="scroll-x">
@@ -638,10 +696,8 @@
     <div class="card-title"><span class="icon">🧨</span> Sapper/Grenade Usage &amp; Damage by Player</div>
     <div class="hs-sub">Engineering explosives = free DPS. <b>Damage</b> is the contribution · counts show what they pressed.</div>
     <div class="scroll-x">
-      <table class="mini-table" id="engTable">
-        <thead>
-          <tr><th>Player</th><th class="num">Damage</th><th class="num">Super Sapper</th><th class="num">Goblin Sapper</th><th class="num">Adamantite Gren.</th><th class="num">Fel Iron Bomb</th></tr>
-        </thead>
+      <table class="mini-table" id="engTable" style="table-layout:fixed;width:100%">
+        <thead><tr id="engHead"></tr></thead>
         <tbody id="engTbody"></tbody>
       </table>
     </div>
@@ -654,6 +710,7 @@
   <div class="card">
     <div class="card-title"><span class="icon">🔇</span> Interrupted Spells by Player</div>
     <div id="interruptBars"></div>
+    <div style="font-size:10.5px;color:var(--muted);margin-top:10px">Players with 0 interrupts not shown.</div>
   </div>
 
   <!-- ═══════════════ SPELL USAGE BY ROLE ═══════════════ -->
@@ -673,16 +730,10 @@
   </div>
 
   </div>
-
-  <!-- Update note -->
-  <div class="update-note">
-    <strong>📅 Weekly Update:</strong> run <code>python scripts/wcl_auto_dashboard.py &lt;REPORT_CODE&gt;</code> —
-    it pulls from WarcraftLogs + your <code>WoWCombatLog.txt</code> and regenerates this dashboard automatically.
-  </div>
 </div>
 
 <div class="footer">
-  TBC Anniversary · Raid KPI Dashboard · auto-generated from WarcraftLogs + WoWCombatLog.txt
+  TBC Anniversary · Raid KPI Dashboard · Auto-generated from WarcraftLogs + WoWCombatLog.txt
 </div>
 
 <!-- drill-down modal -->
@@ -18189,15 +18240,6 @@ function renderTonightInReview(){
 }
 
 function renderOverview(){
-  const bk = document.getElementById("bossKills");
-  if (bk) {
-    const fmt = s => `${Math.floor(s/60)}:${String(Math.round(s%60)).padStart(2,"0")}`;
-    const entries = Object.entries(WEEK_DATA.boss_times || {}).sort((a,b)=>b[1]-a[1]);
-    bk.innerHTML = entries.length ? entries.map(([boss,sec]) =>
-      `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:12.5px">
-         <span>${boss}</span><span style="font-family:'IBM Plex Mono',monospace;color:var(--muted)">${fmt(sec)}</span></div>`).join("")
-      : '<div style="color:var(--muted);font-size:12px">No kills recorded.</div>';
-  }
   const hl = document.getElementById("highlights");
   if (hl) {
     // Pure contribution leaders — deliberately distinct from the Highlights & Lowlights feed
@@ -18217,6 +18259,86 @@ function renderOverview(){
          <span style="font-weight:600;font-size:12.5px">${n?`<span class="cname" style="color:${nameColor(n,r)}">${n}</span> `:""}${v}</span></div>`).join("")
       : '<div style="color:var(--muted);font-size:12px">No highlights.</div>';
   }
+}
+
+// ── BOSS SUMMARY TILES — canonical order per zone; grayed "—" if not in this report
+function renderBossTiles(){
+  const ZONES = {
+    bossZoneSSC: ["Hydross the Unstable","The Lurker Below","Morogrim Tidewalker",
+                  "Leotheras the Blind","Fathom-Lord Karathress","Lady Vashj"],
+    bossZoneTK:  ["Void Reaver","High Astromancer Solarian","Al'ar","Kael'thas Sunstrider"]
+  };
+  const times = WEEK_DATA.boss_times || {};
+  const fmt = s => `${Math.floor(s/60)}:${String(Math.round(s%60)).padStart(2,"0")}`;
+  for (const [id, bosses] of Object.entries(ZONES)){
+    const el = document.getElementById(id); if(!el) continue;
+    el.innerHTML = bosses.map(b => {
+      const down = times[b] != null;
+      return `<div class="boss-tile ${down?'':'down-no'}">
+        <div class="bn">${b}</div>
+        <div class="bt">${down?fmt(times[b]):'—'}</div>
+      </div>`;
+    }).join("");
+  }
+}
+
+// ── RAID COHORT SCORECARDS — cohort aggregates only, no individual names
+function renderCohortCards(){
+  const el = document.getElementById("cohortCards"); if(!el) return;
+  const roster = WEEK_DATA.roster || {};
+  const roleOf = n => (roster[n]||{}).role;
+  const C = { tank:"var(--tank)", healer:"var(--healer)", caster:"var(--caster)", physical:"var(--physical)" };
+
+  // C1 — Avoidable split: melee (Physical) vs ranged (Caster). Role granularity can't
+  // isolate ranged hunters, so tanks/healers are excluded from this DPS-positioning split.
+  let melee=0, ranged=0;
+  (WEEK_DATA.avoidableDmg||[]).forEach(p => {
+    const r = p.role || roleOf(p.name);
+    if (r === "Physical") melee += p.dmg||0; else if (r === "Caster") ranged += p.dmg||0;
+  });
+  const tot = (melee+ranged) || 1;
+  const mPct = Math.round(melee/tot*100), rPct = 100-mPct;
+  const card1 = `<div class="card physical">
+    <div class="card-title">Avoidable Split</div>
+    <div class="seg-bar">
+      <span style="width:${mPct}%;background:${C.physical}">${mPct>=12?mPct+'%':''}</span>
+      <span style="width:${rPct}%;background:${C.caster}">${rPct>=12?rPct+'%':''}</span>
+    </div>
+    <div class="cohort-sub"><b style="color:${C.physical}">Melee</b> ${hsK(melee)} · <b style="color:${C.caster}">Ranged</b> ${hsK(ranged)}</div>
+  </div>`;
+
+  // C2 — Deaths by role
+  const dRole = {Tank:0, Healer:0, Physical:0, Caster:0};
+  (WEEK_DATA.deaths||[]).forEach(p => { const r = p.role || roleOf(p.name); if (r in dRole) dRole[r]+=p.total||0; });
+  const lbl = {Tank:"Tank", Healer:"Healer", Physical:"Melee", Caster:"Ranged"};
+  const pills = ["Tank","Healer","Physical","Caster"].map(r =>
+    `<span class="pill" style="border-color:${C[r.toLowerCase()]}"><span style="color:${C[r.toLowerCase()]}">${lbl[r]}</span><span class="pv">${dRole[r]}</span></span>`).join("");
+  const card2 = `<div class="card">
+    <div class="card-title">Deaths by Role</div>
+    <div class="pill-row">${pills}</div>
+  </div>`;
+
+  // C3 — Interrupt breadth
+  const breadth = (WEEK_DATA.interrupts||[]).filter(i => (i.count||0)>0).length;
+  const card3 = `<div class="card">
+    <div class="card-title">Interrupt Breadth</div>
+    <div class="cohort-val" style="color:var(--blue)">${breadth}</div>
+    <div class="cohort-sub">raiders contributed interrupts</div>
+  </div>`;
+
+  // C4 — Drums coverage: avg allies buffed per drum ÷ 4 (a drum buffs up to ~4 partymates).
+  // NOTE: drums "score" is a raw buff count, not a %, so we derive coverage from buffs_per_drum.
+  const bpds = (WEEK_DATA.drums||[]).map(d => d.buffs_per_drum||0).filter(x => x>0);
+  const avgBpd = bpds.length ? bpds.reduce((a,b)=>a+b,0)/bpds.length : 0;
+  const cov = Math.min(100, Math.round(avgBpd/4*100));
+  const covColor = cov>=90 ? "var(--green)" : cov>=70 ? "var(--orange)" : "var(--red)";
+  const card4 = `<div class="card">
+    <div class="card-title">Drums Coverage</div>
+    <div class="cohort-val" style="color:${covColor}">${cov}%</div>
+    <div class="cohort-sub">avg ${avgBpd.toFixed(2)} allies buffed / drum</div>
+  </div>`;
+
+  el.innerHTML = card1 + card2 + card3 + card4;
 }
 
 // ── RATSHEET: performance flags (aggregated from the metrics we already have)
@@ -18302,7 +18424,8 @@ function renderPlayerSpells(){
   if (!tabs || !grid) return;
   const order = ["Physical","Caster","Healer","Tank"];
   const roles = order.filter(r => (data[r]||[]).length);
-  if (!roles.length){ grid.innerHTML = '<div style="color:var(--muted);font-size:12px">No cast data.</div>'; return; }
+  // No cast data → hide the whole section (no empty-state placeholder)
+  if (!roles.length){ const card = grid.closest(".card"); if(card) card.style.display = "none"; return; }
   if (!_psRole || !roles.includes(_psRole)) _psRole = roles[0];
   tabs.innerHTML = roles.map(r => {
     const on = r === _psRole, col = roleColor(r);
@@ -18311,21 +18434,15 @@ function renderPlayerSpells(){
       border:1px solid ${on?col:'var(--border)'};background:${on?col+'22':'transparent'};
       color:${on?col:'var(--muted)'}">${r} <span style="opacity:.6">${data[r].length}</span></button>`;
   }).join("");
-  const col = roleColor(_psRole);
+  // Each player: name + their top-3 abilities as compact pills (spell · casts)
   grid.innerHTML = data[_psRole].map(p => {
     const nc = nameColor(p.name, p.role);
-    const max = p.abilities.length ? p.abilities[0].casts : 1;
-    const rows = p.abilities.map(a => `
-      <div style="display:flex;align-items:center;gap:8px;margin:3px 0;font-size:11px">
-        <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.ability}</span>
-        <span style="width:42px;height:5px;border-radius:3px;background:var(--surface2);overflow:hidden"><span style="display:block;height:100%;width:${(a.casts/max*100)}%;background:${col}"></span></span>
-        <span style="font-family:'IBM Plex Mono',monospace;color:var(--muted);min-width:36px;text-align:right">${a.casts.toLocaleString()}</span>
-      </div>`).join("");
-    return `<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
-        <span class="cname" style="color:${nc};font-weight:700;font-size:13px">${p.name}</span>
-        <span style="font-family:'IBM Plex Mono',monospace;color:var(--muted);font-size:11px">${p.total.toLocaleString()} casts</span>
-      </div>${rows}</div>`;
+    const pills = (p.abilities||[]).slice(0,3).map(a =>
+      `<span class="spell-pill">${a.ability}<span class="sc">${a.casts.toLocaleString()}</span></span>`).join("");
+    return `<div class="spell-card">
+      <div class="cname" style="color:${nc};font-weight:700;font-size:13px;margin-bottom:8px">${p.name}</div>
+      <div class="pill-row" style="margin-top:0">${pills || '<span style="color:var(--muted);font-size:11px">no casts</span>'}</div>
+    </div>`;
   }).join("");
 }
 
@@ -18341,6 +18458,9 @@ function renderStatTiles() {
   document.getElementById("totalInterrupts").textContent = intTotal;
   const kills = (WEEK_DATA.meta && WEEK_DATA.meta.kills) || 0;
   document.getElementById("bossesKilled").textContent = kills;
+  const killSecs = Object.values(WEEK_DATA.boss_times || {}).reduce((s, v) => s + v, 0);
+  document.getElementById("totalKillTime").textContent =
+    `${Math.floor(killSecs / 60)}:${String(Math.round(killSecs % 60)).padStart(2, "0")}`;
 }
 
 // ── SHARED RANKED-ROW TEMPLATE — one consistent delivery format for every ranking card
@@ -18913,8 +19033,9 @@ function renderDamage() {
     const up = p.active_pct != null ? p.active_pct : null;
     const upChip = up == null ? "" : (up >= 90 ? "green" : up >= 75 ? "yellow" : "orange");
     const nc = nameColor(p.name, p.role);
+    const spec = ((WEEK_DATA.roster||{})[p.name]||{}).spec || "";
     return `<tr>
-      <td><span class="cname" style="color:${nc}">${p.name}</span></td>
+      <td><span class="cname" style="color:${nc}">${p.name}</span>${spec?`<div style="font-size:10px;color:var(--muted);margin-top:1px;font-weight:400">${spec}</div>`:""}</td>
       <td class="num" style="font-weight:600;color:var(--text);position:relative">
         <div style="position:absolute;left:0;bottom:1px;height:3px;width:${pct}%;background:${nc};border-radius:2px"></div>
         ${Math.round(dps).toLocaleString()}</td>
@@ -19134,20 +19255,26 @@ function renderLuckGrid() {
 // ── ENGINEERING TABLE (single card — damage + per-ability counts)
 function renderEngTable() {
   const sorted = [...(WEEK_DATA.engineering||[])].sort((a, b) => b.dmg - a.dmg);
+  const head = document.getElementById("engHead");
   const tbody = document.getElementById("engTbody");
-  if (!sorted.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);font-size:12px">No engineering data — provide combat log via --log flag.</td></tr>'; return; }
-  // Engineering counts live in p.eng keyed by ability name (e.g. "Super Sapper").
-  tbody.innerHTML = sorted.map(p => {
-    const e = p.eng || {};
+  if (!sorted.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);font-size:12px">No engineering data — provide combat log via --log flag.</td></tr>'; return; }
+  // Collapse ability counts into two buckets; drop a bucket entirely if no one used it.
+  const SAPPERS = ["Super Sapper", "Goblin Sapper"];
+  const BOMBS   = ["Fel Iron Bomb", "Adamantite Grenade"];
+  const sum = (e, names) => names.reduce((s, n) => s + (e[n] || 0), 0);
+  const rows = sorted.map(p => ({ p, s: sum(p.eng||{}, SAPPERS), b: sum(p.eng||{}, BOMBS) }));
+  const showSap = rows.some(r => r.s > 0), showBomb = rows.some(r => r.b > 0);
+  head.innerHTML = `<th style="width:40%">Player</th><th class="num" style="width:24%">Total DMG</th>`
+    + (showSap  ? `<th class="num">Sappers</th>` : "")
+    + (showBomb ? `<th class="num">Bombs</th>` : "");
+  tbody.innerHTML = rows.map(({ p, s, b }) => {
     const nc = nameColor(p.name, p.role);
     const k = p.dmg >= 1e6 ? (p.dmg / 1e6).toFixed(2) + "M" : (p.dmg / 1e3).toFixed(0) + "K";
     return `<tr>
       <td><span class="cname" style="color:${nc}">${p.name}</span></td>
       <td class="num" style="font-weight:600;color:var(--text)">${p.dmg ? k : "—"}</td>
-      <td class="num">${e["Super Sapper"] || "—"}</td>
-      <td class="num">${e["Goblin Sapper"] || "—"}</td>
-      <td class="num">${e["Adamantite Grenade"] || "—"}</td>
-      <td class="num">${e["Fel Iron Bomb"] || "—"}</td>
+      ${showSap  ? `<td class="num">${s || "—"}</td>` : ""}
+      ${showBomb ? `<td class="num">${b || "—"}</td>` : ""}
     </tr>`;
   }).join("");
 }
@@ -19191,7 +19318,8 @@ function showTab(name){
 document.addEventListener("DOMContentLoaded", () => {
   renderHeader();
   renderStatTiles();
-  renderTonightInReview();
+  renderBossTiles();
+  renderCohortCards();
   renderOverview();
   renderDrums();
   renderAvoidableShame();
