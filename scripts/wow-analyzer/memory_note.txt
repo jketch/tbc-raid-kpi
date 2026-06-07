@@ -1,3 +1,0 @@
-Jon's WoW character: Marvels (Warlock) - plays on fresh.warcraftlogs.com
-Guild raids: TBC Anniversary (SSC/TK content), 25-man
-WCL API client: fresh.warcraftlogs.com OAuth endpoint
