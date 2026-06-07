@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0e0e12;
@@ -43,7 +43,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     font-size: 14.5px;
     min-height: 100vh;
   }
@@ -348,11 +348,11 @@
   .hs-pod { border:1px solid var(--border); border-radius:12px; padding:15px 12px 13px; text-align:center;
     background:linear-gradient(180deg,rgba(255,255,255,.022),transparent); position:relative; }
   .hs-pod::before { content:""; position:absolute; inset:0 0 auto 0; height:3px; border-radius:12px 12px 0 0; background:var(--cc); }
-  .hs-pod .rank { font-family:'Bebas Neue',sans-serif; font-size:15px; letter-spacing:.06em; color:var(--muted); }
+  .hs-pod .rank { font-family:'Inter',sans-serif; font-size:15px; letter-spacing:.06em; color:var(--muted); }
   .hs-pod .av { width:50px; height:50px; border-radius:50%; margin:7px auto 8px; background-size:cover; background-position:center;
     border:2px solid var(--cc); box-shadow:0 0 0 3px rgba(0,0,0,.35), 0 4px 14px rgba(0,0,0,.5); }
   .hs-pod .nm { font-weight:700; font-size:14px; text-shadow:0 1px 2px rgba(0,0,0,.9); }
-  .hs-pod .dmg { font-family:'Bebas Neue',sans-serif; font-size:32px; line-height:.95; margin:4px 0 1px; color:var(--text); }
+  .hs-pod .dmg { font-family:'Inter',sans-serif; font-size:32px; line-height:.95; margin:4px 0 1px; color:var(--text); }
   .hs-pod .cap { font-size:10.5px; color:var(--dim); line-height:1.35; margin-top:5px; min-height:26px; }
   .hs-pod .cap b { color:var(--text); font-weight:600; }
   .hs-pod.first { padding-top:19px; }
@@ -537,35 +537,28 @@
     <!-- Avoidable damage taken -->
     <div class="card hs-wide">
       <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_shadow_shadowfury.jpg" alt=""> Avoidable Damage Taken</div>
-      <div class="hs-sub">Damage from mechanics you could've sidestepped. <b>One block</b> = a bad moment · <b>several stacked</b> = a pattern.</div>
+      <div class="hs-sub">Damage from mechanics you could've sidestepped.</div>
       <div id="avoidShame"></div>
     </div>
 
     <!-- Deaths -->
     <div class="card">
       <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_bone_humanskull_01.jpg" alt=""> Deaths — what actually killed them</div>
-      <div class="hs-sub"><b>Click a raider</b> → each death: encounter, killing blow, the final seconds. Not dying is the skill.</div>
+      <div class="hs-sub"><b>Click a raider</b> → each death: encounter, killing blow, the final seconds.</div>
       <div id="deathStrips"></div>
     </div>
 
     <!-- Healthstone compliance — pairs with Deaths (died, never used the free panic button) -->
     <div class="card">
       <div class="card-title"><img src="https://wow.zamimg.com/images/wow/icons/large/inv_stone_04.jpg" alt="" style="width:15px;height:15px;border-radius:3px;vertical-align:-2px;margin-right:3px"> Panic Button — died without a stone</div>
-      <div class="hs-sub">Who died but never popped the free <b>healthstone</b> in their bag. A fixable habit.</div>
+      <div class="hs-sub">Who died but never popped the free <b>healthstone</b> in their bag.</div>
       <div id="healthstoneCard"></div>
-    </div>
-
-    <!-- Friendly fire (clumping/positioning only) -->
-    <div class="card hs-wide">
-      <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_fire_selfdestruct.jpg" alt=""> Friendly Fire — Clumping</div>
-      <div class="hs-sub">Splash damage dealt <b>to teammates</b> by clumping on spread mechanics — it hits whoever's near you.</div>
-      <div id="friendlyFire"></div>
     </div>
 
     <!-- Mind Control (moved here) -->
     <div class="card hs-wide">
       <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_shadow_shadowworddominate.jpg" alt=""> Mind Control — saves &amp; liabilities</div>
-      <div class="hs-sub">Charmed ≠ their fault — blame flips to the raid. <b style="color:var(--green)">Saves</b> = you CC'd them safely · <b style="color:var(--red)">Liabilities</b> = you AoE'd into them (a <b>💀 killing blow</b> is the cardinal sin).</div>
+      <div class="hs-sub"><b style="color:var(--green)">Saves</b> = you CC'd them safely · <b style="color:var(--red)">Liabilities</b> = you AoE'd into them.</div>
       <div class="grid-2" style="margin-top:8px">
         <div>
           <div style="font-weight:700;color:var(--green);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Saves</div>
@@ -661,7 +654,7 @@
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg" alt=""> Engineering — Bombs & Sappers</div>
   <div class="card physical">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_gizmo_supersappercharge.jpg" alt=""> Sapper/Grenade Usage &amp; Damage by Player</div>
-    <div class="hs-sub">Engineering explosives = free DPS. <b>Damage</b> is the contribution · counts show what they pressed.</div>
+    <div class="hs-sub"><b>Damage</b> is the contribution · counts show what they pressed.</div>
     <div class="scroll-x">
       <table class="mini-table" id="engTable" style="table-layout:fixed;width:100%">
         <thead><tr id="engHead"></tr></thead>
@@ -18676,12 +18669,10 @@ function avStrip(rank, name, role, num, max, ability, ctxHTML, onclick){
     <span class="strip-rank">${rank}</span>
     <span class="strip-ico" style="${ic?`background-image:url('${ic}')`:''}"></span>
     <div style="flex:1;min-width:0">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
-        <span class="cname" style="color:${cc};font-weight:600;font-size:12.5px">${name}</span>
-        <span class="strip-num">${typeof num==="number"&&num>=1000?hsK(num):num}</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+      <span class="cname" style="color:${cc};font-weight:600;font-size:12.5px">${name}</span>
+      <div style="display:flex;align-items:center;gap:9px;margin-top:4px">
         ${avBlocks(max?num/max:0, lead?'#d8924a':'#9c7340')}
+        <span class="strip-num" style="flex-shrink:0">${typeof num==="number"&&num>=1000?hsK(num):num}</span>
         <span class="strip-ctx">${ctxHTML}</span>
       </div>
     </div></div>`;
@@ -19013,9 +19004,11 @@ function renderDamage() {
     const spec = ((WEEK_DATA.roster||{})[p.name]||{}).spec || "";
     return `<tr>
       <td><span class="cname" style="color:${nc}">${p.name}</span>${spec?`<div style="font-size:10px;color:var(--muted);margin-top:1px;font-weight:400">${spec}</div>`:""}</td>
-      <td class="num" style="font-weight:600;color:var(--text);position:relative">
-        <div style="position:absolute;left:0;bottom:1px;height:3px;width:${pct}%;background:${nc};border-radius:2px"></div>
-        ${Math.round(dps).toLocaleString()}</td>
+      <td class="num" style="font-weight:600;color:var(--text)">
+        <span style="display:inline-flex;align-items:center;gap:9px;justify-content:flex-end">
+          <span style="width:60px;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;flex-shrink:0"><span style="display:block;height:100%;width:${pct}%;background:${nc}"></span></span>
+          <span style="min-width:50px;text-align:right">${Math.round(dps).toLocaleString()}</span>
+        </span></td>
       <td class="num" style="color:var(--muted)">${hsK(p.total_dmg)}</td>
       <td class="num" style="color:var(--muted)">${share}%</td>
       <td class="num">${up == null ? "—" : `<span class="chip ${upChip}">${up.toFixed(0)}%</span>`}</td>
@@ -19219,7 +19212,6 @@ document.addEventListener("DOMContentLoaded", () => {
   renderOverview();
   renderDrums();
   renderAvoidableShame();
-  renderFriendlyFire();
   renderMC();
   renderDeaths();
   renderHealthstones();
