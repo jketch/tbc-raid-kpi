@@ -1999,10 +1999,115 @@ def map_to_week_data(wcl: dict) -> dict:
 # Inject WEEK_DATA into HTML dashboard
 # ══════════════════════════════════════════════════════════════════════════════
 
-def inject_into_html(week_data: dict, html_path: Path):
-    """Replace const WEEK_DATA = {...}; in the HTML using bracket counting."""
+def enrich_with_trends(week_data: dict, db_path) -> dict:
+    """Attach week-over-week delta_* fields to the per-player items of a MAPPED week_data
+    dict, by reading the PREVIOUS week's values from the history DB.
+
+    Must run AFTER build_week_data()/map_to_week_data() and BEFORE write_week() — otherwise
+    this week's row overwrites last week's before we can read it. Never throws: any DB error
+    (missing file, missing table on an older DB, no prior week) just yields no deltas, and the
+    HTML degrades silently (the fmtDelta() helper renders nothing for undefined values).
+
+    db_path: the SAME DB the run will write to (DB_PATH or DB_PATH_TEST), so --test-db reads
+    and writes the test DB consistently.
+    """
+    import sqlite3
+    try:
+        path = Path(db_path)
+        if not path.exists():
+            return week_data                      # first ever run — nothing to compare to
+        con = sqlite3.connect(path)
+        try:
+            current = (week_data.get("meta") or {}).get("report_code")
+            # Prior week = most recent OTHER report by CHRONOLOGICAL start_ms (epoch ms),
+            # NOT the human date string — the display date sorts lexically and misorders
+            # (see weeks.start_ms, the canonical sort key).
+            row = con.execute(
+                "SELECT report_code, date, kills FROM weeks WHERE report_code != ? "
+                "ORDER BY start_ms DESC, date DESC LIMIT 1",
+                (current,)
+            ).fetchone()
+            if not row:
+                return week_data                  # only one week of history
+            prev, prev_date, prev_kills = row[0], row[1], row[2]
+
+            def pv(table, player, col):
+                """Previous-week value, or None if absent (also tolerates a missing
+                table/column on an older DB that predates this metric)."""
+                try:
+                    r = con.execute(
+                        f"SELECT {col} FROM {table} WHERE report_code=? AND player=?",
+                        (prev, player)
+                    ).fetchone()
+                    return r[0] if r and r[0] is not None else None
+                except sqlite3.OperationalError:
+                    return None
+
+            # ── damage: trend DPS (normalizes raid length), matching the live HTML which
+            #    renders total_dmg / sum(boss_times). Compare against the `dps` table's dps.
+            dur = sum((week_data.get("boss_times") or {}).values()) or 0
+            for it in (week_data.get("damage") or []):
+                p = pv("dps", it.get("name"), "dps")
+                if p is not None and dur:
+                    it["delta_dps"] = round((it.get("total_dmg", 0) / dur) - p, 1)
+
+            # ── healing: four trended columns (HPS, overheal, activity, mana-efficiency).
+            for it in (week_data.get("healing") or []):
+                nm = it.get("name")
+                for cur_field, db_col, delta_field in (
+                    ("eff_hps",      "eff_hps",      "delta_hps"),
+                    ("overheal_pct", "overheal_pct", "delta_overheal"),
+                    ("activity_pct", "activity_pct", "delta_activity"),
+                    ("mana_eff",     "mana_eff",     "delta_hp_per_mana"),
+                ):
+                    p = pv("healing", nm, db_col)
+                    if p is not None:
+                        it[delta_field] = round((it.get(cur_field) or 0) - p, 1)
+
+            # ── single-field KPIs: (week key, table, current field, db col, delta field)
+            #    (luck is intentionally NOT trended: the `luck_kpi.luck` column is NULL by
+            #    design — luck is derived at render time from the multi-week crit baseline,
+            #    not persisted — so a week-over-week DB delta is meaningless.)
+            for wk_key, table, cur_field, db_col, delta_field in (
+                ("avoidableDmg", "avoidable_dmg", "dmg",   "dmg",   "delta_dmg"),
+                ("deaths",       "deaths",        "total", "total", "delta_deaths"),
+                ("drums",        "drums",         "score", "score", "delta_drums"),
+            ):
+                for it in (week_data.get(wk_key) or []):
+                    p = pv(table, it.get("name"), db_col)
+                    if p is not None:
+                        it[delta_field] = round((it.get(cur_field) or 0) - p, 1)
+
+            # ── prior-week header context (powers the "vs last week" header pills).
+            #    Kill-time delta is summed over the bosses cleared in BOTH weeks so it's
+            #    fight-count agnostic — comparing raw totals would unfairly reward a week
+            #    that simply downed fewer bosses. Negative delta = faster this week.
+            prev_bt = {r[0]: r[1] for r in con.execute(
+                "SELECT boss, seconds FROM boss_times WHERE report_code=?", (prev,)).fetchall()}
+            cur_bt  = week_data.get("boss_times") or {}
+            common  = [b for b in cur_bt if b in prev_bt]
+            prev_ctx = {"report_code": prev, "date": prev_date, "kills": prev_kills}
+            if common:
+                prev_ctx["delta_kill_secs"] = round(
+                    sum(cur_bt[b] for b in common) - sum(prev_bt[b] for b in common), 1)
+                prev_ctx["common_bosses"] = len(common)
+            week_data["prev"] = prev_ctx
+        finally:
+            con.close()
+    except Exception as e:
+        print(f"  [trends] warning: {e}")
+    return week_data
+
+
+def inject_into_html(week_data: dict, html_path: Path, mapped: dict = None):
+    """Replace const WEEK_DATA = {...}; in the HTML using bracket counting.
+
+    mapped: an already-mapped (and possibly trend-enriched) WEEK_DATA dict. When given,
+    it is injected verbatim instead of re-mapping `week_data` — this preserves delta_*
+    fields added by enrich_with_trends(). Omit it and the old behavior is unchanged."""
     html   = html_path.read_text(encoding="utf-8")
-    mapped = map_to_week_data(week_data)
+    if mapped is None:
+        mapped = map_to_week_data(week_data)
     new_json = json.dumps(mapped, indent=2, ensure_ascii=False)
 
     # Find the start of const WEEK_DATA = {
@@ -2744,11 +2849,15 @@ def main():
         print("\n─── WCL_AUTO_DATA JSON ───")
         print(json.dumps(week_data, indent=2, ensure_ascii=False))
     else:
-        inject_into_html(week_data, Path(args.out))
-        from db_writer import write_week, DB_PATH_TEST
-        # db_writer consumes the mapped WEEK_DATA shape (luckKPI/avoidableDmg/…),
-        # not the raw wcl dict — map once more (pure transform, no API calls).
-        write_week(map_to_week_data(week_data), db_path=DB_PATH_TEST if args.test_db else None)
+        from db_writer import write_week, DB_PATH, DB_PATH_TEST
+        db_path = DB_PATH_TEST if args.test_db else DB_PATH
+        # db_writer + the HTML both consume the mapped WEEK_DATA shape (luckKPI/avoidableDmg/…),
+        # not the raw wcl dict. Map ONCE (pure transform, no API calls), then enrich with
+        # week-over-week deltas BEFORE write_week() overwrites last week's row in the DB.
+        mapped = map_to_week_data(week_data)
+        enrich_with_trends(mapped, db_path)
+        inject_into_html(week_data, Path(args.out), mapped=mapped)
+        write_week(mapped, db_path=db_path)
         print(f"\nRun next time with:")
         print(f"  python wcl_auto_dashboard.py {args.report_code} --out \"{args.out}\"")
 

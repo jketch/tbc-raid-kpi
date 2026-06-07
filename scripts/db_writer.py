@@ -182,6 +182,17 @@ CREATE TABLE IF NOT EXISTS boss_times (
     seconds      REAL,
     PRIMARY KEY (report_code, boss)
 );
+
+CREATE TABLE IF NOT EXISTS dps (
+    report_code  TEXT,
+    player       TEXT,
+    role         TEXT,
+    dps          REAL,      -- total_dmg / total kill seconds (normalizes raid length)
+    total        INTEGER,   -- total damage done
+    pct_raid     REAL,      -- share of raid damage (%)
+    uptime       REAL,      -- active-time % (from week_data 'active_pct')
+    PRIMARY KEY (report_code, player)
+);
 """
 
 
@@ -360,6 +371,25 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
                 INSERT OR REPLACE INTO boss_times (report_code, boss, seconds)
                 VALUES (?, ?, ?)
             """, (rc, boss, seconds))
+
+        # ── dps ────────────────────────────────────────────────────────────────
+        # Persist per-player damage so it can be trended week-over-week. Store DPS
+        # (total_dmg / total kill seconds) so the comparison normalizes raid length;
+        # `dur` mirrors the live HTML's `sum(boss_times)`. Falls back to total when
+        # boss_times is missing (no division → dps stored as 0).
+        dmg_rows  = week_data.get("damage") or []
+        dur       = sum((week_data.get("boss_times") or {}).values()) or 0
+        raid_tot  = sum((p.get("total_dmg") or 0) for p in dmg_rows) or 0
+        for p in dmg_rows:
+            total = p.get("total_dmg") or 0
+            con.execute("""
+                INSERT OR REPLACE INTO dps (report_code, player, role, dps, total, pct_raid, uptime)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (rc, p["name"], p.get("role"),
+                  round(total / dur, 2) if dur else 0,
+                  total,
+                  round(total / raid_tot * 100, 2) if raid_tot else 0,
+                  p.get("active_pct")))
 
         con.commit()
         print(f"  ✓ DB written → {target.name}  (report: {rc})")
