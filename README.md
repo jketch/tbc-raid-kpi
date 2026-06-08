@@ -11,9 +11,10 @@ browser-viewable HTML dashboard, and deploys it to Netlify.
 | Tool | Version | Notes |
 |------|---------|-------|
 | Python | 3.9+ | stdlib only — no `pip install` needed for the core pipeline |
-| Node.js + npm | any | Only needed for the Netlify CLI |
-| Netlify CLI | latest | `npm install -g netlify-cli` |
 | Git | any | For cloning and pulling updates |
+| Node.js + npm | any | Only needed for Netlify hosting (optional) |
+| Netlify CLI | latest | `npm install -g netlify-cli` — only for Netlify hosting |
+| Playwright + pypdf | latest | `pip install playwright pypdf` + `playwright install chromium` — only for screenshot/PDF export |
 
 ---
 
@@ -57,7 +58,12 @@ Optional — override the dashboard title displayed in the browser:
 DASHBOARD_TITLE=My Guild — Raid KPI Dashboard
 ```
 
-### 4. Set up Netlify (optional — for public sharing)
+### 4. Choose a sharing method (optional)
+
+The dashboard is a self-contained HTML file — `dashboard/raid_kpi_dashboard.html` — that works
+locally without any hosting. Two options if you want to share it with your raid:
+
+**Option A — Netlify (live URL, always up-to-date)**
 
 ```
 netlify login
@@ -65,9 +71,26 @@ netlify sites:create
 ```
 
 Follow the prompts to name your site. This writes `.netlify/state.json` (gitignored).
-After this, every `run_weekly.bat` run auto-deploys to your site URL.
+After this, every `run_weekly.bat` run auto-deploys and your raid gets a stable URL to bookmark.
 
-Skip this step if you only want local use — the dashboard opens in your browser without Netlify.
+**Option B — Screenshot / PDF export (no hosting needed)**
+
+Install Playwright once:
+
+```
+pip install playwright pypdf
+playwright install chromium
+```
+
+After each weekly run, export the dashboard to per-tab PNGs or a single merged PDF:
+
+```
+python scripts\screenshot_dashboard.py                  # one PNG per tab → screenshots\
+python scripts\screenshot_dashboard.py --pdf            # merged PDF → screenshots\dashboard.pdf
+python scripts\screenshot_dashboard.py --tabs overview utility  # specific tabs only
+```
+
+Post the images or PDF directly to your raid Discord channel.
 
 ### 5. Create the `logs` directory placeholder (if missing)
 
@@ -89,7 +112,7 @@ The pipeline:
 - Pulls fight data via the WCL v2 GraphQL API
 - Parses your `WoWCombatLog.txt` for supplemental data
 - Writes `dashboard/raid_kpi_dashboard.html` (gitignored — real data stays local)
-- Deploys to Netlify (if configured)
+- Deploys to Netlify (if configured), or export to screenshots/PDF with `screenshot_dashboard.py`
 
 ---
 
@@ -124,7 +147,8 @@ tbc-raid-kpi/
 ├── scripts/
 │   ├── wcl_auto_dashboard.py   ← main pipeline
 │   ├── db_writer.py            ← SQLite history
-│   └── publish.py              ← Netlify deploy
+│   ├── publish.py              ← Netlify deploy
+│   └── screenshot_dashboard.py ← export dashboard to PNG/PDF (requires Playwright)
 ├── dashboard/
 │   ├── template.html           ← markup/CSS/render engine (tracked in git)
 │   └── raid_kpi_dashboard.html ← generated output (gitignored)
