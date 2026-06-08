@@ -19,6 +19,7 @@ cache/*.json
 
 # Claude Code machine-local settings
 .claude/settings.local.json
+CLAUDE.md
 
 # Generated dashboard output (template is the source; output is gitignored to keep real data out of the repo)
 dashboard/raid_kpi_dashboard.html

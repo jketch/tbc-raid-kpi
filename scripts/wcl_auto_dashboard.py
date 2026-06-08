@@ -907,7 +907,7 @@ TANK_CD_IDS = [871, 12975, 26999, 22812, 27154]
 CD_NAMES = {871: "Shield Wall", 12975: "Last Stand", 26999: "Frenzied Regen",
             22812: "Barkskin", 27154: "Lay on Hands"}
 
-# WCL melee hitType enum (LOCKED against live data, not memory — see CLAUDE.md rule).
+# WCL melee hitType enum (LOCKED against live data — confirmed by probing tank logs directly).
 # Confirmed by probing this report's tanks: a crit-immune bear shows only {miss, hit,
 # dodge, crushing}; paladins add {blocked, parry, crit}.
 #   1 = normal hit   2 = crit            4 = blocked (partial, reduced)
