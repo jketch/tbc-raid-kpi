@@ -130,9 +130,9 @@ CREATE TABLE IF NOT EXISTS consumables (
     report_code  TEXT,
     player       TEXT,
     role         TEXT,
-    score        REAL,   -- legacy Raid-Prep score (unused since the compliance rework)
-    suboptimal   TEXT,   -- legacy JSON list (unused)
-    badges       TEXT,   -- legacy JSON list (unused since the compliance rework)
+    score        REAL,
+    suboptimal   TEXT,
+    badges       TEXT,
     flask        INTEGER,-- compliance: flask OR both elixir slots (0/1)
     food         INTEGER,
     weapon       INTEGER,

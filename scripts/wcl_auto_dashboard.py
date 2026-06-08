@@ -2057,8 +2057,6 @@ def map_to_week_data(wcl: dict) -> dict:
         for m in _mechs_seen
     }
     # friendly fire (source side) — join with roster for class/role coloring
-    # Friendly fire is now clumping/positioning only (sappers dropped — self-damage;
-    # MC blame moved to the aggressor in mcLiability below).
     friendly_fire = [
         {"name": f["name"],
          "role":  roster_idx.get(f["name"], {}).get("role", ""),
@@ -2116,7 +2114,6 @@ def map_to_week_data(wcl: dict) -> dict:
     # least-prepared first (missing flask/food bubbles up — that's the accountability angle)
     consum_usage.sort(key=lambda x: (x["prepared"], bool(x["flask"] or x["elixirs"]), x["food"],
                                      x["name"]))
-    # Role-split compliance grid (binary ✓/✗) — replaces the old prep score.
     consum_list = build_consumable_compliance(consum_usage)
 
     # Healer scorecard — actual healers only (role=Healer), ranked by effective HPS.
@@ -2399,8 +2396,7 @@ def inject_into_html(week_data: dict, html_path: Path, mapped: dict = None):
 
 ENG_SPELLS  = {30486:"Super Sapper",23506:"Goblin Sapper",4068:"Goblin Sapper",
                30461:"Adamantite Grenade",30216:"Fel Iron Bomb"}
-# Engineering damage ability NAMES (as they appear in SPELL_DAMAGE) — for REAL
-# engineering damage to bosses instead of the old count×30000 estimate.
+# Engineering damage ability NAMES (as they appear in SPELL_DAMAGE).
 ENG_DMG_NAMES = {"Super Sapper Charge", "Goblin Sapper Charge", "Fel Iron Bomb",
                  "Adamantite Grenade", "The Big One", "Dense Dynamite", "Goblin Mortar",
                  "Cobalt Frag Bomb", "Adamantite Frag Bomb"}
