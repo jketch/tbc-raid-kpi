@@ -109,7 +109,6 @@ SPEC_TALENT_CRIT = {
     "Destruction":     5.0,   # Devastation 5/5
     "Arms":            5.0,   # Impale + Improved Hamstring
     "Fury":            3.0,
-    "Protection Warrior": 1.0,
 }
 
 # ── Common TBC gem → crit rating lookup ───────────────────────────────────────
@@ -229,7 +228,7 @@ ELIXIR_BUFFS = {
     "Elixir of Major Strength", "Elixir of Major Agility", "Elixir of Major Firepower",
     "Elixir of Mastery", "Elixir of Major Defense", "Elixir of Major Fortitude",
     "Elixir of Major Mageblood", "Elixir of the Mongoose", "Elixir of Empowerment",
-    "Elixir of Ironskin", "Elixir of Major Defense",
+    "Elixir of Ironskin",
 }
 
 # Guardian (defensive/utility) elixirs — everything else in ELIXIR_BUFFS is a battle elixir.
@@ -567,10 +566,6 @@ def parse_damage_table(raw_table) -> dict[str, dict]:
         if isinstance(raw_table, str):
             raw_table = json.loads(raw_table)
         entries = raw_table.get("data", {}).get("entries", [])
-        if entries:
-            # Debug first entry to reveal field names
-            sample = {k: v for k, v in entries[0].items() if not isinstance(v, list)}
-            print(f"  DEBUG dmg entry keys: {list(sample.keys())}")
         for e in entries:
             name  = e.get("name", "")
             total = e.get("total", 0)

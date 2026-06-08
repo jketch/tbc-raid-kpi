@@ -134,9 +134,10 @@ def deploy_netlify():
     try:
         DEPLOY.mkdir(exist_ok=True)
         shutil.copyfile(DASH, DEPLOY / "index.html")   # root of the site = the dashboard
+        netlify_exe = shutil.which("netlify")
         r = subprocess.run(
-            ["netlify", "deploy", "--prod", "--dir", str(DEPLOY), "--json"],
-            cwd=ROOT, capture_output=True, text=True, timeout=240, shell=True)
+            [netlify_exe, "deploy", "--prod", "--dir", str(DEPLOY), "--json"],
+            cwd=ROOT, capture_output=True, text=True, timeout=240)
         if r.returncode != 0:
             print(f"  ⚠ netlify deploy failed:\n{(r.stderr or r.stdout)[-500:]}")
             return None

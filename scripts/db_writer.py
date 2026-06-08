@@ -449,7 +449,7 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
 
     except Exception as e:
         con.rollback()
-        print(f"  ⚠ DB write failed (dashboard still updated): {e}")
+        print(f"  ⚠ DB write failed (dashboard still updated): {type(e).__name__}: {e}")
 
     finally:
         con.close()
