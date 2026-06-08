@@ -300,7 +300,9 @@ HEAL_MANA_COST = {
 ROOT_DIR   = Path(__file__).parent.parent  # Gaming/
 CACHE_FILE = ROOT_DIR / "cache" / "item_crit_cache.json"
 LOGS_DIR   = ROOT_DIR / "logs"
-DASH_FILE  = ROOT_DIR / "dashboard" / "raid_kpi_dashboard.html"
+DASH_FILE      = ROOT_DIR / "dashboard" / "raid_kpi_dashboard.html"
+TEMPLATE_FILE  = ROOT_DIR / "dashboard" / "template.html"
+DEFAULT_TITLE  = "Raid KPI Dashboard — TBC Anniversary"
 
 # Healer "replacement-level" cohort cache (same-spec ranked parses per boss). The
 # heavy rankings fetch is amortized here — weekly runs read it; refresh ~monthly.
@@ -2335,12 +2337,20 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
 
 
 def inject_into_html(week_data: dict, html_path: Path, mapped: dict = None):
-    """Replace const WEEK_DATA = {...}; in the HTML using bracket counting.
+    """Read template.html, inject WEEK_DATA, write to html_path (the gitignored output).
 
+    Always reads from TEMPLATE_FILE so the output is never the source for the next run.
+    Substitutes {{DASHBOARD_TITLE}} from the DASHBOARD_TITLE env var (default fallback).
     mapped: an already-mapped (and possibly trend-enriched) WEEK_DATA dict. When given,
     it is injected verbatim instead of re-mapping `week_data` — this preserves delta_*
     fields added by enrich_with_trends(). Omit it and the old behavior is unchanged."""
-    html   = html_path.read_text(encoding="utf-8")
+    src = TEMPLATE_FILE if TEMPLATE_FILE.exists() else html_path
+    html = src.read_text(encoding="utf-8")
+
+    # Substitute the dashboard title placeholder
+    title = os.environ.get("DASHBOARD_TITLE") or DEFAULT_TITLE
+    html = html.replace("{{DASHBOARD_TITLE}}", title)
+
     if mapped is None:
         mapped = map_to_week_data(week_data)
     new_json = json.dumps(mapped, indent=2, ensure_ascii=False)
