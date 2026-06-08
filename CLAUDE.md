@@ -34,9 +34,12 @@ Gaming/
 ├── CLAUDE.md                       ← this file
 ├── prompts/                        ← maintainer's scratch feature-prompts (GITIGNORED; ref by path)
 ├── scripts/
-│   ├── wcl_auto_dashboard.py       ← main pipeline (~1300 lines)
+│   ├── wcl_auto_dashboard.py       ← main pipeline (~3155 lines)
 │   ├── db_writer.py                ← SQLite persistence layer (called at end of main())
-│   └── publish.py                  ← Netlify deploy + paste-ready raid-channel summary
+│   ├── publish.py                  ← Netlify deploy + paste-ready raid-channel summary
+│   ├── backfill_dps.py             ← one-off: pull historical DPS rows from WCL into `dps` table
+│   ├── backfill_tank.py            ← one-off: pull historical tank v2 rows from WCL into tank tables
+│   └── screenshot_dashboard.py     ← Playwright export: per-tab PNG or merged PDF (requires pypdf)
 ├── dashboard/
 │   └── raid_kpi_dashboard.html     ← self-contained HTML dashboard (Chart.js 4.4.1 via CDN)
 ├── logs/                           ← drop WoWCombatLog.txt here (newest .txt auto-selected)
@@ -58,9 +61,22 @@ Pipeline functions (in execution order):
 - `get_token()` — OAuth2 client_credentials against fresh.warcraftlogs.com
 - `gql(token, query, variables)` — GraphQL wrapper with retry/backoff
 - `build_week_data(report_code, token, ...)` — main orchestrator; returns the `wcl` dict
+  - `fetch_fight_roles(token, code, kills)` — per-fight player role resolution from WCL combatantinfo
+  - `fetch_healing_by_fight(token, code, kills)` — batched per-fight healing tables
+  - `fetch_uptime_by_fight(token, code, kills)` — per-fight DPS uptime
+  - `build_tank_scorecard_extended(token, code, kills, ...)` — full tank v2: DTPS, phys/magic split,
+    crush/crit/avoid, defensive CDs, biggest hit, per-boss breakdown — all from WCL DamageTaken
+  - `fetch_deaths_split(token, code)` — deaths split boss/trash with per-death recaps
+  - `fetch_healing_spells(token, code, fights, actors)` — per-healer spell breakdown
+  - `fetch_healer_mana(token, code, fight_ids)` — healer mana from WCL Resources events
+  - `fetch_role_spell_usage(token, code, fight_ids, players)` — role-based spell usage
+  - `compute_healer_war(token, heal_by_fight, ...)` — WAR cohort comparison
+  - `build_consumable_compliance(consumable_usage)` — pure reshape of consumableUsage into compliance grid
 - `parse_combat_log(log_path)` — parses raw combat log; returns `log_data`
 - `merge_log_into_wcl(wcl_data, log_data)` — overlays combat-log results onto the wcl dict
 - `map_to_week_data(wcl)` — transforms the merged dict into the `WEEK_DATA` shape the HTML renders
+- `enrich_with_trends(week_data, db_path)` — reads prev week from DB, injects `delta_*` fields;
+  called AFTER `build_week_data()` and BEFORE `inject_into_html()`
 - `inject_into_html(week_data, html_path)` — replaces `const WEEK_DATA = {...}` in the HTML
 - `db_writer.write_week(week_data, db_path=None)` — upserts all KPI tables into SQLite; called at
   end of `main()` after `inject_into_html()`
@@ -232,9 +248,9 @@ COMBATANT_INFO (API-only, always works); the +3 bonus needs the weekly combat lo
 4. **Bloodlust Optimization** — per-fight BL timing / boss HP / raid mana (pure WCL).
 5. **Mana Economy** — pots/innervates/OOM. Use WCL **`Resources` events**, not combat-log
    `UNIT_POWER_UPDATE` (unreliable in TBC 2.5 logs).
-6. **Trend / Progression reporting** (active next direction — see `prompts/TREND_DATA_PROMPT.md`) —
-   week-over-week KPIs from the SQLite history DB; appends into the HTML (read existing `WEEK_DATA` via
-   the brace-counter, push, write back).
+6. **Trend / Progression reporting** ✅ **BUILT** — `enrich_with_trends()` live in pipeline; injects
+   `delta_*` fields for DPS, HPS, avoidable, deaths, luck, drums, tank DTPS. `fmtDelta()` helper in
+   HTML. `dps` and `healing` DB tables now populated. Backfill scripts cover historical gaps.
 7. **Harden log-only KPIs onto WCL headlines** (per the WCL-Durability Principle above) — give each
    combat-log-only KPI a durable WCL source so a missing log thins but never blanks it: **interrupts →
    WCL `Interrupts` table** (high confidence), **avoidable → WCL `DamageTaken` by ability-ID** (unify
@@ -300,16 +316,20 @@ python scripts\wcl_auto_dashboard.py REPORTCODE --dry-run  # no HTML, no DB — 
 |-------|-------|-------------|
 | `weeks` | 1 row/week | `report_code`, `date`, `zone`, `kills`, `start_ms` |
 | `roster` | 1 row/player/week | `player`, `class`, `spec`, `role` |
-| `luck_kpi` | 1 row/player/week | `actual`, `expected`, `luck` |
-| `avoidable_dmg` | 1 row/player/week | `dmg` |
-| `deaths` | 1 row/player/week | `total`, `trash` |
-| `consumables` | 1 row/player/week | `score` (0–10), `suboptimal` (legacy/unused), `badges` (JSON) |
+| `luck_kpi` | 1 row/player/week | `role`, `actual`, `expected`, `luck` |
+| `avoidable_dmg` | 1 row/player/week | `role`, `dmg` |
+| `avoidable_sources` | 1 row/player/mechanic/boss/week | `mechanic`, `boss`, `dmg` — per-mechanic breakdown |
+| `deaths` | 1 row/player/week | `role`, `total`, `trash` |
+| `consumables` | 1 row/player/week | `role`, `score` (0–10), `badges` (JSON), `flask`, `food`, `weapon`, `combat_pot`, `alt_pot` (compliance columns) |
 | `drums` | 1 row/player/week | `casts`, `total`, `buffs`, `score` |
-| `engineering` | 1 row/player/week | `dmg`, `abilities` (JSON dict) |
+| `engineering` | 1 row/player/week | `role`, `dmg`, `abilities` (JSON dict) |
 | `interrupts` | 1 row/player/week | `count` |
 | `crit` | 1 row/player/type/week | `crit_type` ∈ {caster,physical,healer,tank}, `crit_pct` |
 | `boss_times` | 1 row/boss/week | `seconds`, `encounter_id` |
-| `dps` | 1 row/player/week | `dps`, `total`, `pct_raid`, `uptime` |
+| `dps` | 1 row/player/week | `role`, `dps`, `total`, `pct_raid`, `uptime` |
+| `healing` | 1 row/player/week | `role`, `eff_hps`, `eff_heal`, `overheal_pct`, `activity_pct`, `tank_pct`, `mana_eff`, `vs_replacement`, `top_spell` — **column is `eff_hps` not `hps`** |
+| `healing_spells` | 1 row/player/spell/week | `spell`, `casts`, `eff`, `per_cast`, `overheal_pct`, `crit_pct` |
+| `friendly_fire` | 1 row/player/week | `role`, `dmg`, `incidents`, `category`, `mc_dmg`, `eng_dmg`, `mech_dmg`, `mc_count` |
 | `tank_scorecard` | 1 row/player/week | `dtps`, `taken`, `hps_recv`, `deaths`, `phys_pct`, `magic_pct`, `crush_count`, `crit_count`, `avoid_pct`, `biggest_hit`, `cooldowns` (JSON) |
 | `tank_boss_dtps` | 1 row/player/boss/week | `dtps`, `taken`, `seconds` |
 
@@ -353,3 +373,9 @@ shame_board('2026-05-22')     # a week's avoidable dmg + deaths + consumable sco
   asked; the live site is stale until you deploy.
 - **`prompts/` is gitignored** — the `@` picker won't show it; reference scratch prompts by path
   (e.g. `prompts/TREND_DATA_PROMPT.md`).
+- **`healing` DB column is `eff_hps`** (not `hps`). The DB stores the raw value from `WEEK_DATA.healing[].eff_hps`
+  directly. Any code reading from the `healing` table must use `eff_hps`, not `hps`.
+- **Backfill scripts** (`backfill_dps.py`, `backfill_tank.py`) are safe to re-run — all inserts use
+  `INSERT OR REPLACE`. They gap-fill older weeks without touching log-sourced tables.
+- **`screenshot_dashboard.py`** uses Playwright — requires `pip install playwright pypdf` and
+  `playwright install chromium`. Outputs PNG-per-tab or a single merged PDF to `screenshots/`.
