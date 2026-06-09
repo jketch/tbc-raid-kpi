@@ -858,6 +858,27 @@ def fetch_uptime_by_fight(token: str, report_code: str, kills: list, batch: int 
     return dict(out)
 
 
+def healer_uptime_by_fight(heal_by_fight: dict, kills: list) -> dict:
+    """Per-fight healer CASTING activity % ({name: {boss: pct}}) — the healing analog of
+    fetch_uptime_by_fight. Reuses the already-fetched raw heal_by_fight ({fid: [entries]}),
+    so NO extra API call. Each entry's activeTime / fight_duration = the share of the fight
+    the healer was actively casting. Filtered to Healer role downstream (at emit time)."""
+    out = defaultdict(dict)
+    fid_boss = {f["id"]: f["name"] for f in kills}
+    fid_dur  = {f["id"]: (f["endTime"] - f["startTime"]) / 1000.0 for f in kills}
+    for fid, entries in (heal_by_fight or {}).items():
+        boss = fid_boss.get(fid)
+        dur  = fid_dur.get(fid, 0) or 1
+        if not boss:
+            continue
+        for e in (entries or []):
+            name = e.get("name")
+            at   = e.get("activeTime", 0) / 1000.0
+            if name and at > 0:
+                out[name][boss] = round(at / dur * 100, 1)
+    return dict(out)
+
+
 def compute_healing_metrics(heal_by_fight: dict, fight_roles: dict, fight_durs: dict,
                             tank_names: set = None) -> dict:
     """Healing throughput + efficiency SCOPED to each healer's heal-fights only.
@@ -1923,6 +1944,11 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     for p in players:
         p["uptime_by_fight"] = [{"boss": b, "uptime": u}
                                 for b, u in uptime_by_fight.get(p["name"], {}).items()]
+    # Healer casting-uptime per fight — reuses heal_by_fight (already fetched above), no extra API.
+    healer_uptime = healer_uptime_by_fight(heal_by_fight, kills)
+    for p in players:
+        p["healer_uptime_by_fight"] = [{"boss": b, "uptime": u}
+                                       for b, u in healer_uptime.get(p["name"], {}).items()]
     # Raid debuff coverage — pure WCL, per boss (CoE/Misery/Shadow Weaving/ISB + armor + judgements)
     debuff_coverage = fetch_debuff_coverage(token, report_code, kills)
 
@@ -1985,6 +2011,7 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
                 "fights_tanked": p.get("fights_tanked", 0),
                 "fights_dps":    p.get("fights_dps", 0),
                 "uptime_by_fight": p.get("uptime_by_fight", []),
+                "healer_uptime_by_fight": p.get("healer_uptime_by_fight", []),
                 "crit_baseline": p.get("crit_baseline"),
                 "crit_weeks":    p.get("crit_weeks", 0),
                 "crit_std":      p.get("crit_std"),
@@ -2314,6 +2341,20 @@ def map_to_week_data(wcl: dict) -> dict:
               "uptime_by_fight": p.get("uptime_by_fight", {})}
              for p in players if p.get("total_dmg", 0) > 0),
             key=lambda x: -x["total_dmg"])[:10],
+        # Full roster of damage-dealers (NOT sliced to top 10) — powers the Uptime-by-Fight
+        # heatmap so every attacker's per-boss uptime shows, while `damage` above stays a
+        # top-10 DPS leaderboard. Same shape as `damage` minus active_pct.
+        "uptimeByFight": sorted(
+            ({"name": p["name"], "role": p["role"], "total_dmg": p.get("total_dmg", 0),
+              "uptime_by_fight": p.get("uptime_by_fight", {})}
+             for p in players if p.get("total_dmg", 0) > 0),
+            key=lambda x: -x["total_dmg"]),
+        # Healer casting-uptime per fight — the Healers & Tanks tab analog of uptimeByFight.
+        "healerUptimeByFight": sorted(
+            ({"name": p["name"], "role": p["role"],
+              "uptime_by_fight": p.get("healer_uptime_by_fight", [])}
+             for p in players if p.get("role") == "Healer"),
+            key=lambda x: x["name"]),
         "deaths":       death_list,
         "casterCrit":   crit_list("Caster"),
         "physicalCrit": crit_list("Physical"),
@@ -2327,7 +2368,7 @@ def map_to_week_data(wcl: dict) -> dict:
             key=lambda x: -x["dmg"]
         ),
         "interrupts":   sorted(
-            [{"name": p["name"], "count": p.get("interrupt_count", 0),
+            [{"name": p["name"], "role": p["role"], "count": p.get("interrupt_count", 0),
               # which casts they actually stopped (combat-log interrupt_list → spell tally)
               "spells": _tally_spells(p.get("interrupt_list"), _icons)}
              for p in players if p.get("interrupt_count", 0) > 0],

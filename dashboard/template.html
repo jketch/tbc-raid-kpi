@@ -324,39 +324,38 @@
   .luck-tile.below .luck-fill { background: var(--orange); }
   .luck-tile.avg .luck-fill { background: var(--accent); }
 
-  /* ── DRUMS ── */
-  .drum-card { display: flex; flex-direction: column; gap: 10px; }
+  /* ── DRUMS (compact single-line rows) ── */
+  .drum-card { display: flex; flex-direction: column; gap: 5px; }
   .drum-row {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--surface2);
-    border-radius: 8px;
-    padding: 10px 12px;
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface2); border-radius: 7px; padding: 6px 12px;
   }
-  .drum-name { font-weight: 700; width: 90px; }
-  .drum-stats { flex: 1; }
-  .drum-meter { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-top: 4px; }
-  .drum-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--yellow), var(--orange)); }
+  .drum-rank { color: var(--muted); font-size: 11px; width: 14px; text-align: right; flex-shrink: 0; }
+  .drum-name { font-weight: 700; width: 108px; flex-shrink: 0; font-size: 12.5px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .drum-stat { font-size: 11px; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+  .drum-stat b { color: var(--text); font-weight: 700; font-size: 12.5px; }
+  .drum-meter { display: block; flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; min-width: 50px; }
+  .drum-fill { display: block; height: 100%; border-radius: 3px; background: var(--drum); }
+  .drum-score { font-size: 14px; font-weight: 700; color: var(--accent); text-align: right; min-width: 30px; flex-shrink: 0; }
   /* interrupted-spell pills — real game icon + name + ×N count */
   .ipill { display: inline-flex; align-items: center; gap: 5px; background: var(--surface2);
     border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px 2px 4px;
     font-size: 11.5px; color: var(--text); line-height: 1; }
   .ipill img { width: 15px; height: 15px; border-radius: 3px; display: block; }
   .ipill .ix { color: var(--dim); font-weight: 700; font-size: 10.5px; }
-  .drum-nums { display: flex; gap: 12px; }
-  .drum-num { text-align: center; }
-  .drum-num .dv { font-size: 15px; font-weight: 700; color: var(--accent); }
-  .drum-num .dl { font-size: 10px; color: var(--muted); text-transform: uppercase; }
-  .drum-score {
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--accent);
-    text-align: right;
-    min-width: 48px;
-  }
-  .drum-score-lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; }
 
   /* ── SCROLL ── */
   .scroll-x { overflow-x: auto; }
+  .scroll-y { max-height: 460px; overflow-y: auto; }
+  /* sticky header for tables inside a vertical scroll area */
+  .scroll-y table thead th { position: sticky; top: 0; background: var(--surface); z-index: 2; }
+  /* slim, themed scrollbar for in-card scroll regions */
+  .scroll-x::-webkit-scrollbar, .scroll-y::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scroll-x::-webkit-scrollbar-track, .scroll-y::-webkit-scrollbar-track { background: transparent; }
+  .scroll-x::-webkit-scrollbar-thumb, .scroll-y::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 4px; }
+  .scroll-x::-webkit-scrollbar-thumb:hover, .scroll-y::-webkit-scrollbar-thumb:hover { background: var(--border); }
+  .scroll-x, .scroll-y { scrollbar-width: thin; scrollbar-color: var(--surface2) transparent; }
   .chart-wrap { position: relative; }
 
   /* ── FOOTER ── */
@@ -579,6 +578,7 @@
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_drum_03.jpg" alt=""> Drums of Battle</div>
   <div class="card">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_drum_03.jpg" alt=""> Drums of Battle Efficiency</div>
+    <div class="hs-sub">Per drummer: <b>casts</b> · <b>buffs/drum</b> (allies hit per cast — positioning/timing) · bar &amp; number = total <b>ally-buffs delivered</b>.</div>
     <div class="drum-card" id="drumRows"></div>
   </div>
 
@@ -588,32 +588,32 @@
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/ability_creature_disease_02.jpg" alt=""> Accountability — across all 25 raiders</div>
   <div id="logCoverageNote"></div>
 
-  <!-- ═══════════════ RAID DEBUFF COVERAGE ═══════════════ -->
-  <div class="card">
-    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_shadow_chilltouch.jpg" alt=""> Raid Debuff Coverage</div>
-    <div class="hs-sub">% of each boss fight a key DPS-amplifying debuff was up on an enemy (WCL).
-      <b style="color:var(--caster)">Magic</b> amp · <b style="color:var(--physical)">Armor</b> reduction ·
-      <b style="color:var(--accent)">Judgements</b>. ISB &amp; Crusader proc in bursts, so they're graded on a gentler scale.</div>
-    <div id="debuffCoverage" style="overflow-x:auto"></div>
-  </div>
-
   <div class="hs-grid">
 
-    <!-- Avoidable damage taken -->
-    <div class="card hs-wide">
+    <!-- Avoidable damage taken (paired with Deaths) -->
+    <div class="card">
       <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_shadow_shadowfury.jpg" alt=""> Avoidable Damage Taken</div>
       <div class="hs-sub">Damage from mechanics you could've sidestepped.</div>
       <div id="avoidShame"></div>
     </div>
 
-    <!-- Deaths -->
+    <!-- Deaths (paired with Avoidable) -->
     <div class="card">
       <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_bone_humanskull_01.jpg" alt=""> Deaths — what actually killed them</div>
       <div class="hs-sub"><b>Click a raider</b> → each death: encounter, killing blow, the final seconds.</div>
       <div id="deathStrips"></div>
     </div>
 
-    <!-- Healthstone compliance — pairs with Deaths (died, never used the free panic button) -->
+    <!-- ═══════ RAID DEBUFF COVERAGE (paired with Panic Button) ═══════ -->
+    <div class="card">
+      <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_shadow_chilltouch.jpg" alt=""> Raid Debuff Coverage</div>
+      <div class="hs-sub">% of each boss fight a key DPS-amplifying debuff was up on an enemy (WCL).
+        <b style="color:var(--caster)">Magic</b> amp · <b style="color:var(--physical)">Armor</b> reduction ·
+        <b style="color:var(--accent)">Judgements</b>. ISB &amp; Crusader proc in bursts, so they're graded gentler.</div>
+      <div id="debuffCoverage" class="scroll-x"></div>
+    </div>
+
+    <!-- Healthstone compliance (paired with Debuff Coverage) -->
     <div class="card">
       <div class="card-title"><img src="https://wow.zamimg.com/images/wow/icons/large/inv_stone_04.jpg" alt="" style="width:15px;height:15px;border-radius:3px;vertical-align:-2px;margin-right:3px"> Panic Button — died without a stone</div>
       <div class="hs-sub">Who died but never popped the free <b>healthstone</b> in their bag.</div>
@@ -643,7 +643,7 @@
   <div class="card">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_alchemy_endlessflask_06.jpg" alt=""> Consumable Compliance</div>
     <div class="hs-sub">What each raider brought vs. what's expected for their role. <b>Flask/Elix</b> = a flask or both elixir slots · <b>Alt Pot</b> = a mana rune, Flame Cap, or Nightmare Seed.</div>
-    <div id="consumUsage"></div>
+    <div id="consumUsage" class="scroll-y"></div>
   </div>
 
   <!-- ═══════════════ CRIT KPI + LUCK ═══════════════ -->
@@ -652,10 +652,10 @@
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/ability_dualwield.jpg" alt=""> DPS — Damage Output</div>
   <div class="card physical">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/ability_dualwield.jpg" alt=""> Damage per Second</div>
-    <div class="hs-sub">DPS over total boss time. <b>Uptime</b> = % of fight actively attacking — low = mechanics, gaps, or downtime.</div>
-    <div class="scroll-x">
+    <div class="hs-sub">DPS over total boss time. Per-fight attack uptime is its own chart below.</div>
+    <div class="scroll-x scroll-y">
       <table class="mini-table" id="dpsTable">
-        <thead><tr><th>Player</th><th class="num">DPS</th><th class="num">Total</th><th class="num">% Raid</th><th class="num">Uptime</th></tr></thead>
+        <thead><tr><th>Player</th><th class="num">DPS</th><th class="num">Total</th><th class="num">% Raid</th></tr></thead>
         <tbody id="dpsTbody"></tbody>
       </table>
     </div>
@@ -664,7 +664,7 @@
   <div class="card physical">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_pocketwatch_01.jpg" alt=""> Uptime by Fight</div>
     <div class="hs-sub">Per-boss attack uptime. <b>Whole column low</b> = structural (submerge/phase, not on them) · <b>one red cell</b> = that player's gap.</div>
-    <div class="scroll-x"><div id="uptimeHeatmap"></div></div>
+    <div class="scroll-x scroll-y"><div id="uptimeHeatmap"></div></div>
   </div>
 
   <div class="card" style="margin-top:22px">
@@ -715,32 +715,41 @@
   <div class="card">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_bandage_08.jpg" alt=""> Time to Be Healed — by raider &amp; boss</div>
     <div class="hs-sub">Median seconds from dropping <b>below 50% HP</b> to the next <b>direct heal</b> — how fast the team responds. <b style="color:#3fa45f">Green</b> = fast · <b style="color:#c25a3a">red</b> = left waiting · <b>☠</b> = died first. HoT ticks don't count (insurance, not a response); HoT-only recoveries are excluded. <b>Team responsiveness</b> per raider, not healer blame · <b>click</b> a cell for the drops.</div>
-    <div class="scroll-x"><div id="reactionHeatmap"></div></div>
+    <div class="scroll-x scroll-y"><div id="reactionHeatmap"></div></div>
   </div>
 
-  <!-- ═══════════════ ENGINEERING ═══════════════ -->
-  </div>
-  <div class="tsec" data-tab="utility">
-  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg" alt=""> Engineering — Bombs & Sappers</div>
-  <div class="card physical">
-    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_gizmo_supersappercharge.jpg" alt=""> Sapper/Grenade Usage &amp; Damage by Player</div>
-    <div class="hs-sub">Sapper/bomb damage dealt to bosses, with per-item use counts.</div>
-    <div class="scroll-x">
-      <table class="mini-table" id="engTable" style="table-layout:fixed;width:100%">
-        <thead><tr id="engHead"></tr></thead>
-        <tbody id="engTbody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ═══════════════ INTERRUPTS ═══════════════ -->
-  </div>
-  <div class="tsec" data-tab="utility">
-  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_silence.jpg" alt=""> Spell Interrupts</div>
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_flashheal.jpg" alt=""> Healing Uptime by Fight</div>
   <div class="card">
-    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_silence.jpg" alt=""> Interrupted Spells by Player <span id="intrTotal" style="color:var(--muted);font-weight:400;font-size:11.5px"></span></div>
-    <div id="interruptBars"></div>
-    <div style="font-size:10.5px;color:var(--muted);margin-top:10px">Players with 0 interrupts not shown.</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_flashheal.jpg" alt=""> Casting Activity — by healer &amp; boss</div>
+    <div class="hs-sub">% of each boss fight a healer was actively casting. <b>Low isn't bad</b> — a healthy raid or mana-conservation just means less to heal. <b>Whole column low</b> = a light healing fight (structural) · <b>one low cell</b> = that healer's gap.</div>
+    <div class="scroll-x scroll-y"><div id="healerUptimeHeatmap"></div></div>
+  </div>
+
+  <!-- ═══════════════ ENGINEERING + INTERRUPTS (half-width pair) ═══════════════ -->
+  </div>
+  <div class="tsec" data-tab="utility">
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg" alt=""> Engineering &amp; Interrupts</div>
+  <div class="hs-grid">
+
+    <!-- Engineering (half-width) -->
+    <div class="card physical">
+      <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_gizmo_supersappercharge.jpg" alt=""> Sapper/Grenade Usage &amp; Damage</div>
+      <div class="hs-sub">Sapper/bomb damage dealt to bosses, with per-item use counts.</div>
+      <div class="scroll-x">
+        <table class="mini-table" id="engTable" style="table-layout:fixed;width:100%">
+          <thead><tr id="engHead"></tr></thead>
+          <tbody id="engTbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Spell Interrupts (half-width) -->
+    <div class="card">
+      <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_silence.jpg" alt=""> Interrupted Spells by Player <span id="intrTotal" style="color:var(--muted);font-weight:400;font-size:11.5px"></span></div>
+      <div id="interruptBars"></div>
+      <div style="font-size:10.5px;color:var(--muted);margin-top:10px">Players with 0 interrupts not shown.</div>
+    </div>
+
   </div>
 
   <!-- ═══════════════ SPELL USAGE BY ROLE ═══════════════ -->
@@ -1128,35 +1137,45 @@ function renderDebuffCoverage(){
   if (!slots.length || !bosses.length){ const c = el.closest(".card"); if (c) c.style.display = "none"; return; }
   const catColor = { Magic:"var(--caster)", Armor:"var(--physical)", Utility:"var(--accent)" };
 
-  // two-tier header: category spans, then debuff icons
-  const cats = [];
-  slots.forEach(s => { const last = cats[cats.length-1]; if (last && last.cat === s.cat) last.n++; else cats.push({ cat:s.cat, n:1 }); });
-  const catRow = cats.map(c =>
-    `<th colspan="${c.n}" style="text-align:center;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;color:${catColor[c.cat]||'var(--muted)'};padding:3px 0 4px;border-bottom:1px solid var(--border)">${c.cat}</th>`).join("");
-  const iconRow = slots.map(s =>
-    `<th title="${s.label}${s.soft?' — proc-based, graded gentler':''}" style="padding:5px 6px;text-align:center">${gicon(s.icon)}</th>`).join("");
+  // group boundaries: first slot of each category gets a vertical divider so the
+  // three debuff systems parse at a glance.
+  const groupStart = slots.map((s,i) => i === 0 || slots[i-1].cat !== s.cat);
+  const divL = "1px solid var(--border)";              // category separator
+  const sep  = i => groupStart[i] ? `border-left:${divL};` : "";
 
-  const cell = (pct, soft) => {
+  // two-tier header: category spans (tinted, colored underline) then debuff icons
+  const cats = [];
+  slots.forEach((s,i) => { const last = cats[cats.length-1]; if (last && last.cat === s.cat) last.n++; else cats.push({ cat:s.cat, n:1, i }); });
+  const catRow = cats.map(c => {
+    const col = catColor[c.cat] || "var(--muted)";
+    return `<th colspan="${c.n}" style="text-align:center;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:${col};padding:4px 0 5px;border-bottom:2px solid ${col};border-left:${divL}">${c.cat}</th>`;
+  }).join("");
+  const iconRow = slots.map((s,i) =>
+    `<th title="${s.label}${s.soft?' — proc-based, graded gentler':''}" style="padding:6px 7px 7px;text-align:center;${sep(i)}">${gicon(s.icon)}${s.soft?'<span style="color:var(--muted);font-size:8px;vertical-align:super">~</span>':''}</th>`).join("");
+
+  const cell = (pct, soft, i, bg) => {
     const v = Math.round(pct || 0);
-    return `<td style="text-align:center;padding:4px 6px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600;color:${_debuffColor(pct||0, soft)}">${v}</td>`;
+    return `<td style="text-align:center;padding:5px 7px;font-variant-numeric:tabular-nums;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:${_debuffColor(pct||0, soft)};${sep(i)}${bg?`background:${bg};`:''}">${v}</td>`;
   };
 
-  const bossRows = bosses.map(b => {
+  const bossRows = bosses.map((b,ri) => {
     const eid = b.encounter_id ? b.encounter_id - 100000 : null;
-    const port = eid ? `<img src="https://assets.rpglogs.com/img/warcraft/bosses/${eid}-icon.jpg" style="width:18px;height:18px;border-radius:4px;vertical-align:middle;margin-right:7px" onerror="this.style.display='none'">` : "";
+    const port = eid ? `<img src="https://assets.rpglogs.com/img/warcraft/bosses/${eid}-icon.jpg" style="width:20px;height:20px;border-radius:5px;vertical-align:middle;margin-right:8px" onerror="this.style.display='none'">` : "";
     const name = DEBUFF_BOSS_SHORT[b.boss] || b.boss;
-    const cells = slots.map(s => cell(b.coverage[s.key], s.soft)).join("");
-    return `<tr style="border-top:1px solid var(--surface2)"><td style="white-space:nowrap;padding:4px 12px 4px 2px;font-size:11.5px">${port}${name}</td>${cells}</tr>`;
+    const zebra = ri % 2 ? "background:rgba(255,255,255,.012);" : "";
+    const cells = slots.map((s,i) => cell(b.coverage[s.key], s.soft, i, ri % 2 ? "rgba(255,255,255,.012)" : "")).join("");
+    return `<tr style="border-top:1px solid var(--surface2);${zebra}"><td style="white-space:nowrap;padding:5px 14px 5px 4px;font-size:12px;${zebra}">${port}${name}</td>${cells}</tr>`;
   }).join("");
 
   const avg = dc.raid_avg || {};
-  const avgCells = slots.map(s => cell(avg[s.key], s.soft)).join("");
-  const avgRow = `<tr style="border-top:2px solid var(--border)"><td style="padding:6px 12px 5px 2px;font-size:11.5px;font-weight:700;color:var(--accent)">Raid Avg</td>${avgCells}</tr>`;
+  const avgBg = "var(--surface2)";
+  const avgCells = slots.map((s,i) => cell(avg[s.key], s.soft, i, avgBg)).join("");
+  const avgRow = `<tr style="border-top:2px solid var(--accent)"><td style="padding:7px 14px 7px 4px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);background:${avgBg}">Raid Avg</td>${avgCells}</tr>`;
 
   el.innerHTML = `<table style="border-collapse:collapse;min-width:560px">
     <thead>
       <tr><th></th>${catRow}</tr>
-      <tr><th style="text-align:left;font-size:10px;color:var(--muted);padding:3px 12px 5px 2px">Boss</th>${iconRow}</tr>
+      <tr><th style="text-align:left;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:4px 14px 6px 4px">Boss</th>${iconRow}</tr>
     </thead>
     <tbody>${bossRows}${avgRow}</tbody>
   </table>`;
@@ -1303,24 +1322,17 @@ function renderDrums() {
   }
   const maxScore = Math.max(...WEEK_DATA.drums.map(d => d.score));
   const el = document.getElementById("drumRows");
-  el.innerHTML = WEEK_DATA.drums.map(d => {
+  // Compact single-line rows: rank · name · casts · buffs/drum · bar+total ally-buffs delivered.
+  el.innerHTML = WEEK_DATA.drums.map((d, i) => {
     const pct = (d.score / maxScore * 100).toFixed(0);
-    return `
-      <div class="drum-row">
-        <div class="drum-name cname" style="color:${nameColor(d.name)}">${d.name}</div>
-        <div class="drum-stats" style="flex:1">
-          <div class="drum-nums">
-            <div class="drum-num"><div class="dv">${d.total}</div><div class="dl">Total</div></div>
-            <div class="drum-num"><div class="dv">${(d.buffs_per_drum ?? 0).toFixed(2)}</div><div class="dl">Buffs/Drum</div></div>
-          </div>
-          <div class="drum-meter" style="margin-top:6px"><div class="drum-fill" style="width:${pct}%"></div></div>
-        </div>
-        <div style="text-align:right;min-width:50px">
-          <div class="drum-score">${d.score}</div>
-          <div class="drum-score-lbl">Score</div>
-        </div>
-      </div>
-    `;
+    return `<div class="drum-row">
+        <span class="drum-rank">${i + 1}</span>
+        <span class="drum-name cname" style="color:${nameColor(d.name)}">${d.name}</span>
+        <span class="drum-stat"><b>${d.total}</b> casts</span>
+        <span class="drum-stat"><b>${(d.buffs_per_drum ?? 0).toFixed(2)}</b>/drum</span>
+        <span class="drum-meter"><span class="drum-fill" style="width:${pct}%"></span></span>
+        <span class="drum-score" title="total ally-buffs delivered">${d.score}</span>
+      </div>`;
   }).join("");
 }
 
@@ -1630,7 +1642,7 @@ function renderAvoidableShame() {
     </div>
     <div id="avPlayer">
       <div class="av-summary">Raid total <b>${hsK(total)}</b> across <b>${data.length}</b> raiders · median <b>${hsK(med)}</b> · top 3 = <b>${Math.round(top3/total*100)}%</b>. Click any row for every source — Boss/Trash · Encounter — Mechanic.</div>
-      ${avByPlayerRows()}
+      <div class="scroll-y">${avByPlayerRows()}</div>
     </div>
     <div id="avBoss" style="display:none">
       <div class="av-summary">Triage — which fight bleeds the raid, and who on it. <b>Click a boss</b> to pin its top 5; meters normalize <b>per boss</b>.</div>
@@ -1887,7 +1899,7 @@ function renderDamage() {
   const tbody = document.getElementById("dpsTbody");
   if (!tbody) return;
   const data = [...(WEEK_DATA.damage || [])];
-  if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);font-size:12px">No damage data.</td></tr>'; return; }
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);font-size:12px">No damage data.</td></tr>'; return; }
   const dur = Object.values(WEEK_DATA.boss_times || {}).reduce((s, v) => s + v, 0) || 1;
   const raidTotal = data.reduce((s, p) => s + (p.total_dmg || 0), 0) || 1;
   const maxDps = Math.max(...data.map(p => p.total_dmg / dur));
@@ -1908,7 +1920,6 @@ function renderDamage() {
         </span></td>
       <td class="num" style="color:var(--muted)">${hsK(p.total_dmg)}</td>
       <td class="num" style="color:var(--muted)">${share}%</td>
-      <td class="num">${up == null ? "—" : `<span class="chip ${upChip}">${up.toFixed(0)}%</span>`}</td>
     </tr>`;
   }).join("");
 }
@@ -1916,7 +1927,12 @@ function renderDamage() {
 // ── UPTIME HEATMAP — per-boss attack uptime (structural vs personal at a glance)
 function renderUptimeHeatmap(){
   const el = document.getElementById("uptimeHeatmap"); if(!el) return;
-  const dps = WEEK_DATA.damage || [];
+  // full roster of damage-dealers (uptimeByFight) — falls back to the top-10 `damage`
+  // list for older injected data that predates the dedicated key. Uptime is split by role:
+  // this DPS-tab chart shows Physical + Caster only (tanks/healers have their own surfaces —
+  // tanks: scorecard; healers: Healing Uptime by Fight on the Healers & Tanks tab).
+  const dps = ((WEEK_DATA.uptimeByFight && WEEK_DATA.uptimeByFight.length) ? WEEK_DATA.uptimeByFight : (WEEK_DATA.damage || []))
+    .filter(p => p.role === "Physical" || p.role === "Caster");
   const bosses = Object.keys(WEEK_DATA.boss_times || {});
   if(!dps.length || !bosses.length){ el.innerHTML='<div style="color:var(--muted);font-size:12px">No per-fight uptime data.</div>'; return; }
   const drop = ["The","Lady","High","Astromancer","Fathom-Lord","Lord"];
@@ -1931,6 +1947,33 @@ function renderUptimeHeatmap(){
     const cells = bosses.map(b => { const u=lk[b];
       return u==null ? `<td class="num" style="color:var(--muted)">—</td>`
         : `<td class="num" style="background:${col(u)};color:#fff;font-weight:600" title="${Math.round(u)}% on ${b}">${Math.round(u)}</td>`; }).join("");
+    return `<tr><td><span class="cname" style="color:${nameColor(p.name,p.role)}">${p.name}</span></td>${cells}</tr>`;
+  }).join("");
+  const avgRow = `<tr style="border-top:2px solid var(--border)"><td style="color:var(--muted);font-style:italic">fight avg</td>${bosses.map(b=>avg[b]==null?'<td class="num">—</td>':`<td class="num" style="color:var(--muted)">${Math.round(avg[b])}</td>`).join("")}</tr>`;
+  el.innerHTML = `<table class="mini-table" style="font-size:11.5px;white-space:nowrap"><thead>${head}</thead><tbody>${rows}${avgRow}</tbody></table>`;
+}
+
+// ── HEALER UPTIME HEATMAP — per-fight healer CASTING activity (the healing analog of the DPS one).
+// Low uptime is NOT inherently bad: a healthy raid or mana-conservation means there's simply less to
+// heal (whole-column-low = a light healing fight; one low cell = that healer's gap). Activity ramp —
+// brighter green = more casting, never shame-red.
+function renderHealerUptimeHeatmap(){
+  const el = document.getElementById("healerUptimeHeatmap"); if(!el) return;
+  const heals = WEEK_DATA.healerUptimeByFight || [];
+  const bosses = Object.keys(WEEK_DATA.boss_times || {});
+  if(!heals.length || !bosses.length){ const c = el.closest(".card"); if(c) c.style.display = "none"; return; }
+  const drop = ["The","Lady","High","Astromancer","Fathom-Lord","Lord"];
+  const shortBoss = b => { const w=b.split(" ").filter(x=>!drop.includes(x)); return (w[0]||b).replace(/'.*/,"").slice(0,8); };
+  const col = u => u>=75?"#1f7a3d":u>=55?"#3f6a2a":u>=35?"#5a5a22":"#444433";  // activity ramp, no red
+  const avg = {};
+  bosses.forEach(b => { const vs = heals.map(p=>(p.uptime_by_fight||[]).find(x=>x.boss===b)).filter(Boolean).map(x=>x.uptime);
+    avg[b] = vs.length ? vs.reduce((s,v)=>s+v,0)/vs.length : null; });
+  const head = `<tr><th style="text-align:left">Healer</th>${bosses.map(b=>`<th class="num" title="${b}">${shortBoss(b)}</th>`).join("")}</tr>`;
+  const rows = heals.map(p => {
+    const lk = {}; (p.uptime_by_fight||[]).forEach(x=>lk[x.boss]=x.uptime);
+    const cells = bosses.map(b => { const u=lk[b];
+      return u==null ? `<td class="num" style="color:var(--muted)">—</td>`
+        : `<td class="num" style="background:${col(u)};color:#fff;font-weight:600" title="${Math.round(u)}% casting on ${b}">${Math.round(u)}</td>`; }).join("");
     return `<tr><td><span class="cname" style="color:${nameColor(p.name,p.role)}">${p.name}</span></td>${cells}</tr>`;
   }).join("");
   const avgRow = `<tr style="border-top:2px solid var(--border)"><td style="color:var(--muted);font-style:italic">fight avg</td>${bosses.map(b=>avg[b]==null?'<td class="num">—</td>':`<td class="num" style="color:var(--muted)">${Math.round(avg[b])}</td>`).join("")}</tr>`;
@@ -2136,6 +2179,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderLuckGrid();
   renderHealing();
   renderReactionHeatmap();
+  renderHealerUptimeHeatmap();
   renderTanks();
   renderEngTable();
   renderInterruptBars();
