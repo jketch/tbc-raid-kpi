@@ -729,6 +729,13 @@ PHYSICAL_SPECS = {"Fury", "Arms", "Retribution", "Enhancement",
                   "Survival", "Marksmanship", "Beast Mastery",
                   "Combat", "Assassination", "Subtlety"}
 
+def _nontank_role(spec: str) -> str:
+    """Role to use for compliance when a Tank spec tanks < 50 % of fights (runs DPS consumes)."""
+    if spec in HEALER_SPECS:  return "Healer"
+    if spec in CASTER_SPECS:  return "Caster"
+    if spec in PHYSICAL_SPECS: return "Physical"
+    return "Physical"   # Feral Combat, Protection → physical melee when not tanking
+
 
 def _fight_role(spec: str, bucket: str) -> str:
     """Per-fight role from the player's spec THAT fight — reliable for prot/ret and
@@ -1974,6 +1981,11 @@ def build_consumable_compliance(consumable_usage):
             "weapon": bool(e.get("weapon_oil")),
             "combat_pots": e.get("combat_pots", []),   # all combat pots popped (may be empty)
             "alt_pot": alt_pot,
+            # fight-distribution context — used by JS to bucket hybrid players correctly
+            "effective_role": e.get("effective_role", e.get("role", "")),
+            "fights_tanked":  e.get("fights_tanked", 0),
+            "fights_healed":  e.get("fights_healed", 0),
+            "fights_total":   e.get("fights_total", 0),
         })
     return out
 
@@ -2091,10 +2103,22 @@ def map_to_week_data(wcl: dict) -> dict:
         flask = c.get("flask", "")
         elixirs = c.get("elixirs", [])
         food = bool(c.get("food"))
+        p_info        = roster_idx.get(n, {})
+        role          = p_info.get("role", "")
+        spec          = p_info.get("spec", "")
+        fights_tanked = p_info.get("fights_tanked", 0)
+        fights_healed = p_info.get("fights_healed", 0)
+        fights_total  = p_info.get("fights_total", 0)
+        # If a tank-specced player tanks fewer than half the fights they ran DPS consumes;
+        # evaluate them against the DPS threshold rather than the tank threshold.
+        if role == "Tank" and fights_total > 0 and fights_tanked / fights_total < 0.5:
+            effective_role = _nontank_role(spec)
+        else:
+            effective_role = role
         consum_usage.append({
             "name": n,
-            "role":  roster_idx.get(n, {}).get("role", ""),
-            "class": roster_idx.get(n, {}).get("class", ""),
+            "role":  role,
+            "class": p_info.get("class", p_info.get("type", "")),
             "flask": flask, "elixirs": elixirs, "food": food,
             "scrolls": c.get("scrolls", []), "weapon_oil": bool(c.get("weapon_oil")),
             "potion": u.get("potion", 0), "rune": u.get("rune", 0),
@@ -2106,6 +2130,11 @@ def map_to_week_data(wcl: dict) -> dict:
             "nightmare_seed": bool(u.get("nightmare_seed")),
             # prepared = has a flask (or 2 elixirs) AND food — the BiS baseline
             "prepared": bool(flask or len(elixirs) >= 2) and food,
+            # fight-distribution context for compliance edge cases
+            "effective_role": effective_role,
+            "fights_tanked": fights_tanked,
+            "fights_healed": fights_healed,
+            "fights_total": fights_total,
         })
     # least-prepared first (missing flask/food bubbles up — that's the accountability angle)
     consum_usage.sort(key=lambda x: (x["prepared"], bool(x["flask"] or x["elixirs"]), x["food"],

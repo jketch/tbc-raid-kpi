@@ -160,6 +160,7 @@
   }
   .stat-tile .val { font-size: 22px; font-weight: 700; color: var(--accent); line-height: 1; }
   .stat-tile .lbl { font-size: 10px; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-tile .stat-delta { min-height: 14px; margin-top: 3px; }
 
   /* ── BOSS SUMMARY TILES ── */
   .boss-zones { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
@@ -527,14 +528,17 @@
     <div class="stat-tile">
       <div class="val" id="totalKillTime">—</div>
       <div class="lbl">Total Kill Time</div>
+      <div class="stat-delta" id="deltaKillTime"></div>
     </div>
     <div class="stat-tile">
       <div class="val" id="totalDeaths">—</div>
       <div class="lbl">Total Deaths</div>
+      <div class="stat-delta" id="deltaDeaths"></div>
     </div>
     <div class="stat-tile">
       <div class="val" id="totalAvoidable">—</div>
       <div class="lbl">Avoidable Dmg (M)</div>
+      <div class="stat-delta" id="deltaAvoidable"></div>
     </div>
     <div class="stat-tile">
       <div class="val" id="totalInterrupts">—</div>
@@ -543,6 +547,7 @@
     <div class="stat-tile">
       <div class="val" id="totalDrums">—</div>
       <div class="lbl">Drums Cast</div>
+      <div class="stat-delta" id="deltaDrums"></div>
     </div>
   </div>
 
@@ -1035,6 +1040,8 @@ function renderCohortCards(){
   const roster = WEEK_DATA.roster || {};
   const roleOf = n => (roster[n]||{}).role;
   const C = { tank:"var(--tank)", healer:"var(--healer)", caster:"var(--caster)", physical:"var(--physical)" };
+  const totalDeathsDelta = (WEEK_DATA.deaths || []).reduce((s, p) => s + (p.delta_deaths || 0), 0);
+  const totalDrumsDelta  = (WEEK_DATA.drums || []).reduce((s, p) => s + (p.delta_drums || 0), 0);
 
   // C1 — Avoidable split: melee (Physical) vs ranged (Caster). Role granularity can't
   // isolate ranged hunters, so tanks/healers are excluded from this DPS-positioning split.
@@ -1063,6 +1070,7 @@ function renderCohortCards(){
   const card2 = `<div class="card">
     <div class="card-title">Deaths by Role</div>
     <div class="pill-row">${pills}</div>
+    <div style="font-size:10px;color:var(--muted);margin-top:6px">Total${fmtDelta(totalDeathsDelta, false)} vs last week</div>
   </div>`;
 
   // C3 — Interrupt breadth
@@ -1082,7 +1090,7 @@ function renderCohortCards(){
   const card4 = `<div class="card">
     <div class="card-title">Drums Coverage</div>
     <div class="cohort-val" style="color:${covColor}">${cov}%</div>
-    <div class="cohort-sub">avg ${avgBpd.toFixed(2)} allies buffed / drum</div>
+    <div class="cohort-sub">avg ${avgBpd.toFixed(2)} allies buffed / drum${fmtDelta(totalDrumsDelta, true)}</div>
   </div>`;
 
   el.innerHTML = card1 + card2 + card3 + card4;
@@ -1181,6 +1189,27 @@ function renderStatTiles() {
   const killSecs = Object.values(WEEK_DATA.boss_times || {}).reduce((s, v) => s + v, 0);
   document.getElementById("totalKillTime").textContent =
     `${Math.floor(killSecs / 60)}:${String(Math.round(killSecs % 60)).padStart(2, "0")}`;
+
+  // Week-over-week deltas — degrade silently when no prior week exists
+  const totalDeathsDelta = (WEEK_DATA.deaths || []).reduce((s, p) => s + (p.delta_deaths || 0), 0);
+  const totalAvoidDelta  = (WEEK_DATA.avoidableDmg || []).reduce((s, p) => s + (p.delta_dmg || 0), 0);
+  const totalDrumsDelta  = (WEEK_DATA.drums || []).reduce((s, p) => s + (p.delta_drums || 0), 0);
+  const prev = WEEK_DATA.prev;
+
+  const dd = document.getElementById("deltaDeaths");
+  if (dd) dd.innerHTML = fmtDelta(totalDeathsDelta, false);
+  const da = document.getElementById("deltaAvoidable");
+  if (da) da.innerHTML = fmtDelta(totalAvoidDelta, false, { divK: true });
+  const dr = document.getElementById("deltaDrums");
+  if (dr) dr.innerHTML = fmtDelta(totalDrumsDelta, true);
+  const dkt = document.getElementById("deltaKillTime");
+  if (dkt && prev && prev.delta_kill_secs != null) {
+    const ds = prev.delta_kill_secs, a = Math.abs(Math.round(ds));
+    if (a >= 10) {
+      const t = a >= 60 ? `${Math.floor(a/60)}:${String(a%60).padStart(2,"0")}` : `${a}s`;
+      dkt.innerHTML = `<span class="${ds < 0 ? "delta-up" : "delta-down"}" title="vs last week">${ds < 0 ? "▼ " : "▲ +"}${t}</span>`;
+    }
+  }
 }
 
 // ── SHARED RANKED-ROW TEMPLATE — one consistent delivery format for every ranking card
@@ -1632,7 +1661,9 @@ function renderCompliance() {
   const need  = combat => combat ? 4 : 3;
 
   el.innerHTML = ROLES.map(R => {
-    const rows = data.filter(p => p.role === R.key);
+    // Bucket by effective_role so hybrid players (e.g. tanks on only 1 fight) appear in
+    // the section matching how they actually played — fall back to role for prior data.
+    const rows = data.filter(p => (p.effective_role || p.role) === R.key);
     if (!rows.length) return "";
     rows.sort((a, b) => filled(b, R.combat) - filled(a, R.combat) || a.name.localeCompare(b.name));
     const nComp = rows.filter(p => filled(p, R.combat) >= need(R.combat)).length;
@@ -1643,7 +1674,15 @@ function renderCompliance() {
       const cells = [flaskCell(p), p.food ? chk("food buff at pull") : no, p.weapon ? chk("weapon oil at pull") : no]
         .concat(R.combat ? [potCell(p.combat_pots)] : [])
         .concat([item(p.alt_pot)]);
-      return `<tr><td><span class="cname" style="color:${nameColor(p.name, p.role)}">${p.name}</span></td>${cells.map(c => `<td class="num">${c}</td>`).join("")}</tr>`;
+      // Annotation for hybrid players: tank who appears in DPS section, or partial-night healer
+      const effectiveRole = p.effective_role || p.role;
+      const ft = p.fights_total || 0;
+      let note = "";
+      if (effectiveRole !== p.role && ft > 0)
+        note = ` <span style="font-size:10px;color:var(--muted)" title="Primary role: ${p.role} — tanked ${p.fights_tanked}/${ft} fights">⚔ ${p.fights_tanked}/${ft}</span>`;
+      else if (p.role === "Healer" && ft > 0 && (p.fights_healed || 0) < ft)
+        note = ` <span style="font-size:10px;color:var(--muted)" title="Healed ${p.fights_healed}/${ft} fights">${p.fights_healed}/${ft}</span>`;
+      return `<tr><td><span class="cname" style="color:${nameColor(p.name, p.role)}">${p.name}</span>${note}</td>${cells.map(c => `<td class="num">${c}</td>`).join("")}</tr>`;
     }).join("") + "</tbody>";
     return `<div style="margin-top:14px">
       <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
@@ -1654,7 +1693,7 @@ function renderCompliance() {
     </div>`;
   }).join("") + `
     <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);line-height:1.6">
-      <b style="color:var(--dim)">How this is measured</b> — <b>Flask · Elixirs · Food · Weapon oil</b> are read from the <b>pull-time COMBATANT_INFO snapshot</b> (catches buffs applied before the pull); <b>combat pots</b> (incl. Haste · Free Action · resist/protection) and <b>runes</b> from <b>combat-log buff events</b>. Flask/Elix passes on a flask <i>or</i> both elixir slots (battle + guardian). Ambiguous-named pots (Haste, Free Action) are matched by spell ID so trinket procs don't inflate them. <b>Compliant</b> = ≥3 of 4 (tanks·healers) · ≥4 of 5 (DPS, who also carry a combat pot). Hover any ✓ or item for the exact source.
+      <b style="color:var(--dim)">How this is measured</b> — <b>Flask · Elixirs · Food · Weapon oil</b> are read from the <b>pull-time COMBATANT_INFO snapshot</b> (catches buffs applied before the pull); <b>combat pots</b> (incl. Haste · Free Action · resist/protection) and <b>runes</b> from <b>combat-log buff events</b>. Flask/Elix passes on a flask <i>or</i> both elixir slots (battle + guardian). Ambiguous-named pots (Haste, Free Action) are matched by spell ID so trinket procs don't inflate them. <b>Compliant</b> = ≥3 of 4 (tanks·healers) · ≥4 of 5 (DPS, who also carry a combat pot). Players who tank fewer than half their fights are evaluated against the DPS threshold and appear in their DPS section (⚔ N/T annotation). Partial-night healers show their healed fight count. Hover any ✓ or item for the exact source.
     </div>`;
 }
 
