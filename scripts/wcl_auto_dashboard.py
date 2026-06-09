@@ -314,6 +314,7 @@ def load_cache() -> dict:
     return {}
 
 def save_cache(cache: dict):
+    CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
     CACHE_FILE.write_text(json.dumps(cache, indent=2))
 
 
