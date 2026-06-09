@@ -2489,7 +2489,12 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
 
     # Pass 1: identify all successful-kill encounter windows, split into in-report (kept)
     # vs off-report (excluded).
-    all_kills = []
+    # TBC Classic bug: Hydross the Unstable (and possibly others) fires ENCOUNTER_END with
+    # result=0 even on a kill.  WCL uses UNIT_DIED for kill detection; we do the same:
+    # collect all boss UNIT_DIED events and promote any result=0 encounter to a kill when
+    # its boss dies within 1.5s of ENCOUNTER_END.
+    all_encounters = []   # {name, start, end, result}
+    boss_deaths    = []   # {name, ts}
     with open(log_path, encoding="utf-8", errors="replace") as f:
         current = None
         for line in f:
@@ -2501,10 +2506,26 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
             if ev == "ENCOUNTER_START":
                 current = {"name": fields[2].strip('"'), "start": _parse_ts(ts_str)}
             elif ev == "ENCOUNTER_END" and current:
-                if len(fields) > 5 and fields[5].strip() == "1":
-                    current["end"] = _parse_ts(ts_str)
-                    all_kills.append(current)
+                current["end"]    = _parse_ts(ts_str)
+                current["result"] = int(fields[5].strip()) if len(fields) > 5 else 0
+                all_encounters.append(current)
                 current = None
+            elif ev == "UNIT_DIED" and len(fields) > 6:
+                dst_guid = fields[5]
+                dst_name = fields[6].strip('"')
+                if dst_guid.startswith("Creature"):
+                    boss_deaths.append({"name": dst_name, "ts": _parse_ts(ts_str)})
+
+    all_kills = []
+    for enc in all_encounters:
+        if enc["result"] == 1:
+            all_kills.append(enc)
+        else:
+            # Fallback: treat as kill if the boss has a UNIT_DIED within 1.5s of ENCOUNTER_END
+            for death in boss_deaths:
+                if death["name"] == enc["name"] and abs(death["ts"] - enc["end"]) <= 1.5:
+                    all_kills.append(enc)
+                    break
 
     if allowed_bosses is not None:
         kills    = [k for k in all_kills if k["name"] in allowed_bosses]
