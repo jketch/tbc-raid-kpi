@@ -587,6 +587,16 @@
   <div class="tsec" data-tab="shame">
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/ability_creature_disease_02.jpg" alt=""> Accountability — across all 25 raiders</div>
   <div id="logCoverageNote"></div>
+
+  <!-- ═══════════════ RAID DEBUFF COVERAGE ═══════════════ -->
+  <div class="card">
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_shadow_chilltouch.jpg" alt=""> Raid Debuff Coverage</div>
+    <div class="hs-sub">% of each boss fight a key DPS-amplifying debuff was up on an enemy (WCL).
+      <b style="color:var(--caster)">Magic</b> amp · <b style="color:var(--physical)">Armor</b> reduction ·
+      <b style="color:var(--accent)">Judgements</b>. ISB &amp; Crusader proc in bursts, so they're graded on a gentler scale.</div>
+    <div id="debuffCoverage" style="overflow-x:auto"></div>
+  </div>
+
   <div class="hs-grid">
 
     <!-- Avoidable damage taken -->
@@ -1097,6 +1107,61 @@ function renderCohortCards(){
 }
 
 // ── ACTION / SPELL USAGE BY ROLE
+// ── RAID DEBUFF COVERAGE (per-boss matrix: % uptime of key DPS-amp debuffs on enemies)
+const DEBUFF_BOSS_SHORT = {
+  "Hydross the Unstable":"Hydross", "The Lurker Below":"Lurker", "Leotheras the Blind":"Leotheras",
+  "Fathom-Lord Karathress":"Fathom-Lord", "Morogrim Tidewalker":"Morogrim", "Lady Vashj":"Vashj",
+  "High Astromancer Solarian":"Solarian", "Kael'thas Sunstrider":"Kael'thas",
+};
+function _debuffColor(pct, soft){
+  // proc-based debuffs (ISB, Crusader) peak lower → grade them on a gentler scale
+  const hi = soft ? 58 : 85, mid = soft ? 42 : 65;
+  if (pct >= hi)  return "var(--green)";
+  if (pct >= mid) return "var(--yellow)";
+  return "var(--orange)";
+}
+function renderDebuffCoverage(){
+  const dc = WEEK_DATA.debuffCoverage || {};
+  const el = document.getElementById("debuffCoverage");
+  if (!el) return;
+  const slots = dc.slots || [], bosses = dc.bosses || [];
+  if (!slots.length || !bosses.length){ const c = el.closest(".card"); if (c) c.style.display = "none"; return; }
+  const catColor = { Magic:"var(--caster)", Armor:"var(--physical)", Utility:"var(--accent)" };
+
+  // two-tier header: category spans, then debuff icons
+  const cats = [];
+  slots.forEach(s => { const last = cats[cats.length-1]; if (last && last.cat === s.cat) last.n++; else cats.push({ cat:s.cat, n:1 }); });
+  const catRow = cats.map(c =>
+    `<th colspan="${c.n}" style="text-align:center;font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:700;color:${catColor[c.cat]||'var(--muted)'};padding:3px 0 4px;border-bottom:1px solid var(--border)">${c.cat}</th>`).join("");
+  const iconRow = slots.map(s =>
+    `<th title="${s.label}${s.soft?' — proc-based, graded gentler':''}" style="padding:5px 6px;text-align:center">${gicon(s.icon)}</th>`).join("");
+
+  const cell = (pct, soft) => {
+    const v = Math.round(pct || 0);
+    return `<td style="text-align:center;padding:4px 6px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600;color:${_debuffColor(pct||0, soft)}">${v}</td>`;
+  };
+
+  const bossRows = bosses.map(b => {
+    const eid = b.encounter_id ? b.encounter_id - 100000 : null;
+    const port = eid ? `<img src="https://assets.rpglogs.com/img/warcraft/bosses/${eid}-icon.jpg" style="width:18px;height:18px;border-radius:4px;vertical-align:middle;margin-right:7px" onerror="this.style.display='none'">` : "";
+    const name = DEBUFF_BOSS_SHORT[b.boss] || b.boss;
+    const cells = slots.map(s => cell(b.coverage[s.key], s.soft)).join("");
+    return `<tr style="border-top:1px solid var(--surface2)"><td style="white-space:nowrap;padding:4px 12px 4px 2px;font-size:11.5px">${port}${name}</td>${cells}</tr>`;
+  }).join("");
+
+  const avg = dc.raid_avg || {};
+  const avgCells = slots.map(s => cell(avg[s.key], s.soft)).join("");
+  const avgRow = `<tr style="border-top:2px solid var(--border)"><td style="padding:6px 12px 5px 2px;font-size:11.5px;font-weight:700;color:var(--accent)">Raid Avg</td>${avgCells}</tr>`;
+
+  el.innerHTML = `<table style="border-collapse:collapse;min-width:560px">
+    <thead>
+      <tr><th></th>${catRow}</tr>
+      <tr><th style="text-align:left;font-size:10px;color:var(--muted);padding:3px 12px 5px 2px">Boss</th>${iconRow}</tr>
+    </thead>
+    <tbody>${bossRows}${avgRow}</tbody>
+  </table>`;
+}
+
 function renderRoleSpells(){
   const data = WEEK_DATA.roleSpells || {};
   const el = document.getElementById("roleSpellsGrid");
@@ -2062,6 +2127,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderOverview();
   renderDrums();
   renderAvoidableShame();
+  renderDebuffCoverage();
   renderMC();
   renderDeaths();
   renderHealthstones();

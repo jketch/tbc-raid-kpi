@@ -220,6 +220,14 @@ CREATE TABLE IF NOT EXISTS tank_boss_dtps (
     seconds      REAL,
     PRIMARY KEY (report_code, player, boss)
 );
+
+CREATE TABLE IF NOT EXISTS debuff_coverage (
+    report_code  TEXT,
+    boss         TEXT,      -- boss name, or '__raid__' for the across-boss average
+    slot         TEXT,      -- debuff slot key (coe/misery/sweav/isb/sunder/ff/creck/jow/jotc)
+    pct          REAL,      -- uptime % on enemies during that fight
+    PRIMARY KEY (report_code, boss, slot)
+);
 """
 
 
@@ -443,6 +451,19 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
                     VALUES (?, ?, ?, ?, ?, ?)
                 """, (rc, t["name"], pb.get("boss"), pb.get("dtps"),
                       pb.get("taken"), pb.get("seconds")))
+
+        # ── debuff_coverage (per boss × slot, + '__raid__' average row) ────────
+        _dc = week_data.get("debuffCoverage") or {}
+        con.execute("DELETE FROM debuff_coverage WHERE report_code = ?", (rc,))
+        for b in (_dc.get("bosses") or []):
+            for slot, pct in (b.get("coverage") or {}).items():
+                con.execute("""INSERT OR REPLACE INTO debuff_coverage
+                    (report_code, boss, slot, pct) VALUES (?, ?, ?, ?)""",
+                    (rc, b.get("boss"), slot, pct))
+        for slot, pct in (_dc.get("raid_avg") or {}).items():
+            con.execute("""INSERT OR REPLACE INTO debuff_coverage
+                (report_code, boss, slot, pct) VALUES (?, ?, ?, ?)""",
+                (rc, "__raid__", slot, pct))
 
         con.commit()
         print(f"  ✓ DB written → {target.name}  (report: {rc})")

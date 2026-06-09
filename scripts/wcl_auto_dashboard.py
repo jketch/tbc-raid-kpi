@@ -1582,6 +1582,96 @@ def _build_death_timeline(evs, abil_name, actor_name, max_events=22):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# Debuff coverage — uptime of key DPS-amplifying raid debuffs on each boss (pure WCL)
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Each slot = one raid responsibility; ANY of its GUIDs satisfies it (Sunder OR Expose;
+# Faerie Fire normal OR feral; CoE OR CoS). Uptime = UNION of every matching aura's bands
+# / fight duration, so two fills covering different windows add up correctly. GUIDs + icons
+# verified against live TBC 2.5 Debuffs-table data (hostilityType: Enemies) — not memory.
+# `soft` flags proc-based debuffs (ISB, Crusader) whose natural uptime ceiling is lower, so
+# the dashboard grades them on a gentler scale instead of reading a healthy 60% as "failing".
+DEBUFF_SLOTS = [
+    {"key": "coe",    "label": "Curse of Elements",  "cat": "Magic",   "guids": [27228, 27229], "icon": "spell_shadow_chilltouch"},
+    {"key": "sweav",  "label": "Shadow Weaving",     "cat": "Magic",   "guids": [15258],        "icon": "spell_shadow_blackplague"},
+    {"key": "isb",    "label": "Shadow Vuln. (ISB)", "cat": "Magic",   "guids": [17800],        "icon": "spell_shadow_shadowbolt", "soft": True},
+    {"key": "sunder", "label": "Sunder / Expose",    "cat": "Armor",   "guids": [25225, 26866], "icon": "ability_warrior_riposte"},
+    {"key": "ff",     "label": "Faerie Fire",        "cat": "Armor",   "guids": [26993, 27011], "icon": "spell_nature_faeriefire"},
+    {"key": "creck",  "label": "Curse of Reckless.", "cat": "Armor",   "guids": [27226],        "icon": "spell_shadow_unholystrength"},
+    {"key": "jow",    "label": "Judge: Wisdom",      "cat": "Utility", "guids": [27164],        "icon": "spell_holy_righteousnessaura"},
+    {"key": "jotc",   "label": "Judge: Crusader",    "cat": "Utility", "guids": [27159],        "icon": "spell_holy_holysmite", "soft": True},
+]
+
+def _merge_bands(bands: list) -> float:
+    """Total covered time (ms) of a set of {startTime,endTime} intervals, merging overlaps."""
+    if not bands:
+        return 0.0
+    iv = sorted(([b.get("startTime", 0), b.get("endTime", 0)] for b in bands), key=lambda x: x[0])
+    covered, cs, ce = 0.0, iv[0][0], iv[0][1]
+    for s, e in iv[1:]:
+        if s <= ce:
+            ce = max(ce, e)
+        else:
+            covered += ce - cs
+            cs, ce = s, e
+    return covered + (ce - cs)
+
+def fetch_debuff_coverage(token: str, report_code: str, kills: list) -> dict:
+    """WCL-durable raid debuff coverage — runs EVERY week, no combat log needed. For each
+    boss kill, the % of fight time each key DPS-amplifying debuff was up on an enemy (WCL
+    Debuffs table, hostilityType: Enemies). A slot's uptime is the UNION of every matching
+    aura's bands, so alternate fills (Sunder/Expose, Faerie Fire normal/feral) combine.
+    Returns {slots:[{key,label,cat,icon,soft}],
+             bosses:[{boss,encounter_id,seconds,coverage:{key:pct}}],
+             raid_avg:{key:pct}}  — or {} when there are no kills."""
+    if not kills:
+        return {}
+    guid_slots = {}                         # guid → [slot keys it satisfies]
+    for s in DEBUFF_SLOTS:
+        for g in s["guids"]:
+            guid_slots.setdefault(g, []).append(s["key"])
+    live_icon = {}                          # slot key → live WCL icon slug (preferred)
+    bosses = []
+    for i in range(0, len(kills), 5):
+        chunk = kills[i:i + 5]
+        aliases = "\n".join(
+            f'f{f["id"]}: table(dataType: Debuffs, hostilityType: Enemies, fightIDs:[{int(f["id"])}])'
+            for f in chunk)
+        Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
+        try:
+            rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+        except Exception as ex:
+            print(f"  Warning: debuff-coverage batch failed: {ex}")
+            rep = {}
+        for f in chunk:
+            fid = f["id"]
+            dur_ms = (f["endTime"] - f["startTime"]) or 1
+            t = rep.get(f'f{fid}')
+            if isinstance(t, str):
+                t = json.loads(t)
+            auras = (t or {}).get("data", {}).get("auras", []) if t else []
+            slot_bands = {s["key"]: [] for s in DEBUFF_SLOTS}
+            for a in auras:
+                for key in guid_slots.get(a.get("guid"), ()):
+                    slot_bands[key].extend(a.get("bands") or [])
+                    if a.get("abilityIcon"):
+                        live_icon.setdefault(key, a["abilityIcon"].replace(".jpg", ""))
+            coverage = {s["key"]: round(_merge_bands(slot_bands[s["key"]]) / dur_ms * 100, 1)
+                        for s in DEBUFF_SLOTS}
+            bosses.append({"boss": f["name"], "encounter_id": f.get("encounterID"),
+                           "seconds": round(dur_ms / 1000), "coverage": coverage})
+    raid_avg = {}
+    for s in DEBUFF_SLOTS:
+        vals = [b["coverage"][s["key"]] for b in bosses]
+        raid_avg[s["key"]] = round(sum(vals) / len(vals), 1) if vals else 0
+    slots_out = [{"key": s["key"], "label": s["label"], "cat": s["cat"],
+                  "icon": live_icon.get(s["key"], s["icon"]), "soft": s.get("soft", False)}
+                 for s in DEBUFF_SLOTS]
+    print(f"  ✓ debuff coverage: {len(bosses)} bosses, {len(DEBUFF_SLOTS)} debuffs tracked")
+    return {"slots": slots_out, "bosses": bosses, "raid_avg": raid_avg}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Build WEEK_DATA
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -1833,6 +1923,8 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     for p in players:
         p["uptime_by_fight"] = [{"boss": b, "uptime": u}
                                 for b, u in uptime_by_fight.get(p["name"], {}).items()]
+    # Raid debuff coverage — pure WCL, per boss (CoE/Misery/Shadow Weaving/ISB + armor + judgements)
+    debuff_coverage = fetch_debuff_coverage(token, report_code, kills)
 
     # ── Assemble WEEK_DATA ─────────────────────────────────────────────────
     print(f"\n[5/5] Assembling WEEK_DATA...")
@@ -1922,6 +2014,8 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
         # top abilities cast per role + per player
         "role_spells":     role_spells.get("roles", {}),
         "player_spells":   role_spells.get("players", {}),
+        # per-boss uptime of key DPS-amplifying raid debuffs (pure WCL)
+        "debuff_coverage": debuff_coverage,
     }
 
     return week_data
@@ -2242,6 +2336,7 @@ def map_to_week_data(wcl: dict) -> dict:
         "boss_times":   wcl.get("boss_times", {}),
         "boss_meta":    wcl.get("boss_meta", {}),
         "healReaction": wcl.get("heal_reaction", {}),
+        "debuffCoverage": wcl.get("debuff_coverage", {}),
     }
 
 
