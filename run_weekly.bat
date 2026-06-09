@@ -10,10 +10,19 @@
 ::      (from: fresh.warcraftlogs.com/reports/XXXXXX)
 ::   4. Dashboard opens automatically when done
 ::
+:: Full output is always saved to run.log in this folder.
 :: The script auto-picks the newest .txt in logs\
 :: ═══════════════════════════════════════════════════════════
 
 cd /d "%~dp0"
+
+set "LOGFILE=%~dp0run.log"
+
+(
+    echo ============================================================
+    echo  Run: %DATE% %TIME%
+    echo ============================================================
+) > "%LOGFILE%"
 
 set /p REPORT_CODE="Enter WCL report code (e.g. PqynTVBF67pN3Gtg): "
 
@@ -24,25 +33,29 @@ if "%REPORT_CODE%"=="" (
 )
 
 echo.
-echo Running dashboard update...
+echo Running dashboard update... (logging to run.log)
 echo   Report : %REPORT_CODE%
 echo   Log    : newest file in logs\
 echo   Output : dashboard\raid_kpi_dashboard.html
 echo.
 
-python scripts\wcl_auto_dashboard.py %REPORT_CODE%
+:: Run pipeline via PowerShell so Tee-Object streams to console + log simultaneously.
+:: PowerShell exits with $LASTEXITCODE so ERRORLEVEL is preserved.
+powershell -NoProfile -Command "python scripts\wcl_auto_dashboard.py %REPORT_CODE% 2>&1 | Tee-Object -FilePath '%LOGFILE%' -Append; exit $LASTEXITCODE"
 
 if %ERRORLEVEL% EQU 0 (
     echo.
-    echo Publishing dashboard to Netlify (Discord auto-post disabled for now)...
-    python scripts\publish.py
+    echo Publishing dashboard to Netlify...
+    powershell -NoProfile -Command "python scripts\publish.py 2>&1 | Tee-Object -FilePath '%LOGFILE%' -Append"
     echo.
     echo Done! Opening dashboard...
     start "" "dashboard\raid_kpi_dashboard.html"
-    echo.
-    pause
 ) else (
     echo.
-    echo Something went wrong. Check the output above.
-    pause
+    echo Something went wrong -- full output saved to run.log
 )
+
+echo.
+echo (log saved to run.log)
+echo.
+pause
