@@ -1934,14 +1934,26 @@ function _setDpsSel(s){
 function renderDamage() {
   const tbody = document.getElementById("dpsTbody");
   if (!tbody) return;
-  const ds = WEEK_DATA.damageBySelection;
-  if (!ds || !ds.players || !ds.players.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);font-size:12px">No damage data.</td></tr>'; return; }
+  let ds = WEEK_DATA.damageBySelection;
+  // WCL-durability fallback: if the per-selection sub-query failed, synthesize an All-only
+  // selection from the still-populated WEEK_DATA.damage so the table never blanks. (active_pct
+  // is a 0-100% → convert back to active-ms over boss time so the Uptime column reads right.)
+  if (!ds || !ds.players || !ds.players.length) {
+    const fdur = Object.values(WEEK_DATA.boss_times || {}).reduce((s, v) => s + v, 0) || 1;
+    const players = (WEEK_DATA.damage || []).filter(p => (p.total_dmg || 0) > 0).map(p => {
+      const act = (p.active_pct || 0) / 100 * fdur * 1000;
+      return { name: p.name, role: p.role, effective_role: p.effective_role || p.role, toolkit: p.toolkit,
+               all: { total: p.total_dmg || 0, active: act }, boss: { total: p.total_dmg || 0, active: act }, trash: { total: 0, active: 0 } };
+    });
+    ds = { durations: { all: fdur, boss: fdur, trash: 1 }, players };
+  }
+  if (!ds.players.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);font-size:12px">No damage data.</td></tr>'; return; }
   const sel = _dpsSel;
   const dur = (ds.durations || {})[sel] || 1;
   const rows = ds.players.map(p => ({ ...p, sd: p[sel] || { total: 0, active: 0 } }))
                          .filter(p => p.sd.total > 0)
                          .sort((a, b) => b.sd.total - a.sd.total);
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" style="color:var(--muted);font-size:12px">No ${sel} damage.</td></tr>`; return; }
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="7" style="color:var(--muted);font-size:12px">No ${sel} damage.</td></tr>`; return; }
   const raidTotal = rows.reduce((s, p) => s + p.sd.total, 0) || 1;
   const maxDps = Math.max(...rows.map(p => p.sd.total / dur));
   tbody.innerHTML = rows.map(p => {

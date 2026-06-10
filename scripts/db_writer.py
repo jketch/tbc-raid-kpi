@@ -454,22 +454,26 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
             boss_dur = durs.get("boss") or 0
             raid_tot = sum((p.get("boss") or {}).get("total", 0) for p in dsp_rows) or 0
             def _sd(p, sel):
-                """(dps, total, uptime%) for a selection, or (0,0,0)."""
+                """(dps, total, uptime%) for a selection — or (None,None,None) when the
+                selection had NO fights (e.g. a wipe-only night has zero boss kills). Storing
+                NULL not 0 keeps next week's delta from diffing against a phantom-0 baseline."""
                 d = durs.get(sel) or 0
+                if not d:
+                    return (None, None, None)
                 s = p.get(sel) or {}
                 t, a = s.get("total", 0), s.get("active", 0)
-                return (round(t / d, 2) if d else 0, t, round(a / 1000 / d * 100, 1) if d else 0)
+                return (round(t / d, 2), t, round(a / 1000 / d * 100, 1))
             for p in dsp_rows:
                 bd, bt, bu = _sd(p, "boss")
                 ad, at, au = _sd(p, "all")
                 td, tt, tu = _sd(p, "trash")
+                pct = round(bt / raid_tot * 100, 2) if (bt is not None and raid_tot) else None
                 con.execute("""
                     INSERT OR REPLACE INTO dps (report_code, player, role, dps, total, pct_raid, uptime,
                                                 all_dps, all_total, all_uptime, trash_dps, trash_total, trash_uptime)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (rc, p["name"], p.get("role"),
-                      bd, bt, round(bt / raid_tot * 100, 2) if raid_tot else 0, bu,
-                      ad, at, au, td, tt, tu))
+                      bd, bt, pct, bu, ad, at, au, td, tt, tu))
         else:
             dmg_rows  = week_data.get("damage") or []
             dur       = sum((week_data.get("boss_times") or {}).values()) or 0

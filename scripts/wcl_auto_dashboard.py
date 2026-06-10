@@ -1421,6 +1421,10 @@ TOOLKIT_ABILITIES = {
     "mangle":                "mangle",           # Feral druid (rank-agnostic)
 }
 
+# Hard cap on paginated WCL event queries — guards against a runaway non-null nextPageTimestamp
+# (a known WCL quirk the older loops defend against). A full clear is ~10-20 pages; 40 is slack.
+MAX_EVENT_PAGES = 40
+
 # class (+ spec where it matters) → signature metric. `kind`: count | per_min | pair.
 # `icon` is an ability NAME → resolved to a live WCL icon via the ability_icons map (always
 # resolves), with `fallback` as the Zamimg slug if the report never logged that ability.
@@ -1577,7 +1581,7 @@ def build_class_toolkit(token, report_code, kills):
     tstamps  = defaultdict(lambda: defaultdict(list)) # [name][key] = [cast timestamps]
     cur = st
     try:
-        while True:
+        for _pg in range(MAX_EVENT_PAGES):
             ev = gql(token, QC, {"c": report_code, "ids": fids, "st": cur, "en": en}
                      )["reportData"]["report"]["events"]
             for d in ev.get("data", []):
@@ -1624,7 +1628,7 @@ def build_class_toolkit(token, report_code, kills):
         try:
             for aid in ae_ids:
                 cur = a_st
-                while True:
+                for _pg in range(MAX_EVENT_PAGES):
                     ev = gql(token, QA, {"c": report_code, "ids": allids, "st": cur,
                                          "en": a_en, "a": float(aid)})["reportData"]["report"]["events"]
                     for d in ev.get("data", []):
@@ -1698,7 +1702,7 @@ def build_class_toolkit(token, report_code, kills):
                    limit: 10000){ data nextPageTimestamp }}}}"""
         cur = st
         try:
-            while True:
+            for _pg in range(MAX_EVENT_PAGES):
                 ev = gql(token, QR, {"c": report_code, "ids": fids, "st": cur, "en": en}
                          )["reportData"]["report"]["events"]
                 for d in ev.get("data", []):
@@ -2128,7 +2132,7 @@ def fetch_mana_returns(token: str, report_code: str, kills: list) -> dict:
                limit: 10000){ data nextPageTimestamp }}}}"""
     cur = st
     try:
-        while True:
+        for _pg in range(MAX_EVENT_PAGES):
             ev = gql(token, QR, {"c": report_code, "ids": fids, "st": cur, "en": en}
                      )["reportData"]["report"]["events"]
             for d in ev.get("data", []):
@@ -2175,7 +2179,7 @@ def fetch_mana_returns(token: str, report_code: str, kills: list) -> dict:
         try:
             for aid in innv_ids:
                 cur = st
-                while True:
+                for _pg in range(MAX_EVENT_PAGES):
                     ev = gql(token, QI, {"c": report_code, "ids": fids, "st": cur, "en": en,
                                          "a": float(aid)})["reportData"]["report"]["events"]
                     for d in ev.get("data", []):
