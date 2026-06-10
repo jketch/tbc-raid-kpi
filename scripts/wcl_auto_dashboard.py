@@ -3058,11 +3058,26 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
             #    boss DPS now). Delta lands on each damageBySelection player (shown in the
             #    Bosses view + the header pill).
             dsel = week_data.get("damageBySelection") or {}
-            boss_dur = (dsel.get("durations") or {}).get("boss") or 0
+            durs = dsel.get("durations") or {}
+            # delta DPS / uptime / total for EACH selection (All/Bosses/Trash), comparing the
+            # matching prior-week columns (boss = base dps/total/uptime; all_*/trash_* added).
+            SEL_COLS = {"boss":  ("dps", "total", "uptime"),
+                        "all":   ("all_dps", "all_total", "all_uptime"),
+                        "trash": ("trash_dps", "trash_total", "trash_uptime")}
             for it in (dsel.get("players") or []):
-                p = pv("dps", it.get("name"), "dps")
-                if p is not None and boss_dur:
-                    it["delta_dps"] = round((it.get("boss", {}).get("total", 0) / boss_dur) - p, 1)
+                nm = it.get("name")
+                for sel, (c_dps, c_total, c_up) in SEL_COLS.items():
+                    d = durs.get(sel) or 0
+                    sd = it.get(sel)
+                    if not d or sd is None:
+                        continue
+                    pd, pu, pt = pv("dps", nm, c_dps), pv("dps", nm, c_up), pv("dps", nm, c_total)
+                    if pd is not None:
+                        sd["delta_dps"] = round(sd.get("total", 0) / d - pd, 1)
+                    if pu is not None:
+                        sd["delta_uptime"] = round(sd.get("active", 0) / 1000 / d * 100 - pu, 1)
+                    if pt is not None:
+                        sd["delta_total"] = round(sd.get("total", 0) - pt, 1)
 
             # ── class toolkit: delta the signature metric, but ONLY when the metric KIND
             #    (label) matches last week — comparing Windfury casts to ToW uptime is nonsense.

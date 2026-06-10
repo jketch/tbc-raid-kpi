@@ -283,6 +283,13 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
             con.execute("ALTER TABLE boss_times ADD COLUMN encounter_id INTEGER")
         except sqlite3.OperationalError:
             pass   # column already exists
+        # migrate the dps table to per-selection (All/Trash) columns for richer trends —
+        # base dps/total/uptime stay the BOSS selection (so existing reads keep working).
+        for _col in ("all_dps", "all_total", "all_uptime", "trash_dps", "trash_total", "trash_uptime"):
+            try:
+                con.execute(f"ALTER TABLE dps ADD COLUMN {_col} REAL")
+            except sqlite3.OperationalError:
+                pass   # column already exists
 
         meta = week_data.get("meta", {})
         rc   = meta.get("report_code") or week_data.get("reportCode", "unknown")
@@ -435,19 +442,26 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
         dsel      = week_data.get("damageBySelection") or {}
         dsp_rows  = dsel.get("players") or []
         if dsp_rows:
-            boss_dur = (dsel.get("durations") or {}).get("boss") or 0
+            durs     = dsel.get("durations") or {}
+            boss_dur = durs.get("boss") or 0
             raid_tot = sum((p.get("boss") or {}).get("total", 0) for p in dsp_rows) or 0
+            def _sd(p, sel):
+                """(dps, total, uptime%) for a selection, or (0,0,0)."""
+                d = durs.get(sel) or 0
+                s = p.get(sel) or {}
+                t, a = s.get("total", 0), s.get("active", 0)
+                return (round(t / d, 2) if d else 0, t, round(a / 1000 / d * 100, 1) if d else 0)
             for p in dsp_rows:
-                bt = (p.get("boss") or {}).get("total", 0)
-                ba = (p.get("boss") or {}).get("active", 0)
+                bd, bt, bu = _sd(p, "boss")
+                ad, at, au = _sd(p, "all")
+                td, tt, tu = _sd(p, "trash")
                 con.execute("""
-                    INSERT OR REPLACE INTO dps (report_code, player, role, dps, total, pct_raid, uptime)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    INSERT OR REPLACE INTO dps (report_code, player, role, dps, total, pct_raid, uptime,
+                                                all_dps, all_total, all_uptime, trash_dps, trash_total, trash_uptime)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (rc, p["name"], p.get("role"),
-                      round(bt / boss_dur, 2) if boss_dur else 0,
-                      bt,
-                      round(bt / raid_tot * 100, 2) if raid_tot else 0,
-                      round(ba / 1000 / boss_dur * 100, 1) if boss_dur else 0))
+                      bd, bt, round(bt / raid_tot * 100, 2) if raid_tot else 0, bu,
+                      ad, at, au, td, tt, tu))
         else:
             dmg_rows  = week_data.get("damage") or []
             dur       = sum((week_data.get("boss_times") or {}).values()) or 0
