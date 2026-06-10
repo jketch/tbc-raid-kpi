@@ -3049,13 +3049,16 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
                 except sqlite3.OperationalError:
                     return None
 
-            # ── damage: trend DPS (normalizes raid length), matching the live HTML which
-            #    renders total_dmg / sum(boss_times). Compare against the `dps` table's dps.
-            dur = sum((week_data.get("boss_times") or {}).values()) or 0
-            for it in (week_data.get("damage") or []):
+            # ── damage: trend BOSS DPS (boss damage / boss time), matching the live DPS
+            #    table's WCL-style denominator. Compare against the `dps` table's dps (also
+            #    boss DPS now). Delta lands on each damageBySelection player (shown in the
+            #    Bosses view + the header pill).
+            dsel = week_data.get("damageBySelection") or {}
+            boss_dur = (dsel.get("durations") or {}).get("boss") or 0
+            for it in (dsel.get("players") or []):
                 p = pv("dps", it.get("name"), "dps")
-                if p is not None and dur:
-                    it["delta_dps"] = round((it.get("total_dmg", 0) / dur) - p, 1)
+                if p is not None and boss_dur:
+                    it["delta_dps"] = round((it.get("boss", {}).get("total", 0) / boss_dur) - p, 1)
 
             # ── healing: four trended columns (HPS, overheal, activity, mana-efficiency).
             for it in (week_data.get("healing") or []):

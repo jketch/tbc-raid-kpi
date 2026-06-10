@@ -414,23 +414,40 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
             """, (rc, boss, seconds, _bmeta.get(boss, {}).get("encounter_id")))
 
         # ── dps ────────────────────────────────────────────────────────────────
-        # Persist per-player damage so it can be trended week-over-week. Store DPS
-        # (total_dmg / total kill seconds) so the comparison normalizes raid length;
-        # `dur` mirrors the live HTML's `sum(boss_times)`. Falls back to total when
-        # boss_times is missing (no division → dps stored as 0).
-        dmg_rows  = week_data.get("damage") or []
-        dur       = sum((week_data.get("boss_times") or {}).values()) or 0
-        raid_tot  = sum((p.get("total_dmg") or 0) for p in dmg_rows) or 0
-        for p in dmg_rows:
-            total = p.get("total_dmg") or 0
-            con.execute("""
-                INSERT OR REPLACE INTO dps (report_code, player, role, dps, total, pct_raid, uptime)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (rc, p["name"], p.get("role"),
-                  round(total / dur, 2) if dur else 0,
-                  total,
-                  round(total / raid_tot * 100, 2) if raid_tot else 0,
-                  p.get("active_pct")))
+        # Persist per-player BOSS DPS (boss damage / boss fight time) — the WCL-style
+        # denominator the live DPS table now uses, so week-over-week deltas compare like
+        # for like. Sourced from damageBySelection (boss selection); falls back to the old
+        # `damage` key (total_dmg / boss_times) for data that predates the split.
+        dsel      = week_data.get("damageBySelection") or {}
+        dsp_rows  = dsel.get("players") or []
+        if dsp_rows:
+            boss_dur = (dsel.get("durations") or {}).get("boss") or 0
+            raid_tot = sum((p.get("boss") or {}).get("total", 0) for p in dsp_rows) or 0
+            for p in dsp_rows:
+                bt = (p.get("boss") or {}).get("total", 0)
+                ba = (p.get("boss") or {}).get("active", 0)
+                con.execute("""
+                    INSERT OR REPLACE INTO dps (report_code, player, role, dps, total, pct_raid, uptime)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (rc, p["name"], p.get("role"),
+                      round(bt / boss_dur, 2) if boss_dur else 0,
+                      bt,
+                      round(bt / raid_tot * 100, 2) if raid_tot else 0,
+                      round(ba / 1000 / boss_dur * 100, 1) if boss_dur else 0))
+        else:
+            dmg_rows  = week_data.get("damage") or []
+            dur       = sum((week_data.get("boss_times") or {}).values()) or 0
+            raid_tot  = sum((p.get("total_dmg") or 0) for p in dmg_rows) or 0
+            for p in dmg_rows:
+                total = p.get("total_dmg") or 0
+                con.execute("""
+                    INSERT OR REPLACE INTO dps (report_code, player, role, dps, total, pct_raid, uptime)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (rc, p["name"], p.get("role"),
+                      round(total / dur, 2) if dur else 0,
+                      total,
+                      round(total / raid_tot * 100, 2) if raid_tot else 0,
+                      p.get("active_pct")))
 
         # ── tank scorecard v2 (summary + per-boss) ─────────────────────────────
         for t in (week_data.get("tankScorecard") or []):

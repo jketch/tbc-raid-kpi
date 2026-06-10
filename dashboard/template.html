@@ -856,9 +856,9 @@ function renderHeader() {
   } else {
     pills.push(`<div class="pill pill-ghost" title="Populates once a prior week is in the history DB">📊 vs last week · pending</div>`);
   }
-  // Raid DPS movement vs last week — mean of per-raider delta_dps (only raiders with a
+  // Raid BOSS-DPS movement vs last week — mean of per-raider delta_dps (only raiders with a
   // prior-week parse). Independent of the boss-count pill; absent until two weeks exist.
-  const dmgItems = (WEEK_DATA.damage || []).filter(d => d.delta_dps !== undefined && isFinite(d.delta_dps));
+  const dmgItems = ((WEEK_DATA.damageBySelection || {}).players || []).filter(d => d.delta_dps !== undefined && isFinite(d.delta_dps));
   if (dmgItems.length) {
     const avg = Math.round(dmgItems.reduce((s, d) => s + d.delta_dps, 0) / dmgItems.length);
     if (avg !== 0) {
@@ -1948,7 +1948,7 @@ function renderDamage() {
       <td class="num" style="font-weight:600;color:var(--text)">
         <span style="display:inline-flex;align-items:center;gap:9px;justify-content:flex-end">
           <span style="width:60px;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;flex-shrink:0"><span style="display:block;height:100%;width:${pct}%;background:${nc}"></span></span>
-          <span style="min-width:50px;text-align:right">${Math.round(dps).toLocaleString()}</span>
+          <span style="min-width:50px;text-align:right">${Math.round(dps).toLocaleString()}${sel==="boss"?fmtDelta(p.delta_dps, true):""}</span>
         </span></td>
       <td class="num" style="color:${upCol};font-weight:600">${Math.round(up)}%</td>
       <td class="num" style="color:var(--muted)">${hsK(p.sd.total)}</td>
