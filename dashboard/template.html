@@ -520,8 +520,8 @@
 
   <div class="tab-nav">
     <button class="tab-btn" data-tab="overview" onclick="showTab('overview')">Overview</button>
-    <button class="tab-btn" data-tab="shame" onclick="showTab('shame')">Accountability</button>
-    <button class="tab-btn" data-tab="healing" onclick="showTab('healing')">Healers &amp; Tanks</button>
+    <button class="tab-btn" data-tab="accountability" onclick="showTab('accountability')">Accountability</button>
+    <button class="tab-btn" data-tab="healers-tanks" onclick="showTab('healers-tanks')">Healers &amp; Tanks</button>
     <button class="tab-btn" data-tab="dps" onclick="showTab('dps')">DPS</button>
     <button class="tab-btn" data-tab="utility" onclick="showTab('utility')">Utility</button>
     <button class="tab-btn" data-tab="loot" onclick="showTab('loot')">Loot</button>
@@ -610,7 +610,7 @@
 
   <!-- ═══════════════ ACCOUNTABILITY ═══════════════ -->
   </div>
-  <div class="tsec" data-tab="shame">
+  <div class="tsec" data-tab="accountability">
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/ability_creature_disease_02.jpg" alt=""> Accountability — across all 25 raiders</div>
   <div id="logCoverageNote"></div>
 
@@ -724,7 +724,7 @@
 
   <!-- ═══════════════ TANK SCORECARD (v2 — leads the Healers & Tanks tab) ═══════════════ -->
   </div>
-  <div class="tsec" data-tab="healing">
+  <div class="tsec" data-tab="healers-tanks">
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_shield_06.jpg" alt=""> Tank Scorecard</div>
   <div class="card">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_shield_06.jpg" alt=""> Survivability &amp; Mitigation</div>
@@ -2446,9 +2446,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (el && m.length) el.innerHTML =
       `<div style="background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11.5px;color:var(--muted)">⚠ No combat-log coverage for <b style="color:var(--orange)">${m.join(", ")}</b> — log-based stats (avoidable, friendly fire, drums) exclude ${m.length>1?"these fights":"this fight"}. WCL stats (DPS, healing, deaths) are complete.</div>`;
   })();
-  // distinguishable browser-tab title / bookmark per week
+  // distinguishable browser-tab title / bookmark per week — lead with the date (drop the time) so
+  // it stays legible when the browser truncates the tab from the right with several weeks open
   const _date = (WEEK_DATA.meta || {}).date;
-  if (_date) document.title = "Raid KPI — " + _date;
+  if (_date) document.title = _date.replace(/\s+\d{1,2}:\d{2}$/, "") + " — Raid KPI";
 
   // ── find-me: restore the saved name, wire live highlighting, and re-apply to drill-downs
   const _fm = document.getElementById("findMe"), _fc = document.getElementById("findMeClear");
