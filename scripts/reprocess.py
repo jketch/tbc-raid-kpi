@@ -26,6 +26,18 @@ Usage:
 Single-file mode also SEEDS cache/week_data/<report>.json from the loaded HTML, so reprocessing a
 retained dashboard backfills the offline cache. Each future prod run drops its own snapshot there
 (see wcl_auto_dashboard.dump_week_data_cache), and `--all` then rebuilds everything offline.
+
+★ RUN `--all` (oldest-first, which it does) AFTER ANY SCHEMA/TREND CHANGE — it is not optional.
+  A week-over-week delta reads the PRIOR week's DB row. If that row predates a new column/table
+  (e.g. a backfilled week written before all_*/trash_* DPS, class_toolkit, or mana_returns existed),
+  the prior value is NULL and the delta SILENTLY BLANKS — the metric shows no trend with no error.
+  Symptom seen 2026-06-10: after fixing enrich_with_trends to compare each week against its true
+  chronological predecessor (c6fbda1) instead of the global-latest week, past-week trends went blank
+  because the May rows were thin. Fix was `reprocess.py --all` to rewrite every week's row with the
+  current schema from its (corrected) snapshot — zero WCL, chronological upsert. So: snapshot rebuilds
+  via backfill_snapshots.py are READ-ONLY on the DB; to refresh the DB itself, run `--all` here.
+  Caveat: `--all` writes each week's row FROM ITS SNAPSHOT, so a log-thin snapshot yields a log-thin
+  row — rebuild a week's snapshot WITH its log first (backfill_snapshots.py --log) if you still have it.
 """
 import sys, json
 from pathlib import Path
