@@ -659,14 +659,15 @@
       <button class="seg-btn" data-sel="trash" onclick="_setDpsSel('trash')" title="Non-boss pulls (no encounter) — trash AoE/cleave.">Trash</button>
     </div>
     <div class="scroll-x scroll-y">
-      <table class="mini-table" id="dpsTable">
+      <table class="mini-table" id="dpsTable" style="width:100%">
         <thead><tr>
           <th title="Sorted by damage in the selected fights. Tank/healer rows are excluded — this is the DPS report.">Player</th>
-          <th style="text-align:center" title="DPS = a player's damage in the selected fights ÷ the summed duration of just those fights (WCL's method). The bar is relative to the top DPS in the view. ▲▼ = change vs last week.">DPS</th>
-          <th class="num" title="Uptime = active (casting / swinging) time ÷ the selection's fight time. Green ≥90 · yellow ≥75 · orange below. ▲▼ vs last week.">Uptime</th>
-          <th class="num" title="Total damage dealt in the selected fights (All / Bosses / Trash). ▲▼ vs last week.">Total</th>
-          <th style="text-align:center" title="Share of the selection's total raid damage.">% Raid</th>
-          <th style="text-align:center" title="Each class's signature raid-utility — uptimes, casts, or a brag stat. Hover a cell for that metric's specifics. ▲▼ vs last week (same metric only).">Toolkit</th>
+          <th style="width:160px"></th>
+          <th style="text-align:left" title="DPS = a player's damage in the selected fights ÷ the summed duration of just those fights (WCL's method). The bar is relative to the top DPS in the view. ▲▼ = change vs last week.">DPS</th>
+          <th style="text-align:center;width:96px" title="Uptime = active (casting / swinging) time ÷ the selection's fight time. Green ≥90 · yellow ≥75 · orange below. ▲▼ vs last week.">Uptime</th>
+          <th style="text-align:center;width:120px" title="Total damage dealt in the selected fights (All / Bosses / Trash). ▲▼ vs last week.">Total</th>
+          <th style="text-align:center;width:96px" title="Share of the selection's total raid damage.">% Raid</th>
+          <th style="text-align:right" title="Each class's signature raid-utility — uptimes, casts, or a brag stat. Hover a cell for that metric's specifics. ▲▼ vs last week (same metric only).">Toolkit</th>
         </tr></thead>
         <tbody id="dpsTbody"></tbody>
       </table>
@@ -1957,15 +1958,12 @@ function renderDamage() {
         + `</span>`;
     return `<tr>
       <td><span class="cname" style="color:${nc}">${p.name}</span>${spec?`<div style="font-size:10px;color:var(--muted);margin-top:1px;font-weight:400">${spec}</div>`:""}</td>
-      <td style="font-weight:600;color:var(--text)">
-        <span style="display:inline-flex;align-items:center;gap:12px;justify-content:center">
-          <span style="width:104px;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;flex-shrink:0"><span style="display:block;height:100%;width:${pct}%;background:${nc}"></span></span>
-          <span style="min-width:56px;text-align:left">${Math.round(dps).toLocaleString()}${fmtDelta(p.sd.delta_dps, true)}</span>
-        </span></td>
-      <td class="num" style="color:${upCol};font-weight:600">${Math.round(up)}%${fmtDelta(p.sd.delta_uptime, true)}</td>
-      <td class="num" style="color:var(--muted)">${hsK(p.sd.total)}${fmtDelta(p.sd.delta_total, true, {divK:true})}</td>
+      <td style="text-align:center"><span style="display:inline-block;width:118px;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;vertical-align:middle"><span style="display:block;height:100%;width:${pct}%;background:${nc}"></span></span></td>
+      <td style="text-align:left;font-weight:600;color:var(--text);white-space:nowrap">${Math.round(dps).toLocaleString()}${fmtDelta(p.sd.delta_dps, true)}</td>
+      <td style="text-align:center;color:${upCol};font-weight:600;white-space:nowrap">${Math.round(up)}%${fmtDelta(p.sd.delta_uptime, true)}</td>
+      <td style="text-align:center;color:var(--muted);white-space:nowrap">${hsK(p.sd.total)}${fmtDelta(p.sd.delta_total, true, {divK:true})}</td>
       <td style="text-align:center;color:var(--muted)">${share}%</td>
-      <td style="text-align:center">${tkCell}</td>
+      <td style="text-align:right">${tkCell}</td>
     </tr>`;
   }).join("");
 }
