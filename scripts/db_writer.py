@@ -250,6 +250,17 @@ CREATE TABLE IF NOT EXISTS sunder_armor (
     refreshed    INTEGER,   -- refreshdebuff (upkeep on an existing stack)
     PRIMARY KEY (report_code, player)
 );
+CREATE TABLE IF NOT EXISTS loot (
+    report_code  TEXT,
+    player       TEXT,
+    item_id      TEXT,      -- ThatsBIS item id (drives Wowhead icon/tooltip)
+    item_name    TEXT,
+    boss         TEXT,      -- source_name (boss the item dropped from)
+    instance     TEXT,
+    is_offspec   INTEGER,   -- 1 = off-spec award
+    received_at  TEXT,      -- raid-night date (YYYY-MM-DD)
+    PRIMARY KEY (report_code, player, item_id, boss)
+);
 """
 
 
@@ -521,6 +532,18 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
                   (report_code, player, total, effective, refreshed)
                 VALUES (?, ?, ?, ?, ?)
             """, (rc, p["name"], p.get("total", 0), p.get("effective", 0), p.get("refreshed", 0)))
+
+        # ── loot received this week (external ThatsBIS CSV; flatten player→items) ──
+        _loot = week_data.get("loot") or {}
+        _ldate = _loot.get("date")
+        for p in _loot.get("players", []):
+            for it in p.get("items", []):
+                con.execute("""
+                    INSERT OR REPLACE INTO loot
+                      (report_code, player, item_id, item_name, boss, instance, is_offspec, received_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (rc, p["name"], str(it.get("item_id", "")), it.get("item_name"),
+                      it.get("boss"), it.get("instance"), 1 if it.get("offspec") else 0, _ldate))
 
         # ── tank scorecard v2 (summary + per-boss) ─────────────────────────────
         for t in (week_data.get("tankScorecard") or []):

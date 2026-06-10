@@ -303,6 +303,7 @@ HEAL_MANA_COST = {
 ROOT_DIR   = Path(__file__).parent.parent  # Gaming/
 CACHE_FILE = ROOT_DIR / "cache" / "item_crit_cache.json"
 LOGS_DIR   = ROOT_DIR / "logs"
+LOOT_DIR   = ROOT_DIR / "loot"   # ThatsBIS "received" CSV exports — newest *.csv auto-picked
 DASH_FILE      = ROOT_DIR / "dashboard" / "raid_kpi_dashboard.html"
 TEMPLATE_FILE  = ROOT_DIR / "dashboard" / "template.html"
 DEFAULT_TITLE  = "Raid KPI Dashboard — TBC Anniversary"
@@ -3085,6 +3086,7 @@ def map_to_week_data(wcl: dict) -> dict:
         "debuffCoverage": wcl.get("debuff_coverage", {}),
         "sunderArmor":    wcl.get("sunder_armor", {}),
         "manaReturns":    wcl.get("mana_returns", {}),
+        "loot":           wcl.get("loot_data", {}),   # this-week loot, external ThatsBIS CSV (degrades to {})
         # DPS table data split All/Bosses/Trash — each with its own WCL-style denominator.
         # DPS-only (effective_role Physical/Caster); toolkit cell carried per player.
         "damageBySelection": (lambda ds: {
@@ -4096,6 +4098,14 @@ def main():
         _auto_log = str(_log_files[0])
     parser.add_argument("--log", default=_auto_log,
                         help="Path to WoWCombatLog.txt (default: newest WoWCombatLog*.txt in logs/)")
+    # Auto-find newest ThatsBIS loot CSV in loot/ — external/optional; absent = Loot card hides.
+    _auto_loot = None
+    _loot_files = sorted(LOOT_DIR.glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True) \
+        if LOOT_DIR.exists() else []
+    if _loot_files:
+        _auto_loot = str(_loot_files[0])
+    parser.add_argument("--loot", default=_auto_loot,
+                        help="Path to ThatsBIS received-loot CSV (default: newest *.csv in loot/)")
     parser.add_argument("--dry-run",  action="store_true", help="Print JSON only, don't write HTML")
     parser.add_argument("--test-db",  action="store_true", help="Write to raid_history_test.db instead of prod")
     parser.add_argument("--refresh-baseline", action="store_true",
@@ -4132,6 +4142,19 @@ def main():
     # Supplement with the rest of the combat-log stats
     if log_data:
         week_data = merge_log_into_wcl(week_data, log_data)
+
+    # This-week loot from the ThatsBIS CSV (external, optional). Filter on the raid-night local date
+    # derived from start_ms — ThatsBIS dates loot to that same night. Degrades to {} if absent.
+    if args.loot:
+        import loot_parser
+        raid_date = time.strftime("%Y-%m-%d", time.localtime(week_data["meta"]["start_ms"] / 1000))
+        loot_data = loot_parser.parse_loot(args.loot, raid_date)
+        if loot_data:
+            week_data["loot_data"] = loot_data
+            print(f"  ✓ loot: {loot_data['total']} items to {len(loot_data['players'])} raiders "
+                  f"({loot_data['offspec']} off-spec) on {raid_date}")
+        else:
+            print(f"  · loot: no awards dated {raid_date} in {args.loot}")
 
     print_summary(week_data)
 

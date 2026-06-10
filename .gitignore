@@ -10,6 +10,12 @@ __pycache__/
 logs/*.txt
 !logs/README.txt
 
+# ThatsBIS loot CSV exports (player data, not source) — keep the placeholder README
+loot/*.csv
+!loot/README.txt
+# stray ThatsBIS exports dropped in the repo root (e.g. attendance) — never source
+/*.csv
+
 # Generated screenshots / exports
 screenshots/
 

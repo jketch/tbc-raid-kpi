@@ -492,6 +492,9 @@
   .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
   .tsec.hidden { display:none; }
 </style>
+<!-- Wowhead tooltips + auto-icons for loot items (item links → icon + quality color + hover card) -->
+<script>const whTooltips={colorLinks:true,iconizeLinks:true,renameLinks:false,iconSize:"small"};</script>
+<script src="https://wow.zamimg.com/widgets/power.js"></script>
 </head>
 <body>
 
@@ -513,6 +516,17 @@
     <button class="tab-btn" data-tab="healing" onclick="showTab('healing')">Healers &amp; Tanks</button>
     <button class="tab-btn" data-tab="dps" onclick="showTab('dps')">DPS</button>
     <button class="tab-btn" data-tab="utility" onclick="showTab('utility')">Utility</button>
+    <button class="tab-btn" data-tab="loot" onclick="showTab('loot')">Loot</button>
+  </div>
+
+  <!-- ═══════════════ LOOT ═══════════════ -->
+  <div class="tsec" data-tab="loot">
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_gem_diamond_07.jpg" alt=""> Loot Received</div>
+  <div class="card gold">
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_coin_01.jpg" alt=""> Who received what — this raid night</div>
+    <div class="hs-sub">Awards from this week's raid (ThatsBIS). Hover an item for its tooltip; <b>OS</b> = off-spec.</div>
+    <div id="lootDistribution"></div>
+  </div>
   </div>
 
   <!-- ═══════════════ STAT TILES ═══════════════ -->
@@ -1255,6 +1269,45 @@ function renderSunderArmor(){
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
+}
+
+// ── LOOT — who received what this week (ThatsBIS CSV; Wowhead tooltips/icons)
+function renderLoot(){
+  const loot = WEEK_DATA.loot || {};
+  const el = document.getElementById("lootDistribution");
+  if (!el) return;
+  const players = loot.players || [];
+  if (!players.length){
+    const c = el.closest(".card"); if (c) c.style.display = "none";
+    const tb = document.querySelector('.tab-btn[data-tab="loot"]'); if (tb) tb.style.display = "none";
+    return;
+  }
+  // class color/icon: prefer roster (consistent across the dashboard), fall back to the CSV's own
+  // class so an alt not in this week's WCL roster still colors correctly.
+  const col = p => (typeof CLASS_COLORS!=="undefined" && CLASS_COLORS[p.class]) || nameColor(p.name) || "var(--text)";
+  const ico = p => classIcon(p.name) || (p.class
+    ? `https://wow.zamimg.com/images/wow/icons/large/classicon_${p.class.toLowerCase()}.jpg` : null);
+  const blocks = players.map(p => {
+    const c = col(p), ic = ico(p);
+    const head = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;font-size:13px;font-weight:600">
+      ${ic?`<img class="ticon-sm" src="${ic}" alt="" style="vertical-align:-2px">`:""}
+      <span class="cname" style="color:${c}">${p.name}</span>
+      <span style="color:var(--muted);font-weight:500;font-size:11px">·&nbsp;${p.items.length}</span></div>`;
+    const items = p.items.map(it => {
+      // power.js iconizes + quality-colors + tooltips this link (whTooltips config in <head>)
+      const link = `<a href="https://www.wowhead.com/tbc/item=${it.item_id}" target="_blank" rel="noopener" style="font-size:12px">${it.item_name}</a>`;
+      // OS + boss live on a muted sub-line so a long item name never orphans the boss or splits it mid-word
+      const meta = [];
+      if (it.offspec) meta.push(`<span style="border:1px solid var(--border);border-radius:3px;padding:0 3px;letter-spacing:.03em">OS</span>`);
+      if (it.boss) meta.push(it.boss);
+      const sub = meta.length ? `<div style="font-size:10px;color:var(--muted);margin:1px 0 0 20px;line-height:1.2;white-space:nowrap">${meta.join(" · ")}</div>` : "";
+      return `<div style="margin:5px 0;line-height:1.3">${link}${sub}</div>`;
+    }).join("");
+    return `<div style="border:1px solid var(--border);border-radius:10px;padding:11px 13px;background:var(--surface)">${head}${items}</div>`;
+  }).join("");
+  const sub = `<div style="font-size:11.5px;color:var(--muted);margin:0 0 12px">${loot.total} item${loot.total===1?"":"s"} to ${players.length} raider${players.length===1?"":"s"}${loot.offspec?` · <b>${loot.offspec}</b> off-spec`:""}</div>`;
+  el.innerHTML = sub + `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;align-items:start">${blocks}</div>`;
+  if (window.$WowheadPower && $WowheadPower.refreshLinks) $WowheadPower.refreshLinks();
 }
 
 function renderRoleSpells(){
@@ -2343,6 +2396,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderRoleSpells();
   renderPlayerSpells();
   renderCompliance();
+  renderLoot();
   (function(){
     const m = (WEEK_DATA.meta||{}).log_missing || [];
     const el = document.getElementById("logCoverageNote");
