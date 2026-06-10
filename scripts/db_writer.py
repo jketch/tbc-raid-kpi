@@ -242,6 +242,14 @@ CREATE TABLE IF NOT EXISTS mana_returns (
     mana         INTEGER,   -- mana returned to the raid via this source
     PRIMARY KEY (report_code, player, source)
 );
+CREATE TABLE IF NOT EXISTS sunder_armor (
+    report_code  TEXT,
+    player       TEXT,
+    total        INTEGER,   -- effective + refreshed (every Sunder application by this player)
+    effective    INTEGER,   -- applydebuff + applydebuffstack (built a stack, 1->5)
+    refreshed    INTEGER,   -- refreshdebuff (upkeep on an existing stack)
+    PRIMARY KEY (report_code, player)
+);
 """
 
 
@@ -505,6 +513,14 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
                     INSERT OR REPLACE INTO mana_returns (report_code, player, source, mana)
                     VALUES (?, ?, ?, ?)
                 """, (rc, prov["name"], b.get("label"), prov.get("mana", 0)))
+
+        # ── sunder armor (per-warrior stack-building vs upkeep) ─────────────────
+        for p in (week_data.get("sunderArmor") or {}).get("players", []):
+            con.execute("""
+                INSERT OR REPLACE INTO sunder_armor
+                  (report_code, player, total, effective, refreshed)
+                VALUES (?, ?, ?, ?, ?)
+            """, (rc, p["name"], p.get("total", 0), p.get("effective", 0), p.get("refreshed", 0)))
 
         # ── tank scorecard v2 (summary + per-boss) ─────────────────────────────
         for t in (week_data.get("tankScorecard") or []):

@@ -2206,6 +2206,79 @@ def fetch_mana_returns(token: str, report_code: str, kills: list) -> dict:
     return {"batteries": batteries, "innervate": {"icon": INNERVATE_ICON, "casters": casters}}
 
 
+def fetch_sunder_armor(token: str, report_code: str, kills: list) -> dict:
+    """Per-player Sunder Armor quality — pure WCL, runs every week (no combat log). Sourced from
+    the WCL `Debuffs` event stream for the Sunder Armor aura (over kill fights, enemy targets).
+    Attribution is by `sourceID`, so it credits anyone who builds the stack, including a prot tank
+    applying it via Devastate. (Rogue Expose Armor is a different debuff → excluded.)
+
+      • effective = applydebuff + applydebuffstack  (applications that BUILT a stack, 1→5)
+      • refreshed = refreshdebuff                   (upkeep casts on an already-existing stack)
+      • total     = effective + refreshed           (every Sunder application by this player)
+
+    The Debuffs stream is the authoritative source here: the WCL Casts stream does NOT reconcile
+    1:1 with it (per-warrior cast counts come out *below* the stacks actually applied — e.g. 28
+    stacks built from only 23 recorded casts), so a casts-minus-landed "wasted" figure would go
+    negative and is intentionally not computed. Refresh framing is neutral upkeep, not a fault.
+
+    Returns {players:[{name,total,effective,refreshed}]} sorted by total desc — {} when no kills."""
+    if not kills:
+        return {}
+    try:
+        md = gql(token, """query($c:String!){reportData{report(code:$c){masterData{
+            actors{id name} abilities{gameID name} }}}}""",
+                 {"c": report_code})["reportData"]["report"]["masterData"]
+    except Exception as ex:
+        print(f"  Warning: sunder-armor masterData failed: {ex}")
+        return {}
+    id2name = {a["id"]: a["name"] for a in (md.get("actors") or [])}
+    sunder_ids = [a.get("gameID") for a in (md.get("abilities") or [])
+                  if (a.get("name") or "") == "Sunder Armor"]
+    if not sunder_ids:
+        print("  ✓ sunder armor: no Sunder Armor applications in report")
+        return {}
+
+    fids = [f["id"] for f in kills]
+    st   = min(f["startTime"] for f in kills)
+    en   = max(f["endTime"]   for f in kills)
+    stats = defaultdict(lambda: {"effective": 0, "refreshed": 0})
+    QD = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!,$a:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Debuffs, hostilityType: Enemies,
+               abilityID:$a, limit: 10000){ data nextPageTimestamp }}}}"""
+    try:
+        for aid in sunder_ids:
+            cur = st
+            for _pg in range(MAX_EVENT_PAGES):
+                ev = gql(token, QD, {"c": report_code, "ids": fids, "st": cur, "en": en,
+                                     "a": float(aid)})["reportData"]["report"]["events"]
+                for d in ev.get("data", []):
+                    nm = id2name.get(d.get("sourceID"))
+                    if not nm:
+                        continue
+                    t = d.get("type")
+                    if t in ("applydebuff", "applydebuffstack"):
+                        stats[nm]["effective"] += 1
+                    elif t == "refreshdebuff":
+                        stats[nm]["refreshed"] += 1
+                nx = ev.get("nextPageTimestamp")
+                if not nx:
+                    break
+                cur = nx
+    except Exception as ex:
+        print(f"  Warning: sunder-armor debuff events failed: {ex}")
+
+    players = []
+    for nm, s in stats.items():
+        total = s["effective"] + s["refreshed"]
+        if total == 0:
+            continue
+        players.append({"name": nm, "total": total,
+                        "effective": s["effective"], "refreshed": s["refreshed"]})
+    players.sort(key=lambda x: -x["total"])
+    print(f"  ✓ sunder armor: {len(players)} sunderers")
+    return {"players": players}
+
+
 def fetch_damage_by_selection(token: str, report_code: str) -> dict:
     """Per-player damage + active time for All / Bosses / Trash, mirroring the WCL DamageDone
     table: DPS = damage ÷ THAT selection's own fight time, uptime = activeTime ÷ that time.
@@ -2515,6 +2588,7 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     debuff_coverage = fetch_debuff_coverage(token, report_code, kills)
     # Class toolkit — each DPS's signature class-relative utility (cast-based, pure WCL)
     mana_returns  = fetch_mana_returns(token, report_code, kills)
+    sunder_armor  = fetch_sunder_armor(token, report_code, kills)
     damage_by_sel = fetch_damage_by_selection(token, report_code)
     class_toolkit = build_class_toolkit(token, report_code, kills)
     # Fold the biggest Shadow Bolt crit (tracked free during the crit pass) into the toolkit
@@ -2619,6 +2693,8 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
         "class_toolkit":   class_toolkit,
         # mana returned to the raid, per provider (mana-battery leaderboard)
         "mana_returns":    mana_returns,
+        # per-player Sunder Armor quality (effective/refreshed/wasted, pure WCL)
+        "sunder_armor":    sunder_armor,
         # per-player damage + active time split All/Bosses/Trash (WCL-style DPS denominator)
         "damage_by_sel":   damage_by_sel,
     }
@@ -3002,6 +3078,7 @@ def map_to_week_data(wcl: dict) -> dict:
         "boss_meta":    wcl.get("boss_meta", {}),
         "healReaction": wcl.get("heal_reaction", {}),
         "debuffCoverage": wcl.get("debuff_coverage", {}),
+        "sunderArmor":    wcl.get("sunder_armor", {}),
         "manaReturns":    wcl.get("mana_returns", {}),
         # DPS table data split All/Bosses/Trash — each with its own WCL-style denominator.
         # DPS-only (effective_role Physical/Caster); toolkit cell carried per player.
@@ -3120,6 +3197,19 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
                         r = None
                     if r and r[0] is not None:
                         prov["delta_mana"] = prov.get("mana", 0) - r[0]
+
+            # ── sunder armor: delta total + effective stacks built, per warrior.
+            for p in (week_data.get("sunderArmor") or {}).get("players", []):
+                try:
+                    r = con.execute("SELECT total, effective FROM sunder_armor WHERE report_code=? AND player=?",
+                                    (prev, p.get("name"))).fetchone()
+                except sqlite3.OperationalError:
+                    r = None
+                if r:
+                    if r[0] is not None:
+                        p["delta_total"] = p.get("total", 0) - r[0]
+                    if r[1] is not None:
+                        p["delta_effective"] = p.get("effective", 0) - r[1]
 
             # ── healthstones: raid-level deltas (total used + # who died never popping).
             hs = week_data.get("healthstoneStats")

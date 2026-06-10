@@ -613,6 +613,15 @@
       <div id="debuffCoverage" class="scroll-x"></div>
     </div>
 
+    <!-- ═══════ SUNDER ARMOR — per-warrior armor-debuff quality ═══════ -->
+    <div class="card">
+      <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/ability_warrior_sunder.jpg" alt=""> Sunder Armor — who built the stack</div>
+      <div class="hs-sub">Per-warrior Sunder Armor applications on bosses &amp; adds (WCL).
+        <b style="color:var(--physical)">Effective</b> = built a stack (1&rarr;5) ·
+        <b style="color:var(--accent)">Refreshed</b> = upkeep on an existing stack. Devastate counts too.</div>
+      <div id="sunderArmor" class="scroll-x"></div>
+    </div>
+
     <!-- Healthstone compliance (paired with Debuff Coverage) -->
     <div class="card">
       <div class="card-title"><img src="https://wow.zamimg.com/images/wow/icons/large/inv_stone_04.jpg" alt="" style="width:15px;height:15px;border-radius:3px;vertical-align:-2px;margin-right:3px"> Panic Button — died without a stone</div>
@@ -1203,6 +1212,48 @@ function renderDebuffCoverage(){
       <tr><th style="text-align:left;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:4px 14px 6px 4px">Boss</th>${iconRow}</tr>
     </thead>
     <tbody>${bossRows}${avgRow}</tbody>
+  </table>`;
+}
+
+// ── SUNDER ARMOR — per-warrior stack-building vs upkeep (pure WCL)
+function renderSunderArmor(){
+  const sa = WEEK_DATA.sunderArmor || {};
+  const el = document.getElementById("sunderArmor");
+  if (!el) return;
+  const players = sa.players || [];
+  if (!players.length){ const c = el.closest(".card"); if (c) c.style.display = "none"; return; }
+  const maxTotal = Math.max(...players.map(p => p.total)) || 1;
+  const EFF = "var(--physical)", REF = "var(--accent)";
+  const num = (v, col, delta) => `<td style="text-align:right;padding:5px 12px;font-variant-numeric:tabular-nums;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:${col};white-space:nowrap">${(v||0).toLocaleString()}${delta!==undefined?fmtDelta(delta, true):""}</td>`;
+  const rows = players.map((p, ri) => {
+    const role = ((WEEK_DATA.roster||{})[p.name]||{}).role;
+    const nc = nameColor(p.name, role);
+    const ci = classIcon(p.name);
+    const icon = ci ? `<img class="ticon-sm" src="${ci}" alt="" style="margin-right:5px;vertical-align:-2px">` : "";
+    // solid two-segment bar (effective | refreshed), width scaled to the busiest sunderer
+    const w = p.total / maxTotal * 100;
+    const effW = p.total ? p.effective / p.total * 100 : 0;
+    const zebra = ri % 2 ? "background:rgba(255,255,255,.012);" : "";
+    const bar = `<span style="display:inline-block;width:130px;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;vertical-align:middle">`
+      + `<span style="display:inline-block;height:100%;width:${w}%;vertical-align:top">`
+      + `<span style="display:inline-block;height:100%;width:${effW}%;background:${EFF};vertical-align:top"></span>`
+      + `<span style="display:inline-block;height:100%;width:${100-effW}%;background:${REF};vertical-align:top"></span>`
+      + `</span></span>`;
+    return `<tr style="border-top:1px solid var(--surface2);${zebra}">
+      <td style="white-space:nowrap;padding:5px 14px 5px 4px;font-size:12px;${zebra}">${icon}<span class="cname" style="color:${nc}">${p.name}</span></td>
+      <td style="text-align:center;padding:5px 10px;${zebra}">${bar}</td>
+      ${num(p.total, "var(--text)", p.delta_total)}
+      ${num(p.effective, EFF, p.delta_effective)}
+      ${num(p.refreshed, REF)}
+    </tr>`;
+  }).join("");
+  const th = (t, al) => `<th style="text-align:${al};font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:4px 12px 6px;font-weight:600">${t}</th>`;
+  el.innerHTML = `<table style="border-collapse:collapse;min-width:520px">
+    <thead><tr>
+      ${th("Warrior","left")}${th("","center")}
+      ${th("Total","right")}${th("Effective","right")}${th("Refreshed","right")}
+    </tr></thead>
+    <tbody>${rows}</tbody>
   </table>`;
 }
 
@@ -2275,6 +2326,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderDrums();
   renderAvoidableShame();
   renderDebuffCoverage();
+  renderSunderArmor();
   renderMC();
   renderDeaths();
   renderHealthstones();
