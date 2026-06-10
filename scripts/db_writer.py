@@ -266,6 +266,12 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
             con.execute("ALTER TABLE weeks ADD COLUMN start_ms INTEGER")
         except sqlite3.OperationalError:
             pass   # column already exists
+        # migrate older DBs that predate the trended healthstone stats
+        for _col in ("hs_used", "hs_died_no_stone"):
+            try:
+                con.execute(f"ALTER TABLE weeks ADD COLUMN {_col} INTEGER")
+            except sqlite3.OperationalError:
+                pass   # column already exists
         # migrate older DBs that predate the Raid-Prep badges column
         try:
             con.execute("ALTER TABLE consumables ADD COLUMN badges TEXT")
@@ -295,10 +301,12 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
         rc   = meta.get("report_code") or week_data.get("reportCode", "unknown")
 
         # ── weeks ──────────────────────────────────────────────────────────────
+        _hs = week_data.get("healthstoneStats") or {}
         con.execute("""
-            INSERT OR REPLACE INTO weeks (report_code, date, zone, kills, start_ms)
-            VALUES (?, ?, ?, ?, ?)
-        """, (rc, meta.get("date"), meta.get("zone"), meta.get("kills"), meta.get("start_ms")))
+            INSERT OR REPLACE INTO weeks (report_code, date, zone, kills, start_ms, hs_used, hs_died_no_stone)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (rc, meta.get("date"), meta.get("zone"), meta.get("kills"), meta.get("start_ms"),
+              _hs.get("total_used"), _hs.get("died_no_stone")))
 
         # ── roster ─────────────────────────────────────────────────────────────
         for name, info in (week_data.get("roster") or {}).items():

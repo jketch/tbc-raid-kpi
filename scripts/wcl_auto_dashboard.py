@@ -210,6 +210,10 @@ AOE_ABILITIES = {
     "Hellfire", "Shadowfury", "Magma Totem", "Fire Nova", "Thunder Clap",
     "Holy Nova", "Mind Sear", "Consecration", "Volley", "Multi-Shot", "Explosive Trap",
 }
+# AoE that does NOT count as a Mind-Control liability: a persistent ground effect (dropped
+# before the charm) can't be retracted once an ally is MC'd into it — not an intentional cast
+# at the controlled target. Still counts for friendly-fire clumping, just not MC blame.
+MC_LIABLE_EXCLUDE = {"Consecration"}
 # CC that mechanically lands on a charmed *player* (humanoid). Cyclone is the marquee.
 CC_ABILITIES = {
     "Cyclone", "Polymorph", "Repentance", "Fear", "Psychic Scream",
@@ -2927,6 +2931,14 @@ def map_to_week_data(wcl: dict) -> dict:
         "mcSaves":             mc_saves,
         "mcLiable":            mc_liable,
         "consumableUsage":     consum_usage,
+        # Healthstone accountability (trended): raid-wide stones used + how many of the
+        # raiders who died never popped one. {total_used, died_total, died_no_stone}.
+        "healthstoneStats":    (lambda hs, dd: {
+            "total_used":    sum(hs.values()),
+            "died_total":    len(dd),
+            "died_no_stone": sum(1 for p in dd if hs.get(p["name"], 0) == 0),
+        })({p["name"]: p.get("healthstone", 0) for p in consum_usage},
+           [p for p in death_list if p.get("total", 0) > 0]),
         "healing":             healing,
         "tankScorecard":       tank_scorecard,
         "roleSpells":          wcl.get("role_spells", {}),
@@ -3104,6 +3116,20 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
                         r = None
                     if r and r[0] is not None:
                         prov["delta_mana"] = prov.get("mana", 0) - r[0]
+
+            # ── healthstones: raid-level deltas (total used + # who died never popping).
+            hs = week_data.get("healthstoneStats")
+            if hs:
+                try:
+                    r = con.execute("SELECT hs_used, hs_died_no_stone FROM weeks WHERE report_code=?",
+                                    (prev,)).fetchone()
+                except sqlite3.OperationalError:
+                    r = None
+                if r:
+                    if r[0] is not None and hs.get("total_used") is not None:
+                        hs["delta_used"] = hs["total_used"] - r[0]
+                    if r[1] is not None and hs.get("died_no_stone") is not None:
+                        hs["delta_no_stone"] = hs["died_no_stone"] - r[1]
 
             # ── healing: four trended columns (HPS, overheal, activity, mana-efficiency).
             for it in (week_data.get("healing") or []):
@@ -3525,7 +3551,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                 except: amt = 0
                 if amt > 0 and ff_spell not in FF_REFLECT:
                     if fields[5] in mc_now:                 # (1) aggressor hit a controlled ally
-                        if ff_spell in AOE_ABILITIES:
+                        if ff_spell in AOE_ABILITIES and ff_spell not in MC_LIABLE_EXCLUDE:
                             agg = player_names.get(fields[1], fields[1])
                             vic = player_names.get(fields[5], fields[5])
                             rec = mc_liable[agg]
