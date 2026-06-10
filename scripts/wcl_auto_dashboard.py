@@ -3972,11 +3972,11 @@ def main():
                         help="Path to HTML dashboard to update")
     # Auto-find most recent .txt in logs/ if not specified
     _auto_log = None
-    _log_files = sorted(LOGS_DIR.glob("*.txt"), key=lambda p: p.stat().st_mtime, reverse=True)
+    _log_files = sorted(LOGS_DIR.glob("WoWCombatLog*.txt"), key=lambda p: p.stat().st_mtime, reverse=True)
     if _log_files:
         _auto_log = str(_log_files[0])
     parser.add_argument("--log", default=_auto_log,
-                        help="Path to WoWCombatLog.txt (default: newest file in logs/)")
+                        help="Path to WoWCombatLog.txt (default: newest WoWCombatLog*.txt in logs/)")
     parser.add_argument("--dry-run",  action="store_true", help="Print JSON only, don't write HTML")
     parser.add_argument("--test-db",  action="store_true", help="Write to raid_history_test.db instead of prod")
     parser.add_argument("--refresh-baseline", action="store_true",
