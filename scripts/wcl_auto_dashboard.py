@@ -1440,13 +1440,24 @@ def _toolkit_metric(cls, spec, c, kill_min):
     if cls == "Shaman":
         bl = g("bloodlust", 0)
         bl_d = f" · {bl} Bloodlust" if bl else ""
-        if g("wf_totem", 0) > 0:                              # enhance — Windfury is the signature
-            goa = g("goa_totem", 0)
-            return {"label": "Windfury", "value": str(g("wf_totem", 0)),
-                    "title": f"Windfury Totem drops" + (f" · {goa} Grace of Air" if goa else "") + bl_d,
+        if g("wf_totem", 0) > 0:                              # enhance — Windfury + twisting
+            goa, sw = g("goa_totem", 0), g("wf_swaps", 0)
+            twisting = sw >= 20 and goa >= 10                 # alternating both air totems
+            cell = {"label": "Windfury", "value": str(g("wf_totem", 0)),
+                    "title": (f"Windfury Totem drops" + (f" · {goa} Grace of Air" if goa else "")
+                              + (f" · {sw} WF↔GoA swaps (twisting)" if twisting else "") + bl_d),
                     "icon_ability": "Windfury Totem", "fallback": "spell_nature_windfury"}
+            if twisting:
+                cell["tag"] = "🌀 twist"
+            return cell
+        up = g("tow_up")
+        if up is not None:                                   # elemental — modeled ToW uptime
+            return {"label": "ToW uptime", "value": f"~{up:g}%",
+                    "title": (f"Totem of Wrath uptime — modeled from recast cadence "
+                              f"(totem buffs aren't logged as auras in 2.5)" + bl_d),
+                    "icon_ability": "Totem of Wrath", "fallback": "spell_fire_totemofwrath"}
         air = g("woa_totem", 0) + g("tow_totem", 0)
-        if air > 0:                                           # elemental — air/wrath totems
+        if air > 0:                                           # ele w/o ToW casts — air totems
             return {"label": "Air totems", "value": str(air),
                     "title": f"Wrath of Air + Totem of Wrath drops" + bl_d,
                     "icon_ability": "Wrath of Air Totem", "fallback": "spell_nature_slowingtotem"}
@@ -1466,9 +1477,12 @@ def _toolkit_metric(cls, spec, c, kill_min):
                           else "Slice and Dice casts"),
                 "icon_ability": "Slice and Dice", "fallback": "ability_rogue_slicedice"}
     if cls == "Warrior":
-        sun = g("sunder", 0)
-        return {"label": "Battle Shout", "value": str(g("bshout", 0)),
-                "title": f"Battle Shout casts" + (f" · {sun} Sunders" if sun else ""),
+        sun, up = g("sunder", 0), g("bshout_up")
+        sun_d = f" · {sun} Sunders" if sun else ""
+        return {"label": "Battle Shout",
+                "value": (f"{up:g}%" if up is not None else str(g("bshout", 0))),
+                "title": (f"Battle Shout uptime on self ({g('bshout', 0)} casts){sun_d}" if up is not None
+                          else f"Battle Shout casts{sun_d}"),
                 "icon_ability": "Battle Shout", "fallback": "ability_warrior_battleshout"}
     if cls == "Paladin":
         # Spec-agnostic: WCL labels TBC builds by name (Justicar/Protection/Retribution), so
@@ -1533,6 +1547,7 @@ def build_class_toolkit(token, report_code, kills):
     gid2key = {}
     ae_ids  = []                                     # Arcane Explosion ranks (whole-report meme)
     snd_ids = []                                     # Slice and Dice (rogue uptime)
+    bs_ids  = []                                     # Battle Shout (warrior uptime, self-target)
     vt_ids  = set()                                  # Vampiric Touch (spriest mana battery)
     for a in (md.get("abilities") or []):
         nm_a = (a.get("name") or "")
@@ -1543,12 +1558,17 @@ def build_class_toolkit(token, report_code, kills):
             ae_ids.append(a.get("gameID"))
         if nm_a == "Slice and Dice":
             snd_ids.append(a.get("gameID"))
+        if nm_a == "Battle Shout":
+            bs_ids.append(a.get("gameID"))
         if nm_a == "Vampiric Touch":
             vt_ids.add(a.get("gameID"))
     QC = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
         events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts,
                limit: 10000){ data nextPageTimestamp }}}}"""
     counts = defaultdict(lambda: defaultdict(int))   # [name][canonical_key] = casts
+    # Totem cast timestamps for shaman analytics: enhance WF↔GoA twisting + ele ToW uptime.
+    TOTEM_TS = {"wf_totem", "goa_totem", "tow_totem"}
+    tstamps  = defaultdict(lambda: defaultdict(list)) # [name][key] = [cast timestamps]
     cur = st
     try:
         while True:
@@ -1562,12 +1582,29 @@ def build_class_toolkit(token, report_code, kills):
                     nm = id2name.get(d.get("sourceID"))
                     if nm:
                         counts[nm][key] += 1
+                        if key in TOTEM_TS and d.get("timestamp") is not None:
+                            tstamps[nm][key].append(d["timestamp"])
             nx = ev.get("nextPageTimestamp")
             if not nx:
                 break
             cur = nx
     except Exception as ex:
         print(f"  Warning: class-toolkit events failed: {ex}")
+
+    # Shaman totem analytics from the timestamps above:
+    #  • Enhance — WF↔GoA twisting: # of swaps between the two (mutually-exclusive) air totems.
+    #    A non-twister parks one totem (0 swaps); a twister alternates every few seconds.
+    #  • Elemental — Totem of Wrath uptime, MODELED: 2.5 doesn't log totem pulse buffs as auras,
+    #    so estimate from recast cadence (ToW lasts 120s → each cast covers a 120s band, clamped
+    #    to its fight; a cast within 120s of the pull implies pre-pull coverage back to start).
+    for nm, tk in tstamps.items():
+        wf, goa = tk.get("wf_totem", []), tk.get("goa_totem", [])
+        if wf:
+            seq = sorted([(t, "w") for t in wf] + [(t, "g") for t in goa])
+            counts[nm]["wf_swaps"] = sum(1 for i in range(1, len(seq)) if seq[i][1] != seq[i-1][1])
+        tow = tk.get("tow_totem", [])
+        if tow:
+            counts[nm]["tow_up"] = _totem_uptime(sorted(tow), kills, 120_000)
 
     # Arcane Explosion — WHOLE report (trash included), server-filtered by abilityID so it's
     # cheap (~2 pages). The mage AE-spam leaderboard wants the full-night number, not kills-only.
@@ -1620,6 +1657,30 @@ def build_class_toolkit(token, report_code, kills):
                 counts[nm]["snd_up"] = round(up / kdur * 100, 1)
             except Exception as ex:
                 print(f"  Warning: SnD-uptime fetch failed for {nm}: {ex}")
+
+    # Battle Shout UPTIME% per warrior. A raid buff, so source-only sums across every buffed
+    # player (meaningless) — filter to the warrior as BOTH source and target (uptime on self,
+    # the proxy for raid Battle Shout coverage). Keyed off anyone who cast Battle Shout.
+    if bs_ids:
+        kdur = sum(f["endTime"] - f["startTime"] for f in kills) or 1
+        QB = """query($c:String!,$f:[Int],$s:Int!,$t:Int!,$a:Float!){reportData{report(code:$c){
+            table(dataType: Buffs, fightIDs:$f, sourceID:$s, targetID:$t, abilityID:$a)}}}"""
+        for nm, d in list(counts.items()):
+            wid = name2id.get(nm)
+            if not d.get("bshout") or wid is None:
+                continue
+            up = 0
+            try:
+                for aid in bs_ids:
+                    t = gql(token, QB, {"c": report_code, "f": fids, "s": wid, "t": wid, "a": float(aid)}
+                            )["reportData"]["report"]["table"]
+                    if isinstance(t, str):
+                        t = json.loads(t)
+                    for a in t.get("data", {}).get("auras", []):
+                        up += a.get("totalUptime", 0)
+                counts[nm]["bshout_up"] = round(up / kdur * 100, 1)
+            except Exception as ex:
+                print(f"  Warning: Battle Shout-uptime fetch failed for {nm}: {ex}")
 
     # Vampiric Touch mana battery — mana the shadow priest returned to the raid (5% of VT
     # shadow damage → party mana). Authoritative sum from Resources `resourcechange` energize
@@ -1932,6 +1993,26 @@ def _merge_bands(bands: list) -> float:
             cs, ce = s, e
     return covered + (ce - cs)
 
+def _totem_uptime(ts: list, kills: list, dur_ms: int) -> float:
+    """Modeled uptime% of a totem from its recast timestamps. Each cast covers a `dur_ms`
+    band (the totem's duration), clamped to the fight; a cast within `dur_ms` of the pull
+    implies the totem was pre-dropped, so coverage extends back to fight start. Bands merged
+    per fight, summed over all kills. (TBC 2.5 doesn't log totem pulse buffs as auras, so this
+    cadence model is the best available — present it as an estimate.)"""
+    covered = total = 0
+    for f in kills:
+        s, e = f["startTime"], f["endTime"]
+        total += (e - s)
+        casts = [t for t in ts if s <= t <= e]
+        if not casts:
+            continue
+        bands = [{"startTime": max(s, t), "endTime": min(e, t + dur_ms)} for t in casts]
+        if casts[0] - s <= dur_ms:                      # pre-pull drop → cover the lead-in
+            bands.append({"startTime": s, "endTime": min(e, casts[0])})
+        covered += _merge_bands(bands)
+    return round(covered / total * 100, 1) if total else 0
+
+
 def fetch_debuff_coverage(token: str, report_code: str, kills: list) -> dict:
     """WCL-durable raid debuff coverage — runs EVERY week, no combat log needed. For each
     boss kill, the % of fight time each key DPS-amplifying debuff was up on an enemy (WCL
@@ -1985,6 +2066,90 @@ def fetch_debuff_coverage(token: str, report_code: str, kills: list) -> dict:
                  for s in DEBUFF_SLOTS]
     print(f"  ✓ debuff coverage: {len(bosses)} bosses, {len(DEBUFF_SLOTS)} debuffs tracked")
     return {"slots": slots_out, "bosses": bosses, "raid_avg": raid_avg}
+
+
+# Raid-facing mana batteries (energize OTHERS) — what refills the raid/healer corps. Self-only
+# sources (mana gems, Dark/Demonic Rune, Evocation, Life Tap, Spiritual Attunement) are excluded.
+# Judgement of Wisdom is excluded too: its energize credits the ATTACKER, not the providing
+# paladin, and it feeds melee/casters rather than the healer corps this card is about.
+MANA_SOURCES = [
+    {"match": "Vampiric Touch",  "label": "Vampiric Touch",    "icon": "spell_shadow_gathershadows"},
+    {"match": "Mana Tide Totem", "label": "Mana Tide Totem",   "icon": "spell_frost_summonwaterelemental_2"},
+    {"match": "Mana Spring",     "label": "Mana Spring Totem", "icon": "spell_nature_manaregentotem"},
+]
+
+def fetch_mana_returns(token: str, report_code: str, kills: list) -> dict:
+    """Mana RETURNED TO THE RAID, per provider — the mana-battery leaderboard for the Healers
+    & Tanks tab. From WCL Resources `resourcechange` energize events (resourceChangeType 0 =
+    mana). Provider is owner-resolved (totems log as a pet → credit the shaman via petOwner;
+    VT logs the priest directly). Returns
+      {total, providers:[{name, total, sources:[{label,icon,mana}], receivers:[{name,mana}]}]}."""
+    if not kills:
+        return {}
+    try:
+        md = gql(token, """query($c:String!){reportData{report(code:$c){masterData{
+            actors{id name petOwner} abilities{gameID name} }}}}""",
+                 {"c": report_code})["reportData"]["report"]["masterData"]
+    except Exception as ex:
+        print(f"  Warning: mana-returns masterData failed: {ex}")
+        return {}
+    acts = {a["id"]: a for a in (md.get("actors") or [])}
+    def owner(sid):
+        a = acts.get(sid, {})
+        return acts.get(a.get("petOwner"), {}).get("name") if a.get("petOwner") else a.get("name")
+    # abilityGameID → source config (match by name substring; unions ranks/totem variants)
+    gid2src = {}
+    for a in (md.get("abilities") or []):
+        nm = a.get("name") or ""
+        for s in MANA_SOURCES:
+            if s["match"] in nm:
+                gid2src[a.get("gameID")] = s
+                break
+    fids = [f["id"] for f in kills]
+    st   = min(f["startTime"] for f in kills)
+    en   = max(f["endTime"]   for f in kills)
+    QR = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Resources,
+               limit: 10000){ data nextPageTimestamp }}}}"""
+    prov = defaultdict(lambda: {"total": 0, "sources": defaultdict(int), "receivers": defaultdict(int)})
+    cur = st
+    try:
+        while True:
+            ev = gql(token, QR, {"c": report_code, "ids": fids, "st": cur, "en": en}
+                     )["reportData"]["report"]["events"]
+            for d in ev.get("data", []):
+                if d.get("type") != "resourcechange" or d.get("resourceChangeType") != 0:
+                    continue
+                amt = d.get("resourceChange", 0) or 0
+                src = gid2src.get(d.get("abilityGameID"))
+                if amt <= 0 or not src:
+                    continue
+                pname = owner(d.get("sourceID"))
+                if not pname:
+                    continue
+                p = prov[pname]
+                p["total"] += amt
+                p["sources"][src["label"]] += amt
+                rname = acts.get(d.get("targetID"), {}).get("name")
+                if rname and rname != pname:
+                    p["receivers"][rname] += amt
+            nx = ev.get("nextPageTimestamp")
+            if not nx:
+                break
+            cur = nx
+    except Exception as ex:
+        print(f"  Warning: mana-returns events failed: {ex}")
+    icon_of = {s["label"]: s["icon"] for s in MANA_SOURCES}
+    providers = []
+    for nm, p in prov.items():
+        srcs = sorted(({"label": l, "icon": icon_of.get(l, ""), "mana": m}
+                       for l, m in p["sources"].items()), key=lambda x: -x["mana"])
+        recv = sorted(({"name": r, "mana": m} for r, m in p["receivers"].items()),
+                      key=lambda x: -x["mana"])[:3]
+        providers.append({"name": nm, "total": p["total"], "sources": srcs, "receivers": recv})
+    providers.sort(key=lambda x: -x["total"])
+    print(f"  ✓ mana returns: {len(providers)} providers")
+    return {"total": sum(p["total"] for p in providers), "providers": providers}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2251,6 +2416,7 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     # Raid debuff coverage — pure WCL, per boss (CoE/Misery/Shadow Weaving/ISB + armor + judgements)
     debuff_coverage = fetch_debuff_coverage(token, report_code, kills)
     # Class toolkit — each DPS's signature class-relative utility (cast-based, pure WCL)
+    mana_returns  = fetch_mana_returns(token, report_code, kills)
     class_toolkit = build_class_toolkit(token, report_code, kills)
     # Fold the biggest Shadow Bolt crit (tracked free during the crit pass) into the toolkit
     # counts so the warlock metric resolver reads it like any other value.
@@ -2352,6 +2518,8 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
         "debuff_coverage": debuff_coverage,
         # per-player signature class-utility cast counts (pure WCL Casts)
         "class_toolkit":   class_toolkit,
+        # mana returned to the raid, per provider (mana-battery leaderboard)
+        "mana_returns":    mana_returns,
     }
 
     return week_data
@@ -2444,6 +2612,8 @@ def map_to_week_data(wcl: dict) -> dict:
             return None
         icon = _tk_icons.get(m["icon_ability"]) or m["fallback"]
         cell = {"label": m["label"], "value": m["value"], "title": m["title"], "icon": icon}
+        if m.get("tag"):
+            cell["tag"] = m["tag"]
         # hybrid tag: this metric belongs to someone whose roster role isn't what they played
         if _eff(p) != p.get("role") and p.get("fights_dps", 0) > 0:
             cell["off"] = f"{p.get('fights_dps', 0)}/{p.get('fights_total', 0)}"
@@ -2721,6 +2891,7 @@ def map_to_week_data(wcl: dict) -> dict:
         "boss_meta":    wcl.get("boss_meta", {}),
         "healReaction": wcl.get("heal_reaction", {}),
         "debuffCoverage": wcl.get("debuff_coverage", {}),
+        "manaReturns":    wcl.get("mana_returns", {}),
     }
 
 

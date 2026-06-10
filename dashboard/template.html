@@ -725,6 +725,13 @@
     <div class="scroll-x scroll-y"><div id="healerUptimeHeatmap"></div></div>
   </div>
 
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/spell_frost_summonwaterelemental_2.jpg" alt=""> Mana Returned to the Raid</div>
+  <div class="card healer">
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_frost_summonwaterelemental_2.jpg" alt=""> Mana batteries — who refilled the raid</div>
+    <div class="hs-sub">Mana fed to <b>others</b> via Vampiric Touch, Mana Tide &amp; Mana Spring totems (self-only sources — gems, runes, Evocation, Life Tap — are excluded). The support players keeping the raid topped off. Arrow shows the top recipients.</div>
+    <div class="scroll-y"><div id="manaReturns"></div></div>
+  </div>
+
   <!-- ═══════════════ ENGINEERING + INTERRUPTS (half-width pair) ═══════════════ -->
   </div>
   <div class="tsec" data-tab="utility">
@@ -1917,6 +1924,7 @@ function renderDamage() {
       : `<span title="${(tk.title||'').replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap">`
         + `${gicon(tk.icon)}<span style="color:var(--muted);font-size:10.5px">${tk.label}</span>`
         + `<b style="color:var(--text)">${tk.value}</b>`
+        + (tk.tag?`<span style="color:var(--blue);font-size:10px;font-weight:600">${tk.tag}</span>`:"")
         + (tk.off?`<span title="played DPS on ${tk.off} fights off their roster role" style="color:var(--amber);font-size:10px">⚔${tk.off}</span>`:"")
         + `</span>`;
     return `<tr>
@@ -1987,6 +1995,28 @@ function renderHealerUptimeHeatmap(){
   }).join("");
   const avgRow = `<tr style="border-top:2px solid var(--border)"><td style="color:var(--muted);font-style:italic">fight avg</td>${bosses.map(b=>avg[b]==null?'<td class="num">—</td>':`<td class="num" style="color:var(--muted)">${Math.round(avg[b])}</td>`).join("")}</tr>`;
   el.innerHTML = `<table class="mini-table" style="font-size:11.5px;white-space:nowrap"><thead>${head}</thead><tbody>${rows}${avgRow}</tbody></table>`;
+}
+
+// ── MANA RETURNED TO THE RAID — mana-battery leaderboard. Who fed OTHERS mana (Vampiric Touch,
+// Mana Tide/Spring totems). Provider → top recipients. Positive call-out, solid green bars.
+function renderManaReturns(){
+  const el = document.getElementById("manaReturns"); if(!el) return;
+  const provs = (WEEK_DATA.manaReturns || {}).providers || [];
+  if(!provs.length){ const c = el.closest(".card"); if(c) c.style.display = "none"; return; }
+  const k = v => v>=1000 ? (v/1000).toFixed(v>=10000?0:1)+"k" : ""+Math.round(v);
+  const max = provs[0].total || 1;
+  el.innerHTML = provs.map(p => {
+    const nc = nameColor(p.name);
+    const bar = Math.round(p.total/max*100);
+    const srcs = (p.sources||[]).map(s=>`<span title="${s.label}: ${s.mana.toLocaleString()} mana" style="display:inline-flex;align-items:center;gap:3px;margin-right:9px">${gicon(s.icon,'ticon-sm')}<span style="color:var(--muted);font-size:11px">${k(s.mana)}</span></span>`).join("");
+    const recv = (p.receivers||[]).length ? `<span style="color:var(--dim);font-size:10.5px;white-space:nowrap">→ ${p.receivers.map(r=>`<span class="cname" style="color:${nameColor(r.name)}">${r.name}</span>`).join(", ")}</span>` : "";
+    return `<div style="display:flex;align-items:center;gap:10px;padding:5px 2px;border-bottom:1px solid var(--border)">
+      <span class="cname" style="color:${nc};min-width:108px;font-weight:600">${p.name}</span>
+      <span style="min-width:58px;text-align:right;font-weight:700;color:var(--healer)">${k(p.total)}</span>
+      <span style="flex:0 0 84px"><span style="display:block;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden"><span style="display:block;height:100%;width:${bar}%;background:var(--healer)"></span></span></span>
+      <span style="flex:1;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${srcs}${recv}</span>
+    </div>`;
+  }).join("");
 }
 
 // ── HEAL REACTION-TIME HEATMAP — median seconds from dropping <50% HP to the next heal landing.
@@ -2189,6 +2219,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderHealing();
   renderReactionHeatmap();
   renderHealerUptimeHeatmap();
+  renderManaReturns();
   renderTanks();
   renderEngTable();
   renderInterruptBars();
