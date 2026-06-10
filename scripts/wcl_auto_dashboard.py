@@ -848,6 +848,66 @@ def build_fight_roles_from_log(log_roles: dict, kills: list):
     return {n: dict(d) for n, d in roles.items()}, durs, coverage
 
 
+def harden_tank_fights(token: str, report_code: str, kills: list,
+                       fight_roles: dict, tank_names: set, batch: int = 5):
+    """WCL-durable per-fight tank attribution — the fix for ferals ('Warden') and other
+    specs WCL's per-fight playerDetails mislabels, which otherwise drop a real tank from the
+    scorecard on log-less (backfilled) weeks. A boss's main-hand 'Melee' auto-attack only ever
+    lands on its current target, so boss-melee-taken is a near-pure tank signal. We restrict
+    detection to known roster tanks (`tank_names`) — that removes the only false positives the
+    raw signal has (a DPS threat-slip or an add's melee on a non-tank) — and we ONLY ADD fights
+    (union with the spec path, never remove), so this can't regress today's numbers. The
+    combat-log role path already carries this signal, so this runs only on the API fallback.
+    Mutates `fight_roles` in place (adds fids to each tank's 'Tank' list, drops them from
+    'dps'/'Healer'). Cheap: ~2 batched DamageTaken-table queries."""
+    if not tank_names:
+        return
+    added = 0
+    for i in range(0, len(kills), batch):
+        chunk = kills[i:i + batch]
+        aliases = "\n".join(
+            f'f{f["id"]}: table(dataType: DamageTaken, fightIDs:[{int(f["id"])}], hostilityType: Friendlies)'
+            for f in chunk)
+        Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
+        try:
+            rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+        except Exception as ex:
+            print(f"  Warning: tank-harden DamageTaken batch failed: {ex}")
+            continue
+        for f in chunk:
+            fid = f["id"]
+            t = rep.get(f'f{fid}')
+            if isinstance(t, str):
+                t = json.loads(t)
+            # boss-melee taken, restricted to roster tanks
+            melee = {}
+            for e in (t or {}).get("data", {}).get("entries", []):
+                nm = e.get("name")
+                if nm not in tank_names:
+                    continue
+                m = sum(ab.get("total", 0) for ab in (e.get("abilities") or [])
+                        if ab.get("name") == "Melee")
+                if m > 0:
+                    melee[nm] = m
+            if not melee:
+                continue
+            top = max(melee.values())
+            for nm, m in melee.items():
+                if m < top * 0.15:        # didn't tank this fight (incidental/threat-slip melee)
+                    continue
+                fr = fight_roles.setdefault(nm, {"Healer": [], "Tank": [], "dps": []})
+                tank_l = fr.setdefault("Tank", [])
+                if fid not in tank_l:
+                    tank_l.append(fid)
+                    added += 1
+                # a fight they tanked isn't a fight they DPS'd/healed
+                for b in ("dps", "Healer"):
+                    if fid in fr.get(b, []):
+                        fr[b].remove(fid)
+    if added:
+        print(f"   Tank attribution hardened from WCL DamageTaken: +{added} tank-fight(s)")
+
+
 def fetch_healing_by_fight(token: str, report_code: str, kills: list, batch: int = 5) -> dict:
     """Per-fight Healing tables (needed for per-boss vs-replacement + heal-fight scoping).
     Uses GraphQL field ALIASING to fetch `batch` fights per HTTP request instead of one
@@ -2541,6 +2601,12 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     if fight_roles is None:
         print("   Per-fight roles from WCL playerDetails (API)")
         fight_roles, fight_durs = fetch_fight_roles(token, report_code, kills)
+        # WCL's per-fight spec labels drop ferals ('Warden') and undercount tanks, so harden
+        # per-fight tank attribution from the boss-melee signal — restricted to known roster
+        # tanks, additive only (see harden_tank_fights). Keeps log-less weeks from blanking a
+        # tank, per the WCL-Durability Principle. (The log role path already has this signal.)
+        roster_tanks = {p["name"] for p in players if p.get("role") == "Tank"}
+        harden_tank_fights(token, report_code, kills, fight_roles, roster_tanks)
     # Report bosses with NO combat-log coverage (e.g. logging started mid-session) — these
     # are missing from the log-sourced KPIs, so surface them rather than silently dropping.
     logged_bosses = set((log_data or {}).get("fight_roles_log", {}).keys())
