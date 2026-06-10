@@ -307,6 +307,11 @@ DASH_FILE      = ROOT_DIR / "dashboard" / "raid_kpi_dashboard.html"
 TEMPLATE_FILE  = ROOT_DIR / "dashboard" / "template.html"
 DEFAULT_TITLE  = "Raid KPI Dashboard — TBC Anniversary"
 
+# Per-week mapped WEEK_DATA snapshots — the source of record for OFFLINE reprocessing
+# (reprocess.py --all) so a schema/trend/render change never needs a WCL re-run. One JSON
+# per report, written every prod run after map_to_week_data() (gitignored, ~MB each).
+WEEK_DATA_CACHE = ROOT_DIR / "cache" / "week_data"
+
 # Healer "replacement-level" cohort cache (same-spec ranked parses per boss). The
 # heavy rankings fetch is amortized here — weekly runs read it; refresh ~monthly.
 BASELINE_CACHE = ROOT_DIR / "cache" / "healer_baseline.json"
@@ -3282,6 +3287,27 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
     return week_data
 
 
+def dump_week_data_cache(mapped: dict) -> None:
+    """Persist a mapped WEEK_DATA dict to cache/week_data/<report>.json — the offline-reprocess
+    source of record (reprocess.py --all rebuilds the whole DB + trends from these, zero WCL).
+
+    Cache the CLEAN mapped data (call BEFORE enrich_with_trends) so a from-scratch reprocess
+    recomputes deltas fresh instead of inheriting stale ones. The mapped dict is already
+    json-serializable (inject_into_html json.dumps's it). Never raises — a cache miss must not
+    break the run (same discipline as the db_writer write_week warning)."""
+    try:
+        code = (mapped.get("meta") or {}).get("report_code")
+        if not code:
+            print("  ⚠ week_data cache: no report_code in meta — skipping")
+            return
+        WEEK_DATA_CACHE.mkdir(parents=True, exist_ok=True)
+        out = WEEK_DATA_CACHE / f"{code}.json"
+        out.write_text(json.dumps(mapped, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"  ✓ cached WEEK_DATA → week_data/{out.name}")
+    except Exception as e:
+        print(f"  ⚠ week_data cache write failed: {e}")
+
+
 def inject_into_html(week_data: dict, html_path: Path, mapped: dict = None):
     """Read template.html, inject WEEK_DATA, write to html_path (the gitignored output).
 
@@ -4119,6 +4145,11 @@ def main():
         # not the raw wcl dict. Map ONCE (pure transform, no API calls), then enrich with
         # week-over-week deltas BEFORE write_week() overwrites last week's row in the DB.
         mapped = map_to_week_data(week_data)
+        # Snapshot the clean mapped WEEK_DATA for offline reprocessing (prod only — the cache is
+        # the canonical weekly history; --test-db proofs and throwaway test reports must not
+        # pollute it). Pre-enrich so reprocess recomputes trends fresh.
+        if not args.test_db:
+            dump_week_data_cache(mapped)
         enrich_with_trends(mapped, db_path)
         inject_into_html(week_data, Path(args.out), mapped=mapped)
         write_week(mapped, db_path=db_path)

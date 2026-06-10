@@ -17,8 +17,15 @@ mana_returns the first time needed the Resources events) — that one needs a si
 which this script keeps it current for free.
 
 Usage:
-    python scripts/reprocess.py [path/to/injected.html]   # default: .deploy/index.html
+    python scripts/reprocess.py [path/to/injected.html]   # one week from an injected HTML
     python scripts/reprocess.py --test-db [path]          # write the test DB instead of prod
+    python scripts/reprocess.py --all                     # rebuild the WHOLE DB + trends from
+                                                          #   cache/week_data/*.json (zero WCL)
+    python scripts/reprocess.py --all --test-db           # same, into the safe test DB
+
+Single-file mode also SEEDS cache/week_data/<report>.json from the loaded HTML, so reprocessing a
+retained dashboard backfills the offline cache. Each future prod run drops its own snapshot there
+(see wcl_auto_dashboard.dump_week_data_cache), and `--all` then rebuilds everything offline.
 """
 import sys, json
 from pathlib import Path
@@ -46,27 +53,63 @@ def load_week_data(html_path: Path) -> dict:
     return json.loads(html[s:j + 1])
 
 
+def reprocess_one(wd: dict, db_path: Path, render: bool = True) -> None:
+    """Run the cheap local stages on one mapped WEEK_DATA: trends → DB write → (optional) render.
+    enrich_with_trends MUST precede write_week (it reads the prior week before this one overwrites)."""
+    W.enrich_with_trends(wd, db_path)
+    try:
+        db_writer.write_week(wd, db_path)
+    except Exception as e:
+        print(f"  db write warning: {e}")
+    if render:
+        W.inject_into_html(wd, W.DASH_FILE, mapped=wd)
+
+
+def reprocess_all(db_path: Path) -> None:
+    """Rebuild the whole DB + trend chain from cache/week_data/*.json, chronologically (zero WCL).
+    Non-destructive upsert (INSERT OR REPLACE): older backfilled weeks not in the cache are kept and
+    still serve as trend baselines. Re-renders the dashboard for the most recent cached week."""
+    files = sorted(W.WEEK_DATA_CACHE.glob("*.json"))
+    weeks = []
+    for f in files:
+        try:
+            weeks.append(json.loads(f.read_text(encoding="utf-8")))
+        except Exception as e:
+            print(f"  ⚠ skip {f.name}: {e}")
+    weeks = [w for w in weeks if (w.get("meta") or {}).get("start_ms") is not None]
+    weeks.sort(key=lambda w: w["meta"]["start_ms"])     # chronological — NOT the display date string
+    if not weeks:
+        raise SystemExit(f"no cached weeks in {W.WEEK_DATA_CACHE} — run a prod pipeline (or seed one "
+                         f"with `python scripts/reprocess.py <injected.html>`) first")
+    print(f"reprocess --all: {len(weeks)} cached week(s) → {db_path.name}  ·  NO WCL calls")
+    for i, wd in enumerate(weeks):
+        meta = wd.get("meta", {})
+        n = len(wd.get("roster") or {})
+        print(f"  [{i+1}/{len(weeks)}] {meta.get('report_code')} ({meta.get('date')}) → {n} players")
+        reprocess_one(wd, db_path, render=(i == len(weeks) - 1))   # render only the latest week
+    print(f"  ✓ rebuilt {len(weeks)} weeks; regenerated {W.DASH_FILE.name} for the latest")
+
+
 def main():
     args = [a for a in sys.argv[1:]]
     test = "--test-db" in args
-    args = [a for a in args if a != "--test-db"]
-    src = Path(args[0]) if args else (W.ROOT_DIR / ".deploy" / "index.html")
+    do_all = "--all" in args
+    args = [a for a in args if a not in ("--test-db", "--all")]
     db_path = db_writer.DB_PATH_TEST if test else db_writer.DB_PATH
 
+    if do_all:
+        reprocess_all(db_path)
+        return
+
+    src = Path(args[0]) if args else (W.ROOT_DIR / ".deploy" / "index.html")
     wd = load_week_data(src)
     meta = wd.get("meta", {})
     print(f"reprocess {meta.get('report_code')} ({meta.get('date')}) from {src}")
     print(f"  DB: {db_path.name}  ·  NO WCL calls")
 
-    # 1) recompute trend deltas vs the prior week (reads DB; must precede this week's write)
-    W.enrich_with_trends(wd, db_path)
-    # 2) persist this week's rows so subsequent weeks can trend against the new schema
-    try:
-        db_writer.write_week(wd, db_path)
-    except Exception as e:
-        print(f"  db write warning: {e}")
-    # 3) re-render from the current template
-    W.inject_into_html(wd, W.DASH_FILE, mapped=wd)
+    # Seed the offline cache from this HTML so `--all` can reach this week later.
+    W.dump_week_data_cache(wd)
+    reprocess_one(wd, db_path, render=True)
     print(f"  ✓ regenerated {W.DASH_FILE.name}")
 
 
