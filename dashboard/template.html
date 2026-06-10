@@ -652,10 +652,15 @@
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/ability_dualwield.jpg" alt=""> DPS — Damage Output</div>
   <div class="card physical">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/ability_dualwield.jpg" alt=""> Damage per Second</div>
-    <div class="hs-sub">DPS over total boss time. The Toolkit column is each class's signature raid-utility (did you bring your kit?). Per-fight attack uptime is its own chart below.</div>
+    <div class="hs-sub">DPS &amp; uptime computed WCL-style — damage divided by <b>that selection's own fight time</b> (All / Bosses / Trash). The Toolkit column is each class's signature raid-utility (did you bring your kit?).</div>
+    <div class="seg" id="dpsSeg">
+      <button class="seg-btn on" data-sel="all" onclick="_setDpsSel('all')">All</button>
+      <button class="seg-btn" data-sel="boss" onclick="_setDpsSel('boss')">Bosses</button>
+      <button class="seg-btn" data-sel="trash" onclick="_setDpsSel('trash')">Trash</button>
+    </div>
     <div class="scroll-x scroll-y">
       <table class="mini-table" id="dpsTable">
-        <thead><tr><th>Player</th><th class="num">DPS</th><th class="num">Total</th><th class="num">% Raid</th><th>Toolkit</th></tr></thead>
+        <thead><tr><th>Player</th><th class="num">DPS</th><th class="num">Uptime</th><th class="num">Total</th><th class="num">% Raid</th><th>Toolkit</th></tr></thead>
         <tbody id="dpsTbody"></tbody>
       </table>
     </div>
@@ -728,7 +733,7 @@
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/spell_frost_summonwaterelemental_2.jpg" alt=""> Mana Returned to the Raid</div>
   <div class="card healer">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_frost_summonwaterelemental_2.jpg" alt=""> Mana batteries — who refilled the raid</div>
-    <div class="hs-sub">Mana fed to <b>others</b> via Vampiric Touch, Mana Tide &amp; Mana Spring totems (self-only sources — gems, runes, Evocation, Life Tap — are excluded). The support players keeping the raid topped off. Arrow shows the top recipients.</div>
+    <div class="hs-sub">Mana returned to the raid, <b>split by source</b> — Vampiric Touch, Mana Tide &amp; Mana Spring totems (self counts; the provider is a raid member). Self-only sources (gems, runes, Evocation, Life Tap) are out. Innervate is a cast count — it boosts spirit regen and emits no measurable mana event. Arrow shows top recipients.</div>
     <div class="scroll-y"><div id="manaReturns"></div></div>
   </div>
 
@@ -1901,24 +1906,35 @@ function renderDeaths() {
   el.innerHTML = `<div class="av-summary">${summary}</div>${rows}`;
 }
 
-// ── DPS RANKING — real damage output (DPS, total, % raid, uptime)
+// ── DPS RANKING — real damage output split All / Bosses / Trash. DPS & uptime use that
+// selection's OWN fight time (WCL-style), not whole-report damage over boss time.
+let _dpsSel = "all";
+function _setDpsSel(s){
+  _dpsSel = s;
+  document.querySelectorAll("#dpsSeg .seg-btn").forEach(b => b.classList.toggle("on", b.dataset.sel === s));
+  renderDamage();
+}
 function renderDamage() {
   const tbody = document.getElementById("dpsTbody");
   if (!tbody) return;
-  const data = [...(WEEK_DATA.damage || [])];
-  if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);font-size:12px">No damage data.</td></tr>'; return; }
-  const dur = Object.values(WEEK_DATA.boss_times || {}).reduce((s, v) => s + v, 0) || 1;
-  const raidTotal = data.reduce((s, p) => s + (p.total_dmg || 0), 0) || 1;
-  const maxDps = Math.max(...data.map(p => p.total_dmg / dur));
-  tbody.innerHTML = data.map(p => {
-    const dps = p.total_dmg / dur;
+  const ds = WEEK_DATA.damageBySelection;
+  if (!ds || !ds.players || !ds.players.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);font-size:12px">No damage data.</td></tr>'; return; }
+  const sel = _dpsSel;
+  const dur = (ds.durations || {})[sel] || 1;
+  const rows = ds.players.map(p => ({ ...p, sd: p[sel] || { total: 0, active: 0 } }))
+                         .filter(p => p.sd.total > 0)
+                         .sort((a, b) => b.sd.total - a.sd.total);
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" style="color:var(--muted);font-size:12px">No ${sel} damage.</td></tr>`; return; }
+  const raidTotal = rows.reduce((s, p) => s + p.sd.total, 0) || 1;
+  const maxDps = Math.max(...rows.map(p => p.sd.total / dur));
+  tbody.innerHTML = rows.map(p => {
+    const dps = p.sd.total / dur;
     const pct = (dps / maxDps * 100).toFixed(0);
-    const share = (p.total_dmg / raidTotal * 100).toFixed(1);
-    const up = p.active_pct != null ? p.active_pct : null;
-    const upChip = up == null ? "" : (up >= 90 ? "green" : up >= 75 ? "yellow" : "orange");
+    const share = (p.sd.total / raidTotal * 100).toFixed(1);
+    const up = p.sd.active / 1000 / dur * 100;
+    const upCol = up >= 90 ? "var(--green)" : up >= 75 ? "var(--yellow)" : "var(--orange)";
     const nc = nameColor(p.name, p.role);
     const spec = ((WEEK_DATA.roster||{})[p.name]||{}).spec || "";
-    // Class Toolkit cell: signature class-utility (icon · label · value), ⚔ tag for hybrids.
     const tk = p.toolkit;
     const tkCell = !tk ? `<span style="color:var(--muted)">—</span>`
       : `<span title="${(tk.title||'').replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap">`
@@ -1932,9 +1948,10 @@ function renderDamage() {
       <td class="num" style="font-weight:600;color:var(--text)">
         <span style="display:inline-flex;align-items:center;gap:9px;justify-content:flex-end">
           <span style="width:60px;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;flex-shrink:0"><span style="display:block;height:100%;width:${pct}%;background:${nc}"></span></span>
-          <span style="min-width:50px;text-align:right">${Math.round(dps).toLocaleString()}${fmtDelta(p.delta_dps, true)}</span>
+          <span style="min-width:50px;text-align:right">${Math.round(dps).toLocaleString()}</span>
         </span></td>
-      <td class="num" style="color:var(--muted)">${hsK(p.total_dmg)}</td>
+      <td class="num" style="color:${upCol};font-weight:600">${Math.round(up)}%</td>
+      <td class="num" style="color:var(--muted)">${hsK(p.sd.total)}</td>
       <td class="num" style="color:var(--muted)">${share}%</td>
       <td>${tkCell}</td>
     </tr>`;
@@ -1997,26 +2014,46 @@ function renderHealerUptimeHeatmap(){
   el.innerHTML = `<table class="mini-table" style="font-size:11.5px;white-space:nowrap"><thead>${head}</thead><tbody>${rows}${avgRow}</tbody></table>`;
 }
 
-// ── MANA RETURNED TO THE RAID — mana-battery leaderboard. Who fed OTHERS mana (Vampiric Touch,
-// Mana Tide/Spring totems). Provider → top recipients. Positive call-out, solid green bars.
+// ── MANA RETURNED TO THE RAID — battery leaderboards grouped BY SOURCE (Vampiric Touch, Mana
+// Tide, Mana Spring), each provider's mana → top recipients. Self counts (provider is a raid
+// member). Innervate is a separate cast-count section (it emits no mana event). Solid green bars.
 function renderManaReturns(){
   const el = document.getElementById("manaReturns"); if(!el) return;
-  const provs = (WEEK_DATA.manaReturns || {}).providers || [];
-  if(!provs.length){ const c = el.closest(".card"); if(c) c.style.display = "none"; return; }
+  const mr = WEEK_DATA.manaReturns || {};
+  const bats = mr.batteries || [];
+  const casters = (mr.innervate || {}).casters || [];
+  if(!bats.length && !casters.length){ const c = el.closest(".card"); if(c) c.style.display = "none"; return; }
   const k = v => v>=1000 ? (v/1000).toFixed(v>=10000?0:1)+"k" : ""+Math.round(v);
-  const max = provs[0].total || 1;
-  el.innerHTML = provs.map(p => {
-    const nc = nameColor(p.name);
-    const bar = Math.round(p.total/max*100);
-    const srcs = (p.sources||[]).map(s=>`<span title="${s.label}: ${s.mana.toLocaleString()} mana" style="display:inline-flex;align-items:center;gap:3px;margin-right:9px">${gicon(s.icon,'ticon-sm')}<span style="color:var(--muted);font-size:11px">${k(s.mana)}</span></span>`).join("");
+  const provRow = (p, max) => {
+    const bar = Math.round(p.mana/max*100);
     const recv = (p.receivers||[]).length ? `<span style="color:var(--dim);font-size:10.5px;white-space:nowrap">→ ${p.receivers.map(r=>`<span class="cname" style="color:${nameColor(r.name)}">${r.name}</span>`).join(", ")}</span>` : "";
-    return `<div style="display:flex;align-items:center;gap:10px;padding:5px 2px;border-bottom:1px solid var(--border)">
-      <span class="cname" style="color:${nc};min-width:108px;font-weight:600">${p.name}</span>
-      <span style="min-width:58px;text-align:right;font-weight:700;color:var(--healer)">${k(p.total)}</span>
+    return `<div style="display:flex;align-items:center;gap:10px;padding:3px 2px 3px 4px">
+      <span class="cname" style="color:${nameColor(p.name)};min-width:108px;font-weight:600">${p.name}</span>
+      <span style="min-width:50px;text-align:right;font-weight:700;color:var(--healer)">${k(p.mana)}</span>
       <span style="flex:0 0 84px"><span style="display:block;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden"><span style="display:block;height:100%;width:${bar}%;background:var(--healer)"></span></span></span>
-      <span style="flex:1;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${srcs}${recv}</span>
+      <span style="flex:1">${recv}</span>
     </div>`;
+  };
+  let html = bats.map(b => {
+    const max = (b.providers[0]||{}).mana || 1;
+    return `<div style="margin-bottom:11px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;border-bottom:1px solid var(--border);padding-bottom:3px">
+        ${gicon(b.icon,'ticon')}<b style="font-size:12px;color:var(--text)">${b.label}</b>
+        <span style="color:var(--muted);font-size:11px">${k(b.total)} to raid</span></div>
+      ${b.providers.map(p=>provRow(p,max)).join("")}</div>`;
   }).join("");
+  if(casters.length){
+    html += `<div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;border-bottom:1px solid var(--border);padding-bottom:3px">
+        ${gicon(mr.innervate.icon,'ticon')}<b style="font-size:12px;color:var(--text)">Innervate</b>
+        <span style="color:var(--dim);font-size:10.5px">cast count — emits no mana event to measure</span></div>
+      ${casters.map(c=>`<div style="display:flex;align-items:center;gap:10px;padding:3px 2px 3px 4px">
+        <span class="cname" style="color:${nameColor(c.name)};min-width:108px;font-weight:600">${c.name}</span>
+        <span style="min-width:50px;text-align:right;font-weight:700;color:var(--healer)">${c.count}×</span>
+        <span style="flex:1;color:var(--dim);font-size:10.5px">${c.targets.length?`→ ${c.targets.map(t=>`<span class="cname" style="color:${nameColor(t)}">${t}</span>`).join(", ")}`:""}</span>
+      </div>`).join("")}</div>`;
+  }
+  el.innerHTML = html;
 }
 
 // ── HEAL REACTION-TIME HEATMAP — median seconds from dropping <50% HP to the next heal landing.

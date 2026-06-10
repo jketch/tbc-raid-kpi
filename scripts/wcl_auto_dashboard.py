@@ -2068,22 +2068,27 @@ def fetch_debuff_coverage(token: str, report_code: str, kills: list) -> dict:
     return {"slots": slots_out, "bosses": bosses, "raid_avg": raid_avg}
 
 
-# Raid-facing mana batteries (energize OTHERS) — what refills the raid/healer corps. Self-only
-# sources (mana gems, Dark/Demonic Rune, Evocation, Life Tap, Spiritual Attunement) are excluded.
-# Judgement of Wisdom is excluded too: its energize credits the ATTACKER, not the providing
-# paladin, and it feeds melee/casters rather than the healer corps this card is about.
+# Raid-facing mana batteries (energize the raid) — what refills the healer corps + casters,
+# split by source so each totem/ability is its own leaderboard. Self counts (the provider is a
+# raid member). Self-only sources (mana gems, Dark/Demonic Rune, Evocation, Life Tap, Spiritual
+# Attunement) and Judgement of Wisdom (its energize goes to the ATTACKER, not the paladin, and
+# feeds melee/casters) are out. Innervate is tracked separately — it emits no mana event (it
+# boosts spirit regen, logged as the target's passive ticks), so it's a cast COUNT, not mana.
 MANA_SOURCES = [
     {"match": "Vampiric Touch",  "label": "Vampiric Touch",    "icon": "spell_shadow_gathershadows"},
     {"match": "Mana Tide Totem", "label": "Mana Tide Totem",   "icon": "spell_frost_summonwaterelemental_2"},
     {"match": "Mana Spring",     "label": "Mana Spring Totem", "icon": "spell_nature_manaregentotem"},
 ]
+INNERVATE_ICON = "spell_nature_lightning"
 
 def fetch_mana_returns(token: str, report_code: str, kills: list) -> dict:
-    """Mana RETURNED TO THE RAID, per provider — the mana-battery leaderboard for the Healers
-    & Tanks tab. From WCL Resources `resourcechange` energize events (resourceChangeType 0 =
-    mana). Provider is owner-resolved (totems log as a pet → credit the shaman via petOwner;
-    VT logs the priest directly). Returns
-      {total, providers:[{name, total, sources:[{label,icon,mana}], receivers:[{name,mana}]}]}."""
+    """Mana RETURNED TO THE RAID, grouped by SOURCE — the mana-battery leaderboards for the
+    Healers & Tanks tab. From WCL Resources `resourcechange` energize events (resourceChangeType
+    0 = mana); provider is owner-resolved (totems log as a pet → credit the shaman via petOwner;
+    VT logs the priest directly). Self mana counts (the provider is part of the raid). Innervate
+    is added as a cast count (it emits no mana event). Returns
+      {batteries:[{label,icon,total,providers:[{name,mana,receivers:[{name,mana}]}]}],
+       innervate:{icon, casters:[{name,count,targets:[name]}]}}."""
     if not kills:
         return {}
     try:
@@ -2097,21 +2102,24 @@ def fetch_mana_returns(token: str, report_code: str, kills: list) -> dict:
     def owner(sid):
         a = acts.get(sid, {})
         return acts.get(a.get("petOwner"), {}).get("name") if a.get("petOwner") else a.get("name")
-    # abilityGameID → source config (match by name substring; unions ranks/totem variants)
-    gid2src = {}
+    gid2src, innv_ids = {}, []
     for a in (md.get("abilities") or []):
         nm = a.get("name") or ""
         for s in MANA_SOURCES:
             if s["match"] in nm:
                 gid2src[a.get("gameID")] = s
                 break
+        if nm == "Innervate":
+            innv_ids.append(a.get("gameID"))
     fids = [f["id"] for f in kills]
     st   = min(f["startTime"] for f in kills)
     en   = max(f["endTime"]   for f in kills)
+    # ── batteries: Resources energize events, per source → provider → mana + receivers ──
+    bysrc = {s["label"]: defaultdict(lambda: {"mana": 0, "recv": defaultdict(int)})
+             for s in MANA_SOURCES}
     QR = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
         events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Resources,
                limit: 10000){ data nextPageTimestamp }}}}"""
-    prov = defaultdict(lambda: {"total": 0, "sources": defaultdict(int), "receivers": defaultdict(int)})
     cur = st
     try:
         while True:
@@ -2127,29 +2135,109 @@ def fetch_mana_returns(token: str, report_code: str, kills: list) -> dict:
                 pname = owner(d.get("sourceID"))
                 if not pname:
                     continue
-                p = prov[pname]
-                p["total"] += amt
-                p["sources"][src["label"]] += amt
+                slot = bysrc[src["label"]][pname]
+                slot["mana"] += amt                          # self included (raid member)
                 rname = acts.get(d.get("targetID"), {}).get("name")
-                if rname and rname != pname:
-                    p["receivers"][rname] += amt
+                if rname:
+                    slot["recv"][rname] += amt
             nx = ev.get("nextPageTimestamp")
             if not nx:
                 break
             cur = nx
     except Exception as ex:
         print(f"  Warning: mana-returns events failed: {ex}")
-    icon_of = {s["label"]: s["icon"] for s in MANA_SOURCES}
-    providers = []
-    for nm, p in prov.items():
-        srcs = sorted(({"label": l, "icon": icon_of.get(l, ""), "mana": m}
-                       for l, m in p["sources"].items()), key=lambda x: -x["mana"])
-        recv = sorted(({"name": r, "mana": m} for r, m in p["receivers"].items()),
-                      key=lambda x: -x["mana"])[:3]
-        providers.append({"name": nm, "total": p["total"], "sources": srcs, "receivers": recv})
-    providers.sort(key=lambda x: -x["total"])
-    print(f"  ✓ mana returns: {len(providers)} providers")
-    return {"total": sum(p["total"] for p in providers), "providers": providers}
+    batteries = []
+    for s in MANA_SOURCES:
+        provs = bysrc[s["label"]]
+        if not provs:
+            continue
+        rows = []
+        for nm, d in provs.items():
+            recv = sorted(({"name": r, "mana": m} for r, m in d["recv"].items() if r != nm),
+                          key=lambda x: -x["mana"])[:3]
+            rows.append({"name": nm, "mana": d["mana"], "receivers": recv})
+        rows.sort(key=lambda x: -x["mana"])
+        batteries.append({"label": s["label"], "icon": s["icon"],
+                          "total": sum(r["mana"] for r in rows), "providers": rows})
+
+    # ── Innervate: cast COUNT per druid + targets (no mana event exists) ──
+    innv = defaultdict(lambda: {"count": 0, "targets": defaultdict(int)})
+    if innv_ids:
+        QI = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!,$a:Float!){reportData{report(code:$c){
+            events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts, abilityID:$a,
+                   limit: 10000){ data nextPageTimestamp }}}}"""
+        try:
+            for aid in innv_ids:
+                cur = st
+                while True:
+                    ev = gql(token, QI, {"c": report_code, "ids": fids, "st": cur, "en": en,
+                                         "a": float(aid)})["reportData"]["report"]["events"]
+                    for d in ev.get("data", []):
+                        if d.get("type") != "cast":
+                            continue
+                        nm = owner(d.get("sourceID"))
+                        if not nm:
+                            continue
+                        innv[nm]["count"] += 1
+                        tg = acts.get(d.get("targetID"), {}).get("name")
+                        if tg and tg != nm:
+                            innv[nm]["targets"][tg] += 1
+                    nx = ev.get("nextPageTimestamp")
+                    if not nx:
+                        break
+                    cur = nx
+        except Exception as ex:
+            print(f"  Warning: innervate fetch failed: {ex}")
+    casters = sorted(({"name": nm, "count": d["count"],
+                       "targets": [t for t, _ in sorted(d["targets"].items(), key=lambda x: -x[1])[:3]]}
+                      for nm, d in innv.items()), key=lambda x: -x["count"])
+
+    print(f"  ✓ mana returns: {len(batteries)} battery sources, {len(casters)} innervaters")
+    return {"batteries": batteries, "innervate": {"icon": INNERVATE_ICON, "casters": casters}}
+
+
+def fetch_damage_by_selection(token: str, report_code: str) -> dict:
+    """Per-player damage + active time for All / Bosses / Trash, mirroring the WCL DamageDone
+    table: DPS = damage ÷ THAT selection's own fight time, uptime = activeTime ÷ that time.
+    (The old single number divided whole-report damage by boss-only time — an inflated, mixed
+    denominator.) Bosses = kill fights; Trash = fights with no encounterID; All = everything.
+    Returns {durations:{all,boss,trash} (sec), players:{name:{all:{total,active},boss,trash}}}."""
+    try:
+        fights = gql(token, """query($c:String!){reportData{report(code:$c){
+            fights{ id kill encounterID startTime endTime }}}}""",
+            {"c": report_code})["reportData"]["report"]["fights"]
+    except Exception as ex:
+        print(f"  Warning: damage-by-selection fights failed: {ex}")
+        return {}
+    if not fights:
+        return {}
+    durms = {f["id"]: (f["endTime"] - f["startTime"]) for f in fights}
+    sels = {
+        "all":   [f["id"] for f in fights],
+        "boss":  [f["id"] for f in fights if f.get("kill")],
+        "trash": [f["id"] for f in fights if not f.get("encounterID")],
+    }
+    def table(ids):
+        if not ids:
+            return {}
+        try:
+            t = gql(token, """query($c:String!,$f:[Int]){reportData{report(code:$c){
+                table(dataType: DamageDone, fightIDs:$f)}}}""",
+                {"c": report_code, "f": ids})["reportData"]["report"]["table"]
+            if isinstance(t, str):
+                t = json.loads(t)
+            return {e["name"]: {"total": e.get("total", 0), "active": e.get("activeTime", 0)}
+                    for e in t.get("data", {}).get("entries", [])}
+        except Exception as ex:
+            print(f"  Warning: damage-by-selection table failed: {ex}")
+            return {}
+    data = {k: table(v) for k, v in sels.items()}
+    durations = {k: round(sum(durms[i] for i in v) / 1000) for k, v in sels.items()}
+    names = set().union(*(set(d) for d in data.values())) if data else set()
+    players = {nm: {k: data[k].get(nm, {"total": 0, "active": 0}) for k in sels} for nm in names}
+    print(f"  ✓ damage by selection: all={durations['all']}s boss={durations['boss']}s "
+          f"trash={durations['trash']}s")
+    return {"durations": durations, "players": players}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2417,6 +2505,7 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     debuff_coverage = fetch_debuff_coverage(token, report_code, kills)
     # Class toolkit — each DPS's signature class-relative utility (cast-based, pure WCL)
     mana_returns  = fetch_mana_returns(token, report_code, kills)
+    damage_by_sel = fetch_damage_by_selection(token, report_code)
     class_toolkit = build_class_toolkit(token, report_code, kills)
     # Fold the biggest Shadow Bolt crit (tracked free during the crit pass) into the toolkit
     # counts so the warlock metric resolver reads it like any other value.
@@ -2520,6 +2609,8 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
         "class_toolkit":   class_toolkit,
         # mana returned to the raid, per provider (mana-battery leaderboard)
         "mana_returns":    mana_returns,
+        # per-player damage + active time split All/Bosses/Trash (WCL-style DPS denominator)
+        "damage_by_sel":   damage_by_sel,
     }
 
     return week_data
@@ -2892,6 +2983,21 @@ def map_to_week_data(wcl: dict) -> dict:
         "healReaction": wcl.get("heal_reaction", {}),
         "debuffCoverage": wcl.get("debuff_coverage", {}),
         "manaReturns":    wcl.get("mana_returns", {}),
+        # DPS table data split All/Bosses/Trash — each with its own WCL-style denominator.
+        # DPS-only (effective_role Physical/Caster); toolkit cell carried per player.
+        "damageBySelection": (lambda ds: {
+            "durations": ds.get("durations", {}),
+            "players": [
+                {"name": p["name"], "role": p["role"], "effective_role": _eff(p),
+                 "toolkit": _toolkit_cell(p),
+                 "all":   ds.get("players", {}).get(p["name"], {}).get("all",   {"total": 0, "active": 0}),
+                 "boss":  ds.get("players", {}).get(p["name"], {}).get("boss",  {"total": 0, "active": 0}),
+                 "trash": ds.get("players", {}).get(p["name"], {}).get("trash", {"total": 0, "active": 0})}
+                for p in players
+                if _eff(p) in ("Physical", "Caster")
+                and ds.get("players", {}).get(p["name"], {}).get("all", {}).get("total", 0) > 0
+            ],
+        })(wcl.get("damage_by_sel", {}) or {}),
     }
 
 
