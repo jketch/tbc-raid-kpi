@@ -133,7 +133,15 @@ def deploy_netlify():
         return None
     try:
         DEPLOY.mkdir(exist_ok=True)
-        shutil.copyfile(DASH, DEPLOY / "index.html")   # root of the site = the dashboard
+        # Stage the rolling multi-week site (index.html + weeks/<report>.json + WEEKS_INDEX).
+        # Falls back to a plain single-week copy if staging can't run (e.g. no snapshots yet).
+        try:
+            sys.path.insert(0, str(ROOT / "scripts"))
+            import build_site
+            build_site.build()
+        except Exception as e:
+            print(f"  ⚠ multi-week staging skipped ({e}); deploying single week")
+            shutil.copyfile(DASH, DEPLOY / "index.html")
         netlify_exe = shutil.which("netlify")
         r = subprocess.run(
             [netlify_exe, "deploy", "--prod", "--dir", str(DEPLOY), "--json"],

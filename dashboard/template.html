@@ -72,6 +72,14 @@
   .pill.blue { color: var(--blue); border-color: var(--blue); }
   .pill.red { color: var(--red); border-color: var(--red); }
   .pill.pill-ghost { color: var(--muted); border-color: var(--border); border-style: dashed; }
+  /* week picker (the date pill becomes a dropdown when multiple weeks exist) */
+  .pill.week-select { font-family: inherit; cursor: pointer; appearance: none; -webkit-appearance: none;
+    padding-right: 26px; background-image: linear-gradient(45deg,transparent 50%,var(--accent) 50%),linear-gradient(135deg,var(--accent) 50%,transparent 50%);
+    background-position: calc(100% - 13px) 7px, calc(100% - 8px) 7px; background-size: 5px 5px,5px 5px; background-repeat: no-repeat; }
+  .pill.week-select:hover { background-color: var(--surface); }
+  .pill.week-select option { background: var(--surface); color: var(--text); font-weight: 600; }
+  .pill.pill-latest { color: var(--accent2); border-color: var(--accent2); }
+  .pill.pill-latest:hover { background: var(--surface); }
 
   /* week-over-week deltas (▲ improved / ▼ regressed vs last week) */
   .delta-up   { color: var(--green); font-size: 0.72em; margin-left: 5px; font-weight: 600; white-space: nowrap; }
@@ -844,10 +852,22 @@
 // WEEKLY DATA — auto-injected by the pipeline
 // ═══════════════════════════════════════════════════════════════════
 const WEEK_DATA = {};
+// Rolling multi-week index — [{report,date,start_ms}] newest-first; build_site.py fills this at deploy.
+const WEEKS_INDEX = [];
 
 // ═══════════════════════════════════════════════════════════════════
 // RENDER ENGINE — no need to touch below this line
 // ═══════════════════════════════════════════════════════════════════
+
+// The pipeline injects only the LATEST week into WEEK_DATA. To view an earlier week we MUTATE
+// WEEK_DATA in place (every render fn reads the global by reference, so swapping its contents
+// re-renders the whole dashboard) — avoids reassigning the const + keeps the python injector/
+// extractors keyed on `const WEEK_DATA`. The latest is kept as a clone so switching back is free.
+let LATEST_WEEK_DATA = null, _curWeek = null;
+function _setActive(data){
+  for (const k in WEEK_DATA) delete WEEK_DATA[k];
+  Object.assign(WEEK_DATA, data || {});
+}
 
 const ROLE_COLORS = {
   Tank: "#3b82f6", Healer: "#22c55e", Caster: "#a855f7", Physical: "#f97316"
@@ -880,7 +900,18 @@ function renderHeader() {
   // Top-right is prime real estate: lead with the raid date, then a week-over-week
   // slot. It populates from WEEK_DATA.prev (prior-week summary injected at pipeline
   // time); until that exists it holds the spot as a dashed placeholder.
-  const pills = [`<div class="pill gold">📅 ${m.date || "—"}</div>`];
+  // The date pill becomes a WEEK PICKER when the rolling multi-week index is present — it sits
+  // exactly where people look for the date, so "the date is clickable to time-travel" reads naturally.
+  const multi = Array.isArray(WEEKS_INDEX) && WEEKS_INDEX.length > 1;
+  const pills = [ multi
+    ? `<select class="pill gold week-select" onchange="loadWeek(this.value)" title="View an earlier week">`
+        + WEEKS_INDEX.map(w => `<option value="${w.report}"${w.report === _curWeek ? " selected" : ""}>📅 ${w.date}</option>`).join("")
+      + `</select>`
+    : `<div class="pill gold">📅 ${m.date || "—"}</div>` ];
+  // when time-traveled to an earlier week, offer a one-click jump back to the live week
+  if (multi && LATEST_WEEK_DATA && _curWeek !== (LATEST_WEEK_DATA.meta || {}).report_code) {
+    pills.push(`<div class="pill pill-latest" title="Back to the most recent raid" onclick="loadWeek((LATEST_WEEK_DATA.meta||{}).report_code)" style="cursor:pointer">↩ latest</div>`);
+  }
   const prev = WEEK_DATA.prev;
   if (prev && prev.date) {
     // Boss-count delta — only when it actually changed (a flat "+0 bosses" is noise).
@@ -2411,7 +2442,12 @@ function _tabKeys(e){
 }
 
 // ── BOOT
-document.addEventListener("DOMContentLoaded", () => {
+// ── RENDER ALL — (re)render the whole dashboard for the currently-active WEEK_DATA.
+// Called once on load and again on every week switch (loadWeek mutates WEEK_DATA in place first).
+function renderAll(){
+  // week-switch hygiene: un-hide any cards/tab-buttons a prior week hid (each render fn re-hides as
+  // needed). Only touches elements a render fn explicitly set an inline display on.
+  document.querySelectorAll('.card[style*="display"], .tab-btn[style*="display"]').forEach(e => e.style.display = "");
   renderHeader();
   renderStatTiles();
   renderBossTiles();
@@ -2443,13 +2479,53 @@ document.addEventListener("DOMContentLoaded", () => {
   (function(){
     const m = (WEEK_DATA.meta||{}).log_missing || [];
     const el = document.getElementById("logCoverageNote");
-    if (el && m.length) el.innerHTML =
-      `<div style="background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11.5px;color:var(--muted)">⚠ No combat-log coverage for <b style="color:var(--orange)">${m.join(", ")}</b> — log-based stats (avoidable, friendly fire, drums) exclude ${m.length>1?"these fights":"this fight"}. WCL stats (DPS, healing, deaths) are complete.</div>`;
+    if (el) el.innerHTML = m.length
+      ? `<div style="background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11.5px;color:var(--muted)">⚠ No combat-log coverage for <b style="color:var(--orange)">${m.join(", ")}</b> — log-based stats (avoidable, friendly fire, drums) exclude ${m.length>1?"these fights":"this fight"}. WCL stats (DPS, healing, deaths) are complete.</div>`
+      : "";
   })();
-  // distinguishable browser-tab title / bookmark per week — lead with the date (drop the time) so
-  // it stays legible when the browser truncates the tab from the right with several weeks open
+  // title reflects the ACTIVE week (date-first so browser tabs stay distinguishable when truncated)
   const _date = (WEEK_DATA.meta || {}).date;
   if (_date) document.title = _date.replace(/\s+\d{1,2}:\d{2}$/, "") + " — Raid KPI";
+  applyHighlight(false);   // re-apply find-me highlight to the freshly rendered week
+}
+
+// ── LOAD WEEK — switch the active week. Latest is the embedded WEEK_DATA (no fetch); earlier weeks
+// are fetched on demand from weeks/<report>.json (deployed by build_site.py). Updates ?week + tab.
+async function loadWeek(report){
+  if (!report || report === _curWeek) return;
+  const latestCode = ((LATEST_WEEK_DATA || {}).meta || {}).report_code;
+  let data;
+  if (report === latestCode) { data = LATEST_WEEK_DATA; }
+  else {
+    try {
+      const r = await fetch(`weeks/${report}.json`, { cache: "no-cache" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      data = await r.json();
+    } catch (e) {
+      console.warn("week load failed:", report, e);
+      const sel = document.querySelector(".week-select"); if (sel) sel.value = _curWeek;   // revert picker
+      return;
+    }
+  }
+  const _activeBtn = document.querySelector(".tab-btn.active");
+  const prevTab = _activeBtn ? _activeBtn.dataset.tab : "overview";
+  _setActive(data); _curWeek = report;
+  renderAll();
+  // reflect the week in the URL (drop ?week when back on the live week) — shareable, no reload
+  try {
+    const u = new URL(location.href);
+    if (report === latestCode) u.searchParams.delete("week"); else u.searchParams.set("week", report);
+    history.replaceState(null, "", u);
+  } catch (e) {}
+  // keep the same tab across the switch; fall back to Overview if it's hidden this week (e.g. Loot)
+  const b = prevTab && document.querySelector(`.tab-btn[data-tab="${prevTab}"]`);
+  showTab(b && getComputedStyle(b).display !== "none" ? prevTab : "overview");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  // capture the embedded latest week so switching back to it needs no fetch
+  LATEST_WEEK_DATA = JSON.parse(JSON.stringify(WEEK_DATA));
+  _curWeek = (WEEK_DATA.meta || {}).report_code || null;
 
   // ── find-me: restore the saved name, wire live highlighting, and re-apply to drill-downs
   const _fm = document.getElementById("findMe"), _fc = document.getElementById("findMeClear");
@@ -2457,9 +2533,8 @@ document.addEventListener("DOMContentLoaded", () => {
     try { _fm.value = localStorage.getItem("findMe") || ""; } catch(e){}
     _fm.addEventListener("input", () => applyHighlight(true));
     if (_fc) _fc.addEventListener("click", () => { _fm.value = ""; applyHighlight(true); _fm.focus(); });
-    applyHighlight(false);
-    // drill-downs (deaths, MC, FF, healer, reaction, player-spells) are built on click — re-highlight
-    // their freshly-inserted names. childList-only + class-toggle means no observer feedback loop.
+    // drill-downs (deaths, MC, FF, …) + week switches inject names on the fly — re-highlight them.
+    // childList-only + class-toggle means no observer feedback loop.
     let _hlPending = false;
     new MutationObserver(() => {
       if (_hlPending) return; _hlPending = true;
@@ -2475,12 +2550,18 @@ document.addEventListener("DOMContentLoaded", () => {
     if (b && getComputedStyle(b).display !== "none") showTab(h);
   });
 
+  // first paint = the embedded latest week
+  renderAll();
+
   // restore the active tab: URL #hash (shareable) → last-viewed (localStorage) → Overview.
-  // Guard against a tab that's gone or now hidden (e.g. Loot removes itself when there's no loot).
   let _tab = (location.hash || "").replace(/^#/, "") || null;
   if (!_tab) { try { _tab = localStorage.getItem("activeTab"); } catch(e){} }
   const _btn = _tab && document.querySelector(`.tab-btn[data-tab="${_tab}"]`);
   showTab(_btn && getComputedStyle(_btn).display !== "none" ? _tab : "overview");
+
+  // ?week=<report> deep-link → load that earlier week (after the latest paint so chrome exists)
+  const _wk = new URLSearchParams(location.search).get("week");
+  if (_wk && _wk !== _curWeek && (WEEKS_INDEX || []).some(w => w.report === _wk)) loadWeek(_wk);
 });
 </script>
 </body>
