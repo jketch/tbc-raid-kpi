@@ -655,14 +655,20 @@ def fetch_gear_from_events(token: str, report_code: str, fights: list,
         return {}
 
 
-def fetch_actual_crit(token: str, report_code: str, fights: list) -> dict[str, dict]:
+def fetch_actual_crit(token: str, report_code: str, fights: list,
+                      crit_track_ids: set | None = None) -> dict[str, dict]:
     """
     Page through damage events across all kill fights and count hits vs crits per player.
     hitType: 1=normal, 2=crit, 4=absorb, 8=blocked, 16=glancing, 32=dodge, 64=parry
-    Returns { sourceID: { name, hits, crits } }
+    Returns { sourceID: { name, hits, crits, [sb_crit] } }
+
+    crit_track_ids: an optional set of abilityGameIDs whose biggest single CRIT hit to record
+    per player (free — reuses these same pages). Powers the warlock "biggest Shadow Bolt crit"
+    toolkit metric. Stored as `sb_crit` on the per-source dict.
     """
     if not fights:
         return {}
+    track = crit_track_ids or set()
 
     start = float(min(f["startTime"] for f in fights))
     end   = float(max(f["endTime"]   for f in fights))
@@ -699,6 +705,11 @@ def fetch_actual_crit(token: str, report_code: str, fights: list) -> dict[str, d
                 counts[sid] = {"name": str(sid), "hits": 0, "crits": 0}
             if hit_type == 2:
                 counts[sid]["crits"] += 1
+                # biggest single crit of a tracked ability (warlock Shadow Bolt brag number)
+                if track and ev.get("abilityGameID") in track:
+                    amt = ev.get("amount", 0) or 0
+                    if amt > counts[sid].get("sb_crit", 0):
+                        counts[sid]["sb_crit"] = amt
             elif hit_type == 1:
                 counts[sid]["hits"]  += 1
 
@@ -1385,13 +1396,14 @@ def fetch_role_spell_usage(token, report_code, fight_ids, players):
 # from the WCL Casts table (the durable headline; combat log can enrich later). Match is by
 # ability NAME (lowercased), unioning rank suffixes. Each name maps to a canonical counter key.
 TOOLKIT_ABILITIES = {
-    "remove lesser curse":   "decurse_mage",     # Mage
+    "remove lesser curse":   "decurse_mage",     # Mage (kept as a detail)
     "remove curse":          "decurse_druid",    # Balance druid
-    "create soulstone":      "soulstone",        # Warlock (pre-applied)
-    "soulstone resurrection":"soulstone",        # Warlock (used)
-    "bloodlust":             "bloodlust",        # Shaman
+    "bloodlust":             "bloodlust",        # Shaman (detail)
     "heroism":               "bloodlust",        # Shaman (Alliance name)
-    "purge":                 "purge",            # Shaman
+    "windfury totem":        "wf_totem",         # Enhance shaman (signature)
+    "grace of air totem":    "goa_totem",        # Enhance shaman (twist partner / detail)
+    "wrath of air totem":    "woa_totem",        # Ele shaman
+    "totem of wrath":        "tow_totem",        # Ele shaman
     "misdirection":          "misdirect",        # Hunter
     "tranquilizing shot":    "tranq",            # Hunter
     "slice and dice":        "snd",              # Rogue
@@ -1414,27 +1426,45 @@ def _toolkit_metric(cls, spec, c, kill_min):
     {label, value, title, icon_ability, fallback} or None when the class has no signature."""
     g = c.get
     if cls == "Mage":
-        return {"label": "Decurses", "value": str(g("decurse_mage", 0)),
-                "title": "Remove Lesser Curse casts", "icon_ability": "Remove Lesser Curse",
-                "fallback": "spell_nature_removecurse"}
+        # AE-spam leaderboard (whole report, trash included). Decurse trails as a detail.
+        dc = g("decurse_mage", 0)
+        return {"label": "Arcane Explosions", "value": str(g("ae", 0)),
+                "title": "Arcane Explosion casts — whole night" + (f" · {dc} Decurses" if dc else ""),
+                "icon_ability": "Arcane Explosion", "fallback": "spell_nature_wispsplode"}
     if cls == "Warlock":
-        return {"label": "Soulstones", "value": str(g("soulstone", 0)),
-                "title": "Soulstones created/used (wipe insurance)", "icon_ability": "Create Soulstone",
-                "fallback": "spell_shadow_soulgem"}
+        # Bragging-rights number: the single biggest Shadow Bolt crit landed.
+        sb = g("sb_crit", 0)
+        return {"label": "Top SB crit", "value": (f"{sb:,}" if sb else "—"),
+                "title": "Biggest single Shadow Bolt critical hit", "icon_ability": "Shadow Bolt",
+                "fallback": "spell_shadow_shadowbolt"}
     if cls == "Shaman":
-        pur = g("purge", 0)
-        return {"label": "Bloodlust", "value": str(g("bloodlust", 0)),
-                "title": f"Bloodlust/Heroism casts" + (f" · {pur} Purges" if pur else ""),
-                "icon_ability": "Bloodlust", "fallback": "spell_nature_bloodlust"}
+        bl = g("bloodlust", 0)
+        bl_d = f" · {bl} Bloodlust" if bl else ""
+        if g("wf_totem", 0) > 0:                              # enhance — Windfury is the signature
+            goa = g("goa_totem", 0)
+            return {"label": "Windfury", "value": str(g("wf_totem", 0)),
+                    "title": f"Windfury Totem drops" + (f" · {goa} Grace of Air" if goa else "") + bl_d,
+                    "icon_ability": "Windfury Totem", "fallback": "spell_nature_windfury"}
+        air = g("woa_totem", 0) + g("tow_totem", 0)
+        if air > 0:                                           # elemental — air/wrath totems
+            return {"label": "Air totems", "value": str(air),
+                    "title": f"Wrath of Air + Totem of Wrath drops" + bl_d,
+                    "icon_ability": "Wrath of Air Totem", "fallback": "spell_nature_slowingtotem"}
+        return {"label": "Bloodlust", "value": str(bl),       # resto-who-DPS'd / no totems
+                "title": "Bloodlust/Heroism casts", "icon_ability": "Bloodlust",
+                "fallback": "spell_nature_bloodlust"}
     if cls == "Hunter":
         md, tq = g("misdirect", 0), g("tranq", 0)
         return {"label": "MD · Tranq", "value": f"{md} · {tq}",
                 "title": f"{md} Misdirections · {tq} Tranquilizing Shots",
                 "icon_ability": "Misdirection", "fallback": "ability_hunter_misdirection"}
     if cls == "Rogue":
-        return {"label": "Slice & Dice", "value": str(g("snd", 0)),
-                "title": "Slice and Dice casts (uptime headline)", "icon_ability": "Slice and Dice",
-                "fallback": "ability_rogue_slicedice"}
+        up = g("snd_up")
+        return {"label": "Slice & Dice",
+                "value": (f"{up:g}%" if up is not None else str(g("snd", 0))),
+                "title": (f"Slice and Dice uptime ({g('snd', 0)} casts)" if up is not None
+                          else "Slice and Dice casts"),
+                "icon_ability": "Slice and Dice", "fallback": "ability_rogue_slicedice"}
     if cls == "Warrior":
         sun = g("sunder", 0)
         return {"label": "Battle Shout", "value": str(g("bshout", 0)),
@@ -1478,19 +1508,29 @@ def build_class_toolkit(token, report_code, kills):
     st   = min(f["startTime"] for f in kills)
     en   = max(f["endTime"]   for f in kills)
     try:
-        md = gql(token, """query($c:String!){reportData{report(code:$c){masterData{
-            actors{id name} abilities{gameID name} }}}}""",
-                 {"c": report_code})["reportData"]["report"]["masterData"]
+        rep = gql(token, """query($c:String!){reportData{report(code:$c){
+            fights{id startTime endTime}
+            masterData{ actors{id name} abilities{gameID name} }}}}""",
+                 {"c": report_code})["reportData"]["report"]
+        md = rep["masterData"]
     except Exception as ex:
         print(f"  Warning: class-toolkit masterData failed: {ex}")
         return {}
     id2name = {a["id"]: a["name"] for a in (md.get("actors") or [])}
+    name2id = {a["name"]: a["id"] for a in (md.get("actors") or [])}
     # abilityGameID → canonical toolkit key (via the name map; unions all ranks)
     gid2key = {}
+    ae_ids  = []                                     # Arcane Explosion ranks (whole-report meme)
+    snd_ids = []                                     # Slice and Dice (rogue uptime)
     for a in (md.get("abilities") or []):
-        key = TOOLKIT_ABILITIES.get((a.get("name") or "").lower())
+        nm_a = (a.get("name") or "")
+        key = TOOLKIT_ABILITIES.get(nm_a.lower())
         if key:
             gid2key[a.get("gameID")] = key
+        if nm_a == "Arcane Explosion":
+            ae_ids.append(a.get("gameID"))
+        if nm_a == "Slice and Dice":
+            snd_ids.append(a.get("gameID"))
     QC = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
         events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts,
                limit: 10000){ data nextPageTimestamp }}}}"""
@@ -1514,6 +1554,59 @@ def build_class_toolkit(token, report_code, kills):
             cur = nx
     except Exception as ex:
         print(f"  Warning: class-toolkit events failed: {ex}")
+
+    # Arcane Explosion — WHOLE report (trash included), server-filtered by abilityID so it's
+    # cheap (~2 pages). The mage AE-spam leaderboard wants the full-night number, not kills-only.
+    allf = rep.get("fights") or []
+    if ae_ids and allf:
+        allids = [f["id"] for f in allf]
+        a_st, a_en = min(f["startTime"] for f in allf), max(f["endTime"] for f in allf)
+        QA = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!,$a:Float!){reportData{report(code:$c){
+            events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts, abilityID:$a,
+                   limit: 10000){ data nextPageTimestamp }}}}"""
+        try:
+            for aid in ae_ids:
+                cur = a_st
+                while True:
+                    ev = gql(token, QA, {"c": report_code, "ids": allids, "st": cur,
+                                         "en": a_en, "a": float(aid)})["reportData"]["report"]["events"]
+                    for d in ev.get("data", []):
+                        if d.get("type") == "cast":
+                            nm = id2name.get(d.get("sourceID"))
+                            if nm:
+                                counts[nm]["ae"] += 1
+                    nx = ev.get("nextPageTimestamp")
+                    if not nx:
+                        break
+                    cur = nx
+        except Exception as ex:
+            print(f"  Warning: class-toolkit AE pass failed: {ex}")
+
+    # Slice & Dice UPTIME% per rogue — a far better signal than cast count. Self-buff, so the
+    # aura-centric Buffs table needs a sourceID filter to attribute per player. Denominator =
+    # total kill time (a rogue who sat fights reads slightly low — acceptable). Keyed off anyone
+    # who cast SnD (a rogue), so no roster/class lookup needed here.
+    if snd_ids:
+        kdur = sum(f["endTime"] - f["startTime"] for f in kills) or 1
+        QS = """query($c:String!,$f:[Int],$s:Int!,$a:Float!){reportData{report(code:$c){
+            table(dataType: Buffs, fightIDs:$f, sourceID:$s, abilityID:$a)}}}"""
+        for nm, d in list(counts.items()):
+            rid = name2id.get(nm)
+            if not d.get("snd") or rid is None:
+                continue
+            up = 0
+            try:
+                for aid in snd_ids:
+                    t = gql(token, QS, {"c": report_code, "f": fids, "s": rid, "a": float(aid)}
+                            )["reportData"]["report"]["table"]
+                    if isinstance(t, str):
+                        t = json.loads(t)
+                    for a in t.get("data", {}).get("auras", []):
+                        up += a.get("totalUptime", 0)
+                counts[nm]["snd_up"] = round(up / kdur * 100, 1)
+            except Exception as ex:
+                print(f"  Warning: SnD-uptime fetch failed for {nm}: {ex}")
+
     return {nm: dict(d) for nm, d in counts.items()}
 
 
@@ -1883,14 +1976,18 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     print(f"   Zone: {zone}  |  {len(kills)} kills  |  Fights: {fight_ids}")
 
     # ── Player details + gear ──────────────────────────────────────────────
-    # Fetch actor list (needed to map sourceID → name for crit events)
+    # Fetch actor list (needed to map sourceID → name for crit events) + ability list
+    # (to resolve Shadow Bolt gameIDs for the warlock "biggest SB crit" toolkit metric).
     actor_data = gql(token, """
     query GetActors($code: String!) {
       reportData { report(code: $code) {
-        masterData { actors(type: "Player") { id name type subType } }
+        masterData { actors(type: "Player") { id name type subType }
+                     abilities { gameID name } }
       }}
     }""", {"code": report_code})
-    actors = actor_data["reportData"]["report"]["masterData"]["actors"]
+    actors    = actor_data["reportData"]["report"]["masterData"]["actors"]
+    _abils    = actor_data["reportData"]["report"]["masterData"].get("abilities") or []
+    sb_ids    = {a.get("gameID") for a in _abils if (a.get("name") or "") == "Shadow Bolt"}
 
     print(f"\n[2/5] Fetching player details & gear (fight_ids={fight_ids[:3]}...)")
     pd_data = gql(token, Q_PLAYER_DETAILS, {"code": report_code, "fightIDs": fight_ids})
@@ -1988,7 +2085,7 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
 
     # ── Actual crit from damage events + deaths table ─────────────────────
     print(f"\n[4/5] Fetching damage events & death table...")
-    crit_counts_by_id = fetch_actual_crit(token, report_code, kills)
+    crit_counts_by_id = fetch_actual_crit(token, report_code, kills, crit_track_ids=sb_ids)
     crit_by_name      = merge_actor_names(crit_counts_by_id, actors)
 
     # Curated deaths (no Feign Death) from WCL, split boss vs trash by fight, + killing blows.
@@ -2113,6 +2210,11 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     debuff_coverage = fetch_debuff_coverage(token, report_code, kills)
     # Class toolkit — each DPS's signature class-relative utility (cast-based, pure WCL)
     class_toolkit = build_class_toolkit(token, report_code, kills)
+    # Fold the biggest Shadow Bolt crit (tracked free during the crit pass) into the toolkit
+    # counts so the warlock metric resolver reads it like any other value.
+    for nm, cd in crit_by_name.items():
+        if cd.get("sb_crit"):
+            class_toolkit.setdefault(nm, {})["sb_crit"] = cd["sb_crit"]
     print(f"  ✓ class toolkit: {len(class_toolkit)} players with utility casts")
 
     # ── Assemble WEEK_DATA ─────────────────────────────────────────────────
