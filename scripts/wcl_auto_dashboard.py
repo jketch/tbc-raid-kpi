@@ -3195,14 +3195,30 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
         con = sqlite3.connect(path)
         try:
             current = (week_data.get("meta") or {}).get("report_code")
-            # Prior week = most recent OTHER report by CHRONOLOGICAL start_ms (epoch ms),
-            # NOT the human date string — the display date sorts lexically and misorders
-            # (see weeks.start_ms, the canonical sort key).
-            row = con.execute(
-                "SELECT report_code, date, kills FROM weeks WHERE report_code != ? "
-                "ORDER BY start_ms DESC, date DESC LIMIT 1",
-                (current,)
-            ).fetchone()
+            # Prior week = the most recent week STRICTLY BEFORE this one by CHRONOLOGICAL
+            # start_ms (epoch ms). Must be `start_ms < this week's start_ms`, NOT merely "any
+            # other report" — build_site.py reuses this to enrich EARLIER weeks for the rolling
+            # multi-week view, where "most recent other report" would be a FUTURE week and trend
+            # each past week against the latest (e.g. June 1 vs June 8). Each week trends against
+            # its OWN predecessor. (start_ms is the canonical sort key; the date string misorders.)
+            cur_ms = (week_data.get("meta") or {}).get("start_ms")
+            if cur_ms is None:
+                r0 = con.execute("SELECT start_ms FROM weeks WHERE report_code=?", (current,)).fetchone()
+                cur_ms = r0[0] if r0 else None
+            if cur_ms is None:
+                # No chronological anchor — fall back to the global-latest other report.
+                row = con.execute(
+                    "SELECT report_code, date, kills FROM weeks WHERE report_code != ? "
+                    "ORDER BY start_ms DESC, date DESC LIMIT 1",
+                    (current,)
+                ).fetchone()
+            else:
+                row = con.execute(
+                    "SELECT report_code, date, kills FROM weeks "
+                    "WHERE start_ms < ? AND report_code != ? "
+                    "ORDER BY start_ms DESC LIMIT 1",
+                    (cur_ms, current)
+                ).fetchone()
             if not row:
                 return week_data                  # only one week of history
             prev, prev_date, prev_kills = row[0], row[1], row[2]
