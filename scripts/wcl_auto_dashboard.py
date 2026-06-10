@@ -1428,13 +1428,13 @@ def _toolkit_metric(cls, spec, c, kill_min):
     if cls == "Mage":
         # AE-spam leaderboard (whole report, trash included). Decurse trails as a detail.
         dc = g("decurse_mage", 0)
-        return {"label": "Arcane Explosions", "value": str(g("ae", 0)),
+        return {"label": "Arcane Explosions", "value": str(g("ae", 0)), "num": g("ae", 0),
                 "title": "Arcane Explosion casts — whole night" + (f" · {dc} Decurses" if dc else ""),
                 "icon_ability": "Arcane Explosion", "fallback": "spell_nature_wispsplode"}
     if cls == "Warlock":
         # Bragging-rights number: the single biggest Shadow Bolt crit landed.
         sb = g("sb_crit", 0)
-        return {"label": "Top SB crit", "value": (f"{sb:,}" if sb else "—"),
+        return {"label": "Top SB crit", "value": (f"{sb:,}" if sb else "—"), "num": sb,
                 "title": "Biggest single Shadow Bolt critical hit", "icon_ability": "Shadow Bolt",
                 "fallback": "spell_shadow_shadowbolt"}
     if cls == "Shaman":
@@ -1443,7 +1443,7 @@ def _toolkit_metric(cls, spec, c, kill_min):
         if g("wf_totem", 0) > 0:                              # enhance — Windfury + twisting
             goa, sw = g("goa_totem", 0), g("wf_swaps", 0)
             twisting = sw >= 20 and goa >= 10                 # alternating both air totems
-            cell = {"label": "Windfury", "value": str(g("wf_totem", 0)),
+            cell = {"label": "Windfury", "value": str(g("wf_totem", 0)), "num": g("wf_totem", 0),
                     "title": (f"Windfury Totem drops" + (f" · {goa} Grace of Air" if goa else "")
                               + (f" · {sw} WF↔GoA swaps (twisting)" if twisting else "") + bl_d),
                     "icon_ability": "Windfury Totem", "fallback": "spell_nature_windfury"}
@@ -1452,27 +1452,28 @@ def _toolkit_metric(cls, spec, c, kill_min):
             return cell
         up = g("tow_up")
         if up is not None:                                   # elemental — modeled ToW uptime
-            return {"label": "ToW uptime", "value": f"~{up:g}%",
+            return {"label": "ToW uptime", "value": f"~{up:g}%", "num": up,
                     "title": (f"Totem of Wrath uptime — modeled from recast cadence "
                               f"(totem buffs aren't logged as auras in 2.5)" + bl_d),
                     "icon_ability": "Totem of Wrath", "fallback": "spell_fire_totemofwrath"}
         air = g("woa_totem", 0) + g("tow_totem", 0)
         if air > 0:                                           # ele w/o ToW casts — air totems
-            return {"label": "Air totems", "value": str(air),
+            return {"label": "Air totems", "value": str(air), "num": air,
                     "title": f"Wrath of Air + Totem of Wrath drops" + bl_d,
                     "icon_ability": "Wrath of Air Totem", "fallback": "spell_nature_slowingtotem"}
-        return {"label": "Bloodlust", "value": str(bl),       # resto-who-DPS'd / no totems
+        return {"label": "Bloodlust", "value": str(bl), "num": bl,   # resto-who-DPS'd / no totems
                 "title": "Bloodlust/Heroism casts", "icon_ability": "Bloodlust",
                 "fallback": "spell_nature_bloodlust"}
     if cls == "Hunter":
         md, tq = g("misdirect", 0), g("tranq", 0)
-        return {"label": "MD · Tranq", "value": f"{md} · {tq}",
+        return {"label": "MD · Tranq", "value": f"{md} · {tq}", "num": md + tq,
                 "title": f"{md} Misdirections · {tq} Tranquilizing Shots",
                 "icon_ability": "Misdirection", "fallback": "ability_hunter_misdirection"}
     if cls == "Rogue":
         up = g("snd_up")
         return {"label": "Slice & Dice",
                 "value": (f"{up:g}%" if up is not None else str(g("snd", 0))),
+                "num": (up if up is not None else g("snd", 0)),
                 "title": (f"Slice and Dice uptime ({g('snd', 0)} casts)" if up is not None
                           else "Slice and Dice casts"),
                 "icon_ability": "Slice and Dice", "fallback": "ability_rogue_slicedice"}
@@ -1481,6 +1482,7 @@ def _toolkit_metric(cls, spec, c, kill_min):
         sun_d = f" · {sun} Sunders" if sun else ""
         return {"label": "Battle Shout",
                 "value": (f"{up:g}%" if up is not None else str(g("bshout", 0))),
+                "num": (up if up is not None else g("bshout", 0)),
                 "title": (f"Battle Shout uptime on self ({g('bshout', 0)} casts){sun_d}" if up is not None
                           else f"Battle Shout casts{sun_d}"),
                 "icon_ability": "Battle Shout", "fallback": "ability_warrior_battleshout"}
@@ -1488,7 +1490,7 @@ def _toolkit_metric(cls, spec, c, kill_min):
         # Spec-agnostic: WCL labels TBC builds by name (Justicar/Protection/Retribution), so
         # gate on the ACT, not the label — a prot pally who twists (Blunderdin, 869 SoC) shows.
         rate = (g("soc", 0) / kill_min) if kill_min else 0
-        return {"label": "Seal twists", "value": f"{rate:.0f}/min",
+        return {"label": "Seal twists", "value": f"{rate:.0f}/min", "num": round(rate, 1),
                 "title": f"{g('soc', 0)} Seal of Command casts — twist cadence", "icon_ability": "Seal of Command",
                 "fallback": "spell_holy_championsbond"}
     if cls == "Druid":
@@ -1496,12 +1498,12 @@ def _toolkit_metric(cls, spec, c, kill_min):
         # any Mangle casts → feral; otherwise show the caster's Innervate utility.
         if g("mangle", 0) > 0:
             rb = g("rebirth", 0)
-            return {"label": "Mangles", "value": str(g("mangle", 0)),
+            return {"label": "Mangles", "value": str(g("mangle", 0)), "num": g("mangle", 0),
                     "title": f"Mangle casts" + (f" · {rb} Battle Rez" if rb else ""),
                     "icon_ability": "Mangle (Cat)", "fallback": "ability_druid_mangle2"}
         rb, dc = g("rebirth", 0), g("decurse_druid", 0)
         extra = " · ".join(x for x in [f"{rb} Rez" if rb else "", f"{dc} Decurse" if dc else ""] if x)
-        return {"label": "Innervates", "value": str(g("innervate", 0)),
+        return {"label": "Innervates", "value": str(g("innervate", 0)), "num": g("innervate", 0),
                 "title": "Innervates given" + (f" · {extra}" if extra else ""),
                 "icon_ability": "Innervate", "fallback": "spell_nature_lightning"}
     if cls == "Priest":
@@ -1509,11 +1511,11 @@ def _toolkit_metric(cls, spec, c, kill_min):
         # never cast VT → vt_mana 0 → no cell (they live on the healer scorecard).
         vt = g("vt_mana", 0)
         if vt > 0:
-            # WCL maps "Vampiric Touch" to the wrong (holy) icon in 2.5 — use a sentinel
-            # icon_ability (absent from the live map) so the correct shadow slug is used.
+            # VT's authentic TBC client icon is spell_holy_stoicism (a TBC quirk — it only
+            # got the shadow-drain art in later expansions); that's what WCL's masterData maps.
             return {"label": "Mana battery", "value": f"{round(vt/1000)}k",
                     "title": f"{vt:,} mana returned to the raid via Vampiric Touch",
-                    "icon_ability": "__vt_battery__", "fallback": "spell_shadow_gathershadows"}
+                    "icon_ability": "Vampiric Touch", "fallback": "spell_holy_stoicism"}
         return None
     return None   # Holy/Disc Priest → healer scorecard; others: no DPS signature
 
@@ -2075,7 +2077,7 @@ def fetch_debuff_coverage(token: str, report_code: str, kills: list) -> dict:
 # feeds melee/casters) are out. Innervate is tracked separately — it emits no mana event (it
 # boosts spirit regen, logged as the target's passive ticks), so it's a cast COUNT, not mana.
 MANA_SOURCES = [
-    {"match": "Vampiric Touch",  "label": "Vampiric Touch",    "icon": "spell_shadow_gathershadows"},
+    {"match": "Vampiric Touch",  "label": "Vampiric Touch",    "icon": "spell_holy_stoicism"},
     {"match": "Mana Tide Totem", "label": "Mana Tide Totem",   "icon": "spell_frost_summonwaterelemental_2"},
     {"match": "Mana Spring",     "label": "Mana Spring Totem", "icon": "spell_nature_manaregentotem"},
 ]

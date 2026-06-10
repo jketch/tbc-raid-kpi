@@ -730,16 +730,16 @@
     <div class="scroll-x scroll-y"><div id="healerUptimeHeatmap"></div></div>
   </div>
 
+  <!-- ═══════════════ ENGINEERING + INTERRUPTS (half-width pair) ═══════════════ -->
+  </div>
+  <div class="tsec" data-tab="utility">
+
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/spell_frost_summonwaterelemental_2.jpg" alt=""> Mana Returned to the Raid</div>
   <div class="card healer">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_frost_summonwaterelemental_2.jpg" alt=""> Mana batteries — who refilled the raid</div>
     <div class="hs-sub">Mana returned to the raid, <b>split by source</b> — Vampiric Touch, Mana Tide &amp; Mana Spring totems (self counts; the provider is a raid member). Self-only sources (gems, runes, Evocation, Life Tap) are out. Innervate is a cast count — it boosts spirit regen and emits no measurable mana event. Arrow shows top recipients.</div>
     <div class="scroll-y"><div id="manaReturns"></div></div>
   </div>
-
-  <!-- ═══════════════ ENGINEERING + INTERRUPTS (half-width pair) ═══════════════ -->
-  </div>
-  <div class="tsec" data-tab="utility">
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/trade_engineering.jpg" alt=""> Engineering &amp; Interrupts</div>
   <div class="hs-grid">
 
@@ -998,7 +998,11 @@ function renderOverview(){
     // (which already covers floor / friendly fire / interrupts). Raw output isn't a "shine",
     // so it lives here, not in the feed. Raid totals are the stat tiles above.
     const items = [];
-    const dmg   = WEEK_DATA.damage||[];   if(dmg.length)  items.push(["inv_sword_27","Top damage",dmg[0].name,dmg[0].role,hsK(dmg[0].total_dmg)]);
+    // Top damage — from damageBySelection (All), so it matches the DPS chart's default view
+    // rather than the legacy whole-report `damage` key (which ranked differently).
+    const dsp = [...(((WEEK_DATA.damageBySelection||{}).players)||[])].sort((a,b)=>((b.all||{}).total||0)-((a.all||{}).total||0));
+    if(dsp.length){ const t=dsp[0]; items.push(["inv_sword_27","Top damage",t.name,t.role,hsK((t.all||{}).total||0)]); }
+    else { const dmg=WEEK_DATA.damage||[]; if(dmg.length) items.push(["inv_sword_27","Top damage",dmg[0].name,dmg[0].role,hsK(dmg[0].total_dmg)]); }
     const heal  = WEEK_DATA.healing||[];  if(heal.length) items.push(["spell_holy_flashheal","Top healer",heal[0].name,heal[0].role,`${heal[0].eff_hps.toLocaleString()} HPS`]);
     const tanks = [...(WEEK_DATA.tankScorecard||[])].filter(t=>t.taken>0).sort((a,b)=>b.taken-a.taken);
     if(tanks.length) items.push(["inv_shield_06","Tanked most",tanks[0].name,"Tank",hsK(tanks[0].taken)]);
