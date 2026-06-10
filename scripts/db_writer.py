@@ -228,6 +228,20 @@ CREATE TABLE IF NOT EXISTS debuff_coverage (
     pct          REAL,      -- uptime % on enemies during that fight
     PRIMARY KEY (report_code, boss, slot)
 );
+CREATE TABLE IF NOT EXISTS class_toolkit (
+    report_code  TEXT,
+    player       TEXT,
+    label        TEXT,      -- the metric kind (Windfury / Slice & Dice / ToW uptime / ...)
+    num          REAL,      -- raw numeric value behind the cell (trended only vs same label)
+    PRIMARY KEY (report_code, player)
+);
+CREATE TABLE IF NOT EXISTS mana_returns (
+    report_code  TEXT,
+    player       TEXT,
+    source       TEXT,      -- Vampiric Touch / Mana Tide Totem / Mana Spring Totem
+    mana         INTEGER,   -- mana returned to the raid via this source
+    PRIMARY KEY (report_code, player, source)
+);
 """
 
 
@@ -448,6 +462,23 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
                       total,
                       round(total / raid_tot * 100, 2) if raid_tot else 0,
                       p.get("active_pct")))
+
+        # ── class toolkit (per-player signature metric) — trended vs same label ──
+        for p in dsp_rows:
+            tk = p.get("toolkit") or {}
+            if tk.get("num") is not None:
+                con.execute("""
+                    INSERT OR REPLACE INTO class_toolkit (report_code, player, label, num)
+                    VALUES (?, ?, ?, ?)
+                """, (rc, p["name"], tk.get("label"), tk.get("num")))
+
+        # ── mana returns (per provider, per source) ─────────────────────────────
+        for b in (week_data.get("manaReturns") or {}).get("batteries", []):
+            for prov in b.get("providers", []):
+                con.execute("""
+                    INSERT OR REPLACE INTO mana_returns (report_code, player, source, mana)
+                    VALUES (?, ?, ?, ?)
+                """, (rc, prov["name"], b.get("label"), prov.get("mana", 0)))
 
         # ── tank scorecard v2 (summary + per-boss) ─────────────────────────────
         for t in (week_data.get("tankScorecard") or []):

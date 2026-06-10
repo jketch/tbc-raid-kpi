@@ -1513,7 +1513,7 @@ def _toolkit_metric(cls, spec, c, kill_min):
         if vt > 0:
             # VT's authentic TBC client icon is spell_holy_stoicism (a TBC quirk — it only
             # got the shadow-drain art in later expansions); that's what WCL's masterData maps.
-            return {"label": "Mana battery", "value": f"{round(vt/1000)}k",
+            return {"label": "Mana battery", "value": f"{round(vt/1000)}k", "num": round(vt/1000),
                     "title": f"{vt:,} mana returned to the raid via Vampiric Touch",
                     "icon_ability": "Vampiric Touch", "fallback": "spell_holy_stoicism"}
         return None
@@ -2705,6 +2705,8 @@ def map_to_week_data(wcl: dict) -> dict:
             return None
         icon = _tk_icons.get(m["icon_ability"]) or m["fallback"]
         cell = {"label": m["label"], "value": m["value"], "title": m["title"], "icon": icon}
+        if m.get("num") is not None:
+            cell["num"] = m["num"]          # raw numeric, for week-over-week trending
         if m.get("tag"):
             cell["tag"] = m["tag"]
         # hybrid tag: this metric belongs to someone whose roster role isn't what they played
@@ -3061,6 +3063,32 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
                 p = pv("dps", it.get("name"), "dps")
                 if p is not None and boss_dur:
                     it["delta_dps"] = round((it.get("boss", {}).get("total", 0) / boss_dur) - p, 1)
+
+            # ── class toolkit: delta the signature metric, but ONLY when the metric KIND
+            #    (label) matches last week — comparing Windfury casts to ToW uptime is nonsense.
+            for it in (dsel.get("players") or []):
+                tk = it.get("toolkit")
+                if not tk or tk.get("num") is None:
+                    continue
+                try:
+                    r = con.execute("SELECT label, num FROM class_toolkit WHERE report_code=? AND player=?",
+                                    (prev, it.get("name"))).fetchone()
+                except sqlite3.OperationalError:
+                    r = None
+                if r and r[0] == tk.get("label") and r[1] is not None:
+                    tk["delta"] = round(tk["num"] - r[1], 1)
+
+            # ── mana returns: delta per provider, per source (matched on player+source).
+            for b in (week_data.get("manaReturns") or {}).get("batteries", []):
+                for prov in b.get("providers", []):
+                    try:
+                        r = con.execute(
+                            "SELECT mana FROM mana_returns WHERE report_code=? AND player=? AND source=?",
+                            (prev, prov["name"], b.get("label"))).fetchone()
+                    except sqlite3.OperationalError:
+                        r = None
+                    if r and r[0] is not None:
+                        prov["delta_mana"] = prov.get("mana", 0) - r[0]
 
             # ── healing: four trended columns (HPS, overheal, activity, mana-efficiency).
             for it in (week_data.get("healing") or []):

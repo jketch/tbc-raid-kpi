@@ -1944,6 +1944,7 @@ function renderDamage() {
       : `<span title="${(tk.title||'').replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap">`
         + `${gicon(tk.icon)}<span style="color:var(--muted);font-size:10.5px">${tk.label}</span>`
         + `<b style="color:var(--text)">${tk.value}</b>`
+        + ((tk.delta!==undefined && Math.round(tk.delta)!==0)?fmtDelta(tk.delta, true):"")
         + (tk.tag?`<span style="color:var(--blue);font-size:10px;font-weight:600">${tk.tag}</span>`:"")
         + (tk.off?`<span title="played DPS on ${tk.off} fights off their roster role" style="color:var(--amber);font-size:10px">⚔${tk.off}</span>`:"")
         + `</span>`;
@@ -2031,11 +2032,12 @@ function renderManaReturns(){
   const provRow = (p, max) => {
     const bar = Math.round(p.mana/max*100);
     const recv = (p.receivers||[]).length ? `<span style="color:var(--dim);font-size:10.5px;white-space:nowrap">→ ${p.receivers.map(r=>`<span class="cname" style="color:${nameColor(r.name)}">${r.name}</span>`).join(", ")}</span>` : "";
+    const dlt = (p.delta_mana!==undefined && Math.abs(p.delta_mana)>=1000) ? `<span style="font-size:9.5px">${fmtDelta(p.delta_mana, true, {divK:true})}</span>` : "";
     return `<div style="display:flex;align-items:center;gap:10px;padding:3px 2px 3px 4px">
       <span class="cname" style="color:${nameColor(p.name)};min-width:108px;font-weight:600">${p.name}</span>
       <span style="min-width:50px;text-align:right;font-weight:700;color:var(--healer)">${k(p.mana)}</span>
       <span style="flex:0 0 84px"><span style="display:block;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden"><span style="display:block;height:100%;width:${bar}%;background:var(--healer)"></span></span></span>
-      <span style="flex:1">${recv}</span>
+      <span style="flex:1;display:flex;align-items:center;gap:6px">${dlt}${recv}</span>
     </div>`;
   };
   let html = bats.map(b => {
