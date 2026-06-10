@@ -1490,7 +1490,18 @@ def _toolkit_metric(cls, spec, c, kill_min):
         return {"label": "Innervates", "value": str(g("innervate", 0)),
                 "title": "Innervates given" + (f" · {extra}" if extra else ""),
                 "icon_ability": "Innervate", "fallback": "spell_nature_lightning"}
-    return None   # Priest (Shadow→Mana Regen report; Holy/Disc→healer) & others: no DPS signature
+    if cls == "Priest":
+        # Shadow priest mana battery: mana returned to the raid via Vampiric Touch. Holy/Disc
+        # never cast VT → vt_mana 0 → no cell (they live on the healer scorecard).
+        vt = g("vt_mana", 0)
+        if vt > 0:
+            # WCL maps "Vampiric Touch" to the wrong (holy) icon in 2.5 — use a sentinel
+            # icon_ability (absent from the live map) so the correct shadow slug is used.
+            return {"label": "Mana battery", "value": f"{round(vt/1000)}k",
+                    "title": f"{vt:,} mana returned to the raid via Vampiric Touch",
+                    "icon_ability": "__vt_battery__", "fallback": "spell_shadow_gathershadows"}
+        return None
+    return None   # Holy/Disc Priest → healer scorecard; others: no DPS signature
 
 
 def build_class_toolkit(token, report_code, kills):
@@ -1522,6 +1533,7 @@ def build_class_toolkit(token, report_code, kills):
     gid2key = {}
     ae_ids  = []                                     # Arcane Explosion ranks (whole-report meme)
     snd_ids = []                                     # Slice and Dice (rogue uptime)
+    vt_ids  = set()                                  # Vampiric Touch (spriest mana battery)
     for a in (md.get("abilities") or []):
         nm_a = (a.get("name") or "")
         key = TOOLKIT_ABILITIES.get(nm_a.lower())
@@ -1531,6 +1543,8 @@ def build_class_toolkit(token, report_code, kills):
             ae_ids.append(a.get("gameID"))
         if nm_a == "Slice and Dice":
             snd_ids.append(a.get("gameID"))
+        if nm_a == "Vampiric Touch":
+            vt_ids.add(a.get("gameID"))
     QC = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
         events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts,
                limit: 10000){ data nextPageTimestamp }}}}"""
@@ -1606,6 +1620,34 @@ def build_class_toolkit(token, report_code, kills):
                 counts[nm]["snd_up"] = round(up / kdur * 100, 1)
             except Exception as ex:
                 print(f"  Warning: SnD-uptime fetch failed for {nm}: {ex}")
+
+    # Vampiric Touch mana battery — mana the shadow priest returned to the raid (5% of VT
+    # shadow damage → party mana). Authoritative sum from Resources `resourcechange` energize
+    # events (resourceChangeType 0 = mana); the VT source IS the priest, so no pet mapping.
+    # The server-side abilityID filter doesn't capture the party energize, so page unfiltered.
+    if vt_ids:
+        QR = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
+            events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Resources,
+                   limit: 10000){ data nextPageTimestamp }}}}"""
+        cur = st
+        try:
+            while True:
+                ev = gql(token, QR, {"c": report_code, "ids": fids, "st": cur, "en": en}
+                         )["reportData"]["report"]["events"]
+                for d in ev.get("data", []):
+                    if (d.get("type") == "resourcechange" and d.get("resourceChangeType") == 0
+                            and d.get("abilityGameID") in vt_ids):
+                        amt = d.get("resourceChange", 0) or 0
+                        if amt > 0:
+                            nm = id2name.get(d.get("sourceID"))
+                            if nm:
+                                counts[nm]["vt_mana"] += amt
+                nx = ev.get("nextPageTimestamp")
+                if not nx:
+                    break
+                cur = nx
+        except Exception as ex:
+            print(f"  Warning: VT mana-battery fetch failed: {ex}")
 
     return {nm: dict(d) for nm, d in counts.items()}
 
@@ -2624,15 +2666,19 @@ def map_to_week_data(wcl: dict) -> dict:
         "tankScorecard":       tank_scorecard,
         "roleSpells":          wcl.get("role_spells", {}),
         "playerSpells":        _ice_player_spells(wcl.get("player_spells", {}), _icons),
-        # Expanded past the old top-10 so utility-DPS classes (Balance, etc.) appear with
-        # their Class Toolkit cell; the DPS table has a scroll-y cap so length is handled.
+        # DPS report = actual damage-dealers only (effective_role Physical/Caster) — tanks and
+        # healers who happened to deal damage are filtered out (they have their own surfaces).
+        # A hybrid who mostly DPS'd (e.g. prot pally who twisted) stays via effective_role.
+        # Expanded past the old top-10 so utility-DPS classes (Balance, etc.) appear with their
+        # Class Toolkit cell; the DPS table has a scroll-y cap so length is handled.
         "damage": sorted(
             ({"name": p["name"], "role": p["role"], "effective_role": _eff(p),
               "total_dmg": p.get("total_dmg", 0),
               "active_pct": p.get("active_pct", 0),
               "toolkit": _toolkit_cell(p),
               "uptime_by_fight": p.get("uptime_by_fight", {})}
-             for p in players if p.get("total_dmg", 0) > 0),
+             for p in players
+             if p.get("total_dmg", 0) > 0 and _eff(p) in ("Physical", "Caster")),
             key=lambda x: -x["total_dmg"])[:25],
         # Full roster of damage-dealers (NOT sliced to top 10) — powers the Uptime-by-Fight
         # heatmap so every attacker's per-boss uptime shows, while `damage` above stays a
