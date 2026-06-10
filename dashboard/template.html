@@ -652,10 +652,10 @@
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/ability_dualwield.jpg" alt=""> DPS — Damage Output</div>
   <div class="card physical">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/ability_dualwield.jpg" alt=""> Damage per Second</div>
-    <div class="hs-sub">DPS over total boss time. Per-fight attack uptime is its own chart below.</div>
+    <div class="hs-sub">DPS over total boss time. The Toolkit column is each class's signature raid-utility (did you bring your kit?). Per-fight attack uptime is its own chart below.</div>
     <div class="scroll-x scroll-y">
       <table class="mini-table" id="dpsTable">
-        <thead><tr><th>Player</th><th class="num">DPS</th><th class="num">Total</th><th class="num">% Raid</th></tr></thead>
+        <thead><tr><th>Player</th><th class="num">DPS</th><th class="num">Total</th><th class="num">% Raid</th><th>Toolkit</th></tr></thead>
         <tbody id="dpsTbody"></tbody>
       </table>
     </div>
@@ -1899,7 +1899,7 @@ function renderDamage() {
   const tbody = document.getElementById("dpsTbody");
   if (!tbody) return;
   const data = [...(WEEK_DATA.damage || [])];
-  if (!data.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--muted);font-size:12px">No damage data.</td></tr>'; return; }
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);font-size:12px">No damage data.</td></tr>'; return; }
   const dur = Object.values(WEEK_DATA.boss_times || {}).reduce((s, v) => s + v, 0) || 1;
   const raidTotal = data.reduce((s, p) => s + (p.total_dmg || 0), 0) || 1;
   const maxDps = Math.max(...data.map(p => p.total_dmg / dur));
@@ -1911,6 +1911,14 @@ function renderDamage() {
     const upChip = up == null ? "" : (up >= 90 ? "green" : up >= 75 ? "yellow" : "orange");
     const nc = nameColor(p.name, p.role);
     const spec = ((WEEK_DATA.roster||{})[p.name]||{}).spec || "";
+    // Class Toolkit cell: signature class-utility (icon · label · value), ⚔ tag for hybrids.
+    const tk = p.toolkit;
+    const tkCell = !tk ? `<span style="color:var(--muted)">—</span>`
+      : `<span title="${(tk.title||'').replace(/"/g,'&quot;')}" style="display:inline-flex;align-items:center;gap:5px;white-space:nowrap">`
+        + `${gicon(tk.icon)}<span style="color:var(--muted);font-size:10.5px">${tk.label}</span>`
+        + `<b style="color:var(--text)">${tk.value}</b>`
+        + (tk.off?`<span title="played DPS on ${tk.off} fights off their roster role" style="color:var(--amber);font-size:10px">⚔${tk.off}</span>`:"")
+        + `</span>`;
     return `<tr>
       <td><span class="cname" style="color:${nc}">${p.name}</span>${spec?`<div style="font-size:10px;color:var(--muted);margin-top:1px;font-weight:400">${spec}</div>`:""}</td>
       <td class="num" style="font-weight:600;color:var(--text)">
@@ -1920,6 +1928,7 @@ function renderDamage() {
         </span></td>
       <td class="num" style="color:var(--muted)">${hsK(p.total_dmg)}</td>
       <td class="num" style="color:var(--muted)">${share}%</td>
+      <td>${tkCell}</td>
     </tr>`;
   }).join("");
 }
@@ -1932,7 +1941,7 @@ function renderUptimeHeatmap(){
   // this DPS-tab chart shows Physical + Caster only (tanks/healers have their own surfaces —
   // tanks: scorecard; healers: Healing Uptime by Fight on the Healers & Tanks tab).
   const dps = ((WEEK_DATA.uptimeByFight && WEEK_DATA.uptimeByFight.length) ? WEEK_DATA.uptimeByFight : (WEEK_DATA.damage || []))
-    .filter(p => p.role === "Physical" || p.role === "Caster");
+    .filter(p => { const r = p.effective_role || p.role; return r === "Physical" || r === "Caster"; });
   const bosses = Object.keys(WEEK_DATA.boss_times || {});
   if(!dps.length || !bosses.length){ el.innerHTML='<div style="color:var(--muted);font-size:12px">No per-fight uptime data.</div>'; return; }
   const drop = ["The","Lady","High","Astromancer","Fathom-Lord","Lord"];

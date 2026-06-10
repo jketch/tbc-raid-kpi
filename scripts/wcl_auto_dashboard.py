@@ -737,6 +737,28 @@ def _nontank_role(spec: str) -> str:
     return "Physical"   # Feral Combat, Protection → physical melee when not tanking
 
 
+def _nonheal_role(spec: str) -> str:
+    """Role to use when a Healer spec heals < 50 % of fights (ran DPS most of the night).
+    Resto shaman/druid → Caster by default; an Enhancement/Survival-style off-spec maps by
+    its physical spec. Mirrors _nontank_role. Handles the resto-shaman-who-DPS'd case."""
+    if spec in PHYSICAL_SPECS: return "Physical"
+    if spec in CASTER_SPECS:   return "Caster"
+    if spec in TANK_SPECS:     return "Physical"
+    return "Caster"   # Restoration (shaman/druid), Holy/Disc → caster DPS when not healing
+
+
+def _effective_role(role: str, spec: str, fights_tanked: int, fights_healed: int,
+                    fights_total: int) -> str:
+    """A player's role for the night by what they ACTUALLY did, not their roster slot.
+    A Tank who tanked < 50% of fights, or a Healer who healed < 50%, ran DPS most of the
+    night and is reclassified to their off-role. Everyone else keeps their roster role.
+    Single source of truth for hybrid/spec-swap placement across all KPIs."""
+    if fights_total > 0:
+        if role == "Tank"   and fights_tanked / fights_total < 0.5: return _nontank_role(spec)
+        if role == "Healer" and fights_healed / fights_total < 0.5: return _nonheal_role(spec)
+    return role
+
+
 def _fight_role(spec: str, bucket: str) -> str:
     """Per-fight role from the player's spec THAT fight — reliable for prot/ret and
     heal/dps swaps. WCL's tanks/healers/dps bucket is only a tiebreaker (it mis-buckets
@@ -1357,6 +1379,144 @@ def fetch_role_spell_usage(token, report_code, fight_ids, players):
         return {"roles": {}, "players": {}}
 
 
+# ── CLASS TOOLKIT — each DPS's signature class-relative utility ───────────────
+# One contextual metric per class: "did you bring your kit?" Cast-based & spec-agnostic
+# (so off-spec play is captured for ANYONE who cast the ability — no spec gating), sourced
+# from the WCL Casts table (the durable headline; combat log can enrich later). Match is by
+# ability NAME (lowercased), unioning rank suffixes. Each name maps to a canonical counter key.
+TOOLKIT_ABILITIES = {
+    "remove lesser curse":   "decurse_mage",     # Mage
+    "remove curse":          "decurse_druid",    # Balance druid
+    "create soulstone":      "soulstone",        # Warlock (pre-applied)
+    "soulstone resurrection":"soulstone",        # Warlock (used)
+    "bloodlust":             "bloodlust",        # Shaman
+    "heroism":               "bloodlust",        # Shaman (Alliance name)
+    "purge":                 "purge",            # Shaman
+    "misdirection":          "misdirect",        # Hunter
+    "tranquilizing shot":    "tranq",            # Hunter
+    "slice and dice":        "snd",              # Rogue
+    "battle shout":          "bshout",           # Warrior
+    "sunder armor":          "sunder",           # Warrior
+    "seal of command":       "soc",              # Ret paladin (seal twisting)
+    "innervate":             "innervate",        # Druid
+    "rebirth":               "rebirth",          # Druid (battle rez)
+    "mangle (cat)":          "mangle",           # Feral druid
+    "mangle (bear)":         "mangle",           # Feral druid
+    "mangle":                "mangle",           # Feral druid (rank-agnostic)
+}
+
+# class (+ spec where it matters) → signature metric. `kind`: count | per_min | pair.
+# `icon` is an ability NAME → resolved to a live WCL icon via the ability_icons map (always
+# resolves), with `fallback` as the Zamimg slug if the report never logged that ability.
+def _toolkit_metric(cls, spec, c, kill_min):
+    """Resolve a player's signature class-toolkit cell from their cast counts `c`
+    ({canonical_key: count}) and the night's total kill minutes. Returns a dict
+    {label, value, title, icon_ability, fallback} or None when the class has no signature."""
+    g = c.get
+    if cls == "Mage":
+        return {"label": "Decurses", "value": str(g("decurse_mage", 0)),
+                "title": "Remove Lesser Curse casts", "icon_ability": "Remove Lesser Curse",
+                "fallback": "spell_nature_removecurse"}
+    if cls == "Warlock":
+        return {"label": "Soulstones", "value": str(g("soulstone", 0)),
+                "title": "Soulstones created/used (wipe insurance)", "icon_ability": "Create Soulstone",
+                "fallback": "spell_shadow_soulgem"}
+    if cls == "Shaman":
+        pur = g("purge", 0)
+        return {"label": "Bloodlust", "value": str(g("bloodlust", 0)),
+                "title": f"Bloodlust/Heroism casts" + (f" · {pur} Purges" if pur else ""),
+                "icon_ability": "Bloodlust", "fallback": "spell_nature_bloodlust"}
+    if cls == "Hunter":
+        md, tq = g("misdirect", 0), g("tranq", 0)
+        return {"label": "MD · Tranq", "value": f"{md} · {tq}",
+                "title": f"{md} Misdirections · {tq} Tranquilizing Shots",
+                "icon_ability": "Misdirection", "fallback": "ability_hunter_misdirection"}
+    if cls == "Rogue":
+        return {"label": "Slice & Dice", "value": str(g("snd", 0)),
+                "title": "Slice and Dice casts (uptime headline)", "icon_ability": "Slice and Dice",
+                "fallback": "ability_rogue_slicedice"}
+    if cls == "Warrior":
+        sun = g("sunder", 0)
+        return {"label": "Battle Shout", "value": str(g("bshout", 0)),
+                "title": f"Battle Shout casts" + (f" · {sun} Sunders" if sun else ""),
+                "icon_ability": "Battle Shout", "fallback": "ability_warrior_battleshout"}
+    if cls == "Paladin":
+        # Spec-agnostic: WCL labels TBC builds by name (Justicar/Protection/Retribution), so
+        # gate on the ACT, not the label — a prot pally who twists (Blunderdin, 869 SoC) shows.
+        rate = (g("soc", 0) / kill_min) if kill_min else 0
+        return {"label": "Seal twists", "value": f"{rate:.0f}/min",
+                "title": f"{g('soc', 0)} Seal of Command casts — twist cadence", "icon_ability": "Seal of Command",
+                "fallback": "spell_holy_championsbond"}
+    if cls == "Druid":
+        # Feral vs Balance disambiguated by what they cast (WCL spec = build name, unreliable):
+        # any Mangle casts → feral; otherwise show the caster's Innervate utility.
+        if g("mangle", 0) > 0:
+            rb = g("rebirth", 0)
+            return {"label": "Mangles", "value": str(g("mangle", 0)),
+                    "title": f"Mangle casts" + (f" · {rb} Battle Rez" if rb else ""),
+                    "icon_ability": "Mangle (Cat)", "fallback": "ability_druid_mangle2"}
+        rb, dc = g("rebirth", 0), g("decurse_druid", 0)
+        extra = " · ".join(x for x in [f"{rb} Rez" if rb else "", f"{dc} Decurse" if dc else ""] if x)
+        return {"label": "Innervates", "value": str(g("innervate", 0)),
+                "title": "Innervates given" + (f" · {extra}" if extra else ""),
+                "icon_ability": "Innervate", "fallback": "spell_nature_lightning"}
+    return None   # Priest (Shadow→Mana Regen report; Holy/Disc→healer) & others: no DPS signature
+
+
+def build_class_toolkit(token, report_code, kills):
+    """Per-player cast counts of every TOOLKIT_ABILITIES spell, from WCL Casts EVENTS over
+    the kill windows (durable; runs every week, no combat log). Returns
+    {name: {canonical_key: count}}. The per-class metric resolution happens in
+    map_to_week_data (where class/spec live).
+
+    NB: the Casts *table* truncates to a player's top-5 abilities, so low-frequency utility
+    casts (Misdirection, Innervate, Bloodlust, Decurse, Soulstone…) never surface there —
+    we read raw cast EVENTS and map abilityGameID → name via masterData (rank-safe)."""
+    if not kills:
+        return {}
+    fids = [f["id"] for f in kills]
+    st   = min(f["startTime"] for f in kills)
+    en   = max(f["endTime"]   for f in kills)
+    try:
+        md = gql(token, """query($c:String!){reportData{report(code:$c){masterData{
+            actors{id name} abilities{gameID name} }}}}""",
+                 {"c": report_code})["reportData"]["report"]["masterData"]
+    except Exception as ex:
+        print(f"  Warning: class-toolkit masterData failed: {ex}")
+        return {}
+    id2name = {a["id"]: a["name"] for a in (md.get("actors") or [])}
+    # abilityGameID → canonical toolkit key (via the name map; unions all ranks)
+    gid2key = {}
+    for a in (md.get("abilities") or []):
+        key = TOOLKIT_ABILITIES.get((a.get("name") or "").lower())
+        if key:
+            gid2key[a.get("gameID")] = key
+    QC = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts,
+               limit: 10000){ data nextPageTimestamp }}}}"""
+    counts = defaultdict(lambda: defaultdict(int))   # [name][canonical_key] = casts
+    cur = st
+    try:
+        while True:
+            ev = gql(token, QC, {"c": report_code, "ids": fids, "st": cur, "en": en}
+                     )["reportData"]["report"]["events"]
+            for d in ev.get("data", []):
+                if d.get("type") != "cast":
+                    continue
+                key = gid2key.get(d.get("abilityGameID"))
+                if key:
+                    nm = id2name.get(d.get("sourceID"))
+                    if nm:
+                        counts[nm][key] += 1
+            nx = ev.get("nextPageTimestamp")
+            if not nx:
+                break
+            cur = nx
+    except Exception as ex:
+        print(f"  Warning: class-toolkit events failed: {ex}")
+    return {nm: dict(d) for nm, d in counts.items()}
+
+
 def _healer_count(token, code, fight_id):
     """How many healers a ranked parse's raid fielded — for comp-matching the cohort.
     One playerDetails query per ranking; only called during a cohort (re)fetch, so the
@@ -1951,6 +2111,9 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
                                        for b, u in healer_uptime.get(p["name"], {}).items()]
     # Raid debuff coverage — pure WCL, per boss (CoE/Misery/Shadow Weaving/ISB + armor + judgements)
     debuff_coverage = fetch_debuff_coverage(token, report_code, kills)
+    # Class toolkit — each DPS's signature class-relative utility (cast-based, pure WCL)
+    class_toolkit = build_class_toolkit(token, report_code, kills)
+    print(f"  ✓ class toolkit: {len(class_toolkit)} players with utility casts")
 
     # ── Assemble WEEK_DATA ─────────────────────────────────────────────────
     print(f"\n[5/5] Assembling WEEK_DATA...")
@@ -2043,6 +2206,8 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
         "player_spells":   role_spells.get("players", {}),
         # per-boss uptime of key DPS-amplifying raid debuffs (pure WCL)
         "debuff_coverage": debuff_coverage,
+        # per-player signature class-utility cast counts (pure WCL Casts)
+        "class_toolkit":   class_toolkit,
     }
 
     return week_data
@@ -2114,6 +2279,31 @@ def build_consumable_compliance(consumable_usage):
 def map_to_week_data(wcl: dict) -> dict:
     """Convert WCL API output to the WEEK_DATA structure the HTML renders from."""
     players = wcl.get("players", [])
+
+    def _eff(p):
+        """Effective (played) role for a player dict from the `players` whitelist."""
+        return _effective_role(p.get("role", ""), p.get("spec", ""),
+                               p.get("fights_tanked", 0), p.get("fights_healed", 0),
+                               p.get("fights_total", 0))
+
+    _toolkit_counts = wcl.get("class_toolkit", {})
+    _tk_icons       = wcl.get("ability_icons", {})
+    _kill_min       = sum((wcl.get("boss_times") or {}).values()) / 60.0
+
+    def _toolkit_cell(p):
+        """Signature class-utility cell for a damage row, or None. Resolves the per-class
+        metric from cast counts + attaches a live icon and a ⚔ off-role annotation for
+        hybrids (a tank/healer who mostly DPS'd), mirroring the consumables report."""
+        m = _toolkit_metric(p.get("class", ""), p.get("spec", ""),
+                            _toolkit_counts.get(p["name"], {}), _kill_min)
+        if not m:
+            return None
+        icon = _tk_icons.get(m["icon_ability"]) or m["fallback"]
+        cell = {"label": m["label"], "value": m["value"], "title": m["title"], "icon": icon}
+        # hybrid tag: this metric belongs to someone whose roster role isn't what they played
+        if _eff(p) != p.get("role") and p.get("fights_dps", 0) > 0:
+            cell["off"] = f"{p.get('fights_dps', 0)}/{p.get('fights_total', 0)}"
+        return cell
 
     def crit_list(role):
         return [
@@ -2230,12 +2420,9 @@ def map_to_week_data(wcl: dict) -> dict:
         fights_tanked = p_info.get("fights_tanked", 0)
         fights_healed = p_info.get("fights_healed", 0)
         fights_total  = p_info.get("fights_total", 0)
-        # If a tank-specced player tanks fewer than half the fights they ran DPS consumes;
-        # evaluate them against the DPS threshold rather than the tank threshold.
-        if role == "Tank" and fights_total > 0 and fights_tanked / fights_total < 0.5:
-            effective_role = _nontank_role(spec)
-        else:
-            effective_role = role
+        # Hybrid/spec-swap: a tank who mostly DPS'd (or a healer who mostly DPS'd) is
+        # evaluated against their off-role's threshold, not their roster slot's.
+        effective_role = _effective_role(role, spec, fights_tanked, fights_healed, fights_total)
         consum_usage.append({
             "name": n,
             "role":  role,
@@ -2335,25 +2522,33 @@ def map_to_week_data(wcl: dict) -> dict:
         "tankScorecard":       tank_scorecard,
         "roleSpells":          wcl.get("role_spells", {}),
         "playerSpells":        _ice_player_spells(wcl.get("player_spells", {}), _icons),
+        # Expanded past the old top-10 so utility-DPS classes (Balance, etc.) appear with
+        # their Class Toolkit cell; the DPS table has a scroll-y cap so length is handled.
         "damage": sorted(
-            ({"name": p["name"], "role": p["role"], "total_dmg": p.get("total_dmg", 0),
+            ({"name": p["name"], "role": p["role"], "effective_role": _eff(p),
+              "total_dmg": p.get("total_dmg", 0),
               "active_pct": p.get("active_pct", 0),
+              "toolkit": _toolkit_cell(p),
               "uptime_by_fight": p.get("uptime_by_fight", {})}
              for p in players if p.get("total_dmg", 0) > 0),
-            key=lambda x: -x["total_dmg"])[:10],
+            key=lambda x: -x["total_dmg"])[:25],
         # Full roster of damage-dealers (NOT sliced to top 10) — powers the Uptime-by-Fight
         # heatmap so every attacker's per-boss uptime shows, while `damage` above stays a
-        # top-10 DPS leaderboard. Same shape as `damage` minus active_pct.
+        # top-10 DPS leaderboard. Same shape as `damage` minus active_pct. effective_role
+        # lets the heatmap filter to who actually DPS'd (e.g. a prot pally who twisted).
         "uptimeByFight": sorted(
-            ({"name": p["name"], "role": p["role"], "total_dmg": p.get("total_dmg", 0),
+            ({"name": p["name"], "role": p["role"], "effective_role": _eff(p),
+              "total_dmg": p.get("total_dmg", 0),
               "uptime_by_fight": p.get("uptime_by_fight", {})}
              for p in players if p.get("total_dmg", 0) > 0),
             key=lambda x: -x["total_dmg"]),
         # Healer casting-uptime per fight — the Healers & Tanks tab analog of uptimeByFight.
+        # Filtered by effective_role so a resto player who mostly DPS'd drops out of the
+        # healer chart (and into the DPS one).
         "healerUptimeByFight": sorted(
-            ({"name": p["name"], "role": p["role"],
+            ({"name": p["name"], "role": p["role"], "effective_role": _eff(p),
               "uptime_by_fight": p.get("healer_uptime_by_fight", [])}
-             for p in players if p.get("role") == "Healer"),
+             for p in players if _eff(p) == "Healer"),
             key=lambda x: x["name"]),
         "deaths":       death_list,
         "casterCrit":   crit_list("Caster"),
