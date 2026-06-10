@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/webp" href="https://cdn.discordapp.com/icons/1307888102211059783/8c08590b680a233d639a5982a9f38b07.webp?size=1024">
 <title>{{DASHBOARD_TITLE}}</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -486,11 +487,18 @@
   .dr-hpbar > span { display:block; height:100%; }
 
   /* tabbed layout — sections default visible (graceful), JS just filters */
-  .tab-nav { display:flex; flex-wrap:wrap; gap:4px; margin:0 0 18px; border-bottom:1px solid var(--border); }
+  .tab-nav { display:flex; flex-wrap:wrap; align-items:center; gap:4px; margin:0 0 18px; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:20; background:var(--bg); }
   .tab-btn { background:none; border:none; color:var(--muted); font:600 13px 'Segoe UI',sans-serif; padding:9px 15px; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
   .tab-btn:hover { color:var(--text); }
   .tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
   .tsec.hidden { display:none; }
+  /* find-me: highlight your character across every chart at once (persisted) */
+  .find-me { margin-left:auto; display:flex; align-items:center; gap:4px; padding-bottom:4px; }
+  .find-me input { background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font:500 12px 'Segoe UI',sans-serif; padding:5px 9px; width:128px; outline:none; }
+  .find-me input:focus { border-color:var(--accent); }
+  .find-me button { background:none; border:none; color:var(--muted); cursor:pointer; font-size:15px; line-height:1; padding:0 3px; }
+  .find-me button:hover { color:var(--text); }
+  .cname.hl { background:rgba(200,155,60,.20); outline:1px solid var(--accent); border-radius:3px; padding:0 2px; font-weight:700; }
 </style>
 <!-- Wowhead tooltips + auto-icons for loot items (item links → icon + quality color + hover card) -->
 <script>const whTooltips={colorLinks:true,iconizeLinks:true,renameLinks:false,iconSize:"small"};</script>
@@ -517,6 +525,10 @@
     <button class="tab-btn" data-tab="dps" onclick="showTab('dps')">DPS</button>
     <button class="tab-btn" data-tab="utility" onclick="showTab('utility')">Utility</button>
     <button class="tab-btn" data-tab="loot" onclick="showTab('loot')">Loot</button>
+    <div class="find-me">
+      <input id="findMe" type="text" placeholder="find me…" autocomplete="off" spellcheck="false" title="Highlight a raider across every chart (remembered on this browser)">
+      <button id="findMeClear" title="clear" style="display:none">×</button>
+    </div>
   </div>
 
   <!-- ═══════════════ LOOT ═══════════════ -->
@@ -1751,6 +1763,7 @@ function avView(v){
   const pp = document.getElementById("avPlayer"), bb = document.getElementById("avBoss");
   if (pp) pp.style.display = v==="player" ? "block" : "none";
   if (bb) bb.style.display = v==="boss"   ? "block" : "none";
+  try { localStorage.setItem("avView", v); } catch(e){}   // remember By Player/By Boss across refresh
 }
 function renderAvoidableShame() {
   const el = document.getElementById("avoidShame");
@@ -2033,6 +2046,7 @@ let _dpsSel = "all";
 function _setDpsSel(s){
   _dpsSel = s;
   document.querySelectorAll("#dpsSeg .seg-btn").forEach(b => b.classList.toggle("on", b.dataset.sel === s));
+  try { localStorage.setItem("dpsSel", s); } catch(e){}   // remember All/Bosses/Trash across refresh
   renderDamage();
 }
 function renderDamage() {
@@ -2367,7 +2381,33 @@ function showTab(name){
   document.querySelectorAll(".tsec").forEach(s => s.classList.toggle("hidden", s.dataset.tab !== name));
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
   try { localStorage.setItem("activeTab", name); } catch(e){}   // persist across refresh (per-browser)
+  try { history.replaceState(null, "", "#" + name); } catch(e){} // shareable deep-link, no history spam
   try { window.scrollTo({ top: 0 }); } catch(e){}
+}
+
+// ── FIND ME — highlight one raider's class-colored name across every chart at once.
+// All render fns run at boot, so every .cname (incl. hidden tabs) is already in the DOM; one pass
+// covers the whole dashboard. A MutationObserver re-applies it to drill-downs built on demand.
+function applyHighlight(save){
+  const inp = document.getElementById("findMe"); if (!inp) return;
+  const q = inp.value.trim().toLowerCase();
+  if (save){ try { localStorage.setItem("findMe", inp.value.trim()); } catch(e){} }
+  const clr = document.getElementById("findMeClear"); if (clr) clr.style.display = q ? "" : "none";
+  document.querySelectorAll(".cname.hl").forEach(e => e.classList.remove("hl"));
+  if (!q) return;
+  document.querySelectorAll(".cname").forEach(e => {
+    if ((e.textContent || "").trim().toLowerCase().startsWith(q)) e.classList.add("hl");
+  });
+}
+// jump tabs with 1–9 (visible order) or ←/→; ignored while typing in the find-me box
+function _tabKeys(e){
+  if (e.target.matches("input,textarea,select")) return;
+  const tabs = [...document.querySelectorAll(".tab-btn")].filter(b => getComputedStyle(b).display !== "none");
+  if (!tabs.length) return;
+  const cur = tabs.findIndex(b => b.classList.contains("active"));
+  if (e.key >= "1" && e.key <= "9" && tabs[+e.key - 1]) { showTab(tabs[+e.key - 1].dataset.tab); e.preventDefault(); }
+  else if (e.key === "ArrowRight" && cur >= 0) { showTab(tabs[(cur + 1) % tabs.length].dataset.tab); e.preventDefault(); }
+  else if (e.key === "ArrowLeft"  && cur >= 0) { showTab(tabs[(cur - 1 + tabs.length) % tabs.length].dataset.tab); e.preventDefault(); }
 }
 
 // ── BOOT
@@ -2379,12 +2419,14 @@ document.addEventListener("DOMContentLoaded", () => {
   renderOverview();
   renderDrums();
   renderAvoidableShame();
+  try { const _v = localStorage.getItem("avView"); if (_v) avView(_v); } catch(e){}   // restore By Player/By Boss
   renderDebuffCoverage();
   renderSunderArmor();
   renderMC();
   renderDeaths();
   renderHealthstones();
-  renderDamage();
+  try { const _s = localStorage.getItem("dpsSel"); if (_s) _dpsSel = _s; } catch(e){}   // restore All/Bosses/Trash
+  _setDpsSel(_dpsSel);   // sets seg buttons + renders once
   renderUptimeHeatmap();
   renderLuckGrid();
   renderHealing();
@@ -2404,13 +2446,40 @@ document.addEventListener("DOMContentLoaded", () => {
     if (el && m.length) el.innerHTML =
       `<div style="background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11.5px;color:var(--muted)">⚠ No combat-log coverage for <b style="color:var(--orange)">${m.join(", ")}</b> — log-based stats (avoidable, friendly fire, drums) exclude ${m.length>1?"these fights":"this fight"}. WCL stats (DPS, healing, deaths) are complete.</div>`;
   })();
-  // restore the last-viewed tab across refresh; fall back to Overview if it's gone or now hidden
-  // (e.g. the Loot tab removes itself when there's no loot — don't restore onto a hidden tab)
-  let _tab = null;
-  try { _tab = localStorage.getItem("activeTab"); } catch(e){}
+  // distinguishable browser-tab title / bookmark per week
+  const _date = (WEEK_DATA.meta || {}).date;
+  if (_date) document.title = "Raid KPI — " + _date;
+
+  // ── find-me: restore the saved name, wire live highlighting, and re-apply to drill-downs
+  const _fm = document.getElementById("findMe"), _fc = document.getElementById("findMeClear");
+  if (_fm){
+    try { _fm.value = localStorage.getItem("findMe") || ""; } catch(e){}
+    _fm.addEventListener("input", () => applyHighlight(true));
+    if (_fc) _fc.addEventListener("click", () => { _fm.value = ""; applyHighlight(true); _fm.focus(); });
+    applyHighlight(false);
+    // drill-downs (deaths, MC, FF, healer, reaction, player-spells) are built on click — re-highlight
+    // their freshly-inserted names. childList-only + class-toggle means no observer feedback loop.
+    let _hlPending = false;
+    new MutationObserver(() => {
+      if (_hlPending) return; _hlPending = true;
+      requestAnimationFrame(() => { _hlPending = false; applyHighlight(false); });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+
+  // keyboard tab nav + react to manual hash edits / pasted #tab deep-links
+  document.addEventListener("keydown", _tabKeys);
+  window.addEventListener("hashchange", () => {
+    const h = (location.hash || "").replace(/^#/, "");
+    const b = h && document.querySelector(`.tab-btn[data-tab="${h}"]`);
+    if (b && getComputedStyle(b).display !== "none") showTab(h);
+  });
+
+  // restore the active tab: URL #hash (shareable) → last-viewed (localStorage) → Overview.
+  // Guard against a tab that's gone or now hidden (e.g. Loot removes itself when there's no loot).
+  let _tab = (location.hash || "").replace(/^#/, "") || null;
+  if (!_tab) { try { _tab = localStorage.getItem("activeTab"); } catch(e){} }
   const _btn = _tab && document.querySelector(`.tab-btn[data-tab="${_tab}"]`);
-  const _visible = _btn && getComputedStyle(_btn).display !== "none";
-  showTab(_visible ? _tab : "overview");
+  showTab(_btn && getComputedStyle(_btn).display !== "none" ? _tab : "overview");
 });
 </script>
 </body>
