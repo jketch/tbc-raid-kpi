@@ -2366,6 +2366,7 @@ function renderInterruptBars() {
 function showTab(name){
   document.querySelectorAll(".tsec").forEach(s => s.classList.toggle("hidden", s.dataset.tab !== name));
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+  try { localStorage.setItem("activeTab", name); } catch(e){}   // persist across refresh (per-browser)
   try { window.scrollTo({ top: 0 }); } catch(e){}
 }
 
@@ -2403,7 +2404,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (el && m.length) el.innerHTML =
       `<div style="background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11.5px;color:var(--muted)">⚠ No combat-log coverage for <b style="color:var(--orange)">${m.join(", ")}</b> — log-based stats (avoidable, friendly fire, drums) exclude ${m.length>1?"these fights":"this fight"}. WCL stats (DPS, healing, deaths) are complete.</div>`;
   })();
-  showTab("overview");   // default tab
+  // restore the last-viewed tab across refresh; fall back to Overview if it's gone or now hidden
+  // (e.g. the Loot tab removes itself when there's no loot — don't restore onto a hidden tab)
+  let _tab = null;
+  try { _tab = localStorage.getItem("activeTab"); } catch(e){}
+  const _btn = _tab && document.querySelector(`.tab-btn[data-tab="${_tab}"]`);
+  const _visible = _btn && getComputedStyle(_btn).display !== "none";
+  showTab(_visible ? _tab : "overview");
 });
 </script>
 </body>
