@@ -654,9 +654,9 @@
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/ability_dualwield.jpg" alt=""> Damage per Second</div>
     <div class="hs-sub">DPS &amp; uptime computed WCL-style — damage divided by <b>that selection's own fight time</b> (All / Bosses / Trash). The Toolkit column is each class's signature raid-utility (did you bring your kit?).</div>
     <div class="seg" id="dpsSeg">
-      <button class="seg-btn on" data-sel="all" onclick="_setDpsSel('all')">All</button>
-      <button class="seg-btn" data-sel="boss" onclick="_setDpsSel('boss')">Bosses</button>
-      <button class="seg-btn" data-sel="trash" onclick="_setDpsSel('trash')">Trash</button>
+      <button class="seg-btn on" data-sel="all" onclick="_setDpsSel('all')" title="Every fight this session — boss kills + trash + wipe pulls.">All</button>
+      <button class="seg-btn" data-sel="boss" onclick="_setDpsSel('boss')" title="Boss kill fights only — the parse-night DPS.">Bosses</button>
+      <button class="seg-btn" data-sel="trash" onclick="_setDpsSel('trash')" title="Non-boss pulls (no encounter) — trash AoE/cleave.">Trash</button>
     </div>
     <div class="scroll-x scroll-y">
       <table class="mini-table" id="dpsTable">
@@ -670,9 +670,6 @@
         </tr></thead>
         <tbody id="dpsTbody"></tbody>
       </table>
-    </div>
-    <div style="margin-top:9px;padding-top:8px;border-top:1px solid var(--border);font-size:10.5px;color:var(--muted);line-height:1.55">
-      <b style="color:var(--dim)">How this is calculated</b> · <b>DPS</b> = a player's damage in the selected fights ÷ the summed duration of <i>just those fights</i> (WCL's method — not whole-night damage over boss time). · <b>Uptime</b> = active casting/swinging time ÷ that same fight time. · <b>% Raid</b> = share of the selection's total raid damage. · <b>Selections</b>: <b>Bosses</b> = boss kills · <b>Trash</b> = non-boss pulls · <b>All</b> = the whole session. · <b>▲▼</b> = change vs last week (boss-DPS for the header pill; per-selection here). · <b>Toolkit</b> = each class's signature raid-utility. · Rows are damage-dealers only (a tank/healer who DPS'd a fight isn't listed; hybrids who mostly DPS'd are).
     </div>
   </div>
 
