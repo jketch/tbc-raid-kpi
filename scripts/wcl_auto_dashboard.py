@@ -3882,7 +3882,6 @@ def merge_log_into_wcl(wcl_data: dict, log_data: dict) -> dict:
 
         # Other log-sourced fields (log is authoritative for these).
         # NB: deaths come from the WCL table now (feign-free) — do NOT overwrite from the log.
-        if log.get("total_dmg", 0) > 0:   p["total_dmg"]  = log["total_dmg"]
         p["interrupt_count"] = log.get("interrupt_count", 0)
         p["interrupt_list"]  = log.get("interrupt_list", [])
         p["eng"]             = log.get("eng", {})
