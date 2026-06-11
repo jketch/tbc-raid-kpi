@@ -11,12 +11,11 @@ Sources: cache/week_data/*.json (mapped snapshots) + cache/raid_history.db (prio
 trends). The latest week comes from the HTML so its loot + enrichment match exactly what the pipeline
 produced; earlier weeks are enriched here.
 """
-import sys, json, shutil, time
+import sys, json, shutil
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import wcl_auto_dashboard as W
-import reprocess
-import loot_parser
+import week_build as wb
 from db_writer import DB_PATH
 
 DEPLOY_DIR = W.ROOT_DIR / ".deploy"
@@ -42,7 +41,7 @@ def build():
     if not W.DASH_FILE.exists():
         raise SystemExit(f"no dashboard HTML at {W.DASH_FILE} — run the pipeline first")
 
-    embedded = reprocess.load_week_data(W.DASH_FILE)               # latest week (enriched + loot)
+    embedded = wb.from_snapshot(W.DASH_FILE)                       # latest week (enriched + loot)
     latest_code = (embedded.get("meta") or {}).get("report_code")
 
     weeks = _load_snapshots()
@@ -53,11 +52,6 @@ def build():
         shutil.rmtree(WEEKS_DIR)
     WEEKS_DIR.mkdir(parents=True)
 
-    # newest loot CSV (season-long ThatsBIS export). Each week gets its OWN loot, filtered to its
-    # raid-night date — so past weeks show loot too, always re-derived from the current export.
-    _csvs = sorted(W.LOOT_DIR.glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True) if W.LOOT_DIR.exists() else []
-    loot_csv = str(_csvs[0]) if _csvs else None
-
     manifest = []
     for wd in weeks:
         code = wd["meta"]["report_code"]
@@ -65,11 +59,9 @@ def build():
             data = embedded                          # verbatim from HTML (loot + enrichment intact)
         else:
             W.enrich_with_trends(wd, DB_PATH)        # delta_* vs the prior week (read-only DB)
-            if loot_csv:                             # backfill this week's loot from the season CSV
-                rd = time.strftime("%Y-%m-%d", time.localtime(wd["meta"]["start_ms"] / 1000))
-                lt = loot_parser.parse_loot(loot_csv, rd)
-                if lt:
-                    wd["loot"] = lt
+            # Re-attach this week's loot via the ONE loot funnel (was an inline loot_parser call —
+            # the 4th loot path). finalize re-derives loot from the newest season CSV by raid date.
+            wb.finalize_week(wd, has_log=None, do_validate=False)
             data = wd
         (WEEKS_DIR / f"{code}.json").write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
         manifest.append({"report": code, "date": wd["meta"].get("date"), "start_ms": wd["meta"]["start_ms"]})

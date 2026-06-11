@@ -3503,6 +3503,26 @@ ENG_DMG_NAMES = {"Super Sapper Charge", "Goblin Sapper Charge", "Fel Iron Bomb",
 DRUM_SPELLS = {35476:"Drums of Battle",35475:"Drums of Battle",
                35477:"Drums of War",35478:"Drums of Restoration"}
 
+# ══════════════════════════════════════════════════════════════════════════════
+# ███ TIER CONTENT (T5: SSC / TK) — the ONLY raid-content-coupled constants █████
+# ══════════════════════════════════════════════════════════════════════════════
+# Everything else in this pipeline is content-agnostic: zones and boss lists come
+# from WCL dynamically (report["zone"], the kill list), boss portraits derive from
+# the encounter id, and class/consumable constants (TANK_CD_IDS, CD_NAMES,
+# MANA_SOURCES, ELIXIR_BUFFS, POTION_BUFFS, MC_AURAS, AOE_ABILITIES, CC_ABILITIES)
+# are TBC-wide. The boss-/encounter-specific knowledge lives in just these places:
+#   • AVOIDABLE_SPELL_NAMES   (below)            — per-boss avoidable mechanics
+#   • ICON_OVERRIDES          (near top of file) — per-mechanic icon clarity swaps
+#   • the avoidable-mechanic name list           — "dodgeable" mechanic names
+#
+# ── TO ADD T6 (Hyjal / Black Temple) ──────────────────────────────────────────
+# Extend AVOIDABLE_SPELL_NAMES with the T6 bosses' avoidable mechanics (and add any
+# ICON_OVERRIDES if WCL resolves a misleading icon). Nothing else needs editing —
+# the WEEK_DATA contract (week_schema.py) is tier-agnostic, and zones/bosses flow
+# from WCL. (If T6 grows large, lift this whole block into a scripts/content_t6.py
+# and select by report["zone"]; for now one tier in-file is simplest.)
+# ══════════════════════════════════════════════════════════════════════════════
+
 # Avoidable mechanics matched by SPELL NAME (stable across patches). Curated against
 # real DamageTaken data: ONLY mechanics players can dodge/reposition to avoid — never
 # raid-wide pulses (Pounding, Earthquake, Forked Lightning) or self/tank damage

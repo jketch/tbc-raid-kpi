@@ -123,8 +123,28 @@ def build_summary(wd: dict) -> str:
     return "\n".join(lines)
 
 
-def deploy_netlify():
-    """Deploy dashboard (as index.html) to the linked Netlify site. Returns live URL or None."""
+def _section_loss_guard(prev_latest, new_latest):
+    """Sections whose loss should BLOCK a deploy. Two cases, to avoid cross-week false positives
+    (the 'latest' week legitimately changes each weekly deploy and may have different optional
+    sections):
+      • ALWAYS — a required WCL section blank on a killed week (the pipeline shipped a broken core).
+      • RE-DEPLOY ONLY — when the new latest is the SAME report_code as the previous deploy's latest,
+        ANY section that was present and is now empty (the loot re-deploy-drop incident).
+    Returns a list of human-readable reasons (empty = safe to deploy)."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import week_schema as ws
+    reasons = [w for w in ws.validate(new_latest, has_log=None, has_loot=None)["warn"]]
+    pc = (prev_latest or {}).get("meta", {}).get("report_code")
+    nc = (new_latest or {}).get("meta", {}).get("report_code")
+    if prev_latest and pc and pc == nc:
+        for sec in ws.regression(prev_latest, new_latest):
+            reasons.append(f"{sec}: present in the previous deploy of this week, now empty")
+    return reasons
+
+
+def deploy_netlify(force: bool = False):
+    """Deploy dashboard (as index.html) to the linked Netlify site. Returns live URL or None.
+    force: skip the section-loss guard (deploy even if a section regressed to empty)."""
     if not shutil.which("netlify"):
         print("  ⚠ netlify CLI not found — skipping deploy (run: npm install -g netlify-cli)")
         return None
@@ -133,15 +153,38 @@ def deploy_netlify():
         return None
     try:
         DEPLOY.mkdir(exist_ok=True)
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import week_build as wb
+        # Capture the PREVIOUS deploy's latest WEEK_DATA before build_site overwrites index.html.
+        prev_latest = None
+        _prev_idx = DEPLOY / "index.html"
+        if _prev_idx.exists():
+            try:
+                prev_latest = wb.extract_week_data(_prev_idx.read_text(encoding="utf-8"))
+            except Exception:
+                pass
         # Stage the rolling multi-week site (index.html + weeks/<report>.json + WEEKS_INDEX).
         # Falls back to a plain single-week copy if staging can't run (e.g. no snapshots yet).
         try:
-            sys.path.insert(0, str(ROOT / "scripts"))
             import build_site
             build_site.build()
         except Exception as e:
             print(f"  ⚠ multi-week staging skipped ({e}); deploying single week")
             shutil.copyfile(DASH, DEPLOY / "index.html")
+        # ── section-loss guard ── compare the newly-staged latest vs the previous deploy.
+        try:
+            new_latest = wb.extract_week_data((DEPLOY / "index.html").read_text(encoding="utf-8"))
+            losses = _section_loss_guard(prev_latest, new_latest)
+        except Exception as e:
+            losses = []   # never let the guard itself block a deploy on a parse hiccup
+            print(f"  · section-loss guard skipped ({e})")
+        if losses and not force:
+            print("\n  ╔══ DEPLOY BLOCKED — a dashboard section would be LOST ══╗")
+            for r in losses:
+                print(f"    ✗ {r}")
+            print("  ╚════════════════════════════════════════════════════════╝")
+            print("  Re-run with --force to deploy anyway, or fix the data (likely `reprocess.py --all`).")
+            return None
         netlify_exe = shutil.which("netlify")
         r = subprocess.run(
             [netlify_exe, "deploy", "--prod", "--dir", str(DEPLOY), "--json"],
@@ -172,7 +215,8 @@ def main():
     if not DASH.exists():
         print("  ⚠ dashboard not found — run the weekly script first"); return
     print("\n[publish] deploy …")
-    url     = deploy_netlify()
+    force   = "--force" in sys.argv   # skip the section-loss guard
+    url     = deploy_netlify(force=force)
     summary = build_summary(extract_week_data())
 
     # Print the link + summary so you can paste it into the raid channel BY HAND
