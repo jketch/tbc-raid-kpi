@@ -1,0 +1,24 @@
+name: CI
+
+# Enforces the integrity gate on the server, so the pre-commit hook can't be the only line of
+# defense (it only exists where install_hooks.py was run, and --no-verify bypasses it). Runs the
+# hermetic unit suite — the spine / contract / guard tests. The contract characterization is
+# deliberately NOT run here: it diffs the prod week_data snapshots (cache/week_data/*.json), which
+# are gitignored, so it stays a local pre-commit check. See scripts/check.py.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install runtime deps
+        run: pip install requests
+      - name: Run the gate (unit suite)
+        run: python scripts/check.py --tests
