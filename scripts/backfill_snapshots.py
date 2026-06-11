@@ -27,28 +27,19 @@ import sys, os, argparse
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import wcl_auto_dashboard as W
+import week_build as wb
 from db_writer import crit_history, DB_PATH
 
 
 def backfill(report_code: str, token: str, log_path: str = None) -> None:
     tag = "log-complete" if log_path else "no log"
     print(f"\n=== backfill snapshot: {report_code} ({tag}, read-only DB) ===")
-    rep0 = W.gql(token, W.Q_REPORT, {"code": report_code})["reportData"]["report"]
-    # Parse the log scoped to THIS report's bosses (ignores off-report DST clears), exactly as the
-    # live pipeline does — so build_week_data uses log-based per-fight roles + log-only KPIs.
-    log_data = None
-    if log_path:
-        allowed = {f["name"] for f in rep0["fights"] if f.get("kill")}
-        log_data = W.parse_combat_log(log_path, allowed_bosses=allowed)
     crit_hist = crit_history(DB_PATH, exclude_report=report_code)        # READ-only
-    wk = W.build_week_data(report_code, token, refresh_baseline=False,
-                           log_data=log_data, report=rep0, history=crit_hist)
-    if log_data:
-        wk = W.merge_log_into_wcl(wk, log_data)                          # overlay log-only KPIs
-    mapped = W.map_to_week_data(wk)
-    W.reingest_loot(mapped)                                             # loot lives only in the live
-    # pipeline's --loot step; re-attach this week's loot from the newest loot/*.csv (by raid date)
-    # so the rebuilt snapshot keeps its Loot tab instead of silently dropping it.
+    # from_wcl builds the mapped week from WCL (+ optional log, scoped to this report's bosses);
+    # finalize_week re-attaches this week's loot (the offline path otherwise drops it) and validates.
+    # Backfill is DB-READ-ONLY: it dumps the snapshot but never commits (no write_week / no enrich).
+    mapped, _raw, log_data = wb.from_wcl(report_code, token, log_path=log_path, history=crit_hist)
+    wb.finalize_week(mapped, has_log=log_data is not None)
     W.dump_week_data_cache(mapped)                                       # writes cache/week_data/<code>.json only
     m = mapped.get("meta", {})
     print(f"  ✓ {report_code} ({m.get('date')}) — {len(mapped.get('roster') or {})} players, "

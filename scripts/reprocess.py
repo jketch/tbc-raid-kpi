@@ -44,52 +44,34 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 import wcl_auto_dashboard as W
 import db_writer
+import week_build as wb
 
 
 def load_week_data(html_path: Path) -> dict:
-    """Brace-match the WEEK_DATA object out of an injected dashboard HTML."""
-    html = html_path.read_text(encoding="utf-8")
-    i = html.find("const WEEK_DATA =")
-    if i < 0:
-        raise SystemExit(f"no WEEK_DATA in {html_path}")
-    s = html.find("{", i)
-    depth = 0
-    for j in range(s, len(html)):
-        c = html[j]
-        if c == "{":
-            depth += 1
-        elif c == "}":
-            depth -= 1
-            if depth == 0:
-                break
-    return json.loads(html[s:j + 1])
+    """Load the WEEK_DATA object out of an injected dashboard HTML (string-aware brace match).
+    Thin wrapper over week_build.from_snapshot — kept because build_site.py imports this name."""
+    return wb.from_snapshot(html_path)
 
 
-def reprocess_one(wd: dict, db_path: Path, render: bool = True) -> None:
-    """Run the cheap local stages on one mapped WEEK_DATA: trends → DB write → (optional) render.
-    enrich_with_trends MUST precede write_week (it reads the prior week before this one overwrites)."""
-    # Loot is ingested only by the live pipeline's --loot step, so refresh it from the newest
-    # loot/*.csv (by raid date) here too — keeps the DB row + re-rendered HTML's Loot tab intact
-    # for a snapshot that predates loot. No-op when the CSV has no awards that night.
-    W.reingest_loot(wd)
-    W.enrich_with_trends(wd, db_path)
-    try:
-        db_writer.write_week(wd, db_path)
-    except Exception as e:
-        print(f"  db write warning: {e}")
-    if render:
-        W.inject_into_html(wd, W.DASH_FILE, mapped=wd)
+def reprocess_one(wd: dict, db_path: Path, *, render: bool = True, is_test: bool = False,
+                 dump: bool = False) -> None:
+    """Run the cheap local stages on one mapped WEEK_DATA via the shared spine: finalize (loot +
+    contract validation) → commit (dump? → enrich → write → render). has_log=None: a snapshot can't
+    know whether the original week had a log, so log-tier emptiness stays INFO (no false warnings)."""
+    wb.finalize_week(wd, has_log=None)
+    wb.commit_week(wd, db_path, is_test=is_test, dump=dump, enrich=True, write_db=True, render=render)
 
 
-def reprocess_all(db_path: Path) -> None:
+def reprocess_all(db_path: Path, *, is_test: bool = False) -> None:
     """Rebuild the whole DB + trend chain from cache/week_data/*.json, chronologically (zero WCL).
     Non-destructive upsert (INSERT OR REPLACE): older backfilled weeks not in the cache are kept and
-    still serve as trend baselines. Re-renders the dashboard for the most recent cached week."""
+    still serve as trend baselines. Re-renders the dashboard for the most recent cached week.
+    Does not re-dump snapshots (it reads them) — `dump=False`."""
     files = sorted(W.WEEK_DATA_CACHE.glob("*.json"))
     weeks = []
     for f in files:
         try:
-            weeks.append(json.loads(f.read_text(encoding="utf-8")))
+            weeks.append(wb.from_snapshot(f))
         except Exception as e:
             print(f"  ⚠ skip {f.name}: {e}")
     weeks = [w for w in weeks if (w.get("meta") or {}).get("start_ms") is not None]
@@ -102,7 +84,7 @@ def reprocess_all(db_path: Path) -> None:
         meta = wd.get("meta", {})
         n = len(wd.get("roster") or {})
         print(f"  [{i+1}/{len(weeks)}] {meta.get('report_code')} ({meta.get('date')}) → {n} players")
-        reprocess_one(wd, db_path, render=(i == len(weeks) - 1))   # render only the latest week
+        reprocess_one(wd, db_path, render=(i == len(weeks) - 1), is_test=is_test, dump=False)
     print(f"  ✓ rebuilt {len(weeks)} weeks; regenerated {W.DASH_FILE.name} for the latest")
 
 
@@ -114,18 +96,17 @@ def main():
     db_path = db_writer.DB_PATH_TEST if test else db_writer.DB_PATH
 
     if do_all:
-        reprocess_all(db_path)
+        reprocess_all(db_path, is_test=test)
         return
 
     src = Path(args[0]) if args else (W.ROOT_DIR / ".deploy" / "index.html")
-    wd = load_week_data(src)
+    wd = wb.from_snapshot(src)
     meta = wd.get("meta", {})
     print(f"reprocess {meta.get('report_code')} ({meta.get('date')}) from {src}")
     print(f"  DB: {db_path.name}  ·  NO WCL calls")
 
-    # Seed the offline cache from this HTML so `--all` can reach this week later.
-    W.dump_week_data_cache(wd)
-    reprocess_one(wd, db_path, render=True)
+    # Single-file mode SEEDS the offline cache from this HTML (dump=True, test-gated by commit_week).
+    reprocess_one(wd, db_path, render=True, is_test=test, dump=True)
     print(f"  ✓ regenerated {W.DASH_FILE.name}")
 
 
