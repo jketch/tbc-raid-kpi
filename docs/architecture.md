@@ -54,7 +54,7 @@ flowchart TD
     BACK --> SPINE
 
     SPINE -.->|lazy import<br/>breaks the cycle| CORE
-    CORE -.->|imports for main()| SPINE
+    CORE -.->|imports for main| SPINE
     SPINE --> SCHEMA
     SPINE --> DBW
     MAIN --> PUB
