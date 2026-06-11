@@ -1045,7 +1045,7 @@ HITTYPE_CRIT  = 2
 
 def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
                                   fight_roles: dict, fight_durs: dict,
-                                  heal_by_fight: dict, actors: list):
+                                  heal_by_fight: dict, actors: list, md: dict = None):
     """WCL-durable tank survivability — the source of record, run EVERY week (no combat
     log needed). One consolidated kill-fight pass, scoped to the fights each player TANKED
     (prot/ret-swap aware):
@@ -1071,14 +1071,10 @@ def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
     win_s    = min(f["startTime"] for f in kills)
     win_e    = max(f["endTime"]   for f in kills)
 
-    # ability gameID → name, for labeling the biggest hit
-    abil_name = {}
-    try:
-        md = gql(token, """query($c:String!){reportData{report(code:$c){masterData{
-            abilities{ gameID name }}}}}""", {"c": report_code})["reportData"]["report"]["masterData"]
-        abil_name = {a["gameID"]: a.get("name", "") for a in (md.get("abilities") or []) if a.get("gameID")}
-    except Exception:
-        pass
+    # ability gameID → name, for labeling the biggest hit (from the shared masterData fetch)
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    abil_name = md["gid2name"]
 
     agg = defaultdict(lambda: {"taken": 0, "dur": 0.0, "hrecv": 0, "fights": 0,
                                "phys": 0, "magic": 0, "per_boss": [],
@@ -1594,7 +1590,7 @@ def _toolkit_metric(cls, spec, c, kill_min):
     return None   # Holy/Disc Priest → healer scorecard; others: no DPS signature
 
 
-def build_class_toolkit(token, report_code, kills):
+def build_class_toolkit(token, report_code, kills, md: dict = None):
     """Per-player cast counts of every TOOLKIT_ABILITIES spell, from WCL Casts EVENTS over
     the kill windows (durable; runs every week, no combat log). Returns
     {name: {canonical_key: count}}. The per-class metric resolution happens in
@@ -1608,17 +1604,19 @@ def build_class_toolkit(token, report_code, kills):
     fids = [f["id"] for f in kills]
     st   = min(f["startTime"] for f in kills)
     en   = max(f["endTime"]   for f in kills)
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    # All fights (incl. trash) for the whole-report Arcane Explosion pass below — kills-only
+    # would undercount the mage AE meme. masterData (actors/abilities) comes from the shared md.
     try:
         rep = gql(token, """query($c:String!){reportData{report(code:$c){
-            fights{id startTime endTime}
-            masterData{ actors{id name} abilities{gameID name} }}}}""",
+            fights{id startTime endTime}}}}""",
                  {"c": report_code})["reportData"]["report"]
-        md = rep["masterData"]
     except Exception as ex:
-        print(f"  Warning: class-toolkit masterData failed: {ex}")
+        print(f"  Warning: class-toolkit fights fetch failed: {ex}")
         return {}
-    id2name = {a["id"]: a["name"] for a in (md.get("actors") or [])}
-    name2id = {a["name"]: a["id"] for a in (md.get("actors") or [])}
+    id2name = md["id2name"]
+    name2id = md["name2id"]
     # abilityGameID → canonical toolkit key (via the name map; unions all ranks)
     gid2key = {}
     ae_ids  = []                                     # Arcane Explosion ranks (whole-report meme)
@@ -1897,23 +1895,16 @@ def compute_healer_war(token, heal_by_fight, kills, players, fight_roles, refres
     return {nm: round(sum(r) / len(r), 2) for nm, r in ratios.items() if r}
 
 
-def fetch_ability_icons(token: str, report_code: str, fight_ids: list) -> dict:
+def fetch_ability_icons(token: str, report_code: str, fight_ids: list, md: dict = None) -> dict:
     """Map ability name → real WCL icon slug (no .jpg). Two layers:
     1. masterData abilities — covers EVERY ability in the report, including casts that
        never hit the raid (heals, interrupted spells like Holy Smite / Great Heal).
     2. DamageTaken table — authoritative icon for whatever actually hit the raid; overrides
        layer 1 to sidestep the wrong-spell-ID / reused-asset problem for raid-facing hits."""
-    icons = {}
-    # layer 1 — masterData (so interrupted/healing casts resolve an icon too)
-    try:
-        md = gql(token, """query($c:String!){reportData{report(code:$c){masterData{
-            abilities{ name icon }}}}}""", {"c": report_code})["reportData"]["report"]["masterData"]
-        for a in (md.get("abilities") or []):
-            nm, ic = a.get("name"), a.get("icon")
-            if nm and ic and nm not in icons:
-                icons[nm] = ic.replace(".jpg", "")
-    except Exception as e:
-        print(f"  Warning: masterData ability-icon fetch failed: {e}")
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    # layer 1 — masterData (precomputed in md; so interrupted/healing casts resolve an icon too)
+    icons = dict(md["icons"])
     # layer 2 — DamageTaken (authoritative for raid hits; overrides layer 1)
     if fight_ids:
         Q = """query($c:String!,$f:[Int]){reportData{report(code:$c){
@@ -1932,7 +1923,7 @@ def fetch_ability_icons(token: str, report_code: str, fight_ids: list) -> dict:
     return icons
 
 
-def fetch_deaths_split(token: str, report_code: str):
+def fetch_deaths_split(token: str, report_code: str, md: dict = None):
     """Curated deaths from the WCL Deaths table (WCL excludes Hunter Feign Death,
     unlike raw combat-log UNIT_DIED). Split boss vs trash by each death's fight —
     boss fights carry an encounterID, trash fights don't.
@@ -1945,17 +1936,12 @@ def fetch_deaths_split(token: str, report_code: str):
     fid_is_kill = {f["id"]: bool(f.get("kill")) for f in fights}
     fid_name    = {f["id"]: f.get("name", "") for f in fights}
 
-    # id → name maps to label the per-death recap timeline (abilities + ALL actors,
-    # including NPCs so boss-ability sources resolve). One cheap query; failure is non-fatal.
-    abil_name, actor_name = {}, {}
-    try:
-        md = gql(token, """query($c:String!){reportData{report(code:$c){masterData{
-            abilities{ gameID name } actors{ id name } }}}}""",
-                 {"c": report_code})["reportData"]["report"]["masterData"]
-        abil_name  = {a["gameID"]: a.get("name", "") for a in (md.get("abilities") or []) if a.get("gameID")}
-        actor_name = {a["id"]: a.get("name", "")     for a in (md.get("actors")    or []) if a.get("id")}
-    except Exception as ex:
-        print(f"  Warning: death-recap name map fetch failed: {ex}")
+    # id → name maps to label the per-death recap timeline (abilities + ALL actors, including
+    # NPCs so boss-ability sources resolve) — from the shared masterData fetch.
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    abil_name  = md["gid2name"]
+    actor_name = md["id2name"]
 
     Qd = """query($c:String!,$f:[Int]){reportData{report(code:$c){
         table(dataType: Deaths, fightIDs:$f)}}}"""
@@ -2157,7 +2143,7 @@ MANA_SOURCES = [
 ]
 INNERVATE_ICON = "spell_nature_lightning"
 
-def fetch_mana_returns(token: str, report_code: str, kills: list) -> dict:
+def fetch_mana_returns(token: str, report_code: str, kills: list, md: dict = None) -> dict:
     """Mana RETURNED TO THE RAID, grouped by SOURCE — the mana-battery leaderboards for the
     Healers & Tanks tab. From WCL Resources `resourcechange` energize events (resourceChangeType
     0 = mana); provider is owner-resolved (totems log as a pet → credit the shaman via petOwner;
@@ -2167,14 +2153,9 @@ def fetch_mana_returns(token: str, report_code: str, kills: list) -> dict:
        innervate:{icon, casters:[{name,count,targets:[name]}]}}."""
     if not kills:
         return {}
-    try:
-        md = gql(token, """query($c:String!){reportData{report(code:$c){masterData{
-            actors{id name petOwner} abilities{gameID name} }}}}""",
-                 {"c": report_code})["reportData"]["report"]["masterData"]
-    except Exception as ex:
-        print(f"  Warning: mana-returns masterData failed: {ex}")
-        return {}
-    acts = {a["id"]: a for a in (md.get("actors") or [])}
+    if md is None:
+        md = fetch_master_data(token, report_code)   # actors carry petOwner (totem→shaman resolution)
+    acts = md["acts"]
     def owner(sid):
         a = acts.get(sid, {})
         return acts.get(a.get("petOwner"), {}).get("name") if a.get("petOwner") else a.get("name")
@@ -2272,7 +2253,7 @@ def fetch_mana_returns(token: str, report_code: str, kills: list) -> dict:
     return {"batteries": batteries, "innervate": {"icon": INNERVATE_ICON, "casters": casters}}
 
 
-def fetch_sunder_armor(token: str, report_code: str, kills: list) -> dict:
+def fetch_sunder_armor(token: str, report_code: str, kills: list, md: dict = None) -> dict:
     """Per-player Sunder Armor quality — pure WCL, runs every week (no combat log). Sourced from
     the WCL `Debuffs` event stream for the Sunder Armor aura (over kill fights, enemy targets).
     Attribution is by `sourceID`, so it credits anyone who builds the stack, including a prot tank
@@ -2290,14 +2271,9 @@ def fetch_sunder_armor(token: str, report_code: str, kills: list) -> dict:
     Returns {players:[{name,total,effective,refreshed}]} sorted by total desc — {} when no kills."""
     if not kills:
         return {}
-    try:
-        md = gql(token, """query($c:String!){reportData{report(code:$c){masterData{
-            actors{id name} abilities{gameID name} }}}}""",
-                 {"c": report_code})["reportData"]["report"]["masterData"]
-    except Exception as ex:
-        print(f"  Warning: sunder-armor masterData failed: {ex}")
-        return {}
-    id2name = {a["id"]: a["name"] for a in (md.get("actors") or [])}
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    id2name = md["id2name"]
     sunder_ids = [a.get("gameID") for a in (md.get("abilities") or [])
                   if (a.get("name") or "") == "Sunder Armor"]
     if not sunder_ids:
@@ -2393,6 +2369,43 @@ def fetch_damage_by_selection(token: str, report_code: str) -> dict:
 # Build WEEK_DATA
 # ══════════════════════════════════════════════════════════════════════════════
 
+def fetch_master_data(token: str, report_code: str) -> dict:
+    """ONE masterData fetch for the whole run. The actor/ability maps are needed by ~7 places
+    (crit attribution, tank biggest-hit labels, class toolkit, mana returns, sunder, death
+    recaps, ability icons) — each used to re-query masterData independently (#9 in the code
+    review). This pulls the SUPERSET once — every actor (id/name/type/subType/petOwner, so pet
+    energizes resolve to their owner) and every ability (gameID/name/icon) — and returns the
+    precomputed lookups so consumers take maps, not a token.
+
+    Returns a dict:
+      actors    raw actor list (all types)        players  actors filtered to type==Player
+      abilities raw ability list                  id2name  {actorID: name}  (all actors)
+      name2id   {name: actorID}                   acts     {actorID: actor dict}  (carries petOwner)
+      gid2name  {abilityGameID: name}             icons    {ability name: icon-slug}  (first wins)
+    """
+    md = gql(token, """query($c:String!){reportData{report(code:$c){masterData{
+        actors{ id name type subType petOwner }
+        abilities{ gameID name icon } }}}}""",
+             {"c": report_code})["reportData"]["report"]["masterData"]
+    actors    = md.get("actors") or []
+    abilities = md.get("abilities") or []
+    icons = {}
+    for a in abilities:
+        nm, ic = a.get("name"), a.get("icon")
+        if nm and ic and nm not in icons:          # first-wins, matches old fetch_ability_icons layer 1
+            icons[nm] = ic.replace(".jpg", "")
+    return {
+        "actors":    actors,
+        "players":   [a for a in actors if a.get("type") == "Player"],   # == old actors(type:"Player")
+        "abilities": abilities,
+        "id2name":   {a["id"]: a["name"] for a in actors},
+        "name2id":   {a["name"]: a["id"] for a in actors},
+        "acts":      {a["id"]: a for a in actors},
+        "gid2name":  {a["gameID"]: (a.get("name") or "") for a in abilities if a.get("gameID")},
+        "icons":     icons,
+    }
+
+
 def build_week_data(report_code: str, token: str, refresh_baseline: bool = False,
                     log_data: dict = None, report: dict = None, history: dict = None) -> dict:
     cache = load_cache()
@@ -2420,17 +2433,13 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     print(f"   Zone: {zone}  |  {len(kills)} kills  |  Fights: {fight_ids}")
 
     # ── Player details + gear ──────────────────────────────────────────────
-    # Fetch actor list (needed to map sourceID → name for crit events) + ability list
-    # (to resolve Shadow Bolt gameIDs for the warlock "biggest SB crit" toolkit metric).
-    actor_data = gql(token, """
-    query GetActors($code: String!) {
-      reportData { report(code: $code) {
-        masterData { actors(type: "Player") { id name type subType }
-                     abilities { gameID name } }
-      }}
-    }""", {"code": report_code})
-    actors    = actor_data["reportData"]["report"]["masterData"]["actors"]
-    _abils    = actor_data["reportData"]["report"]["masterData"].get("abilities") or []
+    # ONE masterData fetch, shared by every consumer below (crit attribution, tank biggest-hit,
+    # toolkit, mana returns, sunder, death recaps, ability icons) — see fetch_master_data. The
+    # crit/damage attribution path uses the Player-filtered actor list (md["players"]) exactly as
+    # before (pets must NOT be in the crit name map); pet-aware consumers use the full md["actors"].
+    md        = fetch_master_data(token, report_code)
+    actors    = md["players"]                       # == old actors(type:"Player")
+    _abils    = md["abilities"]
     sb_ids    = {a.get("gameID") for a in _abils if (a.get("name") or "") == "Shadow Bolt"}
 
     print(f"\n[2/5] Fetching player details & gear (fight_ids={fight_ids[:3]}...)")
@@ -2533,7 +2542,7 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     crit_by_name      = merge_actor_names(crit_counts_by_id, actors)
 
     # Curated deaths (no Feign Death) from WCL, split boss vs trash by fight, + killing blows.
-    death_boss, death_trash, death_recaps, deaths_by_boss = fetch_deaths_split(token, report_code)
+    death_boss, death_trash, death_recaps, deaths_by_boss = fetch_deaths_split(token, report_code, md)
     for b, n in deaths_by_boss.items():
         if b in boss_meta:
             boss_meta[b]["deaths"] = n
@@ -2634,7 +2643,7 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     # mitigation, school split, cooldowns, biggest hit, raid DPS for the boss tiles). The
     # combat log, when present, only adds lowest-HP%-survived; a missing log never blanks it.
     tank_metrics, boss_raid_dps = build_tank_scorecard_extended(
-        token, report_code, kills, fight_roles, fight_durs, heal_by_fight, actors)
+        token, report_code, kills, fight_roles, fight_durs, heal_by_fight, actors, md)
     for b, d in boss_raid_dps.items():
         if b in boss_meta:
             boss_meta[b]["raid_dps"] = d
@@ -2659,10 +2668,10 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     # Raid debuff coverage — pure WCL, per boss (CoE/Misery/Shadow Weaving/ISB + armor + judgements)
     debuff_coverage = fetch_debuff_coverage(token, report_code, kills)
     # Class toolkit — each DPS's signature class-relative utility (cast-based, pure WCL)
-    mana_returns  = fetch_mana_returns(token, report_code, kills)
-    sunder_armor  = fetch_sunder_armor(token, report_code, kills)
+    mana_returns  = fetch_mana_returns(token, report_code, kills, md)
+    sunder_armor  = fetch_sunder_armor(token, report_code, kills, md)
     damage_by_sel = fetch_damage_by_selection(token, report_code)
-    class_toolkit = build_class_toolkit(token, report_code, kills)
+    class_toolkit = build_class_toolkit(token, report_code, kills, md)
     # Fold the biggest Shadow Bolt crit (tracked free during the crit pass) into the toolkit
     # counts so the warlock metric resolver reads it like any other value.
     for nm, cd in crit_by_name.items():
@@ -2740,7 +2749,7 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
             for p in players
         ],
         # ability name → real WCL icon slug, for the Hall of Shame legend
-        "ability_icons": fetch_ability_icons(token, report_code, fight_ids),
+        "ability_icons": fetch_ability_icons(token, report_code, fight_ids, md),
         # accurate pull-time consumables (from combatantinfo auras)
         "ci_consumables": ci_consumables,
         # per-player healing throughput/efficiency + per-spell breakdown + mana
