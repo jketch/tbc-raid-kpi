@@ -163,6 +163,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
     mc_source = {}                 # player name → who controlled them (last seen)
     consum_use = defaultdict(lambda: defaultdict(int))  # [player][category] = use count
     consum_label = defaultdict(dict)  # [player][category] = specific item name (first seen)
+    cd_casts = defaultdict(lambda: defaultdict(int))    # [player][CD name] = defensive-CD casts (whole night)
     melee_swings = defaultdict(int)   # [player] = auto-attack swings in boss windows
     # MC accountability — blame flips onto the raid when a teammate is controlled.
     mc_saves  = defaultdict(lambda: {"count": 0, "spells": defaultdict(int),
@@ -284,6 +285,10 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                     consum_use[_pn]["fear_ward"] += 1
                 elif _spell.startswith("Greater Blessing of"):    # paladin raid buff provision
                     consum_use[_pn]["blessing"] += 1
+                # Tank defensive cooldowns (separate, not a consumable category) — whole-night count
+                # by name; overlaid onto the WCL tank scorecard to catch wipe-popped CDs.
+                if _spell in DEFENSIVE_CD_NAMES:
+                    cd_casts[_pn][_spell] += 1
 
             # Combat potions (Destruction, Insane Strength, Haste, Free Action, …) log only their
             # effect BUFF, not a "… Potion" cast — count each APPLIED as one potion use. Unambiguous
@@ -617,6 +622,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
             "fight_heal_recv": {b: dict(v) for b, v in fight_heal_recv.items()},
             "consum_use": {n: dict(v) for n, v in consum_use.items()},
             "consum_label": {n: dict(v) for n, v in consum_label.items()},
+            "cd_casts": {n: dict(v) for n, v in cd_casts.items()},
             "melee_swings": dict(melee_swings),
             "hp_samples": {n: {b: list(s) for b, s in bs.items()} for n, bs in hp_samples.items()},
             "log_deaths": {n: list(d) for n, d in log_deaths.items()}}

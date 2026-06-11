@@ -160,6 +160,12 @@ EXTERNAL_ABILITIES = {
     "Tremor Totem":        "utility",     # shaman fear/charm/sleep break
 }
 
+# Tank defensive cooldowns matched by NAME in the combat log (whole-night, catches CDs popped on
+# wipes that the kill-scoped WCL Casts query misses, and needs no spell-ID guessing). Overlaid onto
+# the tank scorecard's `cooldowns`. Divine Shield id verified 1020; names match the log exactly.
+DEFENSIVE_CD_NAMES = {"Shield Wall", "Last Stand", "Frenzied Regeneration", "Barkskin",
+                      "Lay on Hands", "Divine Shield", "Divine Protection"}
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ███ T5 CONTENT (SSC / TK) — the ONLY raid-content-coupled constants ███████████

@@ -896,9 +896,10 @@ def compute_healing_metrics(heal_by_fight: dict, fight_roles: dict, fight_durs: 
 # Tank defensive cooldowns — WCL spell IDs → display name. Counted from Casts events
 # scoped to kill-fight windows. Frenzied Regen (26999) has no aura, so Casts is the only
 # source; Barkskin/Shield Wall/Last Stand/Lay on Hands likewise tracked by cast.
-TANK_CD_IDS = [871, 12975, 26999, 22812, 27154]
-CD_NAMES = {871: "Shield Wall", 12975: "Last Stand", 26999: "Frenzied Regen",
-            22812: "Barkskin", 27154: "Lay on Hands"}
+TANK_CD_IDS = [871, 12975, 26999, 22812, 27154, 1020, 498, 5573]
+CD_NAMES = {871: "Shield Wall", 12975: "Last Stand", 26999: "Frenzied Regeneration",
+            22812: "Barkskin", 27154: "Lay on Hands", 1020: "Divine Shield",
+            498: "Divine Protection", 5573: "Divine Protection"}   # names match the combat log overlay
 
 # WCL melee hitType enum (LOCKED against live data — confirmed by probing tank logs directly).
 # Confirmed by probing this report's tanks: a crit-immune bear shows only {miss, hit,
@@ -2523,6 +2524,13 @@ def build_week_data(report_code: str, token: str,
                     for b, samples in hp_samples.get(nm, {}).items() if samples}
             if lows:
                 tm["lowest_hp"] = lows
+        # cooldown completeness: the WCL Casts query is kill-scoped (misses CDs popped on wipes) and
+        # keyed by a fixed ID set; the combat log catches every defensive CD by NAME across the whole
+        # night. Max-merge so neither source loses a cast (belt-and-suspenders).
+        cd_casts = log_data.get("cd_casts", {})
+        for nm, tm in tank_metrics.items():
+            for cd, c in cd_casts.get(nm, {}).items():
+                tm["cooldowns"][cd] = max(tm["cooldowns"].get(cd, 0), c)
     role_spells     = fetch_role_spell_usage(token, report_code, fight_ids, players)
     # Per-fight DamageDone — one paginated fetch feeds the uptime heatmap.
     dmg_by_fight    = fetch_damage_by_fight(token, report_code, kills)
