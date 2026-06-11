@@ -58,6 +58,14 @@ Optional — override the dashboard title displayed in the browser:
 DASHBOARD_TITLE=My Guild — Raid KPI Dashboard
 ```
 
+Optional — enable the officer-only **AI performance summaries** (one-line notes per raider on the
+Performance tab). Pay-as-you-go key from `console.anthropic.com`; pennies per week. Leave unset to
+keep it off — the dashboard is unaffected either way.
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
 ### 4. Choose a sharing method (optional)
 
 The dashboard is a self-contained HTML file — `dashboard/raid_kpi_dashboard.html` — that works
@@ -107,6 +115,9 @@ mkdir logs
 3. Enter the WCL report code when prompted (from `fresh.warcraftlogs.com/reports/XXXXXX`).
 4. The dashboard opens automatically when done.
 
+> **Officer view:** append `?officer=1` to the dashboard URL for the private Performance /
+> Raider-Score tab. (Obscurity, not security — the underlying numbers also appear on the public tabs.)
+
 The pipeline:
 - Authenticates against WarcraftLogs OAuth
 - Pulls fight data via the WCL v2 GraphQL API
@@ -143,7 +154,8 @@ python scripts\wcl_auto_dashboard.py REPORTCODE --dry-run  # prints week_data JS
 tbc-raid-kpi/
 ├── run_weekly.bat              ← entry point
 ├── .env                        ← your WCL credentials (gitignored)
-├── SETUP.md                    ← this file
+├── README.md                   ← this file (setup guide)
+├── docs/                       ← architecture + TBC/WCL reference docs
 ├── scripts/
 │   ├── wcl_auto_dashboard.py   ← main pipeline
 │   ├── db_writer.py            ← SQLite history
