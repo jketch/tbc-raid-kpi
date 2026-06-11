@@ -11,7 +11,8 @@ built only the queries our planned pillars needed; this is the systematic sweep 
 
 ## Visual map
 
-Green = we use it · Amber = available, untapped · Grey = null/broken on the 2.5 client · Gold = the standout find.
+**Recon complete — every dataType probed.** Green = we use it · Amber = available & untapped (some only
+via `events()`) · Grey = genuinely unavailable on the 2.5 client · Gold = the standout find.
 
 ```mermaid
 graph LR
@@ -35,10 +36,10 @@ graph LR
   T --> DTH["Deaths<br/>✓ recap — overkill / killingBlow UNTAPPED"]
   T --> SU["Summary<br/>untapped — consolidation + raid ilvl"]
   T --> SM["Summons<br/>untapped — pets / totems"]
-  T --> IN["Interrupts<br/>null on 2.5 (use combat log)"]
-  T --> DI["Dispels<br/>null on 2.5"]
-  T --> TH["Threat<br/>null on 2.5 → would be Execution axis"]
-  T --> SV["Survivability<br/>null on 2.5 → would be Survival"]
+  T --> IN["Interrupts<br/>via events() — WCL-durable, untapped"]
+  T --> DI["Dispels<br/>via events() — Utility signal, untapped"]
+  T --> TH["Threat<br/>DEAD on 2.5 — no threat values logged"]
+  T --> SV["Survivability<br/>DEAD on 2.5 — retail-only metric"]
 
   E --> CI["CombatantInfo<br/>✓ gear-crit · talents BROKEN on 2.5"]
   E --> EV["DamageDone / Healing / Resources events<br/>✓ drill-downs"]
@@ -51,8 +52,8 @@ graph LR
 
   class API,R,T,E root;
   class F,DD,HE,DT,BU,DE,CA,RE,DTH,RK,MD,PD,CI,EV used;
-  class SU,SM,G untapped;
-  class IN,DI,TH,SV dead;
+  class SU,SM,G,IN,DI untapped;
+  class TH,SV dead;
   class GEAR star;
 ```
 
