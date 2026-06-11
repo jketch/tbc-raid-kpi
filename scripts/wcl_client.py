@@ -35,7 +35,10 @@ def get_token(client_id: str, client_secret: str) -> str:
 
 
 def gql(token: str, query: str, variables: dict = None, retries: int = 3) -> dict:
-    for attempt in range(retries):
+    attempt = 0          # network/HTTP retry budget
+    rate_waits = 0       # 429s use their OWN bounded counter so a slow point-budget
+    MAX_RATE_WAITS = 6   # cooldown doesn't burn the network-retry budget
+    while True:
         try:
             resp = _req.post(
                 WCL_API_URL,
@@ -43,13 +46,36 @@ def gql(token: str, query: str, variables: dict = None, retries: int = 3) -> dic
                 headers={"Authorization": f"Bearer {token}"},
                 timeout=30
             )
+            # Rate limited: WCL's 300-points/min ceiling can need a far longer cooldown than
+            # the exponential backoff. Honor Retry-After and try again without spending the
+            # network-retry budget (a bounded number of times).
+            if resp.status_code == 429:
+                rate_waits += 1
+                if rate_waits > MAX_RATE_WAITS:
+                    resp.raise_for_status()
+                ra = resp.headers.get("Retry-After", "")
+                wait = int(ra) if ra.isdigit() else 5 * rate_waits
+                print(f"  Rate limited (429) — waiting {wait}s ({rate_waits}/{MAX_RATE_WAITS})")
+                time.sleep(wait)
+                continue
             resp.raise_for_status()
             data = resp.json()
-            if "errors" in data:
+            payload = data.get("data")
+            if data.get("errors"):
+                # A partial response still carries usable `data` for the aliases/fields that
+                # succeeded — one bad fight-alias must not nuke a whole batch. Only a
+                # null/missing payload is a hard failure. GraphQL-level errors are
+                # deterministic, so they are NOT retried.
+                if payload is not None:
+                    print(f"  GraphQL partial errors (returning partial data): {data['errors']}")
+                    return payload
                 raise RuntimeError(f"GraphQL errors: {data['errors']}")
-            return data["data"]
+            return payload
+        except RuntimeError:
+            raise   # deterministic GraphQL error — retrying would just re-fail
         except Exception as e:
-            if attempt == retries - 1:
+            attempt += 1
+            if attempt >= retries:
                 raise
-            print(f"  Retry {attempt+1}/{retries} after error: {e}")
-            time.sleep(2 ** attempt)
+            print(f"  Retry {attempt}/{retries} after error: {e}")
+            time.sleep(2 ** (attempt - 1))

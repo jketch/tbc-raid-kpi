@@ -185,10 +185,11 @@ DEFAULT_TITLE  = "Raid KPI Dashboard — TBC Anniversary"
 # per report, written every prod run after map_to_week_data() (gitignored, ~MB each).
 WEEK_DATA_CACHE = ROOT_DIR / "cache" / "week_data"
 
-# Healer "replacement-level" cohort cache (same-spec ranked parses per boss). The
-# heavy rankings fetch is amortized here — weekly runs read it; refresh ~monthly.
-BASELINE_CACHE = ROOT_DIR / "cache" / "healer_baseline.json"
-BASELINE_TTL   = 30 * 86400   # 30 days
+# Performance metric = the native WCL PARSE % (rankPercent from report.rankings) — vs the FULL
+# logged population, NOT the old top-100 cohort ratio (which made solid raiders read "below
+# replacement"). See fetch_parse_percentiles. No cohort cache / baseline / TTL needed — WCL scores
+# it server-side; we just read it. (The old healer_baseline.json + dps/tank_baseline.json caches are
+# now orphaned and can be deleted from cache/.)
 
 def load_cache() -> dict:
     if CACHE_FILE.exists():
@@ -198,6 +199,18 @@ def load_cache() -> dict:
 def save_cache(cache: dict):
     CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
     CACHE_FILE.write_text(json.dumps(cache, indent=2))
+
+
+def _loads_alias(t):
+    """Decode a WCL alias/table blob that may arrive as a JSON string or already-parsed
+    object. Returns {} on a malformed blob so one bad fight-alias can't abort a whole
+    batched query (the per-fight loops iterate many aliases from a single response)."""
+    if isinstance(t, str):
+        try:
+            return json.loads(t)
+        except (ValueError, TypeError):
+            return {}
+    return t or {}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -527,7 +540,7 @@ def fetch_actual_crit(token: str, report_code: str, fights: list,
     pages = 0
 
     print(f"  Fetching damage events for crit counting (this may take a moment)...")
-    while next_ts is not None and pages < 20:   # cap at 20 pages (~200k events)
+    while next_ts is not None and pages < MAX_EVENT_PAGES:
         data = gql(token, Q_DAMAGE_EVENTS, {
             "code": report_code,
             "fightIDs": fight_ids,
@@ -564,6 +577,9 @@ def fetch_actual_crit(token: str, report_code: str, fights: list,
         if not next_ts:
             break
 
+    if next_ts is not None:
+        print(f"  ⚠ crit counting hit the {MAX_EVENT_PAGES}-page cap with more events "
+              f"remaining — crit/luck for this week may be undercounted")
     print(f"  Processed {pages} page(s) of damage events")
     return counts
 
@@ -587,7 +603,6 @@ CASTER_SPECS   = {"Arcane", "Fire", "Frost", "Shadow", "Elemental",
 PHYSICAL_SPECS = {"Fury", "Arms", "Retribution", "Enhancement",
                   "Survival", "Marksmanship", "Beast Mastery",
                   "Combat", "Assassination", "Subtlety"}
-
 def _nontank_role(spec: str) -> str:
     """Role to use for compliance when a Tank spec tanks < 50 % of fights (runs DPS consumes)."""
     if spec in HEALER_SPECS:  return "Healer"
@@ -714,9 +729,7 @@ def harden_tank_fights(token: str, report_code: str, kills: list,
             continue
         for f in chunk:
             fid = f["id"]
-            t = rep.get(f'f{fid}')
-            if isinstance(t, str):
-                t = json.loads(t)
+            t = _loads_alias(rep.get(f'f{fid}'))
             # boss-melee taken, restricted to roster tanks
             melee = {}
             for e in (t or {}).get("data", {}).get("entries", []):
@@ -747,10 +760,9 @@ def harden_tank_fights(token: str, report_code: str, kills: list,
 
 
 def fetch_healing_by_fight(token: str, report_code: str, kills: list, batch: int = 5) -> dict:
-    """Per-fight Healing tables (needed for per-boss vs-replacement + heal-fight scoping).
-    Uses GraphQL field ALIASING to fetch `batch` fights per HTTP request instead of one
-    request each — collapses ~10 round-trips into ~2. Shared by the scoped healer metrics
-    and compute_healer_war."""
+    """Per-fight Healing tables (heal-fight scoping for the scoped healer metrics + tank healing
+    received). Uses GraphQL field ALIASING to fetch `batch` fights per HTTP request instead of one
+    request each — collapses ~10 round-trips into ~2."""
     by = {}
     for i in range(0, len(kills), batch):
         chunk = kills[i:i + batch]
@@ -771,13 +783,12 @@ def fetch_healing_by_fight(token: str, report_code: str, kills: list, batch: int
     return by
 
 
-def fetch_uptime_by_fight(token: str, report_code: str, kills: list, batch: int = 5) -> dict:
-    """Per-fight active-time % per player, so a structurally-low fight (submerge/phase, e.g.
-    Vashj P2 for casters, Lurker dives) is visible instead of silently dragging the raid-wide
-    number. Aliased per-fight DamageDone. Returns { player: {boss: uptime_pct} }."""
-    out = defaultdict(dict)
-    fid_boss = {f["id"]: f["name"] for f in kills}
-    fid_dur  = {f["id"]: (f["endTime"] - f["startTime"]) / 1000.0 for f in kills}
+def fetch_damage_by_fight(token: str, report_code: str, kills: list, batch: int = 5) -> dict:
+    """Per-fight DamageDone tables (needed for per-boss vs-replacement DPS/Tank WAR + the
+    uptime heatmap). Aliased like fetch_healing_by_fight — `batch` fights per HTTP request.
+    Returns {fid: [entries]}. ONE fetch feeds both damage_uptime_by_fight and the WAR
+    computations (was a separate fetch_uptime_by_fight pagination of these same tables)."""
+    by = {}
     for i in range(0, len(kills), batch):
         chunk = kills[i:i + batch]
         aliases = "\n".join(
@@ -785,17 +796,34 @@ def fetch_uptime_by_fight(token: str, report_code: str, kills: list, batch: int 
         Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
         try:
             rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+            for f in chunk:
+                t = rep.get(f'f{f["id"]}')
+                if isinstance(t, str):
+                    t = json.loads(t)
+                by[f["id"]] = (t or {}).get("data", {}).get("entries", [])
         except Exception as ex:
-            print(f"  Warning: uptime-by-fight batch failed: {ex}")
+            print(f"  Warning: damage-by-fight batch failed: {ex}")
+            for f in chunk:
+                by[f["id"]] = []
+    return by
+
+
+def damage_uptime_by_fight(dmg_by_fight: dict, kills: list) -> dict:
+    """Per-fight active-time % per player, so a structurally-low fight (submerge/phase, e.g.
+    Vashj P2 for casters, Lurker dives) is visible instead of silently dragging the raid-wide
+    number. Derived from the already-fetched per-fight DamageDone tables (dmg_by_fight) — the
+    damage analog of healer_uptime_by_fight, so NO extra API call. Returns { player: {boss: pct} }."""
+    out = defaultdict(dict)
+    fid_boss = {f["id"]: f["name"] for f in kills}
+    fid_dur  = {f["id"]: (f["endTime"] - f["startTime"]) / 1000.0 for f in kills}
+    for fid, entries in (dmg_by_fight or {}).items():
+        boss = fid_boss.get(fid)
+        dur  = fid_dur.get(fid, 0) or 1
+        if not boss:
             continue
-        for f in chunk:
-            t = rep.get(f'f{f["id"]}')
-            if isinstance(t, str):
-                t = json.loads(t)
-            dur = fid_dur.get(f["id"], 0) or 1
-            for e in (t or {}).get("data", {}).get("entries", []):
-                at = e.get("activeTime", 0) / 1000.0
-                out[e.get("name")][fid_boss[f["id"]]] = round(at / dur * 100, 1)
+        for e in (entries or []):
+            at = e.get("activeTime", 0) / 1000.0
+            out[e.get("name")][boss] = round(at / dur * 100, 1)
     return dict(out)
 
 
@@ -938,9 +966,7 @@ def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
             fight_tanks = {n for n in tanks if fid in fight_roles.get(n, {}).get("Tank", [])}
             if not fight_tanks:
                 continue
-            t = rep.get(f'f{fid}')
-            if isinstance(t, str):
-                t = json.loads(t)
+            t = _loads_alias(rep.get(f'f{fid}'))
             for e in (t or {}).get("data", {}).get("entries", []):
                 nm = e.get("name")
                 if nm not in fight_tanks:
@@ -1041,9 +1067,7 @@ def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
             print(f"  Warning: raid-DPS batch failed: {ex}")
             continue
         for f in chunk:
-            t = rep.get(f'f{f["id"]}')
-            if isinstance(t, str):
-                t = json.loads(t)
+            t = _loads_alias(rep.get(f'f{f["id"]}'))
             dur = fight_durs.get(f["id"], 0) or 1
             tot = sum(e.get("total", 0) for e in (t or {}).get("data", {}).get("entries", []))
             if tot:
@@ -1451,9 +1475,7 @@ def _buff_uptime_batch(token, report_code, fids, players, ability_ids, counts, k
     try:
         rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
         for al, nm in alias2name.items():
-            t = rep.get(al)
-            if isinstance(t, str):
-                t = json.loads(t)
+            t = _loads_alias(rep.get(al))
             for a in (t or {}).get("data", {}).get("auras", []):
                 up[nm] += a.get("totalUptime", 0)
         for nm in {n for n in alias2name.values()}:
@@ -1604,112 +1626,137 @@ def build_class_toolkit(token, report_code, kills, md: dict = None):
     return {nm: dict(d) for nm, d in counts.items()}
 
 
-def _healer_count(token, code, fight_id):
-    """How many healers a ranked parse's raid fielded — for comp-matching the cohort.
-    One playerDetails query per ranking; only called during a cohort (re)fetch, so the
-    monthly baseline cache amortizes it. Returns None on failure (caller degrades to
-    duration-only matching)."""
-    Q = """query($c:String!,$f:Int!){reportData{report(code:$c){
-        playerDetails(fightIDs:[$f], killType:Kills)}}}"""
-    try:
-        pd = gql(token, Q, {"c": code, "f": fight_id})["reportData"]["report"]["playerDetails"]
-        if isinstance(pd, str):
-            pd = json.loads(pd)
-        healers = pd.get("data", {}).get("playerDetails", {}).get("healers", [])
-        return len(healers) or None
-    except Exception:
-        return None
+def fetch_parse_percentiles(token: str, report_code: str, kills: list) -> dict:
+    """Per-player WCL PARSE % (rankPercent — the 'All Stars' percentile vs the FULL logged
+    population, not just the top-100 leaderboard) averaged across the night's kills. This is the
+    colored number on the WCL report page — 50 = a typical logged raider, 95+ = elite. Sourced
+    from report.rankings: the `dps` metric covers DPS *and* tanks (tank threat = their dps parse);
+    `hps` covers healers. Returns {name: {"dps": pct|None, "hps": pct|None}}.
 
-
-# Bump when the cached sample shape changes so old entries are refetched lazily.
-BASELINE_VER = 2   # v2 adds per-sample healer count for comp-matching
-
-
-def _cohort_samples(token, cache, enc_id, cls, spec, refresh, now):
-    """Cached same-spec ranked-parse samples [{duration, hps, healers}] for one
-    (boss, class, spec). Fetches WCL rankings only when missing/stale/old-schema — the
-    cache amortizes the heavy call (rankings + one healer-count query per sample)."""
-    key = f"{enc_id}:{cls}:{spec}"
-    ent = cache.get(key)
-    if ent and not refresh and ent.get("ver") == BASELINE_VER \
-            and (now - ent.get("sampled_at", 0)) < BASELINE_TTL:
-        return ent["samples"]
-    Q = """query($e:Int!,$cl:String!,$sp:String!){worldData{encounter(id:$e){
-        characterRankings(className:$cl, specName:$sp, metric:hps)}}}"""
-    try:
-        cr = gql(token, Q, {"e": enc_id, "cl": cls, "sp": spec})["worldData"]["encounter"]["characterRankings"]
-        if isinstance(cr, str):
-            cr = json.loads(cr)
-        # Cap at 50 (down from 100) — each sample now costs a healer-count query.
-        raw = [r for r in cr.get("rankings", []) if r.get("size") == 25][:50]
-        samples = []
-        for r in raw:
-            rep = r.get("report") or {}
-            code, fid = rep.get("code"), rep.get("fightID")
-            healers = _healer_count(token, code, fid) if code and fid else None
-            samples.append({"duration": (r.get("duration", 0) or 0) / 1000.0,
-                            "hps": r.get("amount", 0), "healers": healers})
-        cache[key] = {"sampled_at": now, "ver": BASELINE_VER, "samples": samples}
-        return samples
-    except Exception as ex:
-        print(f"  Warning: cohort fetch {key} failed: {ex}")
-        cache[key] = {"sampled_at": now, "ver": BASELINE_VER, "samples": []}
-        return []
-
-
-def compute_healer_war(token, heal_by_fight, kills, players, fight_roles, refresh=False):
-    """Each healer's effective HPS per boss vs the median of same-spec ranked parses on
-    that boss (within ±15s duration) = 'replacement level'. Averaged across bosses gives
-    a 'vs replacement' ratio (1.15 = 15% above the cohort median). Cohort cached monthly.
-    Only fights where the player was actually a HEALER count (spec-swap aware), and only
-    cohort parses with a similar healer count (comp-matched). Cohort = *logged* parses
-    (skews skilled), so ~1.0 is solid, not average."""
-    import statistics
-    healer_spec = {p["name"]: (p.get("type") or p.get("class"), p.get("spec"))
-                   for p in players if p.get("role") == "Healer" and p.get("spec")}
-    if not healer_spec:
+    Replaces the old cohort-ratio WAR: that compared to the top-100 parses (≈99th percentile), so a
+    solid raider read ~0.7 'below replacement'; this scores against everyone, so the same raider
+    reads ~75. bracketPercent (ilvl-adjusted) is null on TBC Anniversary logs → rankPercent is
+    authoritative. Values are None when WCL hasn't RANKED the report yet (a report pulled minutes
+    after raid) — the cell then degrades to '—' until a later run picks the ranking up."""
+    fids = [f["id"] for f in kills]
+    if not fids:
         return {}
-    our_healers = sum(1 for p in players if p.get("role") == "Healer")
-    cache = {}
-    if BASELINE_CACHE.exists():
-        try: cache = json.loads(BASELINE_CACHE.read_text())
-        except Exception: cache = {}
-    now = time.time()
-    ratios = defaultdict(list)
-    for f in kills:
-        enc = f.get("encounterID")
-        if not enc:
+    acc = defaultdict(lambda: {"dps": [], "hps": []})
+    for metric in ("dps", "hps"):
+        Q = "query($c:String!){reportData{report(code:$c){rankings(playerMetric:" + metric + ")}}}"
+        try:
+            raw = gql(token, Q, {"c": report_code})["reportData"]["report"]["rankings"]
+        except Exception as ex:
+            print(f"  Warning: report.rankings({metric}) failed: {ex}")
             continue
-        dur_s = (f["endTime"] - f["startTime"]) / 1000.0
-        for e in heal_by_fight.get(f["id"], []):
-            nm = e.get("name")
-            if nm not in healer_spec:
+        if isinstance(raw, str):
+            raw = json.loads(raw)
+        for blk in (raw.get("data") or []):
+            if not blk.get("kill"):
                 continue
-            # spec-swap gate: only count fights this player actually healed
-            if f["id"] not in fight_roles.get(nm, {}).get("Healer", []):
+            for _role, rv in (blk.get("roles") or {}).items():
+                for c in (rv.get("characters") or []):
+                    rp = c.get("rankPercent")
+                    if rp is not None and c.get("name"):
+                        acc[c["name"]][metric].append(rp)
+    out = {nm: {"dps": round(sum(v["dps"]) / len(v["dps"])) if v["dps"] else None,
+                "hps": round(sum(v["hps"]) / len(v["hps"])) if v["hps"] else None}
+           for nm, v in acc.items()}
+    n = sum(1 for v in out.values() if v["dps"] is not None or v["hps"] is not None)
+    print(f"  ✓ parse percentiles: {n} players ranked" if n else
+          "  ⚠ parse percentiles: report not ranked by WCL yet (cells show —)")
+    return out
+
+
+def _tank_survival_grade(tm: dict, deaths: int, cls: str = "") -> dict:
+    """Absolute tank survivability grade (0–100) from WCL-durable mitigation signals — NOT a
+    cohort percentile (WCL exposes no damage-taken ranking, and tank DTPS is MT/OT-confounded;
+    TBC tanks are judged on hard thresholds instead). Crit-immunity is the load-bearing binary
+    check (a boss crit taken = not defense/resilience-capped). Returns {score, flags:[...]} so the
+    officer view can show the *why*, not just the number.
+
+    Class-aware where it matters: bears (Druid) cannot block, so they CAN'T reach 102.4%
+    uncrushable — crushing blows are unavoidable mechanics for them, not a failure, so no crush
+    penalty. Warr/pala (can Shield Block) are still graded on crushes. v1 and TUNABLE: the crit/
+    death/CD weights are first-cut. Inputs are all already on the tankScorecard row (WCL-durable)."""
+    crit  = tm.get("crit_count", 0) or 0
+    crush = tm.get("crush_count", 0) or 0
+    cds   = sum((tm.get("cooldowns") or {}).values())
+    score = 100
+    flags = []
+    if crit > 0:                                  # uncrittable — the hard gear check
+        score -= min(40, 20 + crit * 10)
+        flags.append(f"{crit} crit{'s' if crit > 1 else ''} taken — not crit-immune")
+    if crush > 0 and cls != "Druid":              # bears can't block → crushing is unavoidable
+        score -= min(25, crush)
+        flags.append(f"{crush} crushing blow{'s' if crush > 1 else ''}")
+    if deaths > 0:                                # a tank death is the clearest failure
+        score -= min(30, deaths * 15)
+        flags.append(f"died {deaths}×" if deaths > 1 else "died once")
+    if cds == 0:                                  # never pressed a defensive cooldown
+        score -= 5
+        flags.append("no defensive CDs used")
+    return {"score": max(0, score), "flags": flags}
+
+
+def fetch_saves(token: str, report_code: str, kills: list, md: dict = None) -> dict:
+    """Per-player protective/external casts ON ALLIES — the 'saving others' kit (paladin Hand of
+    Protection / Sacrifice / Freedom / Salvation, Lay on Hands on others, Cleanse + dispels, druid
+    Rebirth, warlock Soulstone res, priest Pain Suppression…). Pure WCL Casts events filtered to
+    EXTERNAL_ABILITIES (name-keyed; Anniversary-verified) with a friendly-PLAYER target that isn't
+    the caster — so self-casts, untargeted totems, and Environment-target trinket procs all drop.
+    Returns {name: {save, dispel, utility, total, targets:{ability:{target:count}}}}.
+    WCL-durable; no combat log needed (a future pass can flag CLUTCH saves by cross-referencing the
+    target's HP at cast time from the log)."""
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    gid2name, id2name, act = md["gid2name"], md["id2name"], md["acts"]
+    fids = [f["id"] for f in kills]
+    if not fids:
+        return {}
+    win_s = min(f["startTime"] for f in kills)
+    win_e = max(f["endTime"]   for f in kills)
+    Q = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts, limit: 10000){
+            data nextPageTimestamp }}}}"""
+    out = defaultdict(lambda: {"save": 0, "dispel": 0, "utility": 0, "total": 0,
+                               "targets": defaultdict(lambda: defaultdict(int))})
+    st = win_s
+    while True:
+        try:
+            ev = gql(token, Q, {"c": report_code, "ids": fids, "st": st, "en": win_e}
+                     )["reportData"]["report"]["events"]
+        except Exception as ex:
+            print(f"  Warning: saves Casts events failed: {ex}")
+            break
+        for d in ev.get("data", []):
+            if d.get("type") != "cast":
                 continue
-            hps = (e.get("total", 0) / dur_s) if dur_s else 0
-            if hps <= 0:
+            cat = EXTERNAL_ABILITIES.get(gid2name.get(d.get("abilityGameID"), ""))
+            if not cat:
                 continue
-            cls, spec = healer_spec[nm]
-            samp = _cohort_samples(token, cache, enc, cls, spec, refresh, now)
-            # Comp-match: same fight length (±15s) AND similar healer count (±1), so a
-            # 5-heal kill is benchmarked against ~5-heal kills, not HPS-inflated 3-heal
-            # parses. Fall back to duration-only if the comp filter is too sparse (<3).
-            comp = [s["hps"] for s in samp
-                    if abs(s["duration"] - dur_s) <= 15
-                    and (s.get("healers") is None or abs(s["healers"] - our_healers) <= 1)]
-            if len(comp) < 3:
-                comp = [s["hps"] for s in samp if abs(s["duration"] - dur_s) <= 15]
-            if len(comp) >= 3:
-                med = statistics.median(comp)
-                if med > 0:
-                    ratios[nm].append(hps / med)
-    try:
-        BASELINE_CACHE.write_text(json.dumps(cache, indent=2))
-    except Exception:
-        pass
-    return {nm: round(sum(r) / len(r), 2) for nm, r in ratios.items() if r}
+            sid, tid = d.get("sourceID"), d.get("targetID")
+            if tid is None or tid == sid:                      # self / untargeted → not "on an ally"
+                continue
+            if act.get(sid, {}).get("type") != "Player":       # caster must be a raider
+                continue
+            if act.get(tid, {}).get("type") != "Player":       # target must be a friendly player
+                continue
+            nm, tgt = id2name.get(sid), id2name.get(tid)
+            if not nm or not tgt:
+                continue
+            r = out[nm]
+            r[cat] += 1
+            r["total"] += 1
+            r["targets"][gid2name.get(d.get("abilityGameID"), "")][tgt] += 1
+        nx = ev.get("nextPageTimestamp")
+        if not nx:
+            break
+        st = nx
+    return {nm: {"save": r["save"], "dispel": r["dispel"], "utility": r["utility"],
+                 "total": r["total"],
+                 "targets": {ab: dict(tg) for ab, tg in r["targets"].items()}}
+            for nm, r in out.items()}
 
 
 def fetch_ability_icons(token: str, report_code: str, fight_ids: list, md: dict = None) -> dict:
@@ -1922,9 +1969,7 @@ def fetch_debuff_coverage(token: str, report_code: str, kills: list) -> dict:
         for f in chunk:
             fid = f["id"]
             dur_ms = (f["endTime"] - f["startTime"]) or 1
-            t = rep.get(f'f{fid}')
-            if isinstance(t, str):
-                t = json.loads(t)
+            t = _loads_alias(rep.get(f'f{fid}'))
             auras = (t or {}).get("data", {}).get("auras", []) if t else []
             slot_bands = {s["key"]: [] for s in DEBUFF_SLOTS}
             for a in auras:
@@ -2223,15 +2268,15 @@ def fetch_master_data(token: str, report_code: str) -> dict:
     }
 
 
-def build_week_data(report_code: str, token: str, refresh_baseline: bool = False,
+def build_week_data(report_code: str, token: str,
                     log_data: dict = None, report: dict = None, history: dict = None) -> dict:
     cache = load_cache()
     print(f"\n[1/5] Fetching report metadata: {report_code}")
     if report is None:   # may be pre-fetched by main() to avoid a duplicate call
         report = gql(token, Q_REPORT, {"code": report_code})["reportData"]["report"]
 
-    zone      = report["zone"]["name"]
-    start_ms  = report["startTime"]
+    zone      = (report.get("zone") or {}).get("name", "Unknown")  # WCL returns zone:null
+    start_ms  = report["startTime"]                                 # until it classifies a report
     start_dt  = time.strftime("%b %d, %Y %H:%M", time.localtime(start_ms / 1000))
     kills     = [f for f in report["fights"] if f.get("kill")]
     fight_ids = [f["id"] for f in kills]
@@ -2454,8 +2499,14 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     healing_metrics = compute_healing_metrics(heal_by_fight, fight_roles, fight_durs, tank_names)
     healing_spells  = fetch_healing_spells(token, report_code, kills, actors)
     healer_mana     = fetch_healer_mana(token, report_code, fight_ids)
-    healer_war      = compute_healer_war(token, heal_by_fight, kills, players,
-                                         fight_roles, refresh=refresh_baseline)
+    # Performance metric — native WCL PARSE % (rankPercent vs the FULL logged population, not the
+    # old top-100 cohort ratio). ONE fetch (report.rankings) covers all roles: the dps parse feeds
+    # the DPS table AND tank threat; the hps parse feeds healers. Held in the same dps_war/tank_war/
+    # healer_war keys the downstream emit/DB/render already read (values are now 0–100, not ratios).
+    parse_pct  = fetch_parse_percentiles(token, report_code, kills)
+    dps_war    = {nm: p["dps"] for nm, p in parse_pct.items() if p.get("dps") is not None}
+    tank_war   = dps_war                                   # tank threat = their own dps parse %
+    healer_war = {nm: p["hps"] for nm, p in parse_pct.items() if p.get("hps") is not None}
     # Tank scorecard — WCL is the durable source of record, run EVERY week (per-boss DTPS,
     # mitigation, school split, cooldowns, biggest hit, raid DPS for the boss tiles). The
     # combat log, when present, only adds lowest-HP%-survived; a missing log never blanks it.
@@ -2473,7 +2524,9 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
             if lows:
                 tm["lowest_hp"] = lows
     role_spells     = fetch_role_spell_usage(token, report_code, fight_ids, players)
-    uptime_by_fight = fetch_uptime_by_fight(token, report_code, kills)   # {name: {boss: uptime%}}
+    # Per-fight DamageDone — one paginated fetch feeds the uptime heatmap.
+    dmg_by_fight    = fetch_damage_by_fight(token, report_code, kills)
+    uptime_by_fight = damage_uptime_by_fight(dmg_by_fight, kills)        # {name: {boss: uptime%}}
     for p in players:
         p["uptime_by_fight"] = [{"boss": b, "uptime": u}
                                 for b, u in uptime_by_fight.get(p["name"], {}).items()]
@@ -2487,6 +2540,7 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     # Class toolkit — each DPS's signature class-relative utility (cast-based, pure WCL)
     mana_returns  = fetch_mana_returns(token, report_code, kills, md)
     sunder_armor  = fetch_sunder_armor(token, report_code, kills, md)
+    saves         = fetch_saves(token, report_code, kills, md)   # protective/external casts on allies
     damage_by_sel = fetch_damage_by_selection(token, report_code)
     class_toolkit = build_class_toolkit(token, report_code, kills, md)
     # Fold the biggest Shadow Bolt crit (tracked free during the crit pass) into the toolkit
@@ -2582,6 +2636,11 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
         "healing_spells":  healing_spells,
         "healer_mana":     healer_mana,
         "healer_war":      healer_war,
+        # Performance metric — WCL parse % (rankPercent, 0–100) per player; folded onto
+        # damageBySelection / tankScorecard rows in map_to_week_data (kept in the legacy
+        # dps_war/tank_war/healer_war keys + vs_replacement field, which now hold the percentile).
+        "dps_war":         dps_war,
+        "tank_war":        tank_war,
         # per-fight roles (spec-swap aware) + per-fight durations for tank scorecard
         "fight_roles":     fight_roles,
         "fight_durs":      fight_durs,
@@ -2601,6 +2660,8 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
         "mana_returns":    mana_returns,
         # per-player Sunder Armor quality (effective/refreshed/wasted, pure WCL)
         "sunder_armor":    sunder_armor,
+        # protective/external casts on allies (paladin Hands, dispels, battle-res) — "saving others"
+        "saves":           saves,
         # per-player damage + active time split All/Bosses/Trash (WCL-style DPS denominator)
         "damage_by_sel":   damage_by_sel,
     }
@@ -2684,6 +2745,8 @@ def map_to_week_data(wcl: dict) -> dict:
     _toolkit_counts = wcl.get("class_toolkit", {})
     _tk_icons       = wcl.get("ability_icons", {})
     _kill_min       = sum((wcl.get("boss_times") or {}).values()) / 60.0
+    _dps_war        = wcl.get("dps_war", {})    # name → WCL dps parse % (DPS table cell)
+    _tank_war       = wcl.get("tank_war", {})   # name → WCL dps parse % (tank threat cell)
 
     def _toolkit_cell(p):
         """Signature class-utility cell for a damage row, or None. Resolves the per-class
@@ -2710,13 +2773,6 @@ def map_to_week_data(wcl: dict) -> dict:
             for p in sorted(players, key=lambda x: -x["actual_crit"])
             if p["role"] == role and p["actual_crit"] > 0
         ]
-
-    # Avoidable damage — use total_dmg as a proxy when real avoidable data unavailable
-    avoid_list = [
-        {"name": p["name"], "role": p["role"], "dmg": p["total_dmg"]}
-        for p in sorted(players, key=lambda x: -x["total_dmg"])
-        if p["total_dmg"] > 0
-    ]
 
     # Deaths — boss + trash, from the combat-log encounter-window split
     _recaps = wcl.get("death_recaps") or {}
@@ -2866,7 +2922,7 @@ def map_to_week_data(wcl: dict) -> dict:
           "fights_healed": m.get("fights_healed", 0),
           "fights_total":  roster_idx.get(nm, {}).get("fights_total", 0),
           "mana_eff": round(m.get("eff_heal", 0) / heal_mana[nm], 1) if heal_mana.get(nm) else 0,
-          "vs_replacement": heal_war.get(nm, 0),
+          "vs_replacement": heal_war.get(nm),   # WCL hps parse % (0–100); None ⇒ not ranked yet
           "spells": heal_spells.get(nm, [])[:8]}
          for nm, m in heal_metrics.items() if m.get("eff_heal", 0) > 0),
         key=lambda x: -x["eff_hps"])
@@ -2889,7 +2945,13 @@ def map_to_week_data(wcl: dict) -> dict:
           "biggest_hit": tm.get("biggest_hit"),
           "cooldowns": tm.get("cooldowns", {}),
           "per_boss": tm.get("per_boss", []),
-          "lowest_hp": tm.get("lowest_hp", {})}
+          "lowest_hp": tm.get("lowest_hp", {}),
+          # Performance pillar (two parts): threat = the tank's WCL dps PARSE % (WCL ranks tanks by
+          # dps); survivability = an ABSOLUTE grade from the mitigation signals above (parse % can't
+          # measure mitigation). vs_replacement holds the parse % (0–100); None/0 ⇒ not ranked yet.
+          "vs_replacement": _tank_war.get(nm),
+          "survival": _tank_survival_grade(tm, roster_idx.get(nm, {}).get("deaths", 0),
+                                           roster_idx.get(nm, {}).get("class", ""))}
          for nm, tm in tank_metrics.items()),
         key=lambda x: -x["dtps"])
 
@@ -2985,6 +3047,16 @@ def map_to_week_data(wcl: dict) -> dict:
         "healReaction": wcl.get("heal_reaction", {}),
         "debuffCoverage": wcl.get("debuff_coverage", {}),
         "sunderArmor":    wcl.get("sunder_armor", {}),
+        # "saving others" — protective/external casts on allies, ranked by saves then total.
+        # Positive call-out surface (no shame); empty list ⇒ a quiet week, not a bug.
+        "saves": (lambda sv: sorted(
+            ({"name": nm, "role": roster_idx.get(nm, {}).get("role", ""),
+              "class": roster_idx.get(nm, {}).get("class", ""),
+              "save": d.get("save", 0), "dispel": d.get("dispel", 0),
+              "utility": d.get("utility", 0), "total": d.get("total", 0),
+              "targets": d.get("targets", {})}
+             for nm, d in sv.items() if d.get("total", 0) > 0),
+            key=lambda x: (-x["save"], -x["total"], x["name"])))(wcl.get("saves", {}) or {}),
         "manaReturns":    wcl.get("mana_returns", {}),
         "loot":           wcl.get("loot_data", {}),   # this-week loot, external ThatsBIS CSV (degrades to {})
         # DPS table data split All/Bosses/Trash — each with its own WCL-style denominator.
@@ -2994,6 +3066,9 @@ def map_to_week_data(wcl: dict) -> dict:
             "players": [
                 {"name": p["name"], "role": p["role"], "effective_role": _eff(p),
                  "toolkit": _toolkit_cell(p),
+                 # Performance pillar: the player's WCL dps PARSE % (rankPercent, 0–100 vs all logged
+                 # parses). None ⇒ report not ranked yet; the cell renders "—".
+                 "vs_replacement": _dps_war.get(p["name"]),
                  "all":   ds.get("players", {}).get(p["name"], {}).get("all",   {"total": 0, "active": 0}),
                  "boss":  ds.get("players", {}).get(p["name"], {}).get("boss",  {"total": 0, "active": 0}),
                  "trash": ds.get("players", {}).get(p["name"], {}).get("trash", {"total": 0, "active": 0})}
@@ -3042,20 +3117,28 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
             if cur_ms is None:
                 # No chronological anchor — fall back to the global-latest other report.
                 row = con.execute(
-                    "SELECT report_code, date, kills FROM weeks WHERE report_code != ? "
+                    "SELECT report_code, date, kills, start_ms FROM weeks WHERE report_code != ? "
                     "ORDER BY start_ms DESC, date DESC LIMIT 1",
                     (current,)
                 ).fetchone()
             else:
+                # Prefer an anchored prior (start_ms < this week). A legacy row with NULL
+                # start_ms (predates the migration) would be silently excluded by a bare
+                # `start_ms < ?` — so include it as a LOWER-priority fallback so we trend
+                # against it rather than returning nothing. `ORDER BY (start_ms IS NULL)`
+                # keeps anchored priors first; the NULL row is chosen only if none exist.
                 row = con.execute(
-                    "SELECT report_code, date, kills FROM weeks "
-                    "WHERE start_ms < ? AND report_code != ? "
-                    "ORDER BY start_ms DESC LIMIT 1",
-                    (cur_ms, current)
+                    "SELECT report_code, date, kills, start_ms FROM weeks "
+                    "WHERE report_code != ? AND (start_ms < ? OR start_ms IS NULL) "
+                    "ORDER BY (start_ms IS NULL), start_ms DESC LIMIT 1",
+                    (current, cur_ms)
                 ).fetchone()
             if not row:
                 return week_data                  # only one week of history
-            prev, prev_date, prev_kills = row[0], row[1], row[2]
+            prev, prev_date, prev_kills, prev_ms = row[0], row[1], row[2], row[3]
+            if prev_ms is None:
+                print(f"  ⚠ trends: prior week {prev} has no start_ms (predates migration) — "
+                      f"baseline ordering is best-effort; run `reprocess.py --all` to anchor it")
 
             # Stale-prior-week guard: a delta reads the prior week's row, so if that row predates a
             # schema bump (missing new columns) the delta SILENTLY blanks. Warn loudly instead — the
@@ -3107,6 +3190,12 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
                         sd["delta_uptime"] = round(sd.get("active", 0) / 1000 / d * 100 - pu, 1)
                     if pt is not None:
                         sd["delta_total"] = round(sd.get("total", 0) - pt, 1)
+
+            # ── DPS parse %: delta the percentile vs last week (top-level on each dsel player).
+            for it in (dsel.get("players") or []):
+                pw = pv("dps", it.get("name"), "war")
+                if pw is not None and it.get("vs_replacement"):
+                    it["delta_vs_replacement"] = round(it["vs_replacement"] - pw, 2)
 
             # ── class toolkit: delta the signature metric, but ONLY when the metric KIND
             #    (label) matches last week — comparing Windfury casts to ToW uptime is nonsense.
@@ -3182,6 +3271,7 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
                 ("avoidableDmg",  "avoidable_dmg",  "dmg",   "dmg",   "delta_dmg"),
                 ("deaths",        "deaths",         "total", "total", "delta_deaths"),
                 ("drums",         "drums",          "score", "score", "delta_drums"),
+                ("saves",         "saves",          "save",  "save",  "delta_save"),
                 # tank DTPS (lower better → HTML renders ▼ green via fmtDelta(...,false)).
                 # Absent until 2 weeks of the new tank_scorecard table exist (no backfill).
                 ("tankScorecard", "tank_scorecard", "dtps",  "dtps",  "delta_dtps"),
@@ -3190,6 +3280,17 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
                     p = pv(table, it.get("name"), db_col)
                     if p is not None:
                         it[delta_field] = round((it.get(cur_field) or 0) - p, 1)
+
+            # ── tank threat parse % + survivability grade — dedicated (survival is nested under
+            #    .score, and the parse-% delta wants its own pass).
+            for it in (week_data.get("tankScorecard") or []):
+                nm = it.get("name")
+                pw = pv("tank_scorecard", nm, "war")
+                if pw is not None and it.get("vs_replacement"):
+                    it["delta_vs_replacement"] = round(it["vs_replacement"] - pw, 2)
+                ps, sv = pv("tank_scorecard", nm, "survival"), it.get("survival")
+                if ps is not None and isinstance(sv, dict) and sv.get("score") is not None:
+                    sv["delta_score"] = round(sv["score"] - ps, 1)
 
             # ── prior-week header context (powers the "vs last week" header pills).
             #    Kill-time delta is summed over the bosses cleared in BOTH weeks so it's
@@ -3471,8 +3572,6 @@ def main():
                         help="Path to ThatsBIS received-loot CSV (default: newest *.csv in loot/)")
     parser.add_argument("--dry-run",  action="store_true", help="Print JSON only, don't write HTML")
     parser.add_argument("--test-db",  action="store_true", help="Write to raid_history_test.db instead of prod")
-    parser.add_argument("--refresh-baseline", action="store_true",
-                        help="Force-refresh the healer replacement-level cohort cache (else ~monthly)")
     args = parser.parse_args()
 
     if not args.client_id or not args.client_secret:
@@ -3499,7 +3598,7 @@ def main():
     import week_build as wb
     mapped, week_data, log_data = wb.from_wcl(
         args.report_code, token, log_path=args.log, report=rep0,
-        history=crit_hist, refresh_baseline=args.refresh_baseline)
+        history=crit_hist)
 
     # finalize_week owns the ONE loot-ingestion point (replacing a raw-dict loot_data block) plus
     # the contract check. Pass the resolved --loot path so an explicit CSV isn't overridden by mtime.

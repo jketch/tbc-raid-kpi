@@ -6,16 +6,37 @@ onto the WCL dict (merge_log_into_wcl) stays in wcl_auto_dashboard — it reache
 model. wcl_auto_dashboard re-exports parse_combat_log so call sites are unchanged.
 """
 import re
+from datetime import date
 from collections import defaultdict
 
 from game_constants import *   # noqa: F401,F403 — the curated name-sets parse uses
 
+# Date-string → seconds-at-midnight offset. The date component rarely changes (once per
+# midnight), so we cache it: the hot path (called per log line, millions of times on a
+# 180 MB log) stays a dict lookup + arithmetic, constructing a date object only once per
+# distinct calendar day.
+_DATE_OFFSET_CACHE = {}
+
 def _parse_ts(ts_str):
-    m = re.match(r'\d+/\d+/\d+ (\d+):(\d+):(\d+)\.(\d+)', ts_str)
-    if m:
-        h,mi,s,ms = m.groups()
-        return int(h)*3600 + int(mi)*60 + int(s) + int(ms)/1000
-    return 0
+    # Combat-log stamps are wall-clock "M/D/YYYY H:MM:SS.mmm". The date MUST be folded in:
+    # if only seconds-since-midnight were used, a raid crossing 00:00 would make end < start
+    # and every fight window straddling midnight would collapse (dropping all log KPIs for
+    # those fights). Returns an absolute monotonic second count.
+    m = re.match(r'(\d+/\d+/\d+)\s+(\d+):(\d+):(\d+)\.(\d+)', ts_str)
+    if not m:
+        return 0
+    date_s, h, mi, s, ms = m.groups()
+    base = _DATE_OFFSET_CACHE.get(date_s)
+    if base is None:
+        try:
+            mo, d, y = (int(x) for x in date_s.split("/"))
+            if y < 100:
+                y += 2000
+            base = date(y, mo, d).toordinal() * 86400
+        except (ValueError, OverflowError):
+            base = 0
+        _DATE_OFFSET_CACHE[date_s] = base
+    return base + int(h)*3600 + int(mi)*60 + int(s) + int(ms)/1000
 
 # Consumable usage — surfaced as an informational call-out (who's actually popping their
 # cooldowns), NOT a compliance threshold. Detected from SPELL_CAST_SUCCESS by name.
@@ -59,7 +80,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
             ts_str, data = parts
             fields = data.split(",")
             ev = fields[0]
-            if ev == "ENCOUNTER_START":
+            if ev == "ENCOUNTER_START" and len(fields) > 2:
                 current = {"name": fields[2].strip('"'), "start": _parse_ts(ts_str)}
             elif ev == "ENCOUNTER_END" and current:
                 current["end"]    = _parse_ts(ts_str)
@@ -77,9 +98,13 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
         if enc["result"] == 1:
             all_kills.append(enc)
         else:
-            # Fallback: treat as kill if the boss has a UNIT_DIED within 1.5s of ENCOUNTER_END
+            # Fallback: treat as kill if the boss UNIT_DIEDs inside the encounter window (or
+            # just after ENCOUNTER_END). Bounding to [start, end+1.5] — not a name+1.5s match
+            # against the global death list — stops a wipe pull from being promoted by a later
+            # same-named kill's death event.
             for death in boss_deaths:
-                if death["name"] == enc["name"] and abs(death["ts"] - enc["end"]) <= 1.5:
+                if (death["name"] == enc["name"]
+                        and enc["start"] <= death["ts"] <= enc["end"] + 1.5):
                     all_kills.append(enc)
                     break
 

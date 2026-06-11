@@ -467,6 +467,7 @@
   .seg { display:inline-flex; background:var(--surface2); border:1px solid var(--border); border-radius:7px; padding:2px; margin-bottom:11px; }
   .seg-btn { background:none; border:none; color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; padding:5px 11px; border-radius:5px; cursor:pointer; }
   .seg-btn.on { background:var(--amber); color:#1a1209; }
+  .ctl-lbl { font-size:9px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); margin-bottom:4px; font-weight:600; }
   .av-summary { font-family:'IBM Plex Mono',monospace; font-size:10.5px; line-height:1.55; color:var(--dim); margin:0 0 12px; padding:8px 10px; background:var(--surface2); border-radius:6px; border-left:2px solid var(--amber); }
   .av-summary b { color:var(--text); font-weight:600; }
   .strip-row { display:flex; align-items:center; gap:11px; padding:8px 6px; border-radius:7px; margin-bottom:2px; transition:background .12s; }
@@ -533,10 +534,49 @@
     <button class="tab-btn" data-tab="dps" onclick="showTab('dps')">DPS</button>
     <button class="tab-btn" data-tab="utility" onclick="showTab('utility')">Utility</button>
     <button class="tab-btn" data-tab="loot" onclick="showTab('loot')">Loot</button>
+    <button class="tab-btn" data-tab="performance" onclick="showTab('performance')" title="Officer view — composite raider scoring">Performance</button>
     <div class="find-me">
       <input id="findMe" type="text" placeholder="find me…" autocomplete="off" spellcheck="false" title="Highlight a raider across every chart (remembered on this browser)">
       <button id="findMeClear" title="clear" style="display:none">×</button>
     </div>
+  </div>
+
+  <!-- ═══════════════ PERFORMANCE (officer-gated: ?officer=1) ═══════════════ -->
+  <div class="tsec" data-tab="performance">
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/achievement_general.jpg" alt=""> Raider Performance — Officer View</div>
+  <div class="card">
+    <div class="hs-sub">A composite <b>Raider Score (0–100)</b> across the five pillars — <b>Preparation · Performance · Execution · Survival · Utility</b> — each normalized to 0–100, blended by the weighting you pick. <b>Click a column to sort.</b> Sub-scores show "—" when a pillar has no data for that raider; the Score is computed over the pillars present and tagged <b>(n/5)</b> when partial. Officer surface (the underlying numbers also live on the public tabs). <b>Utility is the most experimental pillar — treat as directional.</b></div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:13px">
+      <div><div class="ctl-lbl">Weighting</div>
+        <div class="seg" id="perfWeightSeg">
+          <button class="seg-btn on" data-w="balanced" onclick="_setPerfWeight('balanced')" title="Roughly equal across pillars (slight tilt to Performance).">Balanced</button>
+          <button class="seg-btn" data-w="perf" onclick="_setPerfWeight('perf')" title="Throughput / parse % dominates.">Performance</button>
+          <button class="seg-btn" data-w="exec" onclick="_setPerfWeight('exec')" title="Clean play — execution + survival — dominates.">Execution</button>
+        </div></div>
+      <div><div class="ctl-lbl">Role</div>
+        <div class="seg" id="perfRoleSeg">
+          <button class="seg-btn on" data-r="all" onclick="_setPerfRole('all')">All</button>
+          <button class="seg-btn" data-r="Tank" onclick="_setPerfRole('Tank')">Tanks</button>
+          <button class="seg-btn" data-r="Healer" onclick="_setPerfRole('Healer')">Healers</button>
+          <button class="seg-btn" data-r="Physical" onclick="_setPerfRole('Physical')">Melee</button>
+          <button class="seg-btn" data-r="Caster" onclick="_setPerfRole('Caster')">Casters</button>
+        </div></div>
+      <div><div class="ctl-lbl">Group</div>
+        <div class="seg" id="perfGroupSeg">
+          <button class="seg-btn on" data-g="flat" onclick="_setPerfGroup(false)">Flat</button>
+          <button class="seg-btn" data-g="role" onclick="_setPerfGroup(true)">By role</button>
+        </div></div>
+      <div style="margin-left:auto"><div class="ctl-lbl">Find</div>
+        <input id="perfSearch" type="text" placeholder="raider…" autocomplete="off" spellcheck="false" oninput="_setPerfSearch(this.value)"
+               style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 9px;width:120px"></div>
+    </div>
+    <div class="scroll-x scroll-y">
+      <table class="mini-table" id="perfTable" style="width:100%">
+        <thead><tr id="perfHead"></tr></thead>
+        <tbody id="perfTbody"></tbody>
+      </table>
+    </div>
+  </div>
   </div>
 
   <!-- ═══════════════ LOOT ═══════════════ -->
@@ -710,6 +750,7 @@
           <th style="text-align:center;width:96px" title="Uptime = active (casting / swinging) time ÷ the selection's fight time. Green ≥90 · yellow ≥75 · orange below. ▲▼ vs last week.">Uptime</th>
           <th style="text-align:center;width:120px" title="Total damage dealt in the selected fights (All / Bosses / Trash). ▲▼ vs last week.">Total</th>
           <th style="text-align:center;width:96px" title="Share of the selection's total raid damage.">% Raid</th>
+          <th style="text-align:center;width:88px" title="WCL parse % — this player's DPS percentile vs ALL logged same-spec parses (the colored number on the WCL report page). 50 = typical raider, 75+ = strong, 95+ = elite. Color = WCL bracket. — = report not ranked by WCL yet. ▲▼ vs last week.">Parse %</th>
           <th style="text-align:right" title="Each class's signature raid-utility — uptimes, casts, or a brag stat. Hover a cell for that metric's specifics. ▲▼ vs last week (same metric only).">Toolkit</th>
         </tr></thead>
         <tbody id="dpsTbody"></tbody>
@@ -740,7 +781,7 @@
     <div class="scroll-x">
       <table class="mini-table" id="tankTable">
         <thead>
-          <tr><th>Tank</th><th class="num">Fights</th><th class="num">DTPS</th><th>Phys%</th><th class="num">Mit</th><th class="num">Avoid</th><th class="num">Heal/s</th><th class="num">Deaths</th><th>Cooldowns</th></tr>
+          <tr><th>Tank</th><th class="num">Fights</th><th class="num" title="Threat parse % — tank DPS percentile vs ALL logged same-spec tank parses (WCL ranks tanks by DPS; survival is the Survive grade). 50 = typical, 75+ = strong. Color = WCL bracket. — = not ranked yet.">Threat</th><th class="num" title="Survivability grade 0-100 from absolute TBC checks: crit-immunity (a boss crit = not defense-capped), crushing blows, deaths, and defensive-CD use. Hover a cell for the specifics. Coarse v1 — class-tunable.">Survive</th><th class="num">DTPS</th><th>Phys%</th><th class="num">Mit</th><th class="num">Avoid</th><th class="num">Heal/s</th><th class="num">Deaths</th><th>Cooldowns</th></tr>
         </thead>
         <tbody id="tankTbody"></tbody>
       </table>
@@ -760,7 +801,7 @@
     <div class="scroll-x">
       <table class="mini-table" id="healTable">
         <thead>
-          <tr><th>Healer</th><th class="num">Fights</th><th class="num">Eff HPS</th><th class="num">Eff Healing</th><th class="num">Overheal</th><th class="num">Activity</th><th class="num">Tank Heal</th><th class="num">HP/Mana</th><th class="num">vs Repl</th><th>Top Heal</th></tr>
+          <tr><th>Healer</th><th class="num">Fights</th><th class="num">Eff HPS</th><th class="num">Eff Healing</th><th class="num">Overheal</th><th class="num">Activity</th><th class="num">Tank Heal</th><th class="num">HP/Mana</th><th class="num" title="WCL healing parse percentile vs all logged same-spec parses. 50 = typical, 95+ = elite. Color = WCL bracket.">Parse %</th><th>Top Heal</th></tr>
         </thead>
         <tbody id="healTbody"></tbody>
       </table>
@@ -818,6 +859,16 @@
 
   <!-- ═══════════════ SPELL USAGE BY ROLE ═══════════════ -->
   </div>
+
+  <!-- ═══════════════ SAVES & EXTERNALS ═══════════════ -->
+  <div class="tsec" data-tab="utility">
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_sealofprotection.jpg" alt=""> Saving Others — Hands, Dispels &amp; Battle-Res</div>
+  <div class="card gold">
+    <div class="hs-sub">Protective &amp; external casts <b>on teammates</b> — paladin Hand of Protection / Sacrifice / Lay on Hands / Salvation / Freedom, dispels (Cleanse, Abolish, Tranq…), druid Rebirth &amp; Innervate-class help. <b>Maintained buffs and routine shields (PW:Shield, Earth Shield, Blessings) are excluded</b> — this is clutch help, not upkeep. Hover a row for <b>who they helped</b>.</div>
+    <div class="scroll-x"><div id="savesCard"></div></div>
+  </div>
+  </div>
+
   <div class="tsec" data-tab="utility">
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_book_09.jpg" alt=""> Action / Spell Usage by Role</div>
   <div class="card">
@@ -892,6 +943,11 @@ function classColor(name) {
 // Color a name by class, falling back to role color when class is unknown.
 function nameColor(name, role) { return classColor(name) || roleColor(role); }
 
+// HTML-escape an untrusted string before interpolating into innerHTML. Defense-in-depth for the
+// external ThatsBIS loot CSV (item/character names), which is the one source not constrained by WCL.
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
 // ── HEADER (from data, not hardcoded)
 function renderHeader() {
   const m = WEEK_DATA.meta || {};
@@ -956,21 +1012,22 @@ function renderHealing() {
   const totalK = (WEEK_DATA.meta || {}).kills || 0;
   tbody.innerHTML = data.map(h => {
     const cc = nameColor(h.name, h.role);
-    const ohChip  = h.overheal_pct < 40 ? "green" : h.overheal_pct < 55 ? "yellow" : "orange";
-    const actChip = h.activity_pct >= 85 ? "green" : h.activity_pct >= 70 ? "yellow" : "orange";
+    const oh = h.overheal_pct||0, act = h.activity_pct||0, tp = h.tank_pct||0;
+    const ohChip  = oh < 40 ? "green" : oh < 55 ? "yellow" : "orange";
+    const actChip = act >= 85 ? "green" : act >= 70 ? "yellow" : "orange";
     const fh = h.fights_healed || 0, ft = h.fights_total || totalK;
     const partial = ft && fh < ft;   // part-time healer — flag the small sample
     const fightsCell = `<td class="num" title="healed ${fh} of ${ft} kills${partial?' — metrics scoped to those fights (small sample)':''}"><span style="color:${partial?'var(--orange)':'var(--muted)'}">${fh}/${ft}</span>${partial?' ⚠':''}</td>`;
     return `<tr style="cursor:pointer" onclick="showHealerDrill('${h.name}')" title="click for per-spell breakdown">
       <td><span class="cname" style="color:${cc}">${h.name}</span></td>
       ${fightsCell}
-      <td class="num" style="font-weight:600;color:var(--text)">${h.eff_hps.toLocaleString()}${fmtDelta(h.delta_hps, true)}</td>
+      <td class="num" style="font-weight:600;color:var(--text)">${(h.eff_hps||0).toLocaleString()}${fmtDelta(h.delta_hps, true)}</td>
       <td class="num" style="color:var(--muted)">${hsK(h.eff_heal)}</td>
-      <td class="num"><span class="chip ${ohChip}">${h.overheal_pct.toFixed(0)}%</span>${fmtDelta(h.delta_overheal, false)}</td>
-      <td class="num"><span class="chip ${actChip}">${h.activity_pct.toFixed(0)}%</span>${fmtDelta(h.delta_activity, true)}</td>
-      <td class="num" style="color:var(--muted)" title="${h.tank_pct >= 60 ? 'tank-focused' : h.tank_pct <= 30 ? 'raid-focused' : 'mixed'}">${h.tank_pct.toFixed(0)}%</td>
+      <td class="num"><span class="chip ${ohChip}">${oh.toFixed(0)}%</span>${fmtDelta(h.delta_overheal, false)}</td>
+      <td class="num"><span class="chip ${actChip}">${act.toFixed(0)}%</span>${fmtDelta(h.delta_activity, true)}</td>
+      <td class="num" style="color:var(--muted)" title="${tp >= 60 ? 'tank-focused' : tp <= 30 ? 'raid-focused' : 'mixed'}">${tp.toFixed(0)}%</td>
       <td class="num" style="font-weight:600;color:var(--text)" title="effective healing per mana spent (estimate)">${(h.mana_eff||0).toFixed(1)}${fmtDelta(h.delta_hp_per_mana, true, {dp:1})}</td>
-      <td class="num" title="HPS vs the median of same-spec ranked parses on these bosses, comp-matched to a similar healer count (±1) and fight length (±15s). 1.0 = at that median.">${h.vs_replacement ? `<span class="chip ${h.vs_replacement>=1?'green':'orange'}">${h.vs_replacement.toFixed(2)}×</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+      <td class="num" title="WCL healing parse percentile (HPS vs ALL logged same-spec parses) — 50 = typical, 75+ = strong, 95+ = elite. — = report not ranked yet.">${parseCell(h.vs_replacement, h.delta_vs_replacement)}</td>
       <td style="color:var(--muted)">${h.top_spell}</td>
     </tr>`;
   }).join("");
@@ -986,7 +1043,7 @@ function renderTanks() {
   const tbody = document.getElementById("tankTbody");
   if (!tbody) return;
   if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="color:var(--muted);font-size:12px">No tank data this week.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" style="color:var(--muted);font-size:12px">No tank data this week.</td></tr>';
     const host = document.getElementById("tankPerBoss"); if (host) host.innerHTML = "";
     return;
   }
@@ -1014,14 +1071,23 @@ function renderTanks() {
       const n = (t.cooldowns || {})[cd] || 0;
       return `<span style="color:${n>0?'var(--text)':'var(--muted)'}" title="${cd}${cd==='Barkskin'?' — drops Bear Form (off-tank only)':''}">${CD_ABBR[cd]||cd}×${n}</span>`;
     }).join(" ") || '<span style="color:var(--muted)">—</span>';
+    // Performance pillar (two facets): threat WAR (cohort DPS) + absolute survivability grade.
+    const warCell = parseCell(t.vs_replacement, t.delta_vs_replacement);
+    const sv = t.survival || {}, svScore = sv.score;
+    const svCol = svScore>=90?'green':svScore>=70?'yellow':'orange';
+    const svTitle = (sv.flags && sv.flags.length ? sv.flags.join(' · ') : 'clean — no survivability flags').replace(/"/g,'&quot;');
+    const svCell = (svScore==null) ? `<span style="color:var(--muted)">—</span>`
+      : `<span class="chip ${svCol}" title="${svTitle}">${svScore}</span>${fmtDelta(sv.delta_score, true)}`;
     return `<tr>
       <td><span class="cname" style="color:${cc}">${t.name}</span></td>
       <td class="num" title="tanked ${fk} of ${ft} kills"><span style="color:${partial?'var(--orange)':'var(--muted)'}">${fk}/${ft}</span>${partial?' ⚠':''}</td>
-      <td class="num" style="font-weight:600;color:var(--text)" title="damage taken per second on tank fights — lower is better mitigation/avoidance">${t.dtps.toLocaleString()}${fmtDelta(t.delta_dtps, false)}</td>
+      <td class="num">${warCell}</td>
+      <td class="num">${svCell}</td>
+      <td class="num" style="font-weight:600;color:var(--text)" title="damage taken per second on tank fights — lower is better mitigation/avoidance">${(t.dtps||0).toLocaleString()}${fmtDelta(t.delta_dtps, false)}</td>
       <td title="${phys.toFixed(0)}% physical · ${magic.toFixed(0)}% magic taken — magic exposure matters for Kael'thas P3">${bar}</td>
       <td class="num" style="font-size:11.5px" title="crushing blows ✸ / crits taken (crit should be ~0 if defense-capped)">${mit}</td>
       <td class="num" title="melee swings avoided (miss/dodge/parry/block)">${(t.avoid_pct||0).toFixed(0)}%</td>
-      <td class="num" style="color:var(--muted)" title="healing soaked per second">${t.hps_recv.toLocaleString()}</td>
+      <td class="num" style="color:var(--muted)" title="healing soaked per second">${(t.hps_recv||0).toLocaleString()}</td>
       <td class="num"><span class="chip ${deathChip}">${t.deaths}</span></td>
       <td style="font-size:11px;color:var(--muted)">${cdStr}</td>
     </tr>`;
@@ -1078,7 +1144,7 @@ function renderOverview(){
     const dsp = [...(((WEEK_DATA.damageBySelection||{}).players)||[])].sort((a,b)=>((b.all||{}).total||0)-((a.all||{}).total||0));
     if(dsp.length){ const t=dsp[0]; items.push(["inv_sword_27","Top damage",t.name,t.role,hsK((t.all||{}).total||0)]); }
     else { const dmg=WEEK_DATA.damage||[]; if(dmg.length) items.push(["inv_sword_27","Top damage",dmg[0].name,dmg[0].role,hsK(dmg[0].total_dmg)]); }
-    const heal  = WEEK_DATA.healing||[];  if(heal.length) items.push(["spell_holy_flashheal","Top healer",heal[0].name,heal[0].role,`${heal[0].eff_hps.toLocaleString()} HPS`]);
+    const heal  = WEEK_DATA.healing||[];  if(heal.length) items.push(["spell_holy_flashheal","Top healer",heal[0].name,heal[0].role,`${(heal[0].eff_hps||0).toLocaleString()} HPS`]);
     const tanks = [...(WEEK_DATA.tankScorecard||[])].filter(t=>t.taken>0).sort((a,b)=>b.taken-a.taken);
     if(tanks.length) items.push(["inv_shield_06","Tanked most",tanks[0].name,"Tank",hsK(tanks[0].taken)]);
     const drums = [...(WEEK_DATA.drums||[])].sort((a,b)=>((b.total||b.casts||0)-(a.total||a.casts||0)));
@@ -1329,20 +1395,20 @@ function renderLoot(){
   // class so an alt not in this week's WCL roster still colors correctly.
   const col = p => (typeof CLASS_COLORS!=="undefined" && CLASS_COLORS[p.class]) || nameColor(p.name) || "var(--text)";
   const ico = p => classIcon(p.name) || (p.class
-    ? `https://wow.zamimg.com/images/wow/icons/large/classicon_${p.class.toLowerCase()}.jpg` : null);
+    ? `https://wow.zamimg.com/images/wow/icons/large/classicon_${encodeURIComponent(p.class.toLowerCase())}.jpg` : null);
   const blocks = players.map(p => {
     const c = col(p), ic = ico(p);
     const head = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;font-size:13px;font-weight:600">
-      ${ic?`<img class="ticon-sm" src="${ic}" alt="" style="vertical-align:-2px">`:""}
-      <span class="cname" style="color:${c}">${p.name}</span>
+      ${ic?`<img class="ticon-sm" src="${esc(ic)}" alt="" style="vertical-align:-2px">`:""}
+      <span class="cname" style="color:${c}">${esc(p.name)}</span>
       <span style="color:var(--muted);font-weight:500;font-size:11px">·&nbsp;${p.items.length}</span></div>`;
     const items = p.items.map(it => {
       // power.js iconizes + quality-colors + tooltips this link (whTooltips config in <head>)
-      const link = `<a href="https://www.wowhead.com/tbc/item=${it.item_id}" target="_blank" rel="noopener" style="font-size:12px">${it.item_name}</a>`;
+      const link = `<a href="https://www.wowhead.com/tbc/item=${Number(it.item_id)||0}" target="_blank" rel="noopener" style="font-size:12px">${esc(it.item_name)}</a>`;
       // OS + boss live on a muted sub-line so a long item name never orphans the boss or splits it mid-word
       const meta = [];
       if (it.offspec) meta.push(`<span style="border:1px solid var(--border);border-radius:3px;padding:0 3px;letter-spacing:.03em">OS</span>`);
-      if (it.boss) meta.push(it.boss);
+      if (it.boss) meta.push(esc(it.boss));
       const sub = meta.length ? `<div style="font-size:10px;color:var(--muted);margin:1px 0 0 20px;line-height:1.2;white-space:nowrap">${meta.join(" · ")}</div>` : "";
       return `<div style="margin:5px 0;line-height:1.3">${link}${sub}</div>`;
     }).join("");
@@ -1432,13 +1498,13 @@ function showPlayerSpellDrill(name){
 
 // ── STAT TILES
 function renderStatTiles() {
-  const totalDeaths = WEEK_DATA.deaths.reduce((s, p) => s + p.total, 0);
+  const totalDeaths = (WEEK_DATA.deaths || []).reduce((s, p) => s + (p.total || 0), 0);
   document.getElementById("totalDeaths").textContent = totalDeaths;
   const avoidTotal = (WEEK_DATA.avoidableDmg || []).reduce((s, p) => s + (p.dmg || 0), 0);
   document.getElementById("totalAvoidable").textContent = (avoidTotal / 1e6).toFixed(2) + "M";
-  const drumTotal = WEEK_DATA.drums.reduce((s, d) => s + d.total, 0);
+  const drumTotal = (WEEK_DATA.drums || []).reduce((s, d) => s + (d.total || 0), 0);
   document.getElementById("totalDrums").textContent = drumTotal;
-  const intTotal = WEEK_DATA.interrupts.reduce((s, i) => s + i.count, 0);
+  const intTotal = (WEEK_DATA.interrupts || []).reduce((s, i) => s + (i.count || 0), 0);
   document.getElementById("totalInterrupts").textContent = intTotal;
   const kills = (WEEK_DATA.meta && WEEK_DATA.meta.kills) || 0;
   document.getElementById("bossesKilled").textContent = kills;
@@ -1524,6 +1590,22 @@ function fmtDelta(n, higherIsBetter = true, opts = {}) {
   const arrow  = n > 0 ? '▲ +' : '▼ ';
   const cls    = better ? 'delta-up' : 'delta-down';
   return `<span class="${cls}" title="vs last week">${arrow}${mag.toFixed(dp)}${divK ? 'K' : ''}${suffix}</span>`;
+}
+// WCL parse-percentile color brackets (the familiar grey→green→blue→purple→orange→pink→gold).
+function parseColor(p){
+  if(p==null) return 'var(--muted)';
+  if(p>=100) return '#e5cc80';   // gold
+  if(p>=99)  return '#e268a8';   // pink
+  if(p>=95)  return '#ff8000';   // orange
+  if(p>=75)  return '#a335ee';   // purple
+  if(p>=50)  return '#0070ff';   // blue
+  if(p>=25)  return '#1eff00';   // green
+  return 'var(--muted)';          // grey (<25)
+}
+// Parse-% cell: the WCL percentile, color-bracketed, with the week-over-week delta. — when unranked.
+function parseCell(p, delta){
+  if(p==null) return '<span style="color:var(--muted)" title="WCL hasn\'t ranked this report yet, or no parse for this role">—</span>';
+  return `<span style="color:${parseColor(p)};font-weight:700" title="WCL parse percentile vs ALL logged parses for this spec — 50 = typical, 75+ = strong, 95+ = elite">${Math.round(p)}</span>${fmtDelta(delta, true)}`;
 }
 function classIcon(name){
   const r = WEEK_DATA.roster && WEEK_DATA.roster[name];
@@ -1847,7 +1929,11 @@ function showAvoidDrill(encName){
 
 // ── FRIENDLY FIRE — clumping damage to teammates, with context (mechanic · boss · who)
 function renderFriendlyFire() {
+  // NOTE: not currently wired into renderAll() — there is no #friendlyFire card in the markup
+  // (the friendlyFire data feeds the Performance-tab exec pillar instead). Guard the missing
+  // element so this is safe if it's ever re-surfaced.
   const el = document.getElementById("friendlyFire");
+  if (!el) return;
   const data = [...(WEEK_DATA.friendlyFire||[])].filter(p => p.dmg > 0).sort((a,b)=>b.dmg-a.dmg).slice(0, 10);
   if (!data.length) {
     el.innerHTML = '<div style="color:var(--muted);font-size:12px">No clumping friendly fire this week. 👏</div>';
@@ -1953,7 +2039,7 @@ function renderMC() {
   const liable = WEEK_DATA.mcLiable || [];
   const spellsStr = obj => Object.entries(obj || {})
     .sort((a,b)=>b[1]-a[1]).map(([s,n]) => n>1 ? `${s} ×${n}` : s).join(", ");
-  const cn = n => `<span class="cname" style="color:${nameColor(n,(WEEK_DATA.roster[n]||{}).role)}">${n}</span>`;
+  const cn = n => `<span class="cname" style="color:${nameColor(n,((WEEK_DATA.roster||{})[n]||{}).role)}">${n}</span>`;
   // CC spell → icon (the ability that parked the charmed ally)
   const MC_CC = { Cyclone:"spell_nature_cyclone", Polymorph:"spell_nature_polymorph",
     Repentance:"spell_holy_prayerofhealing", Fear:"spell_shadow_possession",
@@ -2005,7 +2091,7 @@ function showMCDrill(name){
     `<span class="cname" style="color:${cc}">${name}</span> · AoE into controlled allies · ${hsK(p.dmg)}${p.kills?` · ${gicon('inv_misc_bone_humanskull_01','ticon-sm')} ${p.kills} kill${p.kills>1?'s':''}`:''}`;
   document.getElementById("drillBody").innerHTML = ev.length
     ? `<div class="drill-sub">${ev.length} hit${ev.length>1?"s":""} on charmed teammates:</div>`
-      + ev.map(h => `<div class="drill-row"><span class="drill-t">${h.t||""}</span><span>${h.spell} → <span class="cname" style="color:${nameColor(h.victim,(WEEK_DATA.roster[h.victim]||{}).role)}">${h.victim}</span>${h.kill?' '+gicon('inv_misc_bone_humanskull_01','ticon-sm'):''}</span><span class="drill-amt">${(h.amt||0).toLocaleString()}</span></div>`).join("")
+      + ev.map(h => `<div class="drill-row"><span class="drill-t">${h.t||""}</span><span>${h.spell} → <span class="cname" style="color:${nameColor(h.victim,((WEEK_DATA.roster||{})[h.victim]||{}).role)}">${h.victim}</span>${h.kill?' '+gicon('inv_misc_bone_humanskull_01','ticon-sm'):''}</span><span class="drill-amt">${(h.amt||0).toLocaleString()}</span></div>`).join("")
     : `<div class="drill-sub">No per-hit detail captured.</div>`;
   document.getElementById("drillModal").style.display = "flex";
 }
@@ -2096,13 +2182,13 @@ function renderDamage() {
     });
     ds = { durations: { all: fdur, boss: fdur, trash: 1 }, players };
   }
-  if (!ds.players.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);font-size:12px">No damage data.</td></tr>'; return; }
+  if (!ds.players.length) { tbody.innerHTML = '<tr><td colspan="8" style="color:var(--muted);font-size:12px">No damage data.</td></tr>'; return; }
   const sel = _dpsSel;
   const dur = (ds.durations || {})[sel] || 1;
   const rows = ds.players.map(p => ({ ...p, sd: p[sel] || { total: 0, active: 0 } }))
                          .filter(p => p.sd.total > 0)
                          .sort((a, b) => b.sd.total - a.sd.total);
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="7" style="color:var(--muted);font-size:12px">No ${sel} damage.</td></tr>`; return; }
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="8" style="color:var(--muted);font-size:12px">No ${sel} damage.</td></tr>`; return; }
   const raidTotal = rows.reduce((s, p) => s + p.sd.total, 0) || 1;
   const maxDps = Math.max(...rows.map(p => p.sd.total / dur));
   tbody.innerHTML = rows.map(p => {
@@ -2122,6 +2208,8 @@ function renderDamage() {
         + (tk.tag?`<span style="color:var(--blue);font-size:10px;font-weight:600">${tk.tag}</span>`:"")
         + (tk.off?`<span title="played DPS on ${tk.off} fights off their roster role" style="color:var(--amber);font-size:10px">⚔${tk.off}</span>`:"")
         + `</span>`;
+    // WAR — vs same-spec ranked-parse median (mirrors the healer WAR chip). 0/undefined = thin cohort → —.
+    const warCell = parseCell(p.vs_replacement, p.delta_vs_replacement);
     return `<tr>
       <td><span class="cname" style="color:${nc}">${p.name}</span>${spec?`<div style="font-size:10px;color:var(--muted);margin-top:1px;font-weight:400">${spec}</div>`:""}</td>
       <td style="text-align:center"><span style="display:inline-block;width:118px;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;vertical-align:middle"><span style="display:block;height:100%;width:${pct}%;background:${nc}"></span></span></td>
@@ -2129,6 +2217,7 @@ function renderDamage() {
       <td style="text-align:center;color:${upCol};font-weight:600;white-space:nowrap">${Math.round(up)}%${fmtDelta(p.sd.delta_uptime, true)}</td>
       <td style="text-align:center;color:var(--muted);white-space:nowrap">${hsK(p.sd.total)}${fmtDelta(p.sd.delta_total, true, {divK:true})}</td>
       <td style="text-align:center;color:var(--muted)">${share}%</td>
+      <td style="text-align:center;white-space:nowrap">${warCell}</td>
       <td style="text-align:right">${tkCell}</td>
     </tr>`;
   }).join("");
@@ -2193,6 +2282,37 @@ function renderHealerUptimeHeatmap(){
 // ── MANA RETURNED TO THE RAID — battery leaderboards grouped BY SOURCE (Vampiric Touch, Mana
 // Tide, Mana Spring), each provider's mana → top recipients. Self counts (provider is a raid
 // member). Innervate is a separate cast-count section (it emits no mana event). Solid green bars.
+function renderSaves(){
+  const el = document.getElementById("savesCard"); if(!el) return;
+  const data = WEEK_DATA.saves || [];
+  if(!data.length){ el.innerHTML = '<div style="color:var(--muted);font-size:12px">No external saves or dispels cast on allies this week.</div>'; return; }
+  const chip = (n, lbl, col) => n>0
+    ? `<span style="color:${col};font-weight:700">${n}</span> <span style="color:var(--muted);font-size:10px">${lbl}</span>`
+    : `<span style="color:var(--dim)">·</span>`;
+  const rows = data.map(p => {
+    const nc = nameColor(p.name, p.role);
+    // "who they helped" — ability → target(s), straight from the targets map
+    const detail = Object.entries(p.targets||{}).map(([ab,tg]) =>
+      Object.entries(tg).map(([t,n]) =>
+        `${ab} → <span class="cname" style="color:${nameColor(t)}">${t}</span>${n>1?` ×${n}`:''}`).join(", ")
+    ).join(" · ");
+    return `<tr>
+      <td><span class="cname" style="color:${nc}">${p.name}</span></td>
+      <td class="num" title="emergency protection / battle-res on an ally (Hand of Protection, Lay on Hands, Rebirth…)">${chip(p.save,'saves','var(--gold-soft)')}${fmtDelta(p.delta_save, true)}</td>
+      <td class="num" title="harmful effects stripped off allies (Cleanse, Abolish, Tranq…)">${chip(p.dispel,'disp','var(--blue)')}</td>
+      <td class="num" title="reactive help (Hand of Salvation, Blessing of Freedom, Tremor)">${chip(p.utility,'util','var(--muted)')}</td>
+      <td style="font-size:10.5px;color:var(--muted);line-height:1.5">${detail||'—'}</td>
+    </tr>`;
+  }).join("");
+  el.innerHTML = `<table class="mini-table" style="width:100%">
+    <thead><tr><th>Player</th>
+      <th class="num" title="Emergency protection or battle-res on an ally — the clutch saves.">Saves</th>
+      <th class="num" title="Harmful debuffs cleansed off allies.">Dispels</th>
+      <th class="num" title="Reactive utility on allies (threat dump, freedom, fear break).">Utility</th>
+      <th>Who they helped</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
 function renderManaReturns(){
   const el = document.getElementById("manaReturns"); if(!el) return;
   const mr = WEEK_DATA.manaReturns || {};
@@ -2246,7 +2366,7 @@ function renderReactionHeatmap(){
   const shortBoss = b => { const w=b.split(" ").filter(x=>!drop.includes(x)); return (w[0]||b).replace(/'.*/,"").slice(0,8); };
   const col = s => s>=8?"#9a2f2f":s>=6?"#9a4d1f":s>=4?"#8a6d1f":s>=2.5?"#5f7a1f":"#1f7a3d";  // fast green → slow red
   const hexA = (hex,a) => { const h=hex.replace('#',''); return `rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`; };
-  const role = n => (WEEK_DATA.roster[n]||{}).role || "";
+  const role = n => ((WEEK_DATA.roster||{})[n]||{}).role || "";
   // rank by SAMPLE-SIZE-WEIGHTED mean — one fluky single drop can't push a raider to "worst"
   const score = n => { const cs=Object.values(rx[n]); let sw=0,w=0; cs.forEach(c=>{sw+=c.median*c.n; w+=c.n;}); return w?sw/w:0; };
   const order = [...players].sort((a,b)=>score(b)-score(a));   // slowest-responded raiders first
@@ -2272,7 +2392,7 @@ function renderReactionHeatmap(){
 function showReactionDrill(en, eb){
   const n = decodeURIComponent(en), b = decodeURIComponent(eb);
   const c = ((WEEK_DATA.healReaction||{})[n]||{})[b]; if(!c) return;
-  const cc = nameColor(n, (WEEK_DATA.roster[n]||{}).role);
+  const cc = nameColor(n, ((WEEK_DATA.roster||{})[n]||{}).role);
   const rows = (c.samples||[]).map((s,i) =>
     `<div class="drill-row" style="grid-template-columns:42px 1fr auto"><span class="drill-t">#${i+1}</span><span>dropped &lt;50% HP → first direct heal</span><span class="drill-amt" style="color:${s>=10?'var(--red)':'var(--text)'}">${s>=10?"☠ "+s+"s":s+"s"}</span></div>`).join("");
   _openDrill(`<span class="cname" style="color:${cc}">${n}</span> · heal response · ${b}`,
@@ -2441,6 +2561,143 @@ function _tabKeys(e){
   else if (e.key === "ArrowLeft"  && cur >= 0) { showTab(tabs[(cur - 1 + tabs.length) % tabs.length].dataset.tab); e.preventDefault(); }
 }
 
+// ═══════════════ PERFORMANCE TAB (officer-gated) ═══════════════
+// v1 scoring tuning — recalibrate after a real week. All pillar sub-scores are 0–100.
+const PERF_TUNING = {
+  EXEC_AVOID_CAP: 1500,    // avoidable dmg / minute at which the avoidable component hits 0
+  FF_PER_INCIDENT: 5, FF_CAP: 15,
+  MC_LIABLE_PENALTY: 20,
+  SURV_BOSS_DEATH: 25, SURV_TRASH_DEATH: 12, SURV_NO_HS_DEATH: 10,
+  // Prep weights (sum→100) by TBC raid-consumable importance (Wowhead): a flask persists through
+  // death so it dominates (2 elixirs ≈ a flask; 1 elixir = half); food + weapon oil are expected;
+  // an in-fight pot is the active/tryhard signal; situational (Flame Cap / rune / Nightmare Seed) a
+  // small bonus. flask+food+oil = 85 ("prepared"); +in-fight pot +situational → 100.
+  PREP_FLASK: 40, PREP_ELIXIR1: 20, PREP_FOOD: 25, PREP_OIL: 20, PREP_POT: 10, PREP_ALT: 5,
+};
+const PERF_WEIGHTS = {           // [prep, perf, exec, surv, util]
+  balanced: [1.0, 1.5, 1.0, 1.0, 0.75],   // headline-tilted, slight util discount (default)
+  perf:     [0.75,2.5, 0.75,0.75,0.5 ],   // Performance-led
+  exec:     [1.0, 1.0, 2.0, 1.5, 0.5 ],   // Execution-led (clean play)
+};
+const PERF_PILLARS = ["prep","perf","exec","surv","util"];
+const PERF_ROLE_FACETS = { Physical:["intr","sunder","save"], Caster:["intr","mana","save"], Healer:["save","mana"], Tank:["intr","save"] };
+let _perfWeight="balanced", _perfRole="all", _perfGroup=false, _perfSearch="";
+let _perfSort={col:"composite",dir:-1};
+try {
+  const _w = localStorage.getItem("perfWeight");
+  if (_w && PERF_WEIGHTS[_w]) _perfWeight = _w;   // ignore a stale/invalid key so the seg toggle still matches
+  _perfRole   = localStorage.getItem("perfRole")   || _perfRole;
+  _perfGroup  = localStorage.getItem("perfGroup") === "1";
+} catch(e){}
+function _setPerfWeight(w){ _perfWeight=w; document.querySelectorAll("#perfWeightSeg .seg-btn").forEach(b=>b.classList.toggle("on",b.dataset.w===w)); try{localStorage.setItem("perfWeight",w);}catch(e){} renderPerformance(); }
+function _setPerfRole(r){ _perfRole=r; document.querySelectorAll("#perfRoleSeg .seg-btn").forEach(b=>b.classList.toggle("on",b.dataset.r===r)); try{localStorage.setItem("perfRole",r);}catch(e){} renderPerformance(); }
+function _setPerfGroup(g){ _perfGroup=g; document.querySelectorAll("#perfGroupSeg .seg-btn").forEach(b=>b.classList.toggle("on",(b.dataset.g==="role")===g)); try{localStorage.setItem("perfGroup",g?"1":"0");}catch(e){} renderPerformance(); }
+function _setPerfSearch(v){ _perfSearch=(v||"").trim().toLowerCase(); renderPerformance(); }
+function _perfSortBy(col){ if(_perfSort.col===col) _perfSort.dir*=-1; else _perfSort={col, dir: col==="name"?1:-1}; renderPerformance(); }
+
+// Build per-player pillar sub-scores (0–100 or null) from WEEK_DATA + the composite for the active weighting.
+function _perfRows(){
+  const wd=WEEK_DATA, roster=wd.roster||{}, clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+  const byName=arr=>Object.fromEntries((arr||[]).map(x=>[x.name,x]));
+  const cons=byName(wd.consumables), dps=byName((wd.damageBySelection||{}).players), heal=byName(wd.healing),
+        tank=byName(wd.tankScorecard), avoid=byName(wd.avoidableDmg), ff=byName(wd.friendlyFire),
+        deaths=byName(wd.deaths), usage=byName(wd.consumableUsage), saves=byName(wd.saves),
+        intr=byName(wd.interrupts), sunder=byName(((wd.sunderArmor||{}).players)||[]);
+  const mcLiable=new Set((wd.mcLiable||[]).map(x=>x.name));
+  const raidMin=((Object.values(wd.boss_times||{}).reduce((s,v)=>s+v,0))||0)/60 || 1;
+  const noLog = !(wd.avoidableDmg||[]).length && !(wd.friendlyFire||[]).length;   // log-less week → exec null for all
+  const mana={};
+  ((wd.manaReturns||{}).batteries||[]).forEach(b=>(b.providers||[]).forEach(p=>{ mana[p.name]=(mana[p.name]||0)+(p.mana||0); }));
+  const saveTot=n=>{ const s=saves[n]; return s?(s.save||0)+(s.dispel||0)+(s.utility||0):0; };
+  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : 0;
+  const best={};   // best[role][facet] — utility normalizes vs the raid's best in-role
+  Object.entries(roster).forEach(([n,r])=>{ (PERF_ROLE_FACETS[r.role]||[]).forEach(f=>{ best[r.role]=best[r.role]||{}; best[r.role][f]=Math.max(best[r.role][f]||0, facetVal(n,f)); }); });
+
+  return Object.entries(roster).map(([name,r])=>{
+    const role=r.role, d=deaths[name]||{total:0,trash:0};
+    // PREP
+    // PREP — consumables is a compliance grid (no numeric score). Weight covered slots by TBC
+    // raid-consumable importance (Wowhead): flask (or 2 elixirs) dominates, food + oil expected, an
+    // in-fight pot = active tryhard, situational a small bonus. Weights in PERF_TUNING.PREP_*.
+    const c=cons[name];
+    let prep=null;
+    if(c){ const T=PERF_TUNING;
+      let pts = c.flask ? T.PREP_FLASK : ((c.elixirs||[]).length ? T.PREP_ELIXIR1 : 0);
+      pts += c.food ? T.PREP_FOOD : 0;
+      pts += c.weapon ? T.PREP_OIL : 0;
+      pts += (c.combat_pots||[]).length ? T.PREP_POT : 0;
+      pts += c.alt_pot ? T.PREP_ALT : 0;
+      prep = Math.min(100, pts); }
+    // PERFORMANCE (role-appropriate parse %)
+    let perf=null;
+    if(role==="Healer") perf=heal[name]?heal[name].vs_replacement:null;
+    else if(role==="Tank"){ const t=tank[name]||{}; const vs=[t.vs_replacement,(t.survival||{}).score].filter(v=>v!=null); perf=vs.length?vs.reduce((s,v)=>s+v,0)/vs.length:null; }
+    else perf=dps[name]?dps[name].vs_replacement:null;
+    if(perf!=null) perf=Math.round(perf);
+    // EXECUTION (clean play)
+    let exec=null;
+    if(!noLog){ const apm=((avoid[name]||{}).dmg||0)/raidMin; let e=100*clamp(1-apm/PERF_TUNING.EXEC_AVOID_CAP,0,1); e-=Math.min(PERF_TUNING.FF_CAP,((ff[name]||{}).incidents||0)*PERF_TUNING.FF_PER_INCIDENT); if(mcLiable.has(name)) e-=PERF_TUNING.MC_LIABLE_PENALTY; exec=Math.round(clamp(e,0,100)); }
+    // SURVIVAL
+    let surv;
+    if(role==="Tank" && (tank[name]||{}).survival && (tank[name].survival.score!=null)) surv=tank[name].survival.score;
+    else { const boss=(d.total||0)-(d.trash||0), died=(d.total||0)>0, hs=((usage[name]||{}).healthstone)||0;
+           surv=Math.round(clamp(100 - boss*PERF_TUNING.SURV_BOSS_DEATH - (d.trash||0)*PERF_TUNING.SURV_TRASH_DEATH - (died&&hs===0?PERF_TUNING.SURV_NO_HS_DEATH:0),0,100)); }
+    // UTILITY (relative to raid's best in-role — experimental)
+    const fac=(PERF_ROLE_FACETS[role]||[]).map(f=>{ const bv=(best[role]||{})[f]||0; return bv>0?facetVal(name,f)/bv*100:null; }).filter(v=>v!=null);
+    const util=fac.length?Math.round(fac.reduce((s,v)=>s+v,0)/fac.length):null;
+    // COMPOSITE — weighted over non-null pillars only (renormalized)
+    const pil={prep,perf,exec,surv,util}, w=PERF_WEIGHTS[_perfWeight]||PERF_WEIGHTS.balanced; let num=0,den=0,present=0;
+    PERF_PILLARS.forEach((p,i)=>{ if(pil[p]!=null){ num+=w[i]*pil[p]; den+=w[i]; present++; } });
+    return { name, role, class:r.class, ...pil, present, composite: den>0?num/den:null };
+  });
+}
+
+function renderPerformance(){
+  const tb=document.getElementById("perfTbody"), hd=document.getElementById("perfHead");
+  if(!tb||!hd) return;
+  let rows=_perfRows();
+  if(_perfRole!=="all") rows=rows.filter(r=>r.role===_perfRole);
+  if(_perfSearch) rows=rows.filter(r=>r.name.toLowerCase().startsWith(_perfSearch));
+  const {col,dir}=_perfSort;
+  rows.sort((a,b)=>{
+    if(col==="name") return a.name.localeCompare(b.name)*dir;   // dir +1 = A→Z (default), -1 = Z→A — matches the ▲/▼
+    const av=a[col], bv=b[col];
+    if(av==null&&bv==null) return 0; if(av==null) return 1; if(bv==null) return -1;   // nulls always last
+    return (av-bv)*dir;
+  });
+  const cols=[["name","Player"],["prep","Prep"],["perf","Perf"],["exec","Exec"],["surv","Surv"],["util","Util"],["composite","Score"]];
+  const titles={prep:"Preparation — consumables score → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play: avoidable dmg/min, friendly fire, MC liability.",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — saves / interrupts / sunder / mana vs the raid's best in-role. MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars (set the weighting above). (n/5) = computed over the pillars present."};
+  const arrow=c=>_perfSort.col===c?(_perfSort.dir<0?" ▼":" ▲"):"";
+  hd.innerHTML=cols.map(([c,lbl])=>`<th class="${c==='name'?'':'num'}" style="cursor:pointer;${c==='composite'?'color:var(--accent)':''}" title="${titles[c]}" onclick="_perfSortBy('${c}')">${lbl}${arrow(c)}</th>`).join("");
+  const cell=v=>v==null?'<span style="color:var(--muted)">—</span>':`<span style="color:${parseColor(v)};font-weight:600">${v}</span>`;
+  const renderRow=r=>{
+    const nc=nameColor(r.name,r.role);
+    const partial=r.present<5?`<span style="color:var(--muted);font-size:9px"> (${r.present}/5)</span>`:"";
+    const score=r.composite==null?'<span style="color:var(--muted)">—</span>'
+      :`<span style="color:${parseColor(r.composite)};font-weight:800;font-size:13px">${Math.round(r.composite)}</span>${partial}`;
+    return `<tr>
+      <td><span class="cname" style="color:${nc}">${r.name}</span> <span style="color:var(--muted);font-size:9px">${r.role}</span></td>
+      <td class="num">${cell(r.prep)}</td><td class="num">${cell(r.perf)}</td><td class="num">${cell(r.exec)}</td>
+      <td class="num">${cell(r.surv)}</td><td class="num">${cell(r.util)}</td><td class="num">${score}</td></tr>`;
+  };
+  const empty=`<tr><td colspan="7" style="color:var(--muted);font-size:12px">No raiders match.</td></tr>`;
+  if(_perfGroup){
+    const order=["Tank","Healer","Physical","Caster"], rc={Tank:"--tank",Healer:"--healer",Physical:"--physical",Caster:"--caster"};
+    tb.innerHTML=order.map(role=>{ const rs=rows.filter(r=>r.role===role); if(!rs.length) return "";
+      return `<tr><td colspan="7" style="background:var(--surface2);color:var(${rc[role]});font-weight:700;font-size:10px;letter-spacing:.5px;text-transform:uppercase;padding:6px 8px">${role} <span style="color:var(--muted);font-weight:400">· ${rs.length}</span></td></tr>`+rs.map(renderRow).join("");
+    }).join("")||empty;
+  } else tb.innerHTML=rows.map(renderRow).join("")||empty;
+}
+
+// Officer gate: hide the whole Performance tab unless ?officer=1. NOTE: obscurity, not security —
+// WEEK_DATA is already in the page and these numbers appear on public tabs; this hides the SURFACE.
+function isOfficer(){ try{ return new URLSearchParams(location.search).get("officer")==="1"; }catch(e){ return false; } }
+function applyOfficerGate(){
+  if(isOfficer()) return;
+  const btn=document.querySelector('.tab-btn[data-tab="performance"]'); if(btn) btn.style.display="none";
+  const sec=document.querySelector('.tsec[data-tab="performance"]'); if(sec) sec.classList.add("hidden");
+}
+
 // ── BOOT
 // ── RENDER ALL — (re)render the whole dashboard for the currently-active WEEK_DATA.
 // Called once on load and again on every week switch (loadWeek mutates WEEK_DATA in place first).
@@ -2469,6 +2726,7 @@ function renderAll(){
   renderReactionHeatmap();
   renderHealerUptimeHeatmap();
   renderManaReturns();
+  renderSaves();
   renderTanks();
   renderEngTable();
   renderInterruptBars();
@@ -2476,6 +2734,7 @@ function renderAll(){
   renderPlayerSpells();
   renderCompliance();
   renderLoot();
+  renderPerformance();   // officer tab — built for everyone; applyOfficerGate() hides the surface
   (function(){
     const m = (WEEK_DATA.meta||{}).log_missing || [];
     const el = document.getElementById("logCoverageNote");
@@ -2511,6 +2770,7 @@ async function loadWeek(report){
   const prevTab = _activeBtn ? _activeBtn.dataset.tab : "overview";
   _setActive(data); _curWeek = report;
   renderAll();
+  applyOfficerGate();   // renderAll un-hid the tab button (it resets inline display) — re-hide on week switch
   // reflect the week in the URL (drop ?week when back on the live week) — shareable, no reload
   try {
     const u = new URL(location.href);
@@ -2552,6 +2812,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // first paint = the embedded latest week
   renderAll();
+  applyOfficerGate();   // hide the Performance tab unless ?officer=1 — MUST run after renderAll (it resets
+                        // inline display) and BEFORE the activeTab restore below (so it falls back off it).
 
   // restore the active tab: URL #hash (shareable) → last-viewed (localStorage) → Overview.
   let _tab = (location.hash || "").replace(/^#/, "") || null;

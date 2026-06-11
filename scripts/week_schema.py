@@ -78,6 +78,8 @@ SECTIONS = {
                                    desc="per-warrior Sunder quality (empty: no warriors / no sunders)"),
     "manaReturns":         Section(WCL,  False, predicate=_has_batteries,
                                    desc="mana returned to raid by source (empty if comp returns none)"),
+    "saves":               Section(WCL,  False,
+                                   desc="protective/external casts on allies (paladin Hands, dispels, battle-res)"),
     "loot":                Section(EXTERNAL, predicate=_has_players,
                                    desc="this-week loot from the ThatsBIS CSV (empty: dry night / no CSV)"),
     "damageBySelection":   Section(WCL,  True,  predicate=_has_players,

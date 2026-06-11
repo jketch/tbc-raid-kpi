@@ -122,6 +122,44 @@ HEAL_MANA_COST = {
     "Holy Light": 840, "Flash of Light": 180, "Holy Shock": 525,
 }
 
+# Protective / external abilities cast ON ALLIES — the "saving others" kit. NAME-keyed (WCL uses the
+# base name); a cast only counts when its TARGET is another player (self-casts and Environment
+# targets are dropped — the latter strips trinket procs like "Blessing of the Silver Crescent" and
+# untargeted totems). REACTIVE only: maintained blessings (Kings/Might/Wisdom/Sanctuary/Salvation),
+# routine shields (Power Word: Shield, Earth Shield) and already-surfaced utility (Innervate,
+# Misdirection — on the Mana/Toolkit cards) are deliberately EXCLUDED so the signal is "clutch help",
+# not upkeep. Names VERIFIED live (2026-06-11, Anniversary): it uses "Hand of Protection" / "Hand of
+# Salvation", NOT the pre-rename "Blessing of …". Pre-rename variants kept for safety; names absent
+# from the probe (Sacrifice, Divine Intervention, Soulstone Resurrection, Pain Suppression, dispels)
+# are standard TBC names — they'll match if cast, else no-op.
+EXTERNAL_ABILITIES = {
+    # ── save: emergency protection / battle-res on an ally ──
+    "Hand of Protection":     "save",     # paladin BoP — physical immunity (verified gid 10278)
+    "Blessing of Protection": "save",     # pre-rename variant
+    "Lay on Hands":           "save",     # paladin full-heal (verified gid 27154; counts only on others)
+    "Hand of Sacrifice":      "save",     # paladin damage soak (Anniversary "Hand of" naming)
+    "Blessing of Sacrifice":  "save",
+    "Divine Intervention":    "save",     # paladin — sacrifice self to save an ally
+    "Rebirth":                "save",     # druid combat res (verified gid 34342)
+    "Soulstone Resurrection": "save",     # warlock combat res
+    "Pain Suppression":       "save",     # priest external damage-reduction CD
+    # ── dispel: strip a harmful effect off an ally ──
+    "Cleanse":            "dispel",       # paladin (verified gid 39078)
+    "Purify":             "dispel",       # priest (disease/poison)
+    "Dispel Magic":       "dispel",       # priest (harmful magic off a friendly)
+    "Abolish Poison":     "dispel",       # druid (verified gid 2893)
+    "Abolish Disease":    "dispel",       # priest
+    "Cure Poison":        "dispel",       # shaman
+    "Cure Disease":       "dispel",       # shaman
+    "Remove Curse":       "dispel",       # mage / druid
+    "Remove Lesser Curse":"dispel",       # mage
+    "Tranquilizing Shot": "dispel",       # hunter — strip a boss enrage
+    # ── utility: reactive help that isn't a heal/dispel ──
+    "Hand of Salvation":   "utility",     # paladin threat dump on a pulling DPS (verified gid 1038)
+    "Blessing of Freedom": "utility",     # paladin snare/root break on an ally (verified gid 1044)
+    "Tremor Totem":        "utility",     # shaman fear/charm/sleep break
+}
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ███ T5 CONTENT (SSC / TK) — the ONLY raid-content-coupled constants ███████████

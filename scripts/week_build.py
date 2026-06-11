@@ -68,8 +68,7 @@ def from_snapshot(path) -> dict:
 
 
 # ── 2. The WCL producer (shared by main + backfill) ─────────────────────────────────────
-def from_wcl(report_code, token, *, log_path=None, report=None, history=None,
-            refresh_baseline=False):
+def from_wcl(report_code, token, *, log_path=None, report=None, history=None):
     """Build a mapped WEEK_DATA from WCL (+ optional combat log). Returns (mapped, raw, log_data).
     `raw` is the pre-map merged wcl dict (publish summary / dry-run read it); `log_data` lets the
     caller pass `has_log` to finalize_week. Does NOT ingest loot or validate — that's finalize_week,
@@ -81,7 +80,7 @@ def from_wcl(report_code, token, *, log_path=None, report=None, history=None,
     if log_path:
         allowed = {f["name"] for f in report["fights"] if f.get("kill")}
         log_data = W.parse_combat_log(log_path, allowed_bosses=allowed)
-    raw = W.build_week_data(report_code, token, refresh_baseline=refresh_baseline,
+    raw = W.build_week_data(report_code, token,
                             log_data=log_data, report=report, history=history)
     if log_data:
         raw = W.merge_log_into_wcl(raw, log_data)

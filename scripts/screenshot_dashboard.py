@@ -1,7 +1,12 @@
-from playwright.sync_api import sync_playwright
 from pathlib import Path
 import argparse
 import sys
+
+try:
+    from playwright.sync_api import sync_playwright
+except ImportError:
+    sys.exit("Playwright is required for screenshots — install it with:\n"
+             "  pip install playwright pypdf && playwright install chromium")
 
 DASHBOARD = Path(__file__).parent.parent / "dashboard" / "raid_kpi_dashboard.html"
 OUT_DIR   = Path(__file__).parent.parent / "screenshots"
@@ -40,7 +45,7 @@ def main(fmt="pdf", tabs=None, prefix=None):
         browser = p.chromium.launch()
         try:
             page = browser.new_page(viewport={"width": 1920, "height": 1080})
-            page.goto(f"file:///{DASHBOARD.resolve()}")
+            page.goto(DASHBOARD.resolve().as_uri())
             page.wait_for_load_state("networkidle")
             _wait_for_render(page)
 

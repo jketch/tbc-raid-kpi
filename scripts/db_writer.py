@@ -34,7 +34,7 @@ DB_PATH_TEST = Path(__file__).parent.parent / "cache" / "raid_history_test.db"
 
 # Bump when a schema/column change means a prior week's row must be rebuilt for trends to compute.
 # enrich_with_trends warns when the prior week's row predates this; `reprocess.py --all` re-stamps.
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3   # v3: dps.war + tank_scorecard.war/survival (DPS & Tank threat WAR)
 
 
 # section → the table whose presence proves that section is in the DB for a report. Used by the
@@ -46,6 +46,7 @@ _SECTION_TABLE = {
     "healing": "healing", "sunderArmor": "sunder_armor", "manaReturns": "mana_returns",
     "debuffCoverage": "debuff_coverage", "loot": "loot", "luckKPI": "luck_kpi",
     "deaths": "deaths", "consumables": "consumables", "roster": "roster",
+    "saves": "saves", "damageBySelection": "dps", "boss_times": "boss_times",
 }
 
 
@@ -241,6 +242,19 @@ CREATE TABLE IF NOT EXISTS tank_scorecard (
     avoid_pct    REAL,      -- melee swings avoided (miss/dodge/parry/full block)
     biggest_hit  INTEGER,
     cooldowns    TEXT,      -- JSON dict {cd_name: count}
+    war          REAL,      -- threat WAR: tank DPS vs same-spec tank cohort (WCL ranks tanks by dps)
+    survival     INTEGER,   -- absolute survivability grade 0-100 (uncrittable/uncrushable/deaths/CDs)
+    PRIMARY KEY (report_code, player)
+);
+
+CREATE TABLE IF NOT EXISTS saves (
+    report_code  TEXT,
+    player       TEXT,
+    save         INTEGER,   -- emergency protection / battle-res on an ally (Hand of Protection, LoH, Rebirth…)
+    dispel       INTEGER,   -- harmful effect stripped off an ally (Cleanse, Abolish…)
+    utility      INTEGER,   -- reactive help (Hand of Salvation / Blessing of Freedom / Tremor)
+    total        INTEGER,
+    targets      TEXT,      -- JSON {ability: {target: count}}
     PRIMARY KEY (report_code, player)
 );
 
@@ -352,6 +366,17 @@ def write_week(week_data: dict, db_path: Path = None, *, allow_downgrade: bool =
                 con.execute(f"ALTER TABLE dps ADD COLUMN {_col} REAL")
             except sqlite3.OperationalError:
                 pass   # column already exists
+        # WAR columns: DPS vs-replacement on dps; tank threat WAR + survivability grade. Additive,
+        # guarded so existing DBs migrate (a delta needs the prior week's row to carry these).
+        try:
+            con.execute("ALTER TABLE dps ADD COLUMN war REAL")
+        except sqlite3.OperationalError:
+            pass
+        for _col, _type in (("war", "REAL"), ("survival", "INTEGER")):
+            try:
+                con.execute(f"ALTER TABLE tank_scorecard ADD COLUMN {_col} {_type}")
+            except sqlite3.OperationalError:
+                pass
         # migrate older DBs that predate the schema-version stamp (drives the stale-prior-week warning)
         try:
             con.execute("ALTER TABLE weeks ADD COLUMN schema_version INTEGER")
@@ -361,17 +386,21 @@ def write_week(week_data: dict, db_path: Path = None, *, allow_downgrade: bool =
         meta = week_data.get("meta", {})
         rc   = meta.get("report_code") or week_data.get("reportCode", "unknown")
 
-        # ── downgrade-guard ────────────────────────────────────────────────────
-        # Never silently overwrite a richer existing row with a thinner one (a log-thin snapshot
-        # over a log-complete week). Warn + skip the whole write unless explicitly forced.
+        # ── downgrade-guard (section-granular) ───────────────────────────────────
+        # A thin snapshot must not wipe a section the existing row already has — but it MUST still
+        # write every section it DOES carry. (The old guard skipped the WHOLE write on any drop,
+        # discarding fresh WCL/parse data just to preserve one log-tier section.) So we identify the
+        # sections that would be dropped and PRESERVE them — skipping only their destructive clears
+        # below. The four DELETE-then-reinsert tables are the only ones that can actively destroy on
+        # an empty incoming; every other table is INSERT OR REPLACE and preserves existing rows
+        # automatically when the section is empty. allow_downgrade=True forces a full overwrite.
+        dropped = set()
         if not allow_downgrade:
             dropped = _db_dropped_sections(con, rc, week_data)
             if dropped:
-                print(f"  ⚠ write_week SKIPPED for {rc}: incoming data would DROP {sorted(dropped)} "
-                      f"that the existing DB row has (thin snapshot over a richer row). "
-                      f"Pass allow_downgrade=True to force.")
-                con.close()
-                return
+                print(f"  ⚠ write_week: preserving {sorted(dropped)} from the existing richer row "
+                      f"for {rc} (incoming snapshot is thin on them); all other sections are written. "
+                      f"Pass allow_downgrade=True to overwrite instead.")
 
         # ── weeks ──────────────────────────────────────────────────────────────
         _hs = week_data.get("healthstoneStats") or {}
@@ -421,7 +450,8 @@ def write_week(week_data: dict, db_path: Path = None, *, allow_downgrade: bool =
                   p.get("mana_eff", 0), p.get("vs_replacement", 0), p.get("top_spell", "")))
 
         # ── healing_spells (per healer × spell) ────────────────────────────────
-        con.execute("DELETE FROM healing_spells WHERE report_code = ?", (rc,))
+        if "healing" not in dropped:   # preserve existing rows if incoming healing is thin
+            con.execute("DELETE FROM healing_spells WHERE report_code = ?", (rc,))
         for h in (week_data.get("healing") or []):
             for s in (h.get("spells") or []):
                 con.execute("""
@@ -435,7 +465,8 @@ def write_week(week_data: dict, db_path: Path = None, *, allow_downgrade: bool =
         # Grain varies per run, so clear this report's rows first to avoid staleness.
         mech_boss = {m: info.get("boss", "")
                      for m, info in (week_data.get("avoidableMechanics") or {}).items()}
-        con.execute("DELETE FROM avoidable_sources WHERE report_code = ?", (rc,))
+        if "avoidableDmg" not in dropped:   # preserve if incoming avoidable is thin
+            con.execute("DELETE FROM avoidable_sources WHERE report_code = ?", (rc,))
         for p in (week_data.get("avoidableDmg") or []):
             for s in (p.get("sources") or []):
                 con.execute("""
@@ -446,7 +477,8 @@ def write_week(week_data: dict, db_path: Path = None, *, allow_downgrade: bool =
                       mech_boss.get(s.get("ability"), ""), s.get("dmg", 0)))
 
         # ── friendly_fire (source side) ────────────────────────────────────────
-        con.execute("DELETE FROM friendly_fire WHERE report_code = ?", (rc,))
+        if "friendlyFire" not in dropped:   # preserve if incoming FF is thin
+            con.execute("DELETE FROM friendly_fire WHERE report_code = ?", (rc,))
         for p in (week_data.get("friendlyFire") or []):
             cats = p.get("cats") or {}
             con.execute("""
@@ -541,12 +573,15 @@ def write_week(week_data: dict, db_path: Path = None, *, allow_downgrade: bool =
                 ad, at, au = _sd(p, "all")
                 td, tt, tu = _sd(p, "trash")
                 pct = round(bt / raid_tot * 100, 2) if (bt is not None and raid_tot) else None
+                # WAR stored NULL (not 0) when the cohort was too thin to judge, so next week's
+                # delta doesn't diff against a phantom-0 baseline.
+                war = p.get("vs_replacement") or None
                 con.execute("""
                     INSERT OR REPLACE INTO dps (report_code, player, role, dps, total, pct_raid, uptime,
-                                                all_dps, all_total, all_uptime, trash_dps, trash_total, trash_uptime)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                                all_dps, all_total, all_uptime, trash_dps, trash_total, trash_uptime, war)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (rc, p["name"], p.get("role"),
-                      bd, bt, pct, bu, ad, at, au, td, tt, tu))
+                      bd, bt, pct, bu, ad, at, au, td, tt, tu, war))
         else:
             dmg_rows  = week_data.get("damage") or []
             dur       = sum((week_data.get("boss_times") or {}).values()) or 0
@@ -587,6 +622,15 @@ def write_week(week_data: dict, db_path: Path = None, *, allow_downgrade: bool =
                 VALUES (?, ?, ?, ?, ?)
             """, (rc, p["name"], p.get("total", 0), p.get("effective", 0), p.get("refreshed", 0)))
 
+        # ── saves & externals (protective/dispel/utility casts on allies) ───────
+        for p in (week_data.get("saves") or []):
+            con.execute("""
+                INSERT OR REPLACE INTO saves
+                  (report_code, player, save, dispel, utility, total, targets)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (rc, p["name"], p.get("save", 0), p.get("dispel", 0), p.get("utility", 0),
+                  p.get("total", 0), json.dumps(p.get("targets") or {})))
+
         # ── loot received this week (external ThatsBIS CSV; flatten player→items) ──
         _loot = week_data.get("loot") or {}
         _ldate = _loot.get("date")
@@ -602,15 +646,17 @@ def write_week(week_data: dict, db_path: Path = None, *, allow_downgrade: bool =
         # ── tank scorecard v2 (summary + per-boss) ─────────────────────────────
         for t in (week_data.get("tankScorecard") or []):
             bh = t.get("biggest_hit") or {}
+            war = t.get("vs_replacement") or None   # NULL when cohort too thin (avoid phantom-0 delta)
+            survival = (t.get("survival") or {}).get("score")
             con.execute("""
                 INSERT OR REPLACE INTO tank_scorecard
                   (report_code, player, dtps, taken, hps_recv, deaths, phys_pct, magic_pct,
-                   crush_count, crit_count, avoid_pct, biggest_hit, cooldowns)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   crush_count, crit_count, avoid_pct, biggest_hit, cooldowns, war, survival)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (rc, t["name"], t.get("dtps"), t.get("taken"), t.get("hps_recv"),
                   t.get("deaths"), t.get("phys_pct"), t.get("magic_pct"),
                   t.get("crush_count"), t.get("crit_count"), t.get("avoid_pct"),
-                  bh.get("amount"), json.dumps(t.get("cooldowns") or {})))
+                  bh.get("amount"), json.dumps(t.get("cooldowns") or {}), war, survival))
             for pb in (t.get("per_boss") or []):
                 con.execute("""
                     INSERT OR REPLACE INTO tank_boss_dtps
@@ -621,7 +667,8 @@ def write_week(week_data: dict, db_path: Path = None, *, allow_downgrade: bool =
 
         # ── debuff_coverage (per boss × slot, + '__raid__' average row) ────────
         _dc = week_data.get("debuffCoverage") or {}
-        con.execute("DELETE FROM debuff_coverage WHERE report_code = ?", (rc,))
+        if "debuffCoverage" not in dropped:   # preserve if incoming coverage is thin
+            con.execute("DELETE FROM debuff_coverage WHERE report_code = ?", (rc,))
         for b in (_dc.get("bosses") or []):
             for slot, pct in (b.get("coverage") or {}).items():
                 con.execute("""INSERT OR REPLACE INTO debuff_coverage

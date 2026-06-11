@@ -41,8 +41,13 @@ CACHE  = ROOT / "cache" / "week_data"
 
 
 def _fingerprint() -> dict:
-    """{report_code: sorted([populated section keys])} over every prod snapshot.
-    Pure read of what the PRODUCERS wrote — the honest drift signal."""
+    """{report_code: {"populated": [...], "keys": [...]}} over every prod snapshot.
+
+    `populated` = contract sections with meaningful data; `keys` = every contract section the
+    producer actually EMITTED (present as a key, even when empty). Tracking BOTH closes a gap:
+    a section whose data was empty when blessed isn't in `populated`, so a mapper that stops
+    emitting it entirely would leave the populated fingerprint unchanged — but the key set drops,
+    so the silent loss is caught. Pure read of what the PRODUCERS wrote."""
     fp = {}
     for f in sorted(CACHE.glob("*.json")):
         try:
@@ -51,8 +56,20 @@ def _fingerprint() -> dict:
             print(f"  ⚠ skip {f.name}: {e}")
             continue
         code = (wd.get("meta") or {}).get("report_code") or f.stem
-        fp[code] = sorted(ws.populated_sections(wd))
+        fp[code] = {
+            "populated": sorted(ws.populated_sections(wd)),
+            "keys":      sorted(k for k, s in ws.SECTIONS.items() if s.tier != ws.META and k in wd),
+        }
     return fp
+
+
+def _norm(entry):
+    """Normalize a golden/current entry to (populated:set, keys:set|None). Tolerates the
+    legacy list format (populated-only) so an un-reblessed golden still runs the populated diff."""
+    if isinstance(entry, dict):
+        keys = entry.get("keys")
+        return set(entry.get("populated", [])), (set(keys) if keys is not None else None)
+    return set(entry), None
 
 
 def run_tests() -> bool:
@@ -92,15 +109,30 @@ def run_char() -> bool:
         for c in sorted(added):
             print(f"  · new week {c} not in golden (run --bless after verifying it)")
 
+    legacy_golden = False
     for code in sorted(set(golden) & set(current)):
-        was, now = set(golden[code]), set(current[code])
-        dropped, gained = was - now, now - was
+        was, now = _norm(golden[code])
+        now_pop, now_keys = _norm(current[code])
+        dropped, gained = was - now_pop, now_pop - was
         if dropped:
             ok = False
             print(f"  ✗ {code}: section(s) DROPPED → {', '.join(sorted(dropped))}")
         if gained:
             ok = False  # a section appearing is also drift vs the recorded contract — bless to accept
             print(f"  ✗ {code}: section(s) APPEARED → {', '.join(sorted(gained))}  (--bless if intended)")
+        # key-set invariant: a contract section the producer USED to emit but no longer does is a
+        # silent drop even if its data was empty when blessed (populated diff can't see it).
+        was_keys = _norm(golden[code])[1]
+        if was_keys is None:
+            legacy_golden = True
+        else:
+            key_dropped = was_keys - (now_keys or set())
+            if key_dropped:
+                ok = False
+                print(f"  ✗ {code}: section KEY(S) no longer EMITTED → {', '.join(sorted(key_dropped))}  "
+                      f"(silent drop — the mapper stopped producing this key)")
+    if legacy_golden:
+        print("  · golden predates the key-set check — run `check.py --bless` to enable it")
 
     if ok and not added:
         print(f"  ✓ {len(current)} week(s) match the recorded contract")

@@ -36,6 +36,27 @@ except Exception:
 ROOT      = Path(__file__).resolve().parent.parent
 DASH      = ROOT / "dashboard" / "raid_kpi_dashboard.html"
 DEPLOY    = ROOT / ".deploy"            # netlify serves index.html at the site root
+LAST_DEPLOY = ROOT / "cache" / "last_deploy.json"   # persisted baseline for the section-loss guard
+
+
+def _load_last_deploy():
+    """The WEEK_DATA of the most recent successful deploy. Persisted (not read from the
+    ephemeral .deploy/) so the re-deploy section-loss guard survives a clean checkout / CI run
+    where .deploy/ is empty — exactly when the loot-drop incident would otherwise slip through."""
+    try:
+        if LAST_DEPLOY.exists():
+            return json.loads(LAST_DEPLOY.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return None
+
+
+def _save_last_deploy(wd):
+    try:
+        LAST_DEPLOY.parent.mkdir(parents=True, exist_ok=True)
+        LAST_DEPLOY.write_text(json.dumps(wd, ensure_ascii=False), encoding="utf-8")
+    except Exception as e:
+        print(f"  · could not persist last-deploy baseline: {e}")
 
 
 def load_env() -> dict:
@@ -148,20 +169,23 @@ def deploy_netlify(force: bool = False):
         print("  ⚠ netlify CLI not found — skipping deploy (run: npm install -g netlify-cli)")
         return None
     if not (ROOT / ".netlify").exists():
-        print("  ⚠ no site linked yet — skipping deploy (run `netlify login` then `netlify init` once)")
+        print("  ⚠ no site linked yet — skipping deploy (run `netlify login` then `netlify sites:create` once)")
         return None
     try:
         DEPLOY.mkdir(exist_ok=True)
         sys.path.insert(0, str(ROOT / "scripts"))
         import week_build as wb
-        # Capture the PREVIOUS deploy's latest WEEK_DATA before build_site overwrites index.html.
-        prev_latest = None
-        _prev_idx = DEPLOY / "index.html"
-        if _prev_idx.exists():
-            try:
-                prev_latest = wb.extract_week_data(_prev_idx.read_text(encoding="utf-8"))
-            except Exception:
-                pass
+        # Baseline for the section-loss guard: the last SUCCESSFUL deploy's WEEK_DATA, read from a
+        # persisted cache so the guard works even on a clean checkout / CI (where .deploy/ is empty).
+        # Fall back to the on-disk staged index if the cache hasn't been written yet.
+        prev_latest = _load_last_deploy()
+        if prev_latest is None:
+            _prev_idx = DEPLOY / "index.html"
+            if _prev_idx.exists():
+                try:
+                    prev_latest = wb.extract_week_data(_prev_idx.read_text(encoding="utf-8"))
+                except Exception:
+                    pass
         # Stage the rolling multi-week site (index.html + weeks/<report>.json + WEEKS_INDEX).
         # Falls back to a plain single-week copy if staging can't run (e.g. no snapshots yet).
         try:
@@ -169,14 +193,29 @@ def deploy_netlify(force: bool = False):
             build_site.build()
         except Exception as e:
             print(f"  ⚠ multi-week staging skipped ({e}); deploying single week")
+            # build_site clears weeks/ early; a mid-way failure can leave a PARTIAL weeks/ dir that
+            # would deploy stale/missing past weeks. Remove it so only a clean single week ships.
+            _wk = DEPLOY / "weeks"
+            if _wk.exists():
+                shutil.rmtree(_wk, ignore_errors=True)
             shutil.copyfile(DASH, DEPLOY / "index.html")
         # ── section-loss guard ── compare the newly-staged latest vs the previous deploy.
+        # FAIL CLOSED: a staged index we can't parse (or with no WEEK_DATA) is the worst thing to
+        # ship over a good live site, so block it unless forced — never silently deploy past it.
         try:
             new_latest = wb.extract_week_data((DEPLOY / "index.html").read_text(encoding="utf-8"))
-            losses = _section_loss_guard(prev_latest, new_latest)
         except Exception as e:
-            losses = []   # never let the guard itself block a deploy on a parse hiccup
-            print(f"  · section-loss guard skipped ({e})")
+            new_latest = None
+            print(f"  · could not parse staged WEEK_DATA ({e})")
+        if not new_latest or not new_latest.get("meta"):
+            print("\n  ╔══ DEPLOY BLOCKED — staged index has no readable WEEK_DATA (corrupt build?) ══╗")
+            print("  ╚══════════════════════════════════════════════════════════════════════════════╝")
+            if not force:
+                print("  Re-run with --force to deploy anyway, or rebuild (likely `reprocess.py --all`).")
+                return None
+            losses = []
+        else:
+            losses = _section_loss_guard(prev_latest, new_latest)
         if losses and not force:
             print("\n  ╔══ DEPLOY BLOCKED — a dashboard section would be LOST ══╗")
             for r in losses:
@@ -185,14 +224,22 @@ def deploy_netlify(force: bool = False):
             print("  Re-run with --force to deploy anyway, or fix the data (likely `reprocess.py --all`).")
             return None
         netlify_exe = shutil.which("netlify")
-        r = subprocess.run(
-            [netlify_exe, "deploy", "--prod", "--dir", str(DEPLOY), "--json"],
-            cwd=ROOT, capture_output=True, text=True, timeout=240)
+        try:
+            r = subprocess.run(
+                [netlify_exe, "deploy", "--prod", "--dir", str(DEPLOY), "--json"],
+                cwd=ROOT, capture_output=True, text=True, timeout=240)
+        except subprocess.TimeoutExpired:
+            print("  ⚠ netlify deploy timed out after 240s — it MAY have landed server-side; "
+                  "check app.netlify.com before re-deploying")
+            return None
         if r.returncode != 0:
             print(f"  ⚠ netlify deploy failed:\n{(r.stderr or r.stdout)[-500:]}")
             return None
         data = json.loads(r.stdout)
-        return data.get("url") or data.get("deploy_url")
+        url = data.get("url") or data.get("deploy_url")
+        if url and new_latest:
+            _save_last_deploy(new_latest)   # baseline for the NEXT deploy's section-loss guard
+        return url
     except Exception as e:
         print(f"  ⚠ netlify deploy error: {e}")
         return None

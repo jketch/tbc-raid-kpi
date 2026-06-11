@@ -14,7 +14,17 @@ Shape returned:
 Players are sorted by item count (desc), then name; each player's items keep CSV order.
 """
 import csv
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
+from datetime import date as _date, timedelta
+
+
+def _shift(d: str, days: int) -> str:
+    """`d` (YYYY-MM-DD) shifted by ±days, or '' if `d` is malformed."""
+    try:
+        y, m, dd = (int(x) for x in d.split("-"))
+        return (_date(y, m, dd) + timedelta(days=days)).isoformat()
+    except (ValueError, TypeError):
+        return ""
 
 
 def parse_loot(csv_path: str, raid_date: str) -> dict:
@@ -28,11 +38,34 @@ def parse_loot(csv_path: str, raid_date: str) -> dict:
         print(f"  ⚠ loot: could not read {csv_path}: {e}")
         return {}
 
+    # Header sanity: a renamed/missing ThatsBIS column would make every row a silent no-op
+    # (total stays 0 → {} → card vanishes), indistinguishable from a genuine dry night. Warn.
+    if rows:
+        missing = {"received_at", "character_name", "item_id"} - set(rows[0].keys())
+        if missing:
+            print(f"  ⚠ loot: CSV missing expected column(s) {sorted(missing)} — "
+                  f"export format may have changed; no loot parsed")
+            return {}
+
+    # Group by award date (date-only). ThatsBIS stamps received_at at midnight in the GUILD
+    # timezone; raid_date comes from the WCL pull time in the RUNNER's local tz — so a raid near
+    # midnight (or a runner in a different tz) can land the night's loot on an adjacent calendar
+    # date. Prefer an exact match; otherwise fall back to the nearest adjacent date that has rows
+    # (a single night's loot shifts wholesale by one day, so this won't merge two raid nights).
+    by_date = defaultdict(list)
+    for r in rows:
+        by_date[(r.get("received_at") or "")[:10]].append(r)
+    use_date = next((c for c in (raid_date, _shift(raid_date, -1), _shift(raid_date, 1))
+                     if c and by_date.get(c)), None)
+    if use_date is None:
+        return {}
+    if use_date != raid_date:
+        print(f"  ⚠ loot: no awards on {raid_date}; using adjacent date {use_date} "
+              f"(timezone/midnight skew between ThatsBIS and the raid log)")
+
     by_player = OrderedDict()
     total = offspec = 0
-    for r in rows:
-        if (r.get("received_at") or "")[:10] != raid_date:
-            continue
+    for r in by_date[use_date]:
         name = (r.get("character_name") or "").strip()
         if not name:
             continue

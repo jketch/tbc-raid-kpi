@@ -77,7 +77,7 @@ class TestWriteWeekGuardEndToEnd(unittest.TestCase):
         if self.rich is None:
             self.skipTest("no log-complete + loot snapshot available")
 
-    def test_thin_write_is_skipped_and_rich_rows_survive(self):
+    def test_thin_write_preserves_dropped_sections_and_writes_the_rest(self):
         with temp_db() as dbp:
             db_writer.write_week(self.rich, dbp)            # seed the rich row
             con = sqlite3.connect(dbp)
@@ -90,17 +90,25 @@ class TestWriteWeekGuardEndToEnd(unittest.TestCase):
             self.assertGreater(n_loot, 0)
             self.assertEqual(sv, db_writer.SCHEMA_VERSION)   # schema_version stamped
 
-            # now a THIN version (loses avoidable + loot) — must be SKIPPED with a warning
+            # now a THIN version (loses avoidable + loot). The section-granular guard must PRESERVE
+            # those richer rows (not wipe them) while still writing every other section — the old
+            # behavior skipped the WHOLE write, discarding fresh data to save one section.
             thin = dict(self.rich)
             thin["avoidableDmg"] = []
             thin["loot"] = {}
             buf = io.StringIO()
             with contextlib.redirect_stdout(buf):
                 db_writer.write_week(thin, dbp)
-            self.assertIn("SKIPPED", buf.getvalue())
+            out = buf.getvalue()
+            self.assertIn("preserving", out)                # informs, doesn't skip the whole write
+            self.assertIn("DB written", out)                # the write still happened
             con = sqlite3.connect(dbp)
+            # the dropped sections' richer rows survive untouched …
             self.assertEqual(con.execute("SELECT COUNT(*) FROM avoidable_dmg WHERE report_code=?", (rc,)).fetchone()[0], n_avoid)
             self.assertEqual(con.execute("SELECT COUNT(*) FROM loot WHERE report_code=?", (rc,)).fetchone()[0], n_loot)
+            # … and the week row is (re)written at the current schema version
+            self.assertEqual(con.execute("SELECT schema_version FROM weeks WHERE report_code=?", (rc,)).fetchone()[0],
+                             db_writer.SCHEMA_VERSION)
             con.close()
 
     def test_allow_downgrade_forces_the_write(self):
