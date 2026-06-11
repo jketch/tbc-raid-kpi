@@ -1888,7 +1888,9 @@ def _build_death_timeline(evs, abil_name, actor_name, max_events=22):
 # ══════════════════════════════════════════════════════════════════════════════
 
 # Each slot = one raid responsibility; ANY of its GUIDs satisfies it (Sunder OR Expose;
-# Faerie Fire normal OR feral; CoE OR CoS). Uptime = UNION of every matching aura's bands
+# Faerie Fire normal OR feral; CoE ranks 27228/27229). Uptime = UNION of every matching aura's bands
+# (NB: there is no "Curse of Shadow" in TBC — it was folded into Curse of the Elements, which already
+#  covers Shadow. See docs/TBC_RAID_MECHANICS.md.)
 # / fight duration, so two fills covering different windows add up correctly. GUIDs + icons
 # verified against live TBC 2.5 Debuffs-table data (hostilityType: Enemies) — not memory.
 # `soft` flags proc-based debuffs (ISB, Crusader) whose natural uptime ceiling is lower, so
@@ -1897,9 +1899,16 @@ DEBUFF_SLOTS = [
     {"key": "coe",    "label": "Curse of Elements",  "cat": "Magic",   "guids": [27228, 27229], "icon": "spell_shadow_chilltouch"},
     {"key": "sweav",  "label": "Shadow Weaving",     "cat": "Magic",   "guids": [15258],        "icon": "spell_shadow_blackplague"},
     {"key": "isb",    "label": "Shadow Vuln. (ISB)", "cat": "Magic",   "guids": [17800],        "icon": "spell_shadow_shadowbolt", "soft": True},
+    {"key": "misery", "label": "Misery",             "cat": "Magic",   "guids": [33200],        "icon": "spell_shadow_misery"},
     {"key": "sunder", "label": "Sunder / Expose",    "cat": "Armor",   "guids": [25225, 26866], "icon": "ability_warrior_riposte"},
     {"key": "ff",     "label": "Faerie Fire",        "cat": "Armor",   "guids": [26993, 27011], "icon": "spell_nature_faeriefire"},
     {"key": "creck",  "label": "Curse of Reckless.", "cat": "Armor",   "guids": [27226],        "icon": "spell_shadow_unholystrength"},
+    {"key": "exposew","label": "Expose Weakness",    "cat": "Armor",   "guids": [34501],        "icon": "ability_rogue_findweakness"},  # Survival hunter, +AP for all physical (live-verified guid)
+    # NOTE: Blood Frenzy is NOT trackable as a debuff slot. It's a hidden passive talent ("Aura is
+    # hidden", Wowhead 29859) — the +4% physical is baked into Rend/Deep Wounds with no separate aura.
+    # 29859 is the talent ID, never an enemy aura, so a slot for it would read 0% forever. The only
+    # signal would be (talent-specced warrior) + Deep Wounds/Rend uptime as a proxy — and Deep Wounds is
+    # applied by ANY warrior regardless of the talent, so that proxy over-credits. Left out by design.
     {"key": "jow",    "label": "Judge: Wisdom",      "cat": "Utility", "guids": [27164],        "icon": "spell_holy_righteousnessaura"},
     {"key": "jotc",   "label": "Judge: Crusader",    "cat": "Utility", "guids": [27159],        "icon": "spell_holy_holysmite", "soft": True},
 ]
