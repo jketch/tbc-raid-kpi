@@ -280,6 +280,10 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                     consum_use[_pn]["stones_made"] += 3
                 elif _spell.startswith("Create ") and ("Healthstone" in _spell or "Soulstone" in _spell):
                     consum_use[_pn]["stones_made"] += 1
+                elif _spell == "Fear Ward":                       # holy/disc priest anti-fear utility
+                    consum_use[_pn]["fear_ward"] += 1
+                elif _spell.startswith("Greater Blessing of"):    # paladin raid buff provision
+                    consum_use[_pn]["blessing"] += 1
 
             # Combat potions (Destruction, Insane Strength, Haste, Free Action, …) log only their
             # effect BUFF, not a "… Potion" cast — count each APPLIED as one potion use. Unambiguous
@@ -299,6 +303,15 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                     _cp = consum_label[_pn].setdefault("combat_pots", [])
                     if _potname not in _cp:
                         _cp.append(_potname)
+
+            # Paladin Judgement of Wisdom/Light upkeep on a target — enables raid mana/healing
+            # returns (the paladin's signature raid utility). Count apply+refresh by the casting
+            # paladin as upkeep activity; the assigned JoW paladin dominates, which is the point.
+            if ev in ("SPELL_AURA_APPLIED", "SPELL_AURA_REFRESH") and len(fields) > 10 \
+                    and "Player-" in fields[1] \
+                    and fields[10].strip('"') in ("Judgement of Wisdom", "Judgement of Light"):
+                _jn = player_names.get(fields[1], fields[1])
+                consum_use[_jn]["judge_util"] += 1
 
             # Player→player damage. Two distinct accountability paths:
             #   (1) TARGET is Mind Controlled → a raider AoE'd the controlled ally.

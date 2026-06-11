@@ -2887,6 +2887,9 @@ def map_to_week_data(wcl: dict) -> dict:
             "potion": u.get("potion", 0), "rune": u.get("rune", 0),
             "healthstone": u.get("healthstone", 0),
             "stones_made": u.get("stones_made", 0),   # warlock raid provision (utility): Create/Ritual of Souls
+            "fear_ward":   u.get("fear_ward", 0),      # holy/disc priest anti-fear utility (cast count)
+            "blessing":    u.get("blessing", 0),       # paladin Greater Blessing casts (raid buff provision)
+            "judge_util":  u.get("judge_util", 0),     # paladin JoW/JoL upkeep (mana/healing to the raid)
             # specific item names for the compliance grid (None if unused)
             "combat_pots": lb.get("combat_pots", []),   # all combat pots popped (Haste/Destruction/Free Action…)
             "rune_name": lb.get("rune"),

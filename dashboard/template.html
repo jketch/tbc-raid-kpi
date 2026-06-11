@@ -2595,9 +2595,16 @@ const PERF_ROLE_FACETS = { Physical:["intr","sunder","save"], Caster:["intr","ma
 // deliberately ABSENT — it's a shared raid debuff (all warlocks benefit even if two maintain it), so
 // it can't fairly rank individuals.
 const CLASS_UTIL_FACETS = {
-  Warlock:["stones"], Mage:["intr"], Priest:["mana","save"], Shaman:["mana","intr"],
-  Druid:["mana","save"], Paladin:["save"], Hunter:["md"], Rogue:["intr"], Warrior:["bshout","sunder"],
+  Warlock:["stones"], Mage:["intr"], Shaman:["mana","intr"],
+  Druid:["mana","save"], Paladin:["pala"], Hunter:["md"], Rogue:["intr"], Warrior:["bshout","sunder"],
 };
+// Priest utility is spec/role-split: a healer (holy/disc) is judged on Fear Ward, a shadow priest
+// (Caster role) on its VT mana battery — same class, different kit. Everything else: class map → role
+// fallback. ('pala' = JoW/JoL upkeep + Greater Blessings; 'fward' = Fear Ward casts.)
+function utilFacetsFor(cls, role){
+  if(cls==="Priest") return role==="Healer" ? ["fward"] : ["mana"];
+  return CLASS_UTIL_FACETS[cls] || PERF_ROLE_FACETS[role] || [];
+}
 let _perfWeight="balanced", _perfRole="all", _perfGroup=false, _perfSearch="";
 let _perfSort={col:"composite",dir:-1};
 try {
@@ -2634,12 +2641,12 @@ function _perfRows(){
   // toolkit num, but are SEPARATE facet keys so each ranks within its own class cohort — the toolkit
   // num isn't comparable across classes (MD count ~6 vs Battle Shout ~89%).
   const tkNum=n=>(((dps[n]||{}).toolkit||{}).num||0);
-  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="stones"?((usage[n]||{}).stones_made||0) : (f==="md"||f==="bshout")?tkNum(n) : 0;
+  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="stones"?((usage[n]||{}).stones_made||0) : f==="fward"?((usage[n]||{}).fear_ward||0) : f==="pala"?(((usage[n]||{}).judge_util||0)+((usage[n]||{}).blessing||0)) : (f==="md"||f==="bshout")?tkNum(n) : 0;
   // best[facet] scoped to the COHORT that provides it (the classes whose CLASS_UTIL_FACETS list it),
   // NOT the whole raid — so a hunter's Misdirection ranks vs other hunters, not vs a mage's toolkit
   // num. A facet that's naturally class-exclusive (stones) collapses to its one cohort either way.
   const bestF={};
-  Object.entries(roster).forEach(([n,r])=>{ (CLASS_UTIL_FACETS[r.class]||PERF_ROLE_FACETS[r.role]||[]).forEach(f=>{ bestF[f]=Math.max(bestF[f]||0, facetVal(n,f)); }); });
+  Object.entries(roster).forEach(([n,r])=>{ utilFacetsFor(r.class,r.role).forEach(f=>{ bestF[f]=Math.max(bestF[f]||0, facetVal(n,f)); }); });
 
   return Object.entries(roster).map(([name,r])=>{
     const role=r.role, d=deaths[name]||{total:0,trash:0};
@@ -2674,7 +2681,7 @@ function _perfRows(){
     // UTILITY (class-shaped, normalized vs the raid's best provider of each facet — experimental).
     // Scored only on the utility the player's CLASS provides, so a structural gap → null facet (drops
     // out), not a damaging 0. null when the class contributes no facet this week.
-    const myFacets = CLASS_UTIL_FACETS[r.class] || PERF_ROLE_FACETS[role] || [];
+    const myFacets = utilFacetsFor(r.class, role);
     const fac=myFacets.map(f=>{ const bv=bestF[f]||0; return bv>0?facetVal(name,f)/bv*100:null; }).filter(v=>v!=null);
     const util=fac.length?Math.round(fac.reduce((s,v)=>s+v,0)/fac.length):null;
     // COMPOSITE — weighted over non-null pillars only (renormalized)
@@ -2698,7 +2705,7 @@ function renderPerformance(){
     return (av-bv)*dir;
   });
   const cols=[["name","Player"],["prep","Prep"],["perf","Perf"],["exec","Exec"],["surv","Surv"],["util","Util"],["composite","Score"]];
-  const titles={prep:"Preparation — consumables score → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play: avoidable dmg/min, friendly fire, MC liability.",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, hunter Misdirection, mana battery, interrupts, sunder, externals) vs the best provider of that facet. Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars (set the weighting above). (n/5) = computed over the pillars present."};
+  const titles={prep:"Preparation — consumables score → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play: avoidable dmg/min, friendly fire, MC liability.",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, hunter Misdirection, warrior Battle Shout, paladin JoW+blessings, holy priest Fear Ward, shadow priest mana battery, interrupts, sunder) vs the best provider in its class. A facet nobody in-class did drops out (no penalty). Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars (set the weighting above). (n/5) = computed over the pillars present."};
   const arrow=c=>_perfSort.col===c?(_perfSort.dir<0?" ▼":" ▲"):"";
   hd.innerHTML=cols.map(([c,lbl])=>`<th class="${c==='name'?'':'num'}" style="cursor:pointer;${c==='composite'?'color:var(--accent)':''}" title="${titles[c]}" onclick="_perfSortBy('${c}')">${lbl}${arrow(c)}</th>`).join("");
   const cell=v=>v==null?'<span style="color:var(--muted)">—</span>':`<span style="color:${parseColor(v)};font-weight:600">${v}</span>`;
