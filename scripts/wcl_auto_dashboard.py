@@ -2886,6 +2886,7 @@ def map_to_week_data(wcl: dict) -> dict:
             "scrolls": c.get("scrolls", []), "weapon_oil": bool(c.get("weapon_oil")),
             "potion": u.get("potion", 0), "rune": u.get("rune", 0),
             "healthstone": u.get("healthstone", 0),
+            "stones_made": u.get("stones_made", 0),   # warlock raid provision (utility): Create/Ritual of Souls
             # specific item names for the compliance grid (None if unused)
             "combat_pots": lb.get("combat_pots", []),   # all combat pots popped (Haste/Destruction/Free Action…)
             "rune_name": lb.get("rune"),

@@ -264,10 +264,22 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
             if ev == "SPELL_CAST_SUCCESS" and "Player-" in fields[1] and len(fields) > 10:
                 _spell = fields[10].strip('"')
                 _cat = _consumable_category(_spell)
+                _pn = player_names.get(fields[1], fields[1])
                 if _cat:
-                    _pn = player_names.get(fields[1], fields[1])
                     consum_use[_pn][_cat] += 1
                     consum_label[_pn].setdefault(_cat, _spell)   # specific name: Dark Rune / Flame Cap / Nightmare Seed
+                # Warlock raid PROVISION (utility KPI): stones + insurance the warlock supplies.
+                # Sourced from the combat log DIRECTLY (not the kill-scoped saves KPI, which misses
+                # wipe-protection soulstones). Ritual of Souls (soulwell) supplies the whole raid;
+                # applying a Soulstone is the insurance act; Create … is making stones. `stones_made`
+                # is a relative score, not a literal count. (Only warlocks' stones_made is scored, so a
+                # stray self-res cast credited to a non-warlock is harmless — it's never read.)
+                elif _spell == "Ritual of Souls":
+                    consum_use[_pn]["stones_made"] += 10
+                elif _spell == "Soulstone Resurrection":          # applying/using a soulstone (insurance)
+                    consum_use[_pn]["stones_made"] += 3
+                elif _spell.startswith("Create ") and ("Healthstone" in _spell or "Soulstone" in _spell):
+                    consum_use[_pn]["stones_made"] += 1
 
             # Combat potions (Destruction, Insane Strength, Haste, Free Action, …) log only their
             # effect BUFF, not a "… Potion" cast — count each APPLIED as one potion use. Unambiguous

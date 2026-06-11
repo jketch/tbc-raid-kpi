@@ -2564,9 +2564,14 @@ function _tabKeys(e){
 // ═══════════════ PERFORMANCE TAB (officer-gated) ═══════════════
 // v1 scoring tuning — recalibrate after a real week. All pillar sub-scores are 0–100.
 const PERF_TUNING = {
-  EXEC_AVOID_CAP: 1500,    // avoidable dmg / minute at which the avoidable component hits 0
+  // Execution avoidable is scored RELATIVE to the raid that night: the cap is the 90th-percentile
+  // avoidable/min (the worst ~10% define 0; everyone else ranks within the raid), floored so a clean
+  // night doesn't manufacture spread. EXEC_AVOID_CAP stays as the fixed fallback if there's no data.
+  EXEC_AVOID_PCTL: 0.90, EXEC_AVOID_FLOOR: 1000, EXEC_AVOID_CAP: 1500,
   FF_PER_INCIDENT: 5, FF_CAP: 15,
   MC_LIABLE_PENALTY: 20,
+  // Survival: a boss/trash death is penalized ONCE (did you die in that category) rather than per
+  // event, so a wipe night doesn't flatten the whole raid to 0 and the pillar still ranks within it.
   SURV_BOSS_DEATH: 25, SURV_TRASH_DEATH: 12, SURV_NO_HS_DEATH: 10,
   // Prep weights (sum→100) by TBC raid-consumable importance (Wowhead): a flask persists through
   // death so it dominates (2 elixirs ≈ a flask; 1 elixir = half); food + weapon oil are expected;
@@ -2581,6 +2586,17 @@ const PERF_WEIGHTS = {           // [prep, perf, exec, surv, util]
 };
 const PERF_PILLARS = ["prep","perf","exec","surv","util"];
 const PERF_ROLE_FACETS = { Physical:["intr","sunder","save"], Caster:["intr","mana","save"], Healer:["save","mana"], Tank:["intr","save"] };
+// Utility is CLASS-shaped, not role-shaped: each class is credited on the utility IT actually
+// provides (vs the raid's best provider of that facet), so a class isn't zeroed for structurally
+// lacking one — a Warlock floored at 0 for having no interrupt/mana-return was the symptom.
+// 'stones' = warlock raid provision (Create / Ritual of Souls); 'save'/'dispel' from the saves KPI;
+// 'mana' = mana returned; 'intr' = interrupts; 'sunder' = Sunder Armor upkeep. Curse coverage is
+// deliberately ABSENT — it's a shared raid debuff (all warlocks benefit even if two maintain it), so
+// it can't fairly rank individuals.
+const CLASS_UTIL_FACETS = {
+  Warlock:["stones"], Mage:["intr"], Priest:["mana","save"], Shaman:["mana","intr"],
+  Druid:["mana","save"], Paladin:["save"], Hunter:["intr"], Rogue:["intr"], Warrior:["sunder","intr"],
+};
 let _perfWeight="balanced", _perfRole="all", _perfGroup=false, _perfSearch="";
 let _perfSort={col:"composite",dir:-1};
 try {
@@ -2606,12 +2622,18 @@ function _perfRows(){
   const mcLiable=new Set((wd.mcLiable||[]).map(x=>x.name));
   const raidMin=((Object.values(wd.boss_times||{}).reduce((s,v)=>s+v,0))||0)/60 || 1;
   const noLog = !(wd.avoidableDmg||[]).length && !(wd.friendlyFire||[]).length;   // log-less week → exec null for all
+  // Relative avoidable cap — the night sets the scale (see PERF_TUNING.EXEC_AVOID_*).
+  const _apms=(wd.avoidableDmg||[]).map(p=>(p.dmg||0)/raidMin).filter(x=>x>0).sort((a,b)=>a-b);
+  const _pctl=(arr,q)=>arr.length?arr[Math.min(arr.length-1,Math.round(q*(arr.length-1)))]:0;
+  const avoidCap=Math.max(PERF_TUNING.EXEC_AVOID_FLOOR, _pctl(_apms,PERF_TUNING.EXEC_AVOID_PCTL) || PERF_TUNING.EXEC_AVOID_CAP);
   const mana={};
   ((wd.manaReturns||{}).batteries||[]).forEach(b=>(b.providers||[]).forEach(p=>{ mana[p.name]=(mana[p.name]||0)+(p.mana||0); }));
   const saveTot=n=>{ const s=saves[n]; return s?(s.save||0)+(s.dispel||0)+(s.utility||0):0; };
-  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : 0;
-  const best={};   // best[role][facet] — utility normalizes vs the raid's best in-role
-  Object.entries(roster).forEach(([n,r])=>{ (PERF_ROLE_FACETS[r.role]||[]).forEach(f=>{ best[r.role]=best[r.role]||{}; best[r.role][f]=Math.max(best[r.role][f]||0, facetVal(n,f)); }); });
+  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="stones"?((usage[n]||{}).stones_made||0) : 0;
+  // best[facet] across the WHOLE raid — utility normalizes vs the raid's best provider of each facet
+  // (which class is scored on which facet is decided by CLASS_UTIL_FACETS below).
+  const bestF={};
+  Object.keys(roster).forEach(n=>{ ["intr","sunder","mana","save","stones"].forEach(f=>{ bestF[f]=Math.max(bestF[f]||0, facetVal(n,f)); }); });
 
   return Object.entries(roster).map(([name,r])=>{
     const role=r.role, d=deaths[name]||{total:0,trash:0};
@@ -2634,16 +2656,20 @@ function _perfRows(){
     else if(role==="Tank"){ const t=tank[name]||{}; const vs=[t.vs_replacement,(t.survival||{}).score].filter(v=>v!=null); perf=vs.length?vs.reduce((s,v)=>s+v,0)/vs.length:null; }
     else perf=dps[name]?dps[name].vs_replacement:null;
     if(perf!=null) perf=Math.round(perf);
-    // EXECUTION (clean play)
+    // EXECUTION (clean play) — avoidable scored vs the night's relative cap (not a fixed absolute)
     let exec=null;
-    if(!noLog){ const apm=((avoid[name]||{}).dmg||0)/raidMin; let e=100*clamp(1-apm/PERF_TUNING.EXEC_AVOID_CAP,0,1); e-=Math.min(PERF_TUNING.FF_CAP,((ff[name]||{}).incidents||0)*PERF_TUNING.FF_PER_INCIDENT); if(mcLiable.has(name)) e-=PERF_TUNING.MC_LIABLE_PENALTY; exec=Math.round(clamp(e,0,100)); }
-    // SURVIVAL
+    if(!noLog){ const apm=((avoid[name]||{}).dmg||0)/raidMin; let e=100*clamp(1-apm/avoidCap,0,1); e-=Math.min(PERF_TUNING.FF_CAP,((ff[name]||{}).incidents||0)*PERF_TUNING.FF_PER_INCIDENT); if(mcLiable.has(name)) e-=PERF_TUNING.MC_LIABLE_PENALTY; exec=Math.round(clamp(e,0,100)); }
+    // SURVIVAL — a boss/trash death counts ONCE (did you die in that category), not per event, so a
+    // wipe night doesn't flatten everyone to 0.
     let surv;
     if(role==="Tank" && (tank[name]||{}).survival && (tank[name].survival.score!=null)) surv=tank[name].survival.score;
     else { const boss=(d.total||0)-(d.trash||0), died=(d.total||0)>0, hs=((usage[name]||{}).healthstone)||0;
-           surv=Math.round(clamp(100 - boss*PERF_TUNING.SURV_BOSS_DEATH - (d.trash||0)*PERF_TUNING.SURV_TRASH_DEATH - (died&&hs===0?PERF_TUNING.SURV_NO_HS_DEATH:0),0,100)); }
-    // UTILITY (relative to raid's best in-role — experimental)
-    const fac=(PERF_ROLE_FACETS[role]||[]).map(f=>{ const bv=(best[role]||{})[f]||0; return bv>0?facetVal(name,f)/bv*100:null; }).filter(v=>v!=null);
+           surv=Math.round(clamp(100 - (boss>0?PERF_TUNING.SURV_BOSS_DEATH:0) - ((d.trash||0)>0?PERF_TUNING.SURV_TRASH_DEATH:0) - (died&&hs===0?PERF_TUNING.SURV_NO_HS_DEATH:0),0,100)); }
+    // UTILITY (class-shaped, normalized vs the raid's best provider of each facet — experimental).
+    // Scored only on the utility the player's CLASS provides, so a structural gap → null facet (drops
+    // out), not a damaging 0. null when the class contributes no facet this week.
+    const myFacets = CLASS_UTIL_FACETS[r.class] || PERF_ROLE_FACETS[role] || [];
+    const fac=myFacets.map(f=>{ const bv=bestF[f]||0; return bv>0?facetVal(name,f)/bv*100:null; }).filter(v=>v!=null);
     const util=fac.length?Math.round(fac.reduce((s,v)=>s+v,0)/fac.length):null;
     // COMPOSITE — weighted over non-null pillars only (renormalized)
     const pil={prep,perf,exec,surv,util}, w=PERF_WEIGHTS[_perfWeight]||PERF_WEIGHTS.balanced; let num=0,den=0,present=0;
@@ -2666,7 +2692,7 @@ function renderPerformance(){
     return (av-bv)*dir;
   });
   const cols=[["name","Player"],["prep","Prep"],["perf","Perf"],["exec","Exec"],["surv","Surv"],["util","Util"],["composite","Score"]];
-  const titles={prep:"Preparation — consumables score → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play: avoidable dmg/min, friendly fire, MC liability.",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — saves / interrupts / sunder / mana vs the raid's best in-role. MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars (set the weighting above). (n/5) = computed over the pillars present."};
+  const titles={prep:"Preparation — consumables score → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play: avoidable dmg/min, friendly fire, MC liability.",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, mana battery, interrupts, sunder, externals) vs the raid's best provider. Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars (set the weighting above). (n/5) = computed over the pillars present."};
   const arrow=c=>_perfSort.col===c?(_perfSort.dir<0?" ▼":" ▲"):"";
   hd.innerHTML=cols.map(([c,lbl])=>`<th class="${c==='name'?'':'num'}" style="cursor:pointer;${c==='composite'?'color:var(--accent)':''}" title="${titles[c]}" onclick="_perfSortBy('${c}')">${lbl}${arrow(c)}</th>`).join("");
   const cell=v=>v==null?'<span style="color:var(--muted)">—</span>':`<span style="color:${parseColor(v)};font-weight:600">${v}</span>`;
