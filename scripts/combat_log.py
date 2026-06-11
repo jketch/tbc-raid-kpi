@@ -165,6 +165,12 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
     consum_label = defaultdict(dict)  # [player][category] = specific item name (first seen)
     cd_casts = defaultdict(lambda: defaultdict(int))    # [player][CD name] = defensive-CD casts (whole night)
     melee_swings = defaultdict(int)   # [player] = auto-attack swings in boss windows
+    # tank active-mitigation execution signals (whole-night, gap-scoped — matches the validated
+    # discovery). Stored as WINDOWS so the bear's Lacerate uptime can be INTERSECTED with active-melee
+    # time (dividing total Lacerate by melee time exceeds 100% — Lacerate stays up between swings).
+    boss_melee_win = defaultdict(list); _last_boss_swing = {}; _melee_start = {}
+    mitig_cast = defaultdict(int)                    # Holy Shield/Shield Block casts (plate)
+    lac_on = {}; lac_iv = defaultdict(list)          # Lacerate debuff windows on bosses (bear)
     # MC accountability — blame flips onto the raid when a teammate is controlled.
     mc_saves  = defaultdict(lambda: {"count": 0, "spells": defaultdict(int),
                                      "targets": defaultdict(int), "hits": []})  # by caster
@@ -289,6 +295,8 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                 # by name; overlaid onto the WCL tank scorecard to catch wipe-popped CDs.
                 if _spell in DEFENSIVE_CD_NAMES:
                     cd_casts[_pn][_spell] += 1
+                if _spell == "Holy Shield" or _spell == "Shield Block":   # plate-tank active mitigation
+                    mitig_cast[_pn] += 1
 
             # Combat potions (Destruction, Insane Strength, Haste, Free Action, …) log only their
             # effect BUFF, not a "… Potion" cast — count each APPLIED as one potion use. Unambiguous
@@ -374,6 +382,29 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                 _db = which_boss(ts)
                 if _db:
                     log_deaths[player_names.get(fields[5], fields[5])].append((ts, _db))
+
+            # ── Tank active-mitigation execution signals (whole-night, gap-scoped to match the
+            # validated discovery): creature melee on a player → active-tanking time (the fair
+            # denominator); Lacerate debuff uptime on a creature (bear). Holy Shield/Shield Block
+            # CASTS are tallied in the SPELL_CAST_SUCCESS block above. Read only for tanks downstream.
+            if ev == "SWING_DAMAGE" and len(fields) > 6 \
+                    and fields[1].startswith("Creature") and fields[5].startswith("Player-"):
+                _tn = player_names.get(fields[5], fields[6].strip('"').split("-")[0])
+                _lst = _last_boss_swing.get(_tn)
+                if _lst is None or ts - _lst > 5:        # >5s gap → close window, start a new one
+                    if _melee_start.get(_tn) is not None:
+                        boss_melee_win[_tn].append((_melee_start[_tn], _lst))
+                    _melee_start[_tn] = ts
+                _last_boss_swing[_tn] = ts
+            elif ev in ("SPELL_AURA_APPLIED", "SPELL_AURA_REFRESH", "SPELL_AURA_REMOVED") \
+                    and len(fields) > 10 and fields[10].strip('"') == "Lacerate" \
+                    and "Player-" in fields[1] and fields[5].startswith("Creature"):
+                _ln = player_names.get(fields[1], fields[2].strip('"').split("-")[0])
+                if ev == "SPELL_AURA_REMOVED":
+                    if lac_on.get(_ln) is not None:
+                        lac_iv[_ln].append((lac_on[_ln], ts)); lac_on[_ln] = None
+                elif lac_on.get(_ln) is None:
+                    lac_on[_ln] = ts
 
             if not in_kill(ts): continue
 
@@ -611,6 +642,34 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                 roles["dps"].append(p)
         fight_roles_log[boss] = roles
 
+    # ── Tank execution aggregates ── close any open boss-melee window, then merge to total
+    # active-melee seconds, and compute the bear's Lacerate uptime as the INTERSECTION of its
+    # Lacerate windows with active-melee time (NOT total Lacerate / melee, which exceeds 100%).
+    for _p, _st in _melee_start.items():
+        if _st is not None and _last_boss_swing.get(_p) is not None:
+            boss_melee_win[_p].append((_st, _last_boss_swing[_p]))
+    def _merge_iv(iv):
+        if not iv: return 0.0
+        iv = sorted(iv); tot = 0.0; cs, ce = iv[0]
+        for s, e in iv[1:]:
+            if s <= ce: ce = max(ce, e)
+            else: tot += ce - cs; cs, ce = s, e
+        return tot + (ce - cs)
+    def _intersect_iv(a, b):
+        a, b = sorted(a), sorted(b); i = j = 0; tot = 0.0
+        while i < len(a) and j < len(b):
+            lo = max(a[i][0], b[j][0]); hi = min(a[i][1], b[j][1])
+            if lo < hi: tot += hi - lo
+            if a[i][1] < b[j][1]: i += 1
+            else: j += 1
+        return tot
+    boss_melee_sec = {p: round(_merge_iv(w), 1) for p, w in boss_melee_win.items()}
+    lacerate_pct = {}
+    for _p, _iv in lac_iv.items():
+        _bm = boss_melee_sec.get(_p, 0)
+        if _bm > 0:
+            lacerate_pct[_p] = round(_intersect_iv(_iv, boss_melee_win[_p]) / _bm * 100, 1)
+
     print(f"  [LOG] {len(result)} players · {len(kills)} kill fights parsed · "
           f"{len(ff_out)} clumping FF · {len(mc_liable_out)} MC-liable · {len(mc_saves_out)} MC-savers")
     return {"players": result, "drums": drums_out, "fights": kills,
@@ -623,6 +682,9 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
             "consum_use": {n: dict(v) for n, v in consum_use.items()},
             "consum_label": {n: dict(v) for n, v in consum_label.items()},
             "cd_casts": {n: dict(v) for n, v in cd_casts.items()},
+            "boss_melee_sec": boss_melee_sec,
+            "mitig_cast": dict(mitig_cast),
+            "lacerate_pct": lacerate_pct,
             "melee_swings": dict(melee_swings),
             "hp_samples": {n: {b: list(s) for b, s in bs.items()} for n, bs in hp_samples.items()},
             "log_deaths": {n: list(d) for n, d in log_deaths.items()}}

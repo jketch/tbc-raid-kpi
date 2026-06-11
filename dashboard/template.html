@@ -2575,6 +2575,12 @@ const PERF_TUNING = {
   // Survival: a boss/trash death is penalized ONCE (did you die in that category) rather than per
   // event, so a wipe night doesn't flatten the whole raid to 0 and the pillar still ranks within it.
   SURV_BOSS_DEATH: 25, SURV_TRASH_DEATH: 12, SURV_NO_HS_DEATH: 10,
+  // Tank EXECUTION = active-mitigation maintenance, normalized to boss-melee-taken time (the
+  // denominator validated in discovery — isolates execution from main-vs-off-tank). Plate: Holy
+  // Shield/Shield Block cast-rate; bear: Lacerate uptime%. CD discipline moved here from Survival.
+  TANK_MIT_TARGET: 8,    // plate casts per boss-melee-minute that scores 100
+  TANK_LAC_TARGET: 90,   // bear Lacerate uptime % that scores 100
+  TANK_NO_CD_PENALTY: 5, // never pressed a defensive CD (was a Survival penalty)
   // Prep weights (sum→100) by TBC raid-consumable importance (Wowhead): a flask persists through
   // death so it dominates (2 elixirs ≈ a flask; 1 elixir = half); food + weapon oil are expected;
   // an in-fight pot is the active/tryhard signal; situational (Flame Cap / rune / Nightmare Seed) a
@@ -2679,10 +2685,24 @@ function _perfRows(){
     else if(role==="Tank"){ const t=tank[name]||{}; const vs=[t.vs_replacement,(t.survival||{}).score].filter(v=>v!=null); perf=vs.length?vs.reduce((s,v)=>s+v,0)/vs.length:null; }
     else perf=dps[name]?dps[name].vs_replacement:null;
     if(perf!=null) perf=Math.round(perf);
-    // EXECUTION (clean play) — avoidable vs the player's POSITIONING-cohort cap. N/A for tanks
-    // (avoidable can't fairly score them — see Survival).
+    // EXECUTION (clean play). Non-tanks: avoidable vs the player's POSITIONING-cohort cap + FF + MC.
+    // Tanks: active-mitigation MAINTENANCE normalized to boss-melee-taken time (plate = Holy Shield/
+    // Shield Block cast-rate; bear = Lacerate uptime%) + CD discipline. Avoidable can't fairly score
+    // tanks (it just flags whoever tanks most) — that's why theirs is a separate, mitigation-based axis.
     let exec=null;
     if(!noLog && role!=="Tank"){ const apm=((avoid[name]||{}).dmg||0)/raidMin; const cap=avoidCap[posOf(r.class,role)]||PERF_TUNING.EXEC_AVOID_CAP; let e=100*clamp(1-apm/cap,0,1); e-=Math.min(PERF_TUNING.FF_CAP,((ff[name]||{}).incidents||0)*PERF_TUNING.FF_PER_INCIDENT); if(mcLiable.has(name)) e-=PERF_TUNING.MC_LIABLE_PENALTY; exec=Math.round(clamp(e,0,100)); }
+    else if(!noLog && role==="Tank"){
+      const t=tank[name]||{}, bm=(t.boss_melee_sec||0);
+      if(bm>=30){   // need meaningful tanking time to judge maintenance
+        let mit;
+        if(r.class==="Druid"){ mit=(t.lacerate_pct||0)/PERF_TUNING.TANK_LAC_TARGET*100; }
+        else { const rate=(t.mitig_casts||0)/(bm/60); mit=rate/PERF_TUNING.TANK_MIT_TARGET*100; }
+        mit=clamp(mit,0,100);
+        const cds=Object.values(t.cooldowns||{}).reduce((s,v)=>s+(v||0),0);
+        if(cds===0) mit-=PERF_TUNING.TANK_NO_CD_PENALTY;   // CD discipline (moved from Survival)
+        exec=Math.round(clamp(mit,0,100));
+      }
+    }
     // SURVIVAL — a boss/trash death counts ONCE (did you die in that category), not per event, so a
     // wipe night doesn't flatten everyone to 0.
     let surv;
@@ -2716,7 +2736,7 @@ function renderPerformance(){
     return (av-bv)*dir;
   });
   const cols=[["name","Player"],["prep","Prep"],["perf","Perf"],["exec","Exec"],["surv","Surv"],["util","Util"],["composite","Score"]];
-  const titles={prep:"Preparation — consumables score → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play: avoidable dmg/min scored vs your POSITIONING cohort (melee DPS vs ranged — melee must stand in mechanics ranged avoid), plus friendly fire + MC liability. N/A for tanks (avoidable just flags whoever tanks most; their defensive execution is the Survival grade).",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, hunter Misdirection, warrior Battle Shout, paladin JoW+blessings, holy priest Fear Ward, shadow priest mana battery, interrupts, sunder) vs the best provider in its class. A facet nobody in-class did drops out (no penalty). Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars (set the weighting above). (n/5) = computed over the pillars present."};
+  const titles={prep:"Preparation — consumables score → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play. DPS: avoidable dmg/min vs your POSITIONING cohort (melee vs ranged) + friendly fire + MC liability. TANKS: active-mitigation maintenance per boss-melee-taken time — plate = Holy Shield/Shield Block cast-rate, bear = Lacerate uptime% — plus CD discipline. (Avoidable can't fairly score tanks; Survival is the outcome side: crushes/crits/deaths.)",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, hunter Misdirection, warrior Battle Shout, paladin JoW+blessings, holy priest Fear Ward, shadow priest mana battery, interrupts, sunder) vs the best provider in its class. A facet nobody in-class did drops out (no penalty). Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars (set the weighting above). (n/5) = computed over the pillars present."};
   const arrow=c=>_perfSort.col===c?(_perfSort.dir<0?" ▼":" ▲"):"";
   hd.innerHTML=cols.map(([c,lbl])=>`<th class="${c==='name'?'':'num'}" style="cursor:pointer;${c==='composite'?'color:var(--accent)':''}" title="${titles[c]}" onclick="_perfSortBy('${c}')">${lbl}${arrow(c)}</th>`).join("");
   const cell=v=>v==null?'<span style="color:var(--muted)">—</span>':`<span style="color:${parseColor(v)};font-weight:600">${v}</span>`;

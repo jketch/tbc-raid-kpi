@@ -1682,7 +1682,6 @@ def _tank_survival_grade(tm: dict, deaths: int, cls: str = "") -> dict:
     death/CD weights are first-cut. Inputs are all already on the tankScorecard row (WCL-durable)."""
     crit  = tm.get("crit_count", 0) or 0
     crush = tm.get("crush_count", 0) or 0
-    cds   = sum((tm.get("cooldowns") or {}).values())
     score = 100
     flags = []
     if crit > 0:                                  # uncrittable — the hard gear check
@@ -1694,9 +1693,8 @@ def _tank_survival_grade(tm: dict, deaths: int, cls: str = "") -> dict:
     if deaths > 0:                                # a tank death is the clearest failure
         score -= min(30, deaths * 15)
         flags.append(f"died {deaths}×" if deaths > 1 else "died once")
-    if cds == 0:                                  # never pressed a defensive cooldown
-        score -= 5
-        flags.append("no defensive CDs used")
+    # NOTE: defensive-CD usage moved to the EXECUTION pillar (it's an input/skill signal); Survival
+    # is now PURE OUTCOMES — crushes/crits/deaths. CD discipline lives in _perfRows' tank exec.
     return {"score": max(0, score), "flags": flags}
 
 
@@ -2531,6 +2529,15 @@ def build_week_data(report_code: str, token: str,
         for nm, tm in tank_metrics.items():
             for cd, c in cd_casts.get(nm, {}).items():
                 tm["cooldowns"][cd] = max(tm["cooldowns"].get(cd, 0), c)
+        # active-mitigation EXECUTION signals (log-only): cast-rate / Lacerate-uptime per the tank's
+        # boss-melee-taken time. Powers the tank Execution pillar (see _perfRows).
+        _bms = log_data.get("boss_melee_sec", {})
+        _mc  = log_data.get("mitig_cast", {})
+        _lac = log_data.get("lacerate_pct", {})
+        for nm, tm in tank_metrics.items():
+            tm["boss_melee_sec"] = _bms.get(nm, 0)
+            tm["mitig_casts"]    = _mc.get(nm, 0)
+            tm["lacerate_pct"]   = _lac.get(nm, 0)   # Lacerate uptime % of active-melee time (bear)
     role_spells     = fetch_role_spell_usage(token, report_code, fight_ids, players)
     # Per-fight DamageDone — one paginated fetch feeds the uptime heatmap.
     dmg_by_fight    = fetch_damage_by_fight(token, report_code, kills)
@@ -2956,6 +2963,11 @@ def map_to_week_data(wcl: dict) -> dict:
           "avoid_pct": tm.get("avoid_pct", 0),
           "biggest_hit": tm.get("biggest_hit"),
           "cooldowns": tm.get("cooldowns", {}),
+          # tank Execution inputs (log-only): active-mitigation cast-rate / Lacerate uptime per
+          # boss-melee-taken time (the normalization validated in discovery).
+          "mitig_casts":    tm.get("mitig_casts", 0),
+          "boss_melee_sec": tm.get("boss_melee_sec", 0),
+          "lacerate_pct":   tm.get("lacerate_pct", 0),
           "per_boss": tm.get("per_boss", []),
           "lowest_hp": tm.get("lowest_hp", {}),
           # Performance pillar (two parts): threat = the tank's WCL dps PARSE % (WCL ranks tanks by
