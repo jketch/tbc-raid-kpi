@@ -3630,6 +3630,16 @@ def main():
 
     print_summary(week_data)
 
+    # Officer-only AI performance one-liners (optional, fully guarded — no key/SDK/error ⇒ no-op).
+    # BEFORE commit_week so the summaries land in BOTH the snapshot dump and the injected HTML.
+    # Skipped on --test-db / --dry-run so proofs never spend on the API.
+    if not args.dry_run and not args.test_db:
+        try:
+            import perf_summaries
+            perf_summaries.attach(mapped)
+        except Exception as e:
+            print(f"  perf summaries: skipped ({e.__class__.__name__}) — dashboard unaffected")
+
     if args.dry_run:
         print("\n─── WCL_AUTO_DATA JSON ───")
         print(json.dumps(week_data, indent=2, ensure_ascii=False))

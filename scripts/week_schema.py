@@ -84,6 +84,8 @@ SECTIONS = {
                                    desc="this-week loot from the ThatsBIS CSV (empty: dry night / no CSV)"),
     "damageBySelection":   Section(WCL,  True,  predicate=_has_players,
                                    desc="DPS table All/Bosses/Trash (the live DPS data source)"),
+    "perfSummaries":       Section(EXTERNAL, predicate=lambda v: isinstance(v, dict) and bool(v),
+                                   desc="AI-written 1-liners per raider (officer drilldown; empty: no API key / generation off)"),
 }
 
 # Top-level keys that legitimately appear AFTER mapping (enrich / loot mutate in place) and must

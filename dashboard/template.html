@@ -2794,8 +2794,12 @@ function renderPerformance(){
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">${lbl} <b style="color:${col}">${v==null?"—":v}</b></div>
         <div style="font-size:11px;color:var(--text);margin-top:2px;line-height:1.35">${esc((r.why&&r.why[k])||"—")}</div></div>`;
     }).join("");
+    // AI-written one-liner (optional, baked at pipeline time → WEEK_DATA.perfSummaries). Subtle italic
+    // lead-in above the hard numbers; the pillar grid stays the source of truth. Absent ⇒ no line.
+    const sum=(WEEK_DATA.perfSummaries||{})[r.name];
+    const lead=sum?`<div style="font-size:11.5px;color:var(--gold-soft);font-style:italic;line-height:1.4;margin:0 0 9px;padding-left:9px;border-left:2px solid var(--accent)">${esc(sum)}</div>`:"";
     return `<tr class="perf-detail"><td colspan="7" style="padding:8px 12px 12px;background:var(--surface2)">
-      <div style="display:flex;flex-wrap:wrap;gap:14px">${blocks}</div></td></tr>`;
+      ${lead}<div style="display:flex;flex-wrap:wrap;gap:14px">${blocks}</div></td></tr>`;
   };
   const renderRow=r=>{
     const nc=nameColor(r.name,r.role), open=_perfOpen.has(r.name);
