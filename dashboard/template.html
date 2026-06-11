@@ -2590,12 +2590,13 @@ const PERF_ROLE_FACETS = { Physical:["intr","sunder","save"], Caster:["intr","ma
 // provides (vs the raid's best provider of that facet), so a class isn't zeroed for structurally
 // lacking one — a Warlock floored at 0 for having no interrupt/mana-return was the symptom.
 // 'stones' = warlock raid provision (Create / Ritual of Souls); 'save'/'dispel' from the saves KPI;
-// 'mana' = mana returned; 'intr' = interrupts; 'sunder' = Sunder Armor upkeep. Curse coverage is
+// 'mana' = mana returned; 'intr' = interrupts; 'sunder' = Sunder Armor upkeep; 'md' = hunter
+// Misdirection/Tranq (the toolkit num — threat transfer). Curse coverage is
 // deliberately ABSENT — it's a shared raid debuff (all warlocks benefit even if two maintain it), so
 // it can't fairly rank individuals.
 const CLASS_UTIL_FACETS = {
   Warlock:["stones"], Mage:["intr"], Priest:["mana","save"], Shaman:["mana","intr"],
-  Druid:["mana","save"], Paladin:["save"], Hunter:["intr"], Rogue:["intr"], Warrior:["sunder","intr"],
+  Druid:["mana","save"], Paladin:["save"], Hunter:["md"], Rogue:["intr"], Warrior:["sunder","intr"],
 };
 let _perfWeight="balanced", _perfRole="all", _perfGroup=false, _perfSearch="";
 let _perfSort={col:"composite",dir:-1};
@@ -2629,11 +2630,12 @@ function _perfRows(){
   const mana={};
   ((wd.manaReturns||{}).batteries||[]).forEach(b=>(b.providers||[]).forEach(p=>{ mana[p.name]=(mana[p.name]||0)+(p.mana||0); }));
   const saveTot=n=>{ const s=saves[n]; return s?(s.save||0)+(s.dispel||0)+(s.utility||0):0; };
-  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="stones"?((usage[n]||{}).stones_made||0) : 0;
-  // best[facet] across the WHOLE raid — utility normalizes vs the raid's best provider of each facet
-  // (which class is scored on which facet is decided by CLASS_UTIL_FACETS below).
+  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="stones"?((usage[n]||{}).stones_made||0) : f==="md"?(((dps[n]||{}).toolkit||{}).num||0) : 0;
+  // best[facet] scoped to the COHORT that provides it (the classes whose CLASS_UTIL_FACETS list it),
+  // NOT the whole raid — so a hunter's Misdirection ranks vs other hunters, not vs a mage's toolkit
+  // num. A facet that's naturally class-exclusive (stones) collapses to its one cohort either way.
   const bestF={};
-  Object.keys(roster).forEach(n=>{ ["intr","sunder","mana","save","stones"].forEach(f=>{ bestF[f]=Math.max(bestF[f]||0, facetVal(n,f)); }); });
+  Object.entries(roster).forEach(([n,r])=>{ (CLASS_UTIL_FACETS[r.class]||PERF_ROLE_FACETS[r.role]||[]).forEach(f=>{ bestF[f]=Math.max(bestF[f]||0, facetVal(n,f)); }); });
 
   return Object.entries(roster).map(([name,r])=>{
     const role=r.role, d=deaths[name]||{total:0,trash:0};
@@ -2692,7 +2694,7 @@ function renderPerformance(){
     return (av-bv)*dir;
   });
   const cols=[["name","Player"],["prep","Prep"],["perf","Perf"],["exec","Exec"],["surv","Surv"],["util","Util"],["composite","Score"]];
-  const titles={prep:"Preparation — consumables score → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play: avoidable dmg/min, friendly fire, MC liability.",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, mana battery, interrupts, sunder, externals) vs the raid's best provider. Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars (set the weighting above). (n/5) = computed over the pillars present."};
+  const titles={prep:"Preparation — consumables score → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play: avoidable dmg/min, friendly fire, MC liability.",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, hunter Misdirection, mana battery, interrupts, sunder, externals) vs the best provider of that facet. Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars (set the weighting above). (n/5) = computed over the pillars present."};
   const arrow=c=>_perfSort.col===c?(_perfSort.dir<0?" ▼":" ▲"):"";
   hd.innerHTML=cols.map(([c,lbl])=>`<th class="${c==='name'?'':'num'}" style="cursor:pointer;${c==='composite'?'color:var(--accent)':''}" title="${titles[c]}" onclick="_perfSortBy('${c}')">${lbl}${arrow(c)}</th>`).join("");
   const cell=v=>v==null?'<span style="color:var(--muted)">—</span>':`<span style="color:${parseColor(v)};font-weight:600">${v}</span>`;
