@@ -4234,37 +4234,23 @@ def main():
     # THIS report's bosses (ignore off-report DST clears like Gruul/HKM) and (b) feed
     # build_week_data so it doesn't re-fetch.
     rep0 = gql(token, Q_REPORT, {"code": args.report_code})["reportData"]["report"]
-    allowed_bosses = {f["name"] for f in rep0["fights"] if f.get("kill")}
-
-    # Parse the combat log FIRST so build_week_data can use its (free) per-fight roles
-    # instead of ~10 playerDetails API calls.
-    log_data = parse_combat_log(args.log, allowed_bosses=allowed_bosses) if args.log else None
-
     # Per-player crit baseline from history (gold-standard 'luck' = this week vs your own
     # multi-week average). Read from the SAME db the run will write to, excluding this report.
-    from db_writer import crit_history, DB_PATH_TEST, DB_PATH
-    crit_hist = crit_history(DB_PATH_TEST if args.test_db else DB_PATH,
-                             exclude_report=args.report_code)
+    from db_writer import crit_history, DB_PATH, DB_PATH_TEST
+    db_path = DB_PATH_TEST if args.test_db else DB_PATH
+    crit_hist = crit_history(db_path, exclude_report=args.report_code)
 
-    week_data = build_week_data(args.report_code, token, refresh_baseline=args.refresh_baseline,
-                                log_data=log_data, report=rep0, history=crit_hist)
+    # Build → finalize → commit through the shared week_build spine — the SAME path backfill and
+    # reprocess use, so the live run can't drift from them (the loot-drop / role / order bug class).
+    # from_wcl parses the log (scoped to rep0's bosses) and feeds build_week_data → no double fetch.
+    import week_build as wb
+    mapped, week_data, log_data = wb.from_wcl(
+        args.report_code, token, log_path=args.log, report=rep0,
+        history=crit_hist, refresh_baseline=args.refresh_baseline)
 
-    # Supplement with the rest of the combat-log stats
-    if log_data:
-        week_data = merge_log_into_wcl(week_data, log_data)
-
-    # This-week loot from the ThatsBIS CSV (external, optional). Filter on the raid-night local date
-    # derived from start_ms — ThatsBIS dates loot to that same night. Degrades to {} if absent.
-    if args.loot:
-        import loot_parser
-        raid_date = time.strftime("%Y-%m-%d", time.localtime(week_data["meta"]["start_ms"] / 1000))
-        loot_data = loot_parser.parse_loot(args.loot, raid_date)
-        if loot_data:
-            week_data["loot_data"] = loot_data
-            print(f"  ✓ loot: {loot_data['total']} items to {len(loot_data['players'])} raiders "
-                  f"({loot_data['offspec']} off-spec) on {raid_date}")
-        else:
-            print(f"  · loot: no awards dated {raid_date} in {args.loot}")
+    # finalize_week owns the ONE loot-ingestion point (replacing a raw-dict loot_data block) plus
+    # the contract check. Pass the resolved --loot path so an explicit CSV isn't overridden by mtime.
+    wb.finalize_week(mapped, has_log=log_data is not None, loot_csv=args.loot, label=args.report_code)
 
     print_summary(week_data)
 
@@ -4272,20 +4258,10 @@ def main():
         print("\n─── WCL_AUTO_DATA JSON ───")
         print(json.dumps(week_data, indent=2, ensure_ascii=False))
     else:
-        from db_writer import write_week, DB_PATH, DB_PATH_TEST
-        db_path = DB_PATH_TEST if args.test_db else DB_PATH
-        # db_writer + the HTML both consume the mapped WEEK_DATA shape (luckKPI/avoidableDmg/…),
-        # not the raw wcl dict. Map ONCE (pure transform, no API calls), then enrich with
-        # week-over-week deltas BEFORE write_week() overwrites last week's row in the DB.
-        mapped = map_to_week_data(week_data)
-        # Snapshot the clean mapped WEEK_DATA for offline reprocessing (prod only — the cache is
-        # the canonical weekly history; --test-db proofs and throwaway test reports must not
-        # pollute it). Pre-enrich so reprocess recomputes trends fresh.
-        if not args.test_db:
-            dump_week_data_cache(mapped)
-        enrich_with_trends(mapped, db_path)
+        # commit: dump (clean, test-gated) → enrich (strictly before write) → write_week. Then render
+        # to --out explicitly (commit_week renders to DASH_FILE; main honors a custom --out path).
+        wb.commit_week(mapped, db_path, is_test=args.test_db, dump=True, render=False)
         inject_into_html(week_data, Path(args.out), mapped=mapped)
-        write_week(mapped, db_path=db_path)
         print(f"\nRun next time with:")
         print(f"  python wcl_auto_dashboard.py {args.report_code} --out \"{args.out}\"")
 
