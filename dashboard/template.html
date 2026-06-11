@@ -729,6 +729,14 @@
     <div id="consumUsage" class="scroll-y"></div>
   </div>
 
+  <!-- ═══════════════ GEAR READINESS ═══════════════ -->
+  <div class="section-label" style="margin-top:24px"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_gem_diamond_06.jpg" alt=""> Gear Readiness</div>
+  <div class="card">
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_gem_diamond_06.jpg" alt=""> Enchants · Gems · Item Level</div>
+    <div class="hs-sub">Every equipped slot's enchant and filled gems (socket counts from Wowhead). Surfaces anyone raiding with an un-enchanted slot or an empty socket. <span id="gearAuditHead"></span></div>
+    <div id="gearAudit" class="scroll-y"></div>
+  </div>
+
   <!-- ═══════════════ CRIT KPI + LUCK ═══════════════ -->
   </div>
   <div class="tsec" data-tab="dps">
@@ -1964,6 +1972,46 @@ function renderFriendlyFire() {
   }).join("");
 }
 
+// ── GEAR READINESS — per-raider enchant / gem / item-level audit (WCL gear + wowhead sockets).
+// Prep signal: surfaces an un-enchanted slot or an empty socket. Constructive (amber flags, no
+// shame-red); gaps sorted to the top so an officer sees the actionable rows first.
+function renderGearAudit() {
+  const el = document.getElementById("gearAudit");
+  if (!el) return;
+  const ga = WEEK_DATA.gearAudit || {};
+  const rows = ga.players || [];
+  const card = el.closest(".card");
+  const label = card && card.previousElementSibling;   // the "Gear Readiness" section-label
+  if (!rows.length) { if (card) card.style.display = "none"; if (label) label.style.display = "none"; return; }
+  if (card) card.style.display = ""; if (label) label.style.display = "";
+  const head = document.getElementById("gearAuditHead");
+  if (head) head.innerHTML = `Raid avg item level <b style="color:var(--text)">${ga.raid_avg_ilvl}</b> · ` +
+    `<b style="color:var(--green)">${ga.fully_prepped}/${ga.total}</b> fully prepped.`;
+  const gap = p => (p.missing_enchants || []).length + (p.empty_sockets > 0 ? 1 : 0);
+  const sorted = [...rows].sort((a, b) => (gap(b) - gap(a)) || a.name.localeCompare(b.name));
+  const row = p => {
+    const enchFull = !(p.missing_enchants || []).length, gemFull = !p.empty_sockets;
+    const ench = `<span style="color:${enchFull ? "var(--green)" : "var(--amber)"};font-weight:600">${p.ench_ok}/${p.ench_total}</span>`;
+    const gems = `<span style="color:${gemFull ? "var(--muted)" : "var(--amber)"}">${p.gems_filled}/${p.sockets_total || 0}</span>`;
+    const notes = [];
+    if ((p.missing_enchants || []).length) notes.push("no enchant: " + p.missing_enchants.join(", "));
+    if (p.empty_sockets) notes.push(`${p.empty_sockets} empty socket${p.empty_sockets > 1 ? "s" : ""}`);
+    const status = (enchFull && gemFull)
+      ? '<span style="color:var(--green)">✓ ready</span>'
+      : `<span style="color:var(--amber)">${esc(notes.join(" · "))}</span>`;
+    return `<tr>
+      <td><span class="cname" style="color:${nameColor(p.name)}">${esc(p.name)}</span></td>
+      <td class="num">${p.ilvl}</td><td class="num">${ench}</td><td class="num">${gems}</td>
+      <td style="font-size:11.5px">${status}</td></tr>`;
+  };
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;text-align:left">
+      <th style="padding:4px 6px">Player</th><th class="num" style="padding:4px 6px">iLvl</th>
+      <th class="num" style="padding:4px 6px">Enchants</th><th class="num" style="padding:4px 6px">Gems</th>
+      <th style="padding:4px 6px">Status</th></tr></thead>
+    <tbody>${sorted.map(row).join("")}</tbody></table>`;
+}
+
 // ── CONSUMABLE USAGE — informational (pots/stones/runes/scrolls popped), not a threshold
 // ── CONSUMABLE COMPLIANCE — role-split ✓/✗ grid vs each role's expectations
 function renderCompliance() {
@@ -2586,6 +2634,10 @@ const PERF_TUNING = {
   // an in-fight pot is the active/tryhard signal; situational (Flame Cap / rune / Nightmare Seed) a
   // small bonus. flask+food+oil = 85 ("prepared"); +in-fight pot +situational → 100.
   PREP_FLASK: 40, PREP_ELIXIR1: 20, PREP_FOOD: 25, PREP_OIL: 20, PREP_POT: 10, PREP_ALT: 5,
+  // Gear readiness folded into Prep: consumables are the base, gear gaps are deductions (a raider
+  // raiding with an un-enchanted slot or an empty socket isn't fully prepped). Tunable; no penalty
+  // when there's no gear data for that raider.
+  PREP_ENCH_PENALTY: 10, PREP_SOCKET_PENALTY: 6,
 };
 // Melee-MANDATORY avoidable mechanics — damage you take by being in melee (a spinning boss hits
 // all melee; low-mobility warriors/rets can't escape it, only high-mobility rogues clip it). EXCLUDED
@@ -2729,7 +2781,8 @@ function _perfRows(){
   const cons=byName(wd.consumables), dps=byName((wd.damageBySelection||{}).players), heal=byName(wd.healing),
         tank=byName(wd.tankScorecard), avoid=byName(wd.avoidableDmg), ff=byName(wd.friendlyFire),
         deaths=byName(wd.deaths), usage=byName(wd.consumableUsage), saves=byName(wd.saves),
-        intr=byName(wd.interrupts), sunder=byName(((wd.sunderArmor||{}).players)||[]);
+        intr=byName(wd.interrupts), sunder=byName(((wd.sunderArmor||{}).players)||[]),
+        gear=byName(((wd.gearAudit||{}).players)||[]);
   const mcLiable=new Set((wd.mcLiable||[]).map(x=>x.name));
   const raidMin=((Object.values(wd.boss_times||{}).reduce((s,v)=>s+v,0))||0)/60 || 1;
   const noLog = !(wd.avoidableDmg||[]).length && !(wd.friendlyFire||[]).length;   // log-less week → exec null for all
@@ -2780,7 +2833,11 @@ function _perfRows(){
       pts += c.weapon ? T.PREP_OIL : 0;
       pts += (c.combat_pots||[]).length ? T.PREP_POT : 0;
       pts += c.alt_pot ? T.PREP_ALT : 0;
-      prep = Math.min(100, pts); }
+      // Gear readiness folded in: deduct for un-enchanted slots + empty sockets (no data ⇒ no penalty).
+      const gr=gear[name];
+      if(gr){ pts -= (gr.missing_enchants||[]).length * T.PREP_ENCH_PENALTY;
+              pts -= (gr.empty_sockets||0) * T.PREP_SOCKET_PENALTY; }
+      prep = clamp(pts, 0, 100); }
     // PERFORMANCE (role-appropriate parse %)
     let perf=null;
     if(role==="Healer") perf=heal[name]?heal[name].vs_replacement:null;
@@ -2825,6 +2882,9 @@ function _perfRows(){
     if(c){ const p=[]; if(c.flask)p.push(`flask +${T.PREP_FLASK}`); else if((c.elixirs||[]).length)p.push(`elixir +${T.PREP_ELIXIR1}`); else p.push("no flask/elixir");
       if(c.food)p.push(`food +${T.PREP_FOOD}`); if(c.weapon)p.push(`oil +${T.PREP_OIL}`);
       if((c.combat_pots||[]).length)p.push(`in-fight pot +${T.PREP_POT}`); if(c.alt_pot)p.push(`situational +${T.PREP_ALT}`);
+      const gr=gear[name];
+      if(gr&&(gr.missing_enchants||[]).length)p.push(`−${gr.missing_enchants.length*T.PREP_ENCH_PENALTY} no enchant (${gr.missing_enchants.join(", ")})`);
+      if(gr&&gr.empty_sockets)p.push(`−${gr.empty_sockets*T.PREP_SOCKET_PENALTY} ${gr.empty_sockets} empty socket${gr.empty_sockets>1?"s":""}`);
       why.prep=p.join(" · "); } else why.prep="consumable data unavailable";
     if(role==="Healer") why.perf=heal[name]?`healer parse ${heal[name].vs_replacement??"—"} (HPS vs all logged)`:"not ranked yet";
     else if(role==="Tank"){ const t=tank[name]||{}; why.perf=`threat parse ${t.vs_replacement??"—"} + survival grade ${(t.survival||{}).score??"—"}, averaged`; }
@@ -2938,6 +2998,7 @@ function renderAll(){
   renderRoleSpells();
   renderPlayerSpells();
   renderCompliance();
+  renderGearAudit();
   renderLoot();
   renderPerformance();   // officer tab — built for everyone; applyOfficerGate() hides the surface
   (function(){

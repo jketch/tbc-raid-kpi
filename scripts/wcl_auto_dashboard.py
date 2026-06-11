@@ -2276,6 +2276,106 @@ def fetch_master_data(token: str, report_code: str) -> dict:
     }
 
 
+# ── Gear readiness audit (Prep) — enchant + gem + item-level compliance ─────────────────
+# WCL gear[] (rides on the DamageDone table) gives every equipped item with its enchant, filled gems,
+# and item level. Socket COUNT (to find EMPTY sockets) isn't in WCL, so we source `nsockets` from
+# wowhead's item XML (cached in cache/item_meta_cache.json — fetched once per item, then free).
+# Degrades gracefully: a missing/failed socket lookup just drops that item from the empty-socket tally,
+# and the enchant + item-level half is pure WCL (works even if wowhead is unreachable).
+ITEM_META_CACHE = ROOT_DIR / "cache" / "item_meta_cache.json"
+# WCL equipment slot index → name. Enchantable = slots a raider is expected to enchant every week
+# (conservative: rings/offhand/ranged are conditional on class/profession → excluded so we never raise
+# a false "missing enchant"). Shirt/tabard are excluded from the item-level average.
+_GEAR_SLOT = {0: "Head", 1: "Neck", 2: "Shoulder", 3: "Shirt", 4: "Chest", 5: "Waist", 6: "Legs",
+              7: "Feet", 8: "Wrist", 9: "Hands", 10: "Ring", 11: "Ring", 12: "Trinket", 13: "Trinket",
+              14: "Back", 15: "Main Hand", 16: "Off Hand", 17: "Ranged", 18: "Tabard"}
+_ENCHANTABLE_SLOTS = {0, 2, 4, 6, 7, 8, 9, 14, 15}
+_ILVL_SKIP_SLOTS   = {3, 18}
+
+
+def _item_sockets(item_id, cache) -> int:
+    """nsockets for item_id from wowhead's item XML (cached in `cache`). None if unknown/unfetchable."""
+    key = str(item_id)
+    if key in cache:
+        return cache[key].get("nsockets")
+    if not item_id:
+        return None
+    try:
+        import re as _re
+        import requests as _rq
+        r = _rq.get(f"https://www.wowhead.com/tbc/item={int(item_id)}?xml", timeout=10,
+                    headers={"User-Agent": "Mozilla/5.0"})
+        m = _re.search(r'"nsockets":(\d+)', r.text)
+        n = int(m.group(1)) if m else 0
+        cache[key] = {"nsockets": n}
+        return n
+    except Exception:
+        cache[key] = {"nsockets": None}
+        return None
+
+
+def fetch_gear_audit(token: str, report_code: str, kills: list) -> dict:
+    """Per-raider gear-readiness audit (Prep tier): item level + enchant compliance + gem/empty-socket
+    compliance. Gear comes from ONE DamageDone table (gear is identical all night); socket counts from
+    wowhead (cached). Pure WCL+wowhead, runs every week, no combat log. {} when there are no kills."""
+    if not kills:
+        return {}
+    big = max(kills, key=lambda f: f["endTime"] - f["startTime"])
+    try:
+        blob = gql(token,
+                   "query($c:String!,$f:Int!){reportData{report(code:$c){"
+                   "table(dataType: DamageDone, fightIDs:[$f])}}}",
+                   {"c": report_code, "f": int(big["id"])})
+        tbl = blob["reportData"]["report"]["table"]
+        if isinstance(tbl, str):
+            tbl = json.loads(tbl)
+        entries = (tbl.get("data") or {}).get("entries") or []
+    except Exception as e:
+        print(f"  Warning: gear audit fetch failed: {e}")
+        return {}
+    try:
+        cache = json.loads(ITEM_META_CACHE.read_text())
+    except Exception:
+        cache = {}
+    out = []
+    for e in entries:
+        if e.get("type") == "Pet" or not isinstance(e.get("gear"), list):
+            continue
+        gear = [it for it in e["gear"] if it.get("id")]
+        if not gear:
+            continue
+        ilvl_items = [it for it in gear
+                      if it.get("slot") not in _ILVL_SKIP_SLOTS and it.get("itemLevel")]
+        ilvl = round(sum(it["itemLevel"] for it in ilvl_items) / len(ilvl_items)) if ilvl_items else 0
+        missing = sorted({_GEAR_SLOT.get(it.get("slot"), str(it.get("slot")))
+                          for it in gear
+                          if it.get("slot") in _ENCHANTABLE_SLOTS and not it.get("permanentEnchant")})
+        gems_filled = sockets_total = empty = 0
+        for it in gear:
+            filled = len(it.get("gems") or [])
+            gems_filled += filled
+            ns = _item_sockets(it.get("id"), cache)
+            if ns:
+                sockets_total += ns
+                empty += max(0, ns - filled)
+        out.append({
+            "name": e.get("name"), "ilvl": ilvl,
+            "ench_ok": len(_ENCHANTABLE_SLOTS) - len(missing),
+            "ench_total": len(_ENCHANTABLE_SLOTS), "missing_enchants": missing,
+            "gems_filled": gems_filled, "sockets_total": sockets_total, "empty_sockets": empty,
+        })
+    try:
+        ITEM_META_CACHE.write_text(json.dumps(cache))
+    except Exception:
+        pass
+    if not out:
+        return {}
+    avg = round(sum(p["ilvl"] for p in out) / len(out))
+    prepped = sum(1 for p in out if not p["missing_enchants"] and not p["empty_sockets"])
+    print(f"  ✓ gear audit: {len(out)} raiders, avg ilvl {avg}, {prepped} fully prepped")
+    return {"players": out, "raid_avg_ilvl": avg, "fully_prepped": prepped, "total": len(out)}
+
+
 def build_week_data(report_code: str, token: str,
                     log_data: dict = None, report: dict = None, history: dict = None) -> dict:
     cache = load_cache()
@@ -2561,6 +2661,8 @@ def build_week_data(report_code: str, token: str,
                                        for b, u in healer_uptime.get(p["name"], {}).items()]
     # Raid debuff coverage — pure WCL, per boss (CoE/Misery/Shadow Weaving/ISB + armor + judgements)
     debuff_coverage = fetch_debuff_coverage(token, report_code, kills)
+    # Gear readiness audit — item level + enchant + gem/empty-socket compliance (WCL gear + wowhead)
+    gear_audit      = fetch_gear_audit(token, report_code, kills)
     # Class toolkit — each DPS's signature class-relative utility (cast-based, pure WCL)
     mana_returns  = fetch_mana_returns(token, report_code, kills, md)
     sunder_armor  = fetch_sunder_armor(token, report_code, kills, md)
@@ -2678,6 +2780,8 @@ def build_week_data(report_code: str, token: str,
         "player_spells":   role_spells.get("players", {}),
         # per-boss uptime of key DPS-amplifying raid debuffs (pure WCL)
         "debuff_coverage": debuff_coverage,
+        # gear readiness audit — item level / enchant / gem compliance (WCL gear + wowhead sockets)
+        "gear_audit":      gear_audit,
         # per-player signature class-utility cast counts (pure WCL Casts)
         "class_toolkit":   class_toolkit,
         # mana returned to the raid, per provider (mana-battery leaderboard)
@@ -3079,6 +3183,7 @@ def map_to_week_data(wcl: dict) -> dict:
         "boss_meta":    wcl.get("boss_meta", {}),
         "healReaction": wcl.get("heal_reaction", {}),
         "debuffCoverage": wcl.get("debuff_coverage", {}),
+        "gearAudit":      wcl.get("gear_audit", {}),
         "sunderArmor":    wcl.get("sunder_armor", {}),
         # "saving others" — protective/external casts on allies, ranked by saves then total.
         # Positive call-out surface (no shame); empty list ⇒ a quiet week, not a bug.

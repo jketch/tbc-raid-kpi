@@ -110,9 +110,21 @@ the preparation signal the tool was built to surface. **Highest-value find of th
   ("Teleport Westfall", "UseDatabaseForName", "Unknown Ability"; `specID 0` from CombatantInfo). So
   **talent-gated tracking is genuinely infeasible** — this is the final word on the Blood Frenzy
   question: we cannot detect who's BF-specced from WCL. Don't retry talents.
-- **Threat / Survivability / Dispels-table / Interrupts-table returned null via `table()`.** Either the
-  2.5 client doesn't populate them or they need `events(dataType:…)` / a `sourceID`. Worth ONE more
-  probe via events() before concluding unavailable — but don't assume they work.
+- **`table()` null ≠ unavailable — `events()` recovers half of them (probed 2026-06-11):**
+  - **Interrupts → `events()` WORKS** (table null, but the events query is valid; returned 0 on Vashj
+    because few raid-relevant casts there). So **WCL-durable interrupts ARE viable** — aggregate
+    `events(dataType:Interrupts)` across fights. (Resolves roadmap #7's interrupt upgrade: real path.)
+  - **Dispels → `events()` WORKS** — 10 events with full `{sourceID, targetID, abilityGameID,
+    extraAbilityGameID (the removed aura), isBuff}`. A real **who-dispelled-what Utility/glue signal**.
+  - **Summons → `events()` WORKS** — pet/totem summon events.
+  - **Threat → no usable metric.** `events(dataType:Threat)` returns cast/melee events but carries **no
+    threat values** — TBC combat logs don't emit threat, so WCL can't compute a threat table. Dead for
+    our purposes (no per-player threat number to rank). *Not* a dormant-edition toggle — the source data
+    simply doesn't exist in 2.5 logs.
+  - **Survivability → unavailable on 2.5** (null table, no event type) — a retail-only computed metric.
+    **This one matches the "dormant for another edition" hypothesis.**
+  Net: Interrupts + Dispels are real WCL-durable wins via `events()`; Threat/Survivability are genuinely
+  out for TBC.
 
 ## Depth upgrades (cheap, additive)
 - **Deaths**: `overkill` (how hard the killing blow over-killed) + `killingBlow` (what ability) →
