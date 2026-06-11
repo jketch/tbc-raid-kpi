@@ -2631,6 +2631,8 @@ function _setPerfRole(r){ _perfRole=r; document.querySelectorAll("#perfRoleSeg .
 function _setPerfGroup(g){ _perfGroup=g; document.querySelectorAll("#perfGroupSeg .seg-btn").forEach(b=>b.classList.toggle("on",(b.dataset.g==="role")===g)); try{localStorage.setItem("perfGroup",g?"1":"0");}catch(e){} renderPerformance(); }
 function _setPerfSearch(v){ _perfSearch=(v||"").trim().toLowerCase(); renderPerformance(); }
 function _perfSortBy(col){ if(_perfSort.col===col) _perfSort.dir*=-1; else _perfSort={col, dir: col==="name"?1:-1}; renderPerformance(); }
+let _perfOpen=new Set();   // expanded drilldown rows (by player name)
+function _perfToggle(n){ n=decodeURIComponent(n); if(_perfOpen.has(n))_perfOpen.delete(n); else _perfOpen.add(n); renderPerformance(); }
 
 // Build per-player pillar sub-scores (0–100 or null) from WEEK_DATA + the composite for the active weighting.
 function _perfRows(){
@@ -2672,8 +2674,9 @@ function _perfRows(){
   // best[facet] scoped to the COHORT that provides it (the classes whose CLASS_UTIL_FACETS list it),
   // NOT the whole raid — so a hunter's Misdirection ranks vs other hunters, not vs a mage's toolkit
   // num. A facet that's naturally class-exclusive (stones) collapses to its one cohort either way.
-  const bestF={};
-  Object.entries(roster).forEach(([n,r])=>{ utilFacetsFor(r.class,r.role).forEach(f=>{ bestF[f]=Math.max(bestF[f]||0, facetVal(n,f)); }); });
+  const bestF={}, bestN={};   // bestN[f] = who leads facet f (for the drilldown "vs best (X)")
+  Object.entries(roster).forEach(([n,r])=>{ utilFacetsFor(r.class,r.role).forEach(f=>{ const v=facetVal(n,f); if(v>(bestF[f]||0)) bestN[f]=n; bestF[f]=Math.max(bestF[f]||0, v); }); });
+  const FACET_LABEL={intr:"interrupts",sunder:"Sunder",mana:"mana returned",save:"externals",stones:"stones",fward:"Fear Ward",pala:"JoW+blessings",md:"Misdirection",bshout:"Battle Shout"};
 
   return Object.entries(roster).map(([name,r])=>{
     const role=r.role, d=deaths[name]||{total:0,trash:0};
@@ -2729,7 +2732,39 @@ function _perfRows(){
     // COMPOSITE — weighted over non-null pillars only (renormalized)
     const pil={prep,perf,exec,surv,util}, w=PERF_WEIGHTS[_perfWeight]||PERF_WEIGHTS.balanced; let num=0,den=0,present=0;
     PERF_PILLARS.forEach((p,i)=>{ if(pil[p]!=null){ num+=w[i]*pil[p]; den+=w[i]; present++; } });
-    return { name, role, class:r.class, ...pil, present, composite: den>0?num/den:null };
+    // ── DRILLDOWN breakdowns — the exact inputs behind each pillar score (defensible) ──
+    const T=PERF_TUNING, why={};
+    if(c){ const p=[]; if(c.flask)p.push(`flask +${T.PREP_FLASK}`); else if((c.elixirs||[]).length)p.push(`elixir +${T.PREP_ELIXIR1}`); else p.push("no flask/elixir");
+      if(c.food)p.push(`food +${T.PREP_FOOD}`); if(c.weapon)p.push(`oil +${T.PREP_OIL}`);
+      if((c.combat_pots||[]).length)p.push(`in-fight pot +${T.PREP_POT}`); if(c.alt_pot)p.push(`situational +${T.PREP_ALT}`);
+      why.prep=p.join(" · "); } else why.prep="consumable data unavailable";
+    if(role==="Healer") why.perf=heal[name]?`healer parse ${heal[name].vs_replacement??"—"} (HPS vs all logged)`:"not ranked yet";
+    else if(role==="Tank"){ const t=tank[name]||{}; why.perf=`threat parse ${t.vs_replacement??"—"} + survival grade ${(t.survival||{}).score??"—"}, averaged`; }
+    else why.perf=dps[name]?`DPS parse ${dps[name].vs_replacement??"—"} (vs all logged)`:"not ranked yet";
+    if(noLog) why.exec="no combat log this week";
+    else if(role!=="Tank"){ const av=avoid[name]||{}, apm=dodgeAvoid(name)/raidMin, cap=avoidCap[posOf(r.class,role)];
+      const ps=[`dodgeable avoidable ${Math.round(apm)}/min vs ${posOf(r.class,role)} cap ${Math.round(cap)}`];
+      const ffi=(ff[name]||{}).incidents||0; if(ffi)ps.push(`friendly fire −${Math.min(T.FF_CAP,ffi*T.FF_PER_INCIDENT)}`);
+      if(mcLiable.has(name))ps.push(`MC liability −${T.MC_LIABLE_PENALTY}`);
+      const excl=(av.sources||[]).filter(s=>MELEE_MANDATORY.has(s.ability));
+      if(excl.length)ps.push(`excluded melee-mandatory: ${excl.map(s=>s.ability+" "+Math.round(s.dmg/1000)+"k").join(", ")}`);
+      why.exec=ps.join(" · "); }
+    else { const t=tank[name]||{}, bm=t.boss_melee_sec||0;
+      if(bm<30) why.exec="insufficient boss-melee time to grade";
+      else { why.exec = r.class==="Druid"
+          ? `Lacerate ${(t.lacerate_pct||0).toFixed(0)}% uptime over ${Math.round(bm)}s boss-melee (target ${T.TANK_LAC_TARGET}%)`
+          : `Holy Shield ${((t.mitig_casts||0)/(bm/60)).toFixed(1)}/min over ${Math.round(bm)}s boss-melee (target ${T.TANK_MIT_TARGET}/min)`;
+        if(Object.values(t.cooldowns||{}).reduce((s,v)=>s+(v||0),0)===0) why.exec+=` · no CDs −${T.TANK_NO_CD_PENALTY}`; } }
+    if(role==="Tank" && (tank[name]||{}).survival){ const fl=tank[name].survival.flags||[]; why.surv=fl.length?fl.join(" · "):"clean — no crits/crushes/deaths"; }
+    else { const boss=(d.total||0)-(d.trash||0), ps=[];
+      if(boss>0)ps.push(`died on boss −${T.SURV_BOSS_DEATH}`); if((d.trash||0)>0)ps.push(`died on trash −${T.SURV_TRASH_DEATH}`);
+      if((d.total||0)>0 && (((usage[name]||{}).healthstone)||0)===0)ps.push(`no healthstone −${T.SURV_NO_HS_DEATH}`);
+      why.surv=ps.length?`${d.total||0} death(s): `+ps.join(" · "):"no deaths"; }
+    const uw=myFacets.map(f=>{ const bv=bestF[f]||0, mv=facetVal(name,f); if(bv<=0)return null;
+      const who=bestN[f]&&bestN[f]!==name?` (best ${bestN[f]})`:(bestN[f]===name?" (you lead)":"");
+      return `${FACET_LABEL[f]||f} ${mv} vs ${bv}${who} → ${Math.round(mv/bv*100)}%`; }).filter(Boolean);
+    why.util=uw.length?uw.join(" · "):"no measured utility this week";
+    return { name, role, class:r.class, ...pil, present, composite: den>0?num/den:null, why };
   });
 }
 
@@ -2751,15 +2786,27 @@ function renderPerformance(){
   const arrow=c=>_perfSort.col===c?(_perfSort.dir<0?" ▼":" ▲"):"";
   hd.innerHTML=cols.map(([c,lbl])=>`<th class="${c==='name'?'':'num'}" style="cursor:pointer;${c==='composite'?'color:var(--accent)':''}" title="${titles[c]}" onclick="_perfSortBy('${c}')">${lbl}${arrow(c)}</th>`).join("");
   const cell=v=>v==null?'<span style="color:var(--muted)">—</span>':`<span style="color:${parseColor(v)};font-weight:600">${v}</span>`;
+  const PILL=[["prep","Prep"],["perf","Perf"],["exec","Exec"],["surv","Surv"],["util","Util"]];
+  const detailRow=r=>{
+    const blocks=PILL.map(([k,lbl])=>{
+      const v=r[k], col=v==null?"var(--muted)":parseColor(v);
+      return `<div style="flex:1 1 180px;min-width:165px">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">${lbl} <b style="color:${col}">${v==null?"—":v}</b></div>
+        <div style="font-size:11px;color:var(--text);margin-top:2px;line-height:1.35">${esc((r.why&&r.why[k])||"—")}</div></div>`;
+    }).join("");
+    return `<tr class="perf-detail"><td colspan="7" style="padding:8px 12px 12px;background:var(--surface2)">
+      <div style="display:flex;flex-wrap:wrap;gap:14px">${blocks}</div></td></tr>`;
+  };
   const renderRow=r=>{
-    const nc=nameColor(r.name,r.role);
+    const nc=nameColor(r.name,r.role), open=_perfOpen.has(r.name);
     const partial=r.present<5?`<span style="color:var(--muted);font-size:9px"> (${r.present}/5)</span>`:"";
     const score=r.composite==null?'<span style="color:var(--muted)">—</span>'
       :`<span style="color:${parseColor(r.composite)};font-weight:800;font-size:13px">${Math.round(r.composite)}</span>${partial}`;
-    return `<tr>
-      <td><span class="cname" style="color:${nc}">${r.name}</span> <span style="color:var(--muted);font-size:9px">${r.role}</span></td>
+    const tr=`<tr style="cursor:pointer" onclick="_perfToggle('${encodeURIComponent(r.name)}')" title="click for the score breakdown">
+      <td><span style="color:var(--muted);font-size:9px">${open?"▾":"▸"}</span> <span class="cname" style="color:${nc}">${r.name}</span> <span style="color:var(--muted);font-size:9px">${r.role}</span></td>
       <td class="num">${cell(r.prep)}</td><td class="num">${cell(r.perf)}</td><td class="num">${cell(r.exec)}</td>
       <td class="num">${cell(r.surv)}</td><td class="num">${cell(r.util)}</td><td class="num">${score}</td></tr>`;
+    return open ? tr+detailRow(r) : tr;
   };
   const empty=`<tr><td colspan="7" style="color:var(--muted);font-size:12px">No raiders match.</td></tr>`;
   if(_perfGroup){

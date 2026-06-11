@@ -21,20 +21,32 @@ WCL_TOKEN_URL = "https://fresh.warcraftlogs.com/oauth/token"
 WCL_API_URL   = "https://www.warcraftlogs.com/api/v2/client"
 
 
-def get_token(client_id: str, client_secret: str) -> str:
-    resp = _req.post(
-        WCL_TOKEN_URL,
-        data={"grant_type": "client_credentials"},
-        auth=(client_id, client_secret),
-        timeout=15
-    )
-    if not resp.ok:
-        print(f"  Auth failed [{resp.status_code}]: {resp.text}")
-        resp.raise_for_status()
-    return resp.json()["access_token"]
+def get_token(client_id: str, client_secret: str, retries: int = 5) -> str:
+    # OAuth host (fresh.warcraftlogs.com) flaps during WCL incidents — retry on timeouts/5xx so a
+    # transient blip doesn't kill the whole run before it starts (it had NO retry before).
+    for attempt in range(retries):
+        try:
+            resp = _req.post(
+                WCL_TOKEN_URL,
+                data={"grant_type": "client_credentials"},
+                auth=(client_id, client_secret),
+                timeout=30
+            )
+            if resp.status_code in (500, 502, 503, 504):
+                raise _req.exceptions.HTTPError(f"{resp.status_code} from OAuth host")
+            if not resp.ok:
+                print(f"  Auth failed [{resp.status_code}]: {resp.text}")
+                resp.raise_for_status()
+            return resp.json()["access_token"]
+        except Exception as e:
+            if attempt == retries - 1:
+                raise
+            wait = min(30, 3 * 2 ** attempt)
+            print(f"  Auth retry {attempt+1}/{retries} after {e.__class__.__name__}; waiting {wait}s")
+            time.sleep(wait)
 
 
-def gql(token: str, query: str, variables: dict = None, retries: int = 3) -> dict:
+def gql(token: str, query: str, variables: dict = None, retries: int = 5) -> dict:
     attempt = 0          # network/HTTP retry budget
     rate_waits = 0       # 429s use their OWN bounded counter so a slow point-budget
     MAX_RATE_WAITS = 6   # cooldown doesn't burn the network-retry budget
@@ -77,5 +89,6 @@ def gql(token: str, query: str, variables: dict = None, retries: int = 3) -> dic
             attempt += 1
             if attempt >= retries:
                 raise
-            print(f"  Retry {attempt}/{retries} after error: {e}")
-            time.sleep(2 ** (attempt - 1))
+            wait = min(30, 2 ** attempt)   # 2,4,8,16,30 — patient enough to ride out a WCL flap
+            print(f"  Retry {attempt}/{retries} after error ({e.__class__.__name__}); waiting {wait}s")
+            time.sleep(wait)
