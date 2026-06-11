@@ -59,9 +59,10 @@ if _env_file.exists():
             _k, _v = _line.split("=", 1)
             os.environ[_k.strip()] = _v.strip()  # .env always wins over system env vars
 
-# ── WCL endpoints ─────────────────────────────────────────────────────────────
-WCL_TOKEN_URL = "https://fresh.warcraftlogs.com/oauth/token"
-WCL_API_URL   = "https://www.warcraftlogs.com/api/v2/client"
+# ── WCL endpoints + transport ─────────────────────────────────────────────────
+# OAuth + the GraphQL wrapper live in wcl_client (a pure transport leaf). Re-exported here
+# so every existing W.gql / W.get_token / W.WCL_API_URL reference keeps resolving.
+from wcl_client import WCL_TOKEN_URL, WCL_API_URL, get_token, gql
 
 # ── TBC crit rating conversion ────────────────────────────────────────────────
 # At level 70: every 22.08 crit rating = 1% crit (melee & spell, same value)
@@ -331,40 +332,6 @@ def save_cache(cache: dict):
 # ══════════════════════════════════════════════════════════════════════════════
 # WCL API helpers
 # ══════════════════════════════════════════════════════════════════════════════
-
-def get_token(client_id: str, client_secret: str) -> str:
-    resp = _req.post(
-        WCL_TOKEN_URL,
-        data={"grant_type": "client_credentials"},
-        auth=(client_id, client_secret),
-        timeout=15
-    )
-    if not resp.ok:
-        print(f"  Auth failed [{resp.status_code}]: {resp.text}")
-        resp.raise_for_status()
-    return resp.json()["access_token"]
-
-
-def gql(token: str, query: str, variables: dict = None, retries: int = 3) -> dict:
-    for attempt in range(retries):
-        try:
-            resp = _req.post(
-                WCL_API_URL,
-                json={"query": query, "variables": variables or {}},
-                headers={"Authorization": f"Bearer {token}"},
-                timeout=30
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            if "errors" in data:
-                raise RuntimeError(f"GraphQL errors: {data['errors']}")
-            return data["data"]
-        except Exception as e:
-            if attempt == retries - 1:
-                raise
-            print(f"  Retry {attempt+1}/{retries} after error: {e}")
-            time.sleep(2 ** attempt)
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # GraphQL query strings
