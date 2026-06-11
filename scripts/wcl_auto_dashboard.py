@@ -1622,7 +1622,6 @@ def build_class_toolkit(token, report_code, kills, md: dict = None):
     ae_ids  = []                                     # Arcane Explosion ranks (whole-report meme)
     snd_ids = []                                     # Slice and Dice (rogue uptime)
     bs_ids  = []                                     # Battle Shout (warrior uptime, self-target)
-    vt_ids  = set()                                  # Vampiric Touch (spriest mana battery)
     for a in (md.get("abilities") or []):
         nm_a = (a.get("name") or "")
         key = TOOLKIT_ABILITIES.get(nm_a.lower())
@@ -1634,8 +1633,6 @@ def build_class_toolkit(token, report_code, kills, md: dict = None):
             snd_ids.append(a.get("gameID"))
         if nm_a == "Battle Shout":
             bs_ids.append(a.get("gameID"))
-        if nm_a == "Vampiric Touch":
-            vt_ids.add(a.get("gameID"))
     QC = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
         events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts,
                limit: 10000){ data nextPageTimestamp }}}}"""
@@ -1756,34 +1753,10 @@ def build_class_toolkit(token, report_code, kills, md: dict = None):
             except Exception as ex:
                 print(f"  Warning: Battle Shout-uptime fetch failed for {nm}: {ex}")
 
-    # Vampiric Touch mana battery — mana the shadow priest returned to the raid (5% of VT
-    # shadow damage → party mana). Authoritative sum from Resources `resourcechange` energize
-    # events (resourceChangeType 0 = mana); the VT source IS the priest, so no pet mapping.
-    # The server-side abilityID filter doesn't capture the party energize, so page unfiltered.
-    if vt_ids:
-        QR = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
-            events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Resources,
-                   limit: 10000){ data nextPageTimestamp }}}}"""
-        cur = st
-        try:
-            for _pg in range(MAX_EVENT_PAGES):
-                ev = gql(token, QR, {"c": report_code, "ids": fids, "st": cur, "en": en}
-                         )["reportData"]["report"]["events"]
-                for d in ev.get("data", []):
-                    if (d.get("type") == "resourcechange" and d.get("resourceChangeType") == 0
-                            and d.get("abilityGameID") in vt_ids):
-                        amt = d.get("resourceChange", 0) or 0
-                        if amt > 0:
-                            nm = id2name.get(d.get("sourceID"))
-                            if nm:
-                                counts[nm]["vt_mana"] += amt
-                nx = ev.get("nextPageTimestamp")
-                if not nx:
-                    break
-                cur = nx
-        except Exception as ex:
-            print(f"  Warning: VT mana-battery fetch failed: {ex}")
-
+    # Vampiric Touch mana battery (the shadow priest's signature toolkit metric) is NOT scanned
+    # here — fetch_mana_returns already pages Resources energize events and sums VT per provider
+    # (MANA_SOURCES[0]). build_week_data folds that provider total into counts[priest]["vt_mana"]
+    # after both run, so this avoids a SECOND full Resources pagination. (See the fold below.)
     return {nm: dict(d) for nm, d in counts.items()}
 
 
@@ -2677,6 +2650,14 @@ def build_week_data(report_code: str, token: str, refresh_baseline: bool = False
     for nm, cd in crit_by_name.items():
         if cd.get("sb_crit"):
             class_toolkit.setdefault(nm, {})["sb_crit"] = cd["sb_crit"]
+    # Fold the shadow priest's VT mana from the mana-returns batteries (the VT source already
+    # paged Resources energize events there) so the toolkit doesn't run a SECOND full Resources
+    # pass. The VT provider total == the old toolkit vt_mana sum (same energize events, same
+    # source — VT credits the priest directly, no pet mapping). See build_class_toolkit.
+    for _bat in (mana_returns or {}).get("batteries", []):
+        if _bat.get("label") == MANA_SOURCES[0]["label"]:    # "Vampiric Touch"
+            for _prov in _bat.get("providers", []):
+                class_toolkit.setdefault(_prov["name"], {})["vt_mana"] = _prov["mana"]
     print(f"  ✓ class toolkit: {len(class_toolkit)} players with utility casts")
 
     # ── Assemble WEEK_DATA ─────────────────────────────────────────────────
