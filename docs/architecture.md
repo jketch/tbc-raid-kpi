@@ -20,6 +20,7 @@ the pipeline; arrows point from importer to imported (calls flow the other way).
 ```mermaid
 flowchart TD
     %% ── Orchestrators (entry points) ────────────────────
+    RW["run_weekly.bat<br/>top-level: runs main() then publish.py"]
     subgraph ORCH["Entry points — thin orchestrators"]
         MAIN["main()<br/>weekly run"]
         REPRO["reprocess.py<br/>offline, zero WCL"]
@@ -49,6 +50,8 @@ flowchart TD
         SCHEMA["week_schema.py<br/>validate · regression<br/>populated_sections"]
     end
 
+    RW --> MAIN
+    RW -->|then, separate process| PUB
     MAIN --> SPINE
     REPRO --> SPINE
     BACK --> SPINE
@@ -57,13 +60,14 @@ flowchart TD
     CORE -.->|imports for main| SPINE
     SPINE --> SCHEMA
     SPINE --> DBW
-    MAIN --> PUB
+    DBW --> SCHEMA
 
     CORE -->|re-exports| WCLC
     CORE -->|re-exports| GC
     CORE -->|re-exports| CL
     CL --> GC
 
+    GATE --> SPINE
     GATE --> SCHEMA
 
     classDef spine fill:#EEEDFE,stroke:#534AB7,color:#26215C;
@@ -74,12 +78,15 @@ flowchart TD
     class SPINE spine;
     class WCLC,GC,CL,SCHEMA leaf;
     class GATE gate;
-    class MAIN,REPRO,BACK,CORE,DBW,PUB plain;
+    class RW,MAIN,REPRO,BACK,CORE,DBW,PUB plain;
 ```
 
 **Legend** — purple: spine · green: leaves · pink: gate · grey: orchestrators/core/sinks.
 The core and the spine import each other; the spine's `import wcl_auto_dashboard` is **lazy
 (inside functions)** to break the cycle, since the core imports the spine for `main()`.
+`run_weekly.bat` runs `main()` and then `publish.py` as **two separate processes** — publish
+reads the HTML `main()` wrote, it isn't called from `main()`. The gate and `db_writer` both
+depend on the `week_schema` contract (characterization / downgrade-guard).
 
 ---
 
