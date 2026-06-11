@@ -50,26 +50,14 @@ def load_env() -> dict:
 
 
 def extract_week_data() -> dict:
-    """Pull the injected WEEK_DATA object out of the HTML (brace-matched)."""
+    """Pull the injected WEEK_DATA out of the dashboard HTML via the ONE shared string-aware
+    loader (week_build.extract_week_data) — was a private brace-walker copy here (#5)."""
     try:
-        t = DASH.read_text(encoding="utf-8")
-        m = t.find("const WEEK_DATA =")
-        i = t.index("{", m); start = i; depth = 0; in_str = esc = False
-        while i < len(t):
-            c = t[i]
-            if esc: esc = False
-            elif c == "\\" and in_str: esc = True
-            elif c == '"': in_str = not in_str
-            elif not in_str:
-                if c == "{": depth += 1
-                elif c == "}":
-                    depth -= 1
-                    if depth == 0:
-                        return json.loads(t[start:i + 1])
-            i += 1
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import week_build as wb
+        return wb.extract_week_data(DASH.read_text(encoding="utf-8"))
     except Exception:
-        pass
-    return {}
+        return {}
 
 
 def hsk(n) -> str:
@@ -95,9 +83,20 @@ def build_summary(wd: dict) -> str:
 
     # ── Shout-outs — positive individual recognition ──
     leaders = []
-    dmg = wd.get("damage", [])
-    if dmg:
-        leaders.append(f"⚔️ Top dmg **{dmg[0]['name']}** {hsk(dmg[0].get('total_dmg'))}")
+    # Rank "Top dmg" off damageBySelection (the SAME source the dashboard's DPS table uses —
+    # All-selection total, already filtered to DPS by effective_role) so the posted blurb names
+    # the same #1 and shows the same number as the site (#4). The legacy wd['damage'] list used a
+    # different denominator/scope and could disagree. Fall back to it only for pre-damageBySelection
+    # snapshots.
+    dbs_players = (wd.get("damageBySelection") or {}).get("players") or []
+    ranked = sorted((p for p in dbs_players if (p.get("all") or {}).get("total")),
+                    key=lambda p: p["all"]["total"], reverse=True)
+    if ranked:
+        top = ranked[0]
+        leaders.append(f"⚔️ Top dmg **{top['name']}** {hsk(top['all']['total'])}")
+    elif wd.get("damage"):
+        d0 = wd["damage"][0]
+        leaders.append(f"⚔️ Top dmg **{d0['name']}** {hsk(d0.get('total_dmg'))}")
     heal = wd.get("healing", [])
     if heal:
         leaders.append(f"💚 Top healer **{heal[0]['name']}** {round(heal[0].get('eff_hps') or 0):,} HPS")
