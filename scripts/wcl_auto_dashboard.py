@@ -1590,6 +1590,40 @@ def _toolkit_metric(cls, spec, c, kill_min):
     return None   # Holy/Disc Priest → healer scorecard; others: no DPS signature
 
 
+def _buff_uptime_batch(token, report_code, fids, players, ability_ids, counts, kdur,
+                       out_key, label, *, self_target):
+    """Per-player self-buff uptime% (Buffs-table totalUptime ÷ kill time), for SnD / Battle
+    Shout. Issues ONE aliased query covering every (player, ability-rank) pair instead of a
+    query per pair (was players×ranks round-trips) — the WCL totalUptime values are unchanged,
+    only batched (#10). `players` is [(name, sourceID)]; self_target also pins targetID=source
+    (Battle Shout uptime on self, the raid-coverage proxy). Writes counts[name][out_key]."""
+    if not players or not ability_ids:
+        return
+    fids_lit = ",".join(str(int(x)) for x in fids)
+    alias2name, clauses = {}, []
+    for pi, (nm, sid) in enumerate(players):
+        for ai, aid in enumerate(ability_ids):
+            al = f"u{pi}_{ai}"
+            alias2name[al] = nm
+            tgt = f", targetID:{int(sid)}" if self_target else ""
+            clauses.append(f'{al}: table(dataType: Buffs, fightIDs:[{fids_lit}], '
+                           f'sourceID:{int(sid)}{tgt}, abilityID:{float(aid)})')
+    Q = "query($c:String!){reportData{report(code:$c){" + " ".join(clauses) + "}}}"
+    up = defaultdict(float)
+    try:
+        rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+        for al, nm in alias2name.items():
+            t = rep.get(al)
+            if isinstance(t, str):
+                t = json.loads(t)
+            for a in (t or {}).get("data", {}).get("auras", []):
+                up[nm] += a.get("totalUptime", 0)
+        for nm in {n for n in alias2name.values()}:
+            counts[nm][out_key] = round(up[nm] / kdur * 100, 1)
+    except Exception as ex:
+        print(f"  Warning: {label}-uptime batch fetch failed: {ex}")
+
+
 def build_class_toolkit(token, report_code, kills, md: dict = None):
     """Per-player cast counts of every TOOLKIT_ABILITIES spell, from WCL Casts EVENTS over
     the kill windows (durable; runs every week, no combat log). Returns
@@ -1710,48 +1744,20 @@ def build_class_toolkit(token, report_code, kills, md: dict = None):
     # who cast SnD (a rogue), so no roster/class lookup needed here.
     if snd_ids:
         kdur = sum(f["endTime"] - f["startTime"] for f in kills) or 1
-        QS = """query($c:String!,$f:[Int],$s:Int!,$a:Float!){reportData{report(code:$c){
-            table(dataType: Buffs, fightIDs:$f, sourceID:$s, abilityID:$a)}}}"""
-        for nm, d in list(counts.items()):
-            rid = name2id.get(nm)
-            if not d.get("snd") or rid is None:
-                continue
-            up = 0
-            try:
-                for aid in snd_ids:
-                    t = gql(token, QS, {"c": report_code, "f": fids, "s": rid, "a": float(aid)}
-                            )["reportData"]["report"]["table"]
-                    if isinstance(t, str):
-                        t = json.loads(t)
-                    for a in t.get("data", {}).get("auras", []):
-                        up += a.get("totalUptime", 0)
-                counts[nm]["snd_up"] = round(up / kdur * 100, 1)
-            except Exception as ex:
-                print(f"  Warning: SnD-uptime fetch failed for {nm}: {ex}")
+        rogues = [(nm, name2id[nm]) for nm, d in counts.items()
+                  if d.get("snd") and name2id.get(nm) is not None]
+        _buff_uptime_batch(token, report_code, fids, rogues, snd_ids, counts, kdur,
+                           "snd_up", "SnD", self_target=False)
 
     # Battle Shout UPTIME% per warrior. A raid buff, so source-only sums across every buffed
     # player (meaningless) — filter to the warrior as BOTH source and target (uptime on self,
     # the proxy for raid Battle Shout coverage). Keyed off anyone who cast Battle Shout.
     if bs_ids:
         kdur = sum(f["endTime"] - f["startTime"] for f in kills) or 1
-        QB = """query($c:String!,$f:[Int],$s:Int!,$t:Int!,$a:Float!){reportData{report(code:$c){
-            table(dataType: Buffs, fightIDs:$f, sourceID:$s, targetID:$t, abilityID:$a)}}}"""
-        for nm, d in list(counts.items()):
-            wid = name2id.get(nm)
-            if not d.get("bshout") or wid is None:
-                continue
-            up = 0
-            try:
-                for aid in bs_ids:
-                    t = gql(token, QB, {"c": report_code, "f": fids, "s": wid, "t": wid, "a": float(aid)}
-                            )["reportData"]["report"]["table"]
-                    if isinstance(t, str):
-                        t = json.loads(t)
-                    for a in t.get("data", {}).get("auras", []):
-                        up += a.get("totalUptime", 0)
-                counts[nm]["bshout_up"] = round(up / kdur * 100, 1)
-            except Exception as ex:
-                print(f"  Warning: Battle Shout-uptime fetch failed for {nm}: {ex}")
+        warriors = [(nm, name2id[nm]) for nm, d in counts.items()
+                    if d.get("bshout") and name2id.get(nm) is not None]
+        _buff_uptime_batch(token, report_code, fids, warriors, bs_ids, counts, kdur,
+                           "bshout_up", "Battle Shout", self_target=True)
 
     # Vampiric Touch mana battery (the shadow priest's signature toolkit metric) is NOT scanned
     # here — fetch_mana_returns already pages Resources energize events and sums VT per provider
