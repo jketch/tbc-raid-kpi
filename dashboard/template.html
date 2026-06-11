@@ -2591,12 +2591,12 @@ const PERF_ROLE_FACETS = { Physical:["intr","sunder","save"], Caster:["intr","ma
 // lacking one — a Warlock floored at 0 for having no interrupt/mana-return was the symptom.
 // 'stones' = warlock raid provision (Create / Ritual of Souls); 'save'/'dispel' from the saves KPI;
 // 'mana' = mana returned; 'intr' = interrupts; 'sunder' = Sunder Armor upkeep; 'md' = hunter
-// Misdirection/Tranq (the toolkit num — threat transfer). Curse coverage is
+// Misdirection/Tranq, 'bshout' = warrior Battle Shout uptime (both the toolkit num). Curse coverage is
 // deliberately ABSENT — it's a shared raid debuff (all warlocks benefit even if two maintain it), so
 // it can't fairly rank individuals.
 const CLASS_UTIL_FACETS = {
   Warlock:["stones"], Mage:["intr"], Priest:["mana","save"], Shaman:["mana","intr"],
-  Druid:["mana","save"], Paladin:["save"], Hunter:["md"], Rogue:["intr"], Warrior:["sunder","intr"],
+  Druid:["mana","save"], Paladin:["save"], Hunter:["md"], Rogue:["intr"], Warrior:["bshout","sunder"],
 };
 let _perfWeight="balanced", _perfRole="all", _perfGroup=false, _perfSearch="";
 let _perfSort={col:"composite",dir:-1};
@@ -2630,7 +2630,11 @@ function _perfRows(){
   const mana={};
   ((wd.manaReturns||{}).batteries||[]).forEach(b=>(b.providers||[]).forEach(p=>{ mana[p.name]=(mana[p.name]||0)+(p.mana||0); }));
   const saveTot=n=>{ const s=saves[n]; return s?(s.save||0)+(s.dispel||0)+(s.utility||0):0; };
-  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="stones"?((usage[n]||{}).stones_made||0) : f==="md"?(((dps[n]||{}).toolkit||{}).num||0) : 0;
+  // 'md' (hunter Misdirection) and 'bshout' (warrior Battle Shout uptime) both read the player's
+  // toolkit num, but are SEPARATE facet keys so each ranks within its own class cohort — the toolkit
+  // num isn't comparable across classes (MD count ~6 vs Battle Shout ~89%).
+  const tkNum=n=>(((dps[n]||{}).toolkit||{}).num||0);
+  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="stones"?((usage[n]||{}).stones_made||0) : (f==="md"||f==="bshout")?tkNum(n) : 0;
   // best[facet] scoped to the COHORT that provides it (the classes whose CLASS_UTIL_FACETS list it),
   // NOT the whole raid — so a hunter's Misdirection ranks vs other hunters, not vs a mage's toolkit
   // num. A facet that's naturally class-exclusive (stones) collapses to its one cohort either way.
