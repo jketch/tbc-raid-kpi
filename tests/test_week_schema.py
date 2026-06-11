@@ -115,6 +115,44 @@ class TestRegression(unittest.TestCase):
         self.assertEqual(ws.regression(old, new), [])
 
 
+class TestFieldCoverage(unittest.TestCase):
+    """coverage() / coverage_regression() — the field-level guard for a key going all-null inside a
+    still-populated section (WCL parse % blanked by a reprocess from pre-ranking snapshots)."""
+
+    @staticmethod
+    def _wk(dps, tank, heal):
+        """A week with `dps`/`tank`/`heal` items each carrying a non-null vs_replacement."""
+        mk = lambda n: [{"name": f"P{i}", "vs_replacement": 70} for i in range(n)]
+        return {"meta": {"report_code": "R"},
+                "damageBySelection": {"players": mk(dps)},
+                "tankScorecard": mk(tank),
+                "healing": mk(heal)}
+
+    def test_coverage_counts_non_null(self):
+        c = ws.coverage(self._wk(3, 2, 5))
+        self.assertEqual((c["dps parse %"], c["tank parse %"], c["healer parse %"]), (3, 2, 5))
+
+    def test_total_collapse_is_flagged(self):
+        # the real incident: dps + tank parse blanked to all-null, healer survives
+        old, new = self._wk(19, 3, 5), self._wk(0, 0, 5)
+        self.assertEqual(ws.coverage_regression(old, new), ["dps parse %", "tank parse %"])
+
+    def test_partial_drop_does_not_trip(self):
+        # roster churn (19 → 17 parsed) is NOT a collapse — only old>0 → new==0 fires
+        self.assertEqual(ws.coverage_regression(self._wk(19, 3, 5), self._wk(17, 3, 5)), [])
+
+    def test_first_deploy_with_nothing_ranked_is_not_a_regression(self):
+        self.assertEqual(ws.coverage_regression(self._wk(0, 0, 0), self._wk(0, 0, 0)), [])
+
+    def test_gaining_coverage_is_not_a_regression(self):
+        self.assertEqual(ws.coverage_regression(self._wk(0, 0, 5), self._wk(19, 3, 5)), [])
+
+    def test_never_raises_on_garbage(self):
+        for junk in (None, {}, {"damageBySelection": None}, {"healing": "x"}):
+            ws.coverage(junk)
+            ws.coverage_regression(junk, junk)
+
+
 class TestManifestCoverage(unittest.TestCase):
     def test_every_section_has_a_tier_and_desc(self):
         for key, s in ws.SECTIONS.items():

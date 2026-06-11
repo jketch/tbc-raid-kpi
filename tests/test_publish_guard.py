@@ -43,6 +43,18 @@ class TestSectionLossGuard(unittest.TestCase):
         reasons = publish._section_loss_guard(prev, new)
         self.assertTrue(any("loot" in r for r in reasons), reasons)
 
+    def test_same_week_redeploy_blanking_parse_pct_blocks(self):
+        # field-coverage collapse INSIDE a still-populated section: parse % went all-null on a
+        # re-deploy of the same report (the reprocess-over-fresh-WCL incident). The section stays
+        # populated, so section-level regression() can't see it — only the coverage check can.
+        prev, new = complete_week("W1"), complete_week("W1")
+        prev["damageBySelection"]["players"] = [{"name": "X", "vs_replacement": 74}]
+        prev["tankScorecard"] = [{"name": "T", "vs_replacement": 71}]
+        new["damageBySelection"]["players"] = [{"name": "X"}]   # same players, parse value gone
+        new["tankScorecard"] = [{"name": "T"}]
+        reasons = publish._section_loss_guard(prev, new)
+        self.assertTrue(any("parse" in r for r in reasons), reasons)
+
     def test_new_week_with_different_optional_sections_does_not_false_positive(self):
         # weekly deploys advance the latest week; a new week may legitimately have empty optional
         # sections (flawless = no deaths, dry night = no loot). Cross-week must NOT block.

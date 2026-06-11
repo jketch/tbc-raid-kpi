@@ -147,6 +147,40 @@ def regression(old: dict, new: dict) -> list:
     return sorted(populated_sections(old) - populated_sections(new))
 
 
+# ── field-coverage (inside a populated section) ─────────────────────────────────────────
+# A section can stay "populated" while a key field across its items collapses to all-null — e.g.
+# WCL parse % (vs_replacement) blanked by a reprocess from pre-ranking snapshots: damageBySelection
+# still has players, so section-level regression() can't see it. These entries track per-field
+# coverage so the deploy guard can. key → (extractor(week_data) -> list[item dict], field name).
+COVERAGE_FIELDS = {
+    "dps parse %":    (lambda wd: ((wd.get("damageBySelection") or {}).get("players")) or [], "vs_replacement"),
+    "tank parse %":   (lambda wd: wd.get("tankScorecard") or [], "vs_replacement"),
+    "healer parse %": (lambda wd: wd.get("healing") or [], "vs_replacement"),
+}
+
+
+def coverage(mapped: dict) -> dict:
+    """{label: count of items carrying a non-null value} for each COVERAGE_FIELDS entry."""
+    out = {}
+    for label, (extract, field) in COVERAGE_FIELDS.items():
+        try:
+            items = extract(mapped or {})
+            out[label] = sum(1 for it in items if isinstance(it, dict) and it.get(field) is not None)
+        except Exception:
+            out[label] = 0
+    return out
+
+
+def coverage_regression(old: dict, new: dict) -> list:
+    """Labels whose field-coverage COLLAPSED — present in `old`, entirely null in `new`.
+
+    Targets the exact 'a populated section's key field went all-null' failure that section-level
+    regression() can't see (WCL parse % blanked by a reprocess from pre-ranking snapshots). Only
+    fires on a TOTAL collapse (old>0 → new==0), so ordinary per-player roster churn never trips it."""
+    co, cn = coverage(old), coverage(new)
+    return sorted(k for k in COVERAGE_FIELDS if co.get(k, 0) > 0 and cn.get(k, 0) == 0)
+
+
 def format_report(report: dict, *, label: str = "week") -> str:
     """Render a validate() result as a compact, human-readable block (for finalize_week's stdout)."""
     lines = []

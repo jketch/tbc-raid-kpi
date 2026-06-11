@@ -159,6 +159,11 @@ def _section_loss_guard(prev_latest, new_latest):
     if prev_latest and pc and pc == nc:
         for sec in ws.regression(prev_latest, new_latest):
             reasons.append(f"{sec}: present in the previous deploy of this week, now empty")
+        # field-coverage collapse INSIDE a still-populated section (e.g. WCL parse % blanked by a
+        # reprocess from pre-ranking snapshots) — section-level regression() can't see this.
+        for fld in ws.coverage_regression(prev_latest, new_latest):
+            reasons.append(f"{fld}: every value blanked vs the previous deploy of this week "
+                           f"(field-coverage collapse — likely a reprocess over fresh WCL data)")
     return reasons
 
 
@@ -216,6 +221,14 @@ def deploy_netlify(force: bool = False):
             losses = []
         else:
             losses = _section_loss_guard(prev_latest, new_latest)
+            # Visible coverage line so a thin/blanked field is obvious BEFORE the push, even on a
+            # first deploy (when the guard has no prior deploy to compare against).
+            try:
+                import week_schema as ws
+                cov = ws.coverage(new_latest)
+                print("  parse-% coverage: " + "  ·  ".join(f"{k} {v}" for k, v in cov.items()))
+            except Exception:
+                pass
         if losses and not force:
             print("\n  ╔══ DEPLOY BLOCKED — a dashboard section would be LOST ══╗")
             for r in losses:

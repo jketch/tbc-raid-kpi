@@ -92,6 +92,7 @@
       "playerSpells",
       "roleSpells",
       "roster",
+      "saves",
       "tankCrit",
       "tankScorecard",
       "uptimeByFight"
@@ -126,6 +127,7 @@
       "playerSpells",
       "roleSpells",
       "roster",
+      "saves",
       "sunderArmor",
       "tankCrit",
       "tankScorecard",
@@ -225,6 +227,7 @@
       "playerSpells",
       "roleSpells",
       "roster",
+      "saves",
       "tankCrit",
       "tankScorecard",
       "uptimeByFight"
@@ -259,6 +262,7 @@
       "playerSpells",
       "roleSpells",
       "roster",
+      "saves",
       "sunderArmor",
       "tankCrit",
       "tankScorecard",
