@@ -1,0 +1,3 @@
+# Git hooks run under git's bundled `sh` — a CRLF shebang yields "/bin/sh^M: bad
+# interpreter" on Windows. Force LF so the tracked hook stays executable everywhere.
+hooks/* text eol=lf

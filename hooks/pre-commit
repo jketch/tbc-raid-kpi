@@ -1,0 +1,24 @@
+#!/bin/sh
+# Pre-commit gate for the raid-KPI pipeline.
+#
+# Runs scripts/check.py — the hermetic unit suite + the contract characterization
+# (does any prod snapshot silently drop a WEEK_DATA section?). Blocks the commit on
+# failure so the single-spine invariants are ENFORCED, not just available.
+#
+# Zero WCL, zero DB writes, read-only on prod data — fast enough to run every commit.
+#
+# Source of truth: hooks/pre-commit (tracked). Install/refresh with:
+#     python scripts/install_hooks.py        (or copy this file to .git/hooks/pre-commit)
+# Bypass for a genuine emergency: git commit --no-verify   (avoid — fix the data instead)
+
+python scripts/check.py
+status=$?
+if [ $status -ne 0 ]; then
+  echo ""
+  echo "✗ pre-commit blocked: scripts/check.py failed (see above)."
+  echo "  If the change is intentional (you added/changed a section), run:"
+  echo "      python scripts/check.py --bless"
+  echo "  and commit tests/characterization.json with your change."
+  exit 1
+fi
+exit 0
