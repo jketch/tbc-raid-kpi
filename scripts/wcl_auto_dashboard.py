@@ -3223,6 +3223,19 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
                 return week_data                  # only one week of history
             prev, prev_date, prev_kills = row[0], row[1], row[2]
 
+            # Stale-prior-week guard: a delta reads the prior week's row, so if that row predates a
+            # schema bump (missing new columns) the delta SILENTLY blanks. Warn loudly instead — the
+            # fix is `reprocess.py --all`, which re-stamps every week to the current schema_version.
+            try:
+                import db_writer as _dbw
+                _sv = con.execute("SELECT schema_version FROM weeks WHERE report_code=?", (prev,)).fetchone()
+                _sv = _sv[0] if _sv else None
+                if _sv is None or _sv < _dbw.SCHEMA_VERSION:
+                    print(f"  ⚠ trends: prior week {prev} predates schema v{_dbw.SCHEMA_VERSION} "
+                          f"(row is v{_sv}) — some delta_* may be blank; run `reprocess.py --all`")
+            except sqlite3.OperationalError:
+                pass   # older DB without the schema_version column
+
             def pv(table, player, col):
                 """Previous-week value, or None if absent (also tolerates a missing
                 table/column on an older DB that predates this metric)."""

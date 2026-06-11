@@ -23,10 +23,43 @@ Usage:
 
 import sqlite3
 import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+import week_schema as ws            # leaf module — the WEEK_DATA contract (no import cycle)
 
 DB_PATH      = Path(__file__).parent.parent / "cache" / "raid_history.db"
 DB_PATH_TEST = Path(__file__).parent.parent / "cache" / "raid_history_test.db"
+
+# Bump when a schema/column change means a prior week's row must be rebuilt for trends to compute.
+# enrich_with_trends warns when the prior week's row predates this; `reprocess.py --all` re-stamps.
+SCHEMA_VERSION = 2
+
+
+# section → the table whose presence proves that section is in the DB for a report. Used by the
+# downgrade-guard: a thin snapshot must not overwrite a richer existing row (the R3 incident —
+# reprocess --all rewriting a log-complete week from a log-thin snapshot).
+_SECTION_TABLE = {
+    "avoidableDmg": "avoidable_dmg", "drums": "drums", "engineering": "engineering",
+    "interrupts": "interrupts", "friendlyFire": "friendly_fire", "tankScorecard": "tank_scorecard",
+    "healing": "healing", "sunderArmor": "sunder_armor", "manaReturns": "mana_returns",
+    "debuffCoverage": "debuff_coverage", "loot": "loot", "luckKPI": "luck_kpi",
+    "deaths": "deaths", "consumables": "consumables", "roster": "roster",
+}
+
+
+def _db_dropped_sections(con, rc: str, week_data: dict) -> set:
+    """Sections the existing DB row HAS that the incoming write would drop (existing − incoming).
+    Empty set = safe write (incoming is at least as rich). Used by the write_week downgrade-guard."""
+    existing = set()
+    for sec, tbl in _SECTION_TABLE.items():
+        try:
+            if con.execute(f"SELECT 1 FROM {tbl} WHERE report_code=? LIMIT 1", (rc,)).fetchone():
+                existing.add(sec)
+        except sqlite3.OperationalError:
+            pass   # table missing on an older DB → treat as absent
+    return existing - ws.populated_sections(week_data)
 
 
 # ── Schema ────────────────────────────────────────────────────────────────────
@@ -266,12 +299,16 @@ CREATE TABLE IF NOT EXISTS loot (
 
 # ── Writer ────────────────────────────────────────────────────────────────────
 
-def write_week(week_data: dict, db_path: Path = None) -> None:
+def write_week(week_data: dict, db_path: Path = None, *, allow_downgrade: bool = False) -> None:
     """
     Upsert all KPI tables from a WEEK_DATA dict (output of map_to_week_data()).
     Safe to call multiple times for the same report_code — will overwrite.
 
     db_path: override the DB file (e.g. pass DB_PATH_TEST to avoid polluting prod).
+    allow_downgrade: by default the write is SKIPPED (with a warning) if the incoming data would
+      drop a contract section the existing DB row already has — protecting a log-complete row from
+      being overwritten by a log-thin snapshot (the reprocess-from-thin-snapshot incident). Pass
+      True to force the write (e.g. when you intentionally rebuild a week with less data).
     """
     target = Path(db_path) if db_path else DB_PATH
     target.parent.mkdir(exist_ok=True)
@@ -315,17 +352,34 @@ def write_week(week_data: dict, db_path: Path = None) -> None:
                 con.execute(f"ALTER TABLE dps ADD COLUMN {_col} REAL")
             except sqlite3.OperationalError:
                 pass   # column already exists
+        # migrate older DBs that predate the schema-version stamp (drives the stale-prior-week warning)
+        try:
+            con.execute("ALTER TABLE weeks ADD COLUMN schema_version INTEGER")
+        except sqlite3.OperationalError:
+            pass   # column already exists
 
         meta = week_data.get("meta", {})
         rc   = meta.get("report_code") or week_data.get("reportCode", "unknown")
 
+        # ── downgrade-guard ────────────────────────────────────────────────────
+        # Never silently overwrite a richer existing row with a thinner one (a log-thin snapshot
+        # over a log-complete week). Warn + skip the whole write unless explicitly forced.
+        if not allow_downgrade:
+            dropped = _db_dropped_sections(con, rc, week_data)
+            if dropped:
+                print(f"  ⚠ write_week SKIPPED for {rc}: incoming data would DROP {sorted(dropped)} "
+                      f"that the existing DB row has (thin snapshot over a richer row). "
+                      f"Pass allow_downgrade=True to force.")
+                con.close()
+                return
+
         # ── weeks ──────────────────────────────────────────────────────────────
         _hs = week_data.get("healthstoneStats") or {}
         con.execute("""
-            INSERT OR REPLACE INTO weeks (report_code, date, zone, kills, start_ms, hs_used, hs_died_no_stone)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO weeks (report_code, date, zone, kills, start_ms, hs_used, hs_died_no_stone, schema_version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (rc, meta.get("date"), meta.get("zone"), meta.get("kills"), meta.get("start_ms"),
-              _hs.get("total_used"), _hs.get("died_no_stone")))
+              _hs.get("total_used"), _hs.get("died_no_stone"), SCHEMA_VERSION))
 
         # ── roster ─────────────────────────────────────────────────────────────
         for name, info in (week_data.get("roster") or {}).items():
