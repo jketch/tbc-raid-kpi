@@ -2587,6 +2587,11 @@ const PERF_TUNING = {
   // small bonus. flask+food+oil = 85 ("prepared"); +in-fight pot +situational → 100.
   PREP_FLASK: 40, PREP_ELIXIR1: 20, PREP_FOOD: 25, PREP_OIL: 20, PREP_POT: 10, PREP_ALT: 5,
 };
+// Melee-MANDATORY avoidable mechanics — damage you take by being in melee (a spinning boss hits
+// all melee; low-mobility warriors/rets can't escape it, only high-mobility rogues clip it). EXCLUDED
+// from Execution scoring so it doesn't punish melee for unavoidable damage (same principle as tanks).
+// Still counted on the Accountability tab. Curated set — refine per boss as needed.
+const MELEE_MANDATORY = new Set(["Whirlwind", "Whirl", "Scalding Water"]);
 const PERF_WEIGHTS = {           // [prep, perf, exec, surv, util]
   balanced: [1.0, 1.5, 1.0, 1.0, 0.75],   // headline-tilted, slight util discount (default)
   perf:     [0.75,2.5, 0.75,0.75,0.5 ],   // Performance-led
@@ -2645,8 +2650,14 @@ function _perfRows(){
   // avoidable-based score just flags whoever tanks the most. Their defensive execution lives in the
   // Survival grade instead → tank exec = null. Hunters are ranged despite the Physical role.
   const posOf=(cls,role)=> role==="Tank" ? "tank" : ((role==="Physical"&&cls!=="Hunter") ? "melee" : "ranged");
+  // "Dodgeable" avoidable for EXECUTION: subtract MELEE-MANDATORY mechanics you take by being in
+  // melee (a spinning boss hits all melee — low-mobility warriors/rets can't escape it, only the
+  // dodgeable stuff is execution). Same principle as excluding tanks. Still shown on Accountability.
+  const dodgeAvoid=n=>{ const av=avoid[n]||{}; let d=av.dmg||0;
+    for(const s of (av.sources||[])) if(MELEE_MANDATORY.has(s.ability)) d-=(s.dmg||0);
+    return Math.max(0,d); };
   const _apmsBy={melee:[],ranged:[]};
-  Object.entries(roster).forEach(([n,r])=>{ const g=posOf(r.class,r.role); if(g==="tank")return; const a=((avoid[n]||{}).dmg||0)/raidMin; if(a>0) _apmsBy[g].push(a); });
+  Object.entries(roster).forEach(([n,r])=>{ const g=posOf(r.class,r.role); if(g==="tank")return; const a=dodgeAvoid(n)/raidMin; if(a>0) _apmsBy[g].push(a); });
   const _pctl=(arr,q)=>{const s=[...arr].sort((a,b)=>a-b); return s.length?s[Math.min(s.length-1,Math.round(q*(s.length-1)))]:0;};
   const _capFor=g=>Math.max(PERF_TUNING.EXEC_AVOID_FLOOR, _pctl(_apmsBy[g],PERF_TUNING.EXEC_AVOID_PCTL) || PERF_TUNING.EXEC_AVOID_CAP);
   const avoidCap={melee:_capFor("melee"), ranged:_capFor("ranged")};
@@ -2690,7 +2701,7 @@ function _perfRows(){
     // Shield Block cast-rate; bear = Lacerate uptime%) + CD discipline. Avoidable can't fairly score
     // tanks (it just flags whoever tanks most) — that's why theirs is a separate, mitigation-based axis.
     let exec=null;
-    if(!noLog && role!=="Tank"){ const apm=((avoid[name]||{}).dmg||0)/raidMin; const cap=avoidCap[posOf(r.class,role)]||PERF_TUNING.EXEC_AVOID_CAP; let e=100*clamp(1-apm/cap,0,1); e-=Math.min(PERF_TUNING.FF_CAP,((ff[name]||{}).incidents||0)*PERF_TUNING.FF_PER_INCIDENT); if(mcLiable.has(name)) e-=PERF_TUNING.MC_LIABLE_PENALTY; exec=Math.round(clamp(e,0,100)); }
+    if(!noLog && role!=="Tank"){ const apm=dodgeAvoid(name)/raidMin; const cap=avoidCap[posOf(r.class,role)]||PERF_TUNING.EXEC_AVOID_CAP; let e=100*clamp(1-apm/cap,0,1); e-=Math.min(PERF_TUNING.FF_CAP,((ff[name]||{}).incidents||0)*PERF_TUNING.FF_PER_INCIDENT); if(mcLiable.has(name)) e-=PERF_TUNING.MC_LIABLE_PENALTY; exec=Math.round(clamp(e,0,100)); }
     else if(!noLog && role==="Tank"){
       const t=tank[name]||{}, bm=(t.boss_melee_sec||0);
       if(bm>=30){   // need meaningful tanking time to judge maintenance
