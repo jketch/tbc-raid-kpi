@@ -68,6 +68,10 @@ def load_week_data(html_path: Path) -> dict:
 def reprocess_one(wd: dict, db_path: Path, render: bool = True) -> None:
     """Run the cheap local stages on one mapped WEEK_DATA: trends → DB write → (optional) render.
     enrich_with_trends MUST precede write_week (it reads the prior week before this one overwrites)."""
+    # Loot is ingested only by the live pipeline's --loot step, so refresh it from the newest
+    # loot/*.csv (by raid date) here too — keeps the DB row + re-rendered HTML's Loot tab intact
+    # for a snapshot that predates loot. No-op when the CSV has no awards that night.
+    W.reingest_loot(wd)
     W.enrich_with_trends(wd, db_path)
     try:
         db_writer.write_week(wd, db_path)

@@ -3392,6 +3392,34 @@ def dump_week_data_cache(mapped: dict) -> None:
         print(f"  ⚠ week_data cache write failed: {e}")
 
 
+def reingest_loot(mapped: dict, csv_path: str = None) -> dict:
+    """Re-attach a week's loot to a MAPPED week_data from a ThatsBIS 'received' CSV, keyed on the
+    raid-night date (from meta.start_ms). Loot is normally ingested ONLY by the live pipeline's
+    `--loot` step (main()), so the OFFLINE rebuild paths — backfill_snapshots.py (rebuilds a
+    snapshot from WCL) and reprocess.py --all (re-renders/re-persists from snapshots) — would
+    silently DROP loot from any week they touch unless they call this. Newest loot/*.csv is
+    auto-picked. No-op (loot untouched) if there's no CSV or no awards dated that night, so it
+    never clobbers existing loot with emptiness on a date the CSV doesn't cover. Never raises."""
+    try:
+        if csv_path is None:
+            csvs = sorted(LOOT_DIR.glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True)
+            if not csvs:
+                return mapped
+            csv_path = str(csvs[0])
+        sm = (mapped.get("meta") or {}).get("start_ms")
+        if sm is None:
+            return mapped
+        raid_date = time.strftime("%Y-%m-%d", time.localtime(sm / 1000))
+        import loot_parser
+        ld = loot_parser.parse_loot(csv_path, raid_date)
+        if ld:
+            mapped["loot"] = ld
+            print(f"  + loot re-ingested: {ld['total']} items to {len(ld['players'])} raiders on {raid_date}")
+    except Exception as e:
+        print(f"  loot re-ingest warning: {e}")
+    return mapped
+
+
 def inject_into_html(week_data: dict, html_path: Path, mapped: dict = None):
     """Read template.html, inject WEEK_DATA, write to html_path (the gitignored output).
 

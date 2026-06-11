@@ -46,6 +46,9 @@ def backfill(report_code: str, token: str, log_path: str = None) -> None:
     if log_data:
         wk = W.merge_log_into_wcl(wk, log_data)                          # overlay log-only KPIs
     mapped = W.map_to_week_data(wk)
+    W.reingest_loot(mapped)                                             # loot lives only in the live
+    # pipeline's --loot step; re-attach this week's loot from the newest loot/*.csv (by raid date)
+    # so the rebuilt snapshot keeps its Loot tab instead of silently dropping it.
     W.dump_week_data_cache(mapped)                                       # writes cache/week_data/<code>.json only
     m = mapped.get("meta", {})
     print(f"  ✓ {report_code} ({m.get('date')}) — {len(mapped.get('roster') or {})} players, "
