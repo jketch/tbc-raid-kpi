@@ -2631,8 +2631,96 @@ function _setPerfRole(r){ _perfRole=r; document.querySelectorAll("#perfRoleSeg .
 function _setPerfGroup(g){ _perfGroup=g; document.querySelectorAll("#perfGroupSeg .seg-btn").forEach(b=>b.classList.toggle("on",(b.dataset.g==="role")===g)); try{localStorage.setItem("perfGroup",g?"1":"0");}catch(e){} renderPerformance(); }
 function _setPerfSearch(v){ _perfSearch=(v||"").trim().toLowerCase(); renderPerformance(); }
 function _perfSortBy(col){ if(_perfSort.col===col) _perfSort.dir*=-1; else _perfSort={col, dir: col==="name"?1:-1}; renderPerformance(); }
-let _perfOpen=new Set();   // expanded drilldown rows (by player name)
-function _perfToggle(n){ n=decodeURIComponent(n); if(_perfOpen.has(n))_perfOpen.delete(n); else _perfOpen.add(n); renderPerformance(); }
+// ── Performance BRIEF — a right-side flyout drawer (replaces the old inline expand row). Click a
+// record → a focused brief slides in over a scrim with the hard data behind every pillar; the table
+// stays put. _perfDrawerName holds the open raider (null = closed); the drawer re-reads _perfRows()
+// each render so a weighting toggle while it's open stays in sync.
+let _perfDrawerName=null;
+function _perfShow(n){ _perfDrawerName=decodeURIComponent(n); _perfRenderDrawer(); renderPerformance(); }
+function _perfHide(){ _perfDrawerName=null; _perfRenderDrawer(); renderPerformance(); }
+function _perfDrawerEls(){
+  let back=document.getElementById("perfScrim"), dr=document.getElementById("perfDrawer");
+  if(!dr){
+    back=document.createElement("div"); back.id="perfScrim";
+    back.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.68);backdrop-filter:blur(2.5px);-webkit-backdrop-filter:blur(2.5px);opacity:0;pointer-events:none;transition:opacity .2s;z-index:90";
+    back.onclick=_perfHide;
+    dr=document.createElement("div"); dr.id="perfDrawer";
+    dr.style.cssText="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.95);width:600px;max-width:94vw;max-height:88vh;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 26px 75px rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity .2s,transform .22s cubic-bezier(.34,1.2,.5,1);z-index:91;overflow-y:auto";
+    document.body.appendChild(back); document.body.appendChild(dr);
+    document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&_perfDrawerName)_perfHide(); });
+  }
+  return {back,dr};
+}
+function _perfRenderDrawer(){
+  const {back,dr}=_perfDrawerEls();
+  const close=()=>{ back.style.opacity=0; back.style.pointerEvents="none"; dr.style.opacity=0; dr.style.pointerEvents="none"; dr.style.transform="translate(-50%,-50%) scale(.95)"; };
+  if(!_perfDrawerName){ close(); return; }
+  const r=(_perfRows()||[]).find(x=>x.name===_perfDrawerName);
+  if(!r){ _perfDrawerName=null; close(); return; }
+  dr.innerHTML=_perfBrief(r);
+  back.style.opacity=1; back.style.pointerEvents="auto"; dr.style.opacity=1; dr.style.pointerEvents="auto"; dr.style.transform="translate(-50%,-50%) scale(1)";
+  dr.scrollTop=0;
+}
+// Extra HARD numbers per pillar that don't fit in the one-line `why` (raw throughput / avoidable /
+// death detail / prep badges) — pulled fresh from WEEK_DATA so they can't drift from the source tabs.
+function _perfExtra(name,role,cls){
+  const wd=WEEK_DATA, by=a=>Object.fromEntries((a||[]).map(x=>[x.name,x]));
+  const dps=by((wd.damageBySelection||{}).players), heal=by(wd.healing), tank=by(wd.tankScorecard),
+        avoid=by(wd.avoidableDmg), deaths=by(wd.deaths), usage=by(wd.consumableUsage), cons=by(wd.consumables);
+  const fmt=n=>n>=1e6?(n/1e6).toFixed(2)+"M":n>=1e3?Math.round(n/1e3)+"k":String(Math.round(n||0));
+  const out={prep:"",perf:"",exec:"",surv:"",util:""};
+  if(role==="Healer"&&heal[name]) out.perf=`${fmt(heal[name].eff_hps)} effective HPS · ${Math.round(heal[name].overheal_pct||0)}% overheal`;
+  else if(role==="Tank"&&tank[name]){ const t=tank[name], bh=t.biggest_hit||{}; out.perf=`${fmt(t.dtps)} DTPS taken`+(bh.amount?` · biggest hit ${fmt(bh.amount)}${bh.ability?" ("+bh.ability+")":""}`:""); }
+  else if(dps[name]) out.perf=`${fmt((dps[name].all||{}).total)} total damage`;
+  if(role!=="Tank"&&avoid[name]){ const a=avoid[name], src=(a.sources||[]).slice().sort((x,y)=>(y.dmg||0)-(x.dmg||0))[0];
+    out.exec=`${fmt(a.dmg)} avoidable taken`+(src?` · worst: ${src.ability} ${fmt(src.dmg)}`:""); }
+  const d=deaths[name]; if(d&&(d.total||0)>0) out.surv=`${d.total} death(s)`+((d.trash||0)?` — ${d.total-d.trash} boss / ${d.trash} trash`:" — all on bosses");
+  const c=cons[name]; if(c&&(c.badges||[]).length){ const b=(c.badges||[]).map(x=>typeof x==="string"?x:(x&&(x.label||x.name)||"")).filter(Boolean); if(b.length)out.prep="extras: "+b.join(", "); }
+  return out;
+}
+function _perfBrief(r){
+  const wd=WEEK_DATA, nc=nameColor(r.name,r.role), ri=(wd.roster||{})[r.name]||{};
+  const sum=(wd.perfSummaries||{})[r.name];
+  const PILL=[["prep","Preparation"],["perf","Performance"],["exec","Execution"],["surv","Survival"],["util","Utility"]];
+  const w=PERF_WEIGHTS[_perfWeight]||PERF_WEIGHTS.balanced;
+  const ex=_perfExtra(r.name,r.role,r.class);
+  const cards=PILL.map(([k,lbl])=>{
+    const v=r[k], col=v==null?"var(--muted)":parseColor(v), wt=w[PERF_PILLARS.indexOf(k)];
+    const bar=`<div style="height:7px;border-radius:4px;background:var(--surface);overflow:hidden;margin-top:7px"><div style="height:100%;width:${v==null?0:v}%;background:${col}"></div></div>`;
+    return `<div style="background:var(--surface2);border-radius:11px;padding:14px 16px;margin-bottom:11px;border-left:4px solid ${col}">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-size:12.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)">${lbl}${v!=null&&wt?`<span style="opacity:.6"> · ×${wt}</span>`:""}</span>
+        <span style="font-size:24px;font-weight:800;color:${col}">${v==null?"—":v}</span></div>
+      ${bar}
+      <div style="font-size:14px;color:var(--text);margin-top:10px;line-height:1.5">${esc((r.why&&r.why[k])||"—")}</div>
+      ${ex[k]?`<div style="font-size:13px;color:var(--gold-soft);margin-top:8px;line-height:1.45">${esc(ex[k])}</div>`:""}
+    </div>`;
+  }).join("");
+  const partial=r.present<5?` · over ${r.present}/5 pillars`:"";
+  const lead=sum?`<div style="font-size:15px;color:var(--gold-soft);font-style:italic;line-height:1.55;margin:16px 22px 6px;padding-left:12px;border-left:3px solid var(--accent)">${esc(sum)}</div>`:"";
+  return `
+    <div style="position:sticky;top:0;background:var(--surface);padding:18px 22px 15px;border-bottom:1px solid var(--border);z-index:1">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:13px">
+        <span style="font-size:11.5px;text-transform:uppercase;letter-spacing:.9px;color:var(--muted)">Performance Brief</span>
+        <span onclick="_perfHide()" title="close (Esc)" style="cursor:pointer;font-size:23px;line-height:1;color:var(--muted);padding:2px 8px">✕</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div>
+          <div class="cname" style="font-size:23px;font-weight:700;color:${nc}">${esc(r.name)}</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">${esc(ri.spec||"")} ${esc(r.class||"")} · ${esc(r.role||"")}</div>
+        </div>
+        <div style="text-align:right;flex:none">
+          <div style="font-size:44px;font-weight:800;line-height:1;color:${r.composite==null?"var(--muted)":parseColor(r.composite)}">${r.composite==null?"—":Math.round(r.composite)}</div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-top:3px">Raider Score</div>
+        </div>
+      </div>
+    </div>
+    ${lead}
+    <div style="padding:16px 22px 26px">
+      ${cards}
+      <div style="font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.55">Weighting: <b style="color:var(--text)">${_perfWeight}</b>${partial}. Sub-scores normalize each pillar to 0–100; the Raider Score is the ×-weighted blend of the pillars present. Numbers above are the live inputs from the other tabs — this surface only re-joins them.</div>
+    </div>`;
+}
 
 // Build per-player pillar sub-scores (0–100 or null) from WEEK_DATA + the composite for the active weighting.
 function _perfRows(){
@@ -2786,31 +2874,15 @@ function renderPerformance(){
   const arrow=c=>_perfSort.col===c?(_perfSort.dir<0?" ▼":" ▲"):"";
   hd.innerHTML=cols.map(([c,lbl])=>`<th class="${c==='name'?'':'num'}" style="cursor:pointer;${c==='composite'?'color:var(--accent)':''}" title="${titles[c]}" onclick="_perfSortBy('${c}')">${lbl}${arrow(c)}</th>`).join("");
   const cell=v=>v==null?'<span style="color:var(--muted)">—</span>':`<span style="color:${parseColor(v)};font-weight:600">${v}</span>`;
-  const PILL=[["prep","Prep"],["perf","Perf"],["exec","Exec"],["surv","Surv"],["util","Util"]];
-  const detailRow=r=>{
-    const blocks=PILL.map(([k,lbl])=>{
-      const v=r[k], col=v==null?"var(--muted)":parseColor(v);
-      return `<div style="flex:1 1 180px;min-width:165px">
-        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">${lbl} <b style="color:${col}">${v==null?"—":v}</b></div>
-        <div style="font-size:11px;color:var(--text);margin-top:2px;line-height:1.35">${esc((r.why&&r.why[k])||"—")}</div></div>`;
-    }).join("");
-    // AI-written one-liner (optional, baked at pipeline time → WEEK_DATA.perfSummaries). Subtle italic
-    // lead-in above the hard numbers; the pillar grid stays the source of truth. Absent ⇒ no line.
-    const sum=(WEEK_DATA.perfSummaries||{})[r.name];
-    const lead=sum?`<div style="font-size:11.5px;color:var(--gold-soft);font-style:italic;line-height:1.4;margin:0 0 9px;padding-left:9px;border-left:2px solid var(--accent)">${esc(sum)}</div>`:"";
-    return `<tr class="perf-detail"><td colspan="7" style="padding:8px 12px 12px;background:var(--surface2)">
-      ${lead}<div style="display:flex;flex-wrap:wrap;gap:14px">${blocks}</div></td></tr>`;
-  };
   const renderRow=r=>{
-    const nc=nameColor(r.name,r.role), open=_perfOpen.has(r.name);
+    const nc=nameColor(r.name,r.role), active=_perfDrawerName===r.name;
     const partial=r.present<5?`<span style="color:var(--muted);font-size:9px"> (${r.present}/5)</span>`:"";
     const score=r.composite==null?'<span style="color:var(--muted)">—</span>'
       :`<span style="color:${parseColor(r.composite)};font-weight:800;font-size:13px">${Math.round(r.composite)}</span>${partial}`;
-    const tr=`<tr style="cursor:pointer" onclick="_perfToggle('${encodeURIComponent(r.name)}')" title="click for the score breakdown">
-      <td><span style="color:var(--muted);font-size:9px">${open?"▾":"▸"}</span> <span class="cname" style="color:${nc}">${r.name}</span> <span style="color:var(--muted);font-size:9px">${r.role}</span></td>
+    return `<tr style="cursor:pointer;${active?"background:var(--surface2)":""}" onclick="_perfShow('${encodeURIComponent(r.name)}')" title="click for the full brief">
+      <td><span style="color:var(--muted);font-size:9px">${active?"▸":"›"}</span> <span class="cname" style="color:${nc}">${r.name}</span> <span style="color:var(--muted);font-size:9px">${r.role}</span></td>
       <td class="num">${cell(r.prep)}</td><td class="num">${cell(r.perf)}</td><td class="num">${cell(r.exec)}</td>
       <td class="num">${cell(r.surv)}</td><td class="num">${cell(r.util)}</td><td class="num">${score}</td></tr>`;
-    return open ? tr+detailRow(r) : tr;
   };
   const empty=`<tr><td colspan="7" style="color:var(--muted);font-size:12px">No raiders match.</td></tr>`;
   if(_perfGroup){
@@ -2819,6 +2891,7 @@ function renderPerformance(){
       return `<tr><td colspan="7" style="background:var(--surface2);color:var(${rc[role]});font-weight:700;font-size:10px;letter-spacing:.5px;text-transform:uppercase;padding:6px 8px">${role} <span style="color:var(--muted);font-weight:400">· ${rs.length}</span></td></tr>`+rs.map(renderRow).join("");
     }).join("")||empty;
   } else tb.innerHTML=rows.map(renderRow).join("")||empty;
+  if(_perfDrawerName) _perfRenderDrawer();   // keep an open brief in sync with weighting/filter changes
 }
 
 // Officer gate: hide the whole Performance tab unless ?officer=1. NOTE: obscurity, not security —
