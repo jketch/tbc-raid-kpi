@@ -2564,10 +2564,12 @@ function _tabKeys(e){
 // ═══════════════ PERFORMANCE TAB (officer-gated) ═══════════════
 // v1 scoring tuning — recalibrate after a real week. All pillar sub-scores are 0–100.
 const PERF_TUNING = {
-  // Execution avoidable is scored RELATIVE to the raid that night: the cap is the 90th-percentile
-  // avoidable/min (the worst ~10% define 0; everyone else ranks within the raid), floored so a clean
-  // night doesn't manufacture spread. EXEC_AVOID_CAP stays as the fixed fallback if there's no data.
-  EXEC_AVOID_PCTL: 0.90, EXEC_AVOID_FLOOR: 1000, EXEC_AVOID_CAP: 1500,
+  // Execution avoidable is scored RELATIVE, per positioning cohort (melee vs ranged): the cap is the
+  // cohort's 90th-percentile avoidable/min, floored. The FLOOR doubles as the ranged-softening lever
+  // — ranged take so little avoidable that their raw P90 is tiny, which over-punishes a bit of fire;
+  // 2800 keeps ranged stricter than the old raid-wide cap but not brutal. Melee P90 is already above
+  // it, so melee/tanks are unaffected. EXEC_AVOID_CAP is the fixed fallback if there's no data.
+  EXEC_AVOID_PCTL: 0.90, EXEC_AVOID_FLOOR: 2800, EXEC_AVOID_CAP: 1500,
   FF_PER_INCIDENT: 5, FF_CAP: 15,
   MC_LIABLE_PENALTY: 20,
   // Survival: a boss/trash death is penalized ONCE (did you die in that category) rather than per
@@ -2630,10 +2632,18 @@ function _perfRows(){
   const mcLiable=new Set((wd.mcLiable||[]).map(x=>x.name));
   const raidMin=((Object.values(wd.boss_times||{}).reduce((s,v)=>s+v,0))||0)/60 || 1;
   const noLog = !(wd.avoidableDmg||[]).length && !(wd.friendlyFire||[]).length;   // log-less week → exec null for all
-  // Relative avoidable cap — the night sets the scale (see PERF_TUNING.EXEC_AVOID_*).
-  const _apms=(wd.avoidableDmg||[]).map(p=>(p.dmg||0)/raidMin).filter(x=>x>0).sort((a,b)=>a-b);
-  const _pctl=(arr,q)=>arr.length?arr[Math.min(arr.length-1,Math.round(q*(arr.length-1)))]:0;
-  const avoidCap=Math.max(PERF_TUNING.EXEC_AVOID_FLOOR, _pctl(_apms,PERF_TUNING.EXEC_AVOID_PCTL) || PERF_TUNING.EXEC_AVOID_CAP);
+  // Avoidable execution is RELATIVE and split by POSITIONING COHORT. Melee (melee DPS) must stand in
+  // Whirlwind / Scalding Water etc. that ranged never eat, so comparing everyone to one raid-wide
+  // distribution punishes melee — each is scored vs its own cohort. TANKS are excluded entirely: the
+  // main tank inherently eats the most avoidable (mandatory while holding the boss), so an
+  // avoidable-based score just flags whoever tanks the most. Their defensive execution lives in the
+  // Survival grade instead → tank exec = null. Hunters are ranged despite the Physical role.
+  const posOf=(cls,role)=> role==="Tank" ? "tank" : ((role==="Physical"&&cls!=="Hunter") ? "melee" : "ranged");
+  const _apmsBy={melee:[],ranged:[]};
+  Object.entries(roster).forEach(([n,r])=>{ const g=posOf(r.class,r.role); if(g==="tank")return; const a=((avoid[n]||{}).dmg||0)/raidMin; if(a>0) _apmsBy[g].push(a); });
+  const _pctl=(arr,q)=>{const s=[...arr].sort((a,b)=>a-b); return s.length?s[Math.min(s.length-1,Math.round(q*(s.length-1)))]:0;};
+  const _capFor=g=>Math.max(PERF_TUNING.EXEC_AVOID_FLOOR, _pctl(_apmsBy[g],PERF_TUNING.EXEC_AVOID_PCTL) || PERF_TUNING.EXEC_AVOID_CAP);
+  const avoidCap={melee:_capFor("melee"), ranged:_capFor("ranged")};
   const mana={};
   ((wd.manaReturns||{}).batteries||[]).forEach(b=>(b.providers||[]).forEach(p=>{ mana[p.name]=(mana[p.name]||0)+(p.mana||0); }));
   const saveTot=n=>{ const s=saves[n]; return s?(s.save||0)+(s.dispel||0)+(s.utility||0):0; };
@@ -2669,9 +2679,10 @@ function _perfRows(){
     else if(role==="Tank"){ const t=tank[name]||{}; const vs=[t.vs_replacement,(t.survival||{}).score].filter(v=>v!=null); perf=vs.length?vs.reduce((s,v)=>s+v,0)/vs.length:null; }
     else perf=dps[name]?dps[name].vs_replacement:null;
     if(perf!=null) perf=Math.round(perf);
-    // EXECUTION (clean play) — avoidable scored vs the night's relative cap (not a fixed absolute)
+    // EXECUTION (clean play) — avoidable vs the player's POSITIONING-cohort cap. N/A for tanks
+    // (avoidable can't fairly score them — see Survival).
     let exec=null;
-    if(!noLog){ const apm=((avoid[name]||{}).dmg||0)/raidMin; let e=100*clamp(1-apm/avoidCap,0,1); e-=Math.min(PERF_TUNING.FF_CAP,((ff[name]||{}).incidents||0)*PERF_TUNING.FF_PER_INCIDENT); if(mcLiable.has(name)) e-=PERF_TUNING.MC_LIABLE_PENALTY; exec=Math.round(clamp(e,0,100)); }
+    if(!noLog && role!=="Tank"){ const apm=((avoid[name]||{}).dmg||0)/raidMin; const cap=avoidCap[posOf(r.class,role)]||PERF_TUNING.EXEC_AVOID_CAP; let e=100*clamp(1-apm/cap,0,1); e-=Math.min(PERF_TUNING.FF_CAP,((ff[name]||{}).incidents||0)*PERF_TUNING.FF_PER_INCIDENT); if(mcLiable.has(name)) e-=PERF_TUNING.MC_LIABLE_PENALTY; exec=Math.round(clamp(e,0,100)); }
     // SURVIVAL — a boss/trash death counts ONCE (did you die in that category), not per event, so a
     // wipe night doesn't flatten everyone to 0.
     let surv;
@@ -2705,7 +2716,7 @@ function renderPerformance(){
     return (av-bv)*dir;
   });
   const cols=[["name","Player"],["prep","Prep"],["perf","Perf"],["exec","Exec"],["surv","Surv"],["util","Util"],["composite","Score"]];
-  const titles={prep:"Preparation — consumables score → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play: avoidable dmg/min, friendly fire, MC liability.",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, hunter Misdirection, warrior Battle Shout, paladin JoW+blessings, holy priest Fear Ward, shadow priest mana battery, interrupts, sunder) vs the best provider in its class. A facet nobody in-class did drops out (no penalty). Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars (set the weighting above). (n/5) = computed over the pillars present."};
+  const titles={prep:"Preparation — consumables score → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play: avoidable dmg/min scored vs your POSITIONING cohort (melee DPS vs ranged — melee must stand in mechanics ranged avoid), plus friendly fire + MC liability. N/A for tanks (avoidable just flags whoever tanks most; their defensive execution is the Survival grade).",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, hunter Misdirection, warrior Battle Shout, paladin JoW+blessings, holy priest Fear Ward, shadow priest mana battery, interrupts, sunder) vs the best provider in its class. A facet nobody in-class did drops out (no penalty). Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars (set the weighting above). (n/5) = computed over the pillars present."};
   const arrow=c=>_perfSort.col===c?(_perfSort.dir<0?" ▼":" ▲"):"";
   hd.innerHTML=cols.map(([c,lbl])=>`<th class="${c==='name'?'':'num'}" style="cursor:pointer;${c==='composite'?'color:var(--accent)':''}" title="${titles[c]}" onclick="_perfSortBy('${c}')">${lbl}${arrow(c)}</th>`).join("");
   const cell=v=>v==null?'<span style="color:var(--muted)">—</span>':`<span style="color:${parseColor(v)};font-weight:600">${v}</span>`;
