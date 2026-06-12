@@ -185,6 +185,13 @@ DEFAULT_TITLE  = "Raid KPI Dashboard — TBC Anniversary"
 # per report, written every prod run after map_to_week_data() (gitignored, ~MB each).
 WEEK_DATA_CACHE = ROOT_DIR / "cache" / "week_data"
 
+# Per-week PRE-map merged `wcl` dict snapshots — the richer offline-reprocess source (reprocess.py
+# --from-raw). Where WEEK_DATA_CACHE freezes the MAPPED output, this freezes the input to
+# map_to_week_data(), so re-running map offline can repopulate a NEW map-derived metric (the mapped
+# snapshot can't — it predates the field). One JSON per report, written every prod run after
+# merge_log_into_wcl() (gitignored, ~MB each). Only a brand-new WCL *query* still needs a live run.
+WCL_CACHE = ROOT_DIR / "cache" / "wcl"
+
 # Performance metric = the native WCL PARSE % (rankPercent from report.rankings) — vs the FULL
 # logged population, NOT the old top-100 cohort ratio (which made solid raiders read "below
 # replacement"). See fetch_parse_percentiles. No cohort cache / baseline / TTL needed — WCL scores
@@ -3648,6 +3655,28 @@ def dump_week_data_cache(mapped: dict) -> None:
         print(f"  ⚠ week_data cache write failed: {e}")
 
 
+def dump_wcl_raw_cache(raw: dict) -> None:
+    """Persist the PRE-map merged `wcl` dict to cache/wcl/<report>.json — the source for
+    `reprocess.py --from-raw`, which re-runs map_to_week_data() on it (zero WCL) so a NEW
+    map-derived metric repopulates across past weeks offline.
+
+    The merged wcl dict is already json-serializable: build_week_data + combat_log convert every
+    set→sorted list and defaultdict→plain dict at construction (so json.dumps needs no custom
+    encoder). Sibling of dump_week_data_cache and gated the same way by callers (skip --test-db, so a
+    proof never pollutes the canonical cache). Never raises — a cache miss must not break the run."""
+    try:
+        code = (raw.get("meta") or {}).get("report_code")
+        if not code:
+            print("  ⚠ wcl raw cache: no report_code in meta — skipping")
+            return
+        WCL_CACHE.mkdir(parents=True, exist_ok=True)
+        out = WCL_CACHE / f"{code}.json"
+        out.write_text(json.dumps(raw, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"  ✓ cached raw wcl → wcl/{out.name}")
+    except Exception as e:
+        print(f"  ⚠ wcl raw cache write failed: {e}")
+
+
 def reingest_loot(mapped: dict, csv_path: str = None) -> dict:
     """Re-attach a week's loot to a MAPPED week_data from a ThatsBIS 'received' CSV, keyed on the
     raid-night date (from meta.start_ms). Loot is normally ingested ONLY by the live pipeline's
@@ -3928,6 +3957,11 @@ def main():
         print("\n─── WCL_AUTO_DATA JSON ───")
         print(json.dumps(week_data, indent=2, ensure_ascii=False))
     else:
+        # Cache the PRE-map merged wcl dict for offline re-derivation (reprocess.py --from-raw) — a
+        # sibling of the week_data snapshot that commit_week dumps below. Same test-gating: a --test-db
+        # proof must never pollute the canonical cache. `week_data` here IS the raw merged dict.
+        if not args.test_db:
+            dump_wcl_raw_cache(week_data)
         # commit: dump (clean, test-gated) → enrich (strictly before write) → write_week. Then render
         # to --out explicitly (commit_week renders to DASH_FILE; main honors a custom --out path).
         wb.commit_week(mapped, db_path, is_test=args.test_db, dump=True, render=False)

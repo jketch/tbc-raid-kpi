@@ -41,6 +41,7 @@ def backfill(report_code: str, token: str, log_path: str = None) -> None:
     mapped, _raw, log_data = wb.from_wcl(report_code, token, log_path=log_path, history=crit_hist)
     wb.finalize_week(mapped, has_log=log_data is not None)
     W.dump_week_data_cache(mapped)                                       # writes cache/week_data/<code>.json only
+    W.dump_wcl_raw_cache(_raw)                                           # + cache/wcl/<code>.json (reprocess --from-raw seed)
     m = mapped.get("meta", {})
     print(f"  ✓ {report_code} ({m.get('date')}) — {len(mapped.get('roster') or {})} players, "
           f"{m.get('kills')} kills  → snapshot cached")
