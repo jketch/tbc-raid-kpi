@@ -2669,7 +2669,11 @@ const PERF_TUNING = {
   // it, so melee/tanks are unaffected. EXEC_AVOID_CAP is the fixed fallback if there's no data.
   EXEC_AVOID_PCTL: 0.90, EXEC_AVOID_FLOOR: 2800, EXEC_AVOID_CAP: 1500,
   FF_PER_INCIDENT: 5, FF_CAP: 15,
-  MC_LIABLE_PENALTY: 20,
+  // "AoE into allies" = friendly fire (clumping) + MC liability (hit a charmed ally). A single graze
+  // shouldn't tank exec, so the COMBINED penalty is capped at EXEC_AOE_ALLY_CAP — BUT a killing blow on
+  // a charmed teammate floors exec to 0 (the worst execution failure there is). MC_LIABLE_PENALTY is the
+  // per-hit dock that feeds the combined cap.
+  MC_LIABLE_PENALTY: 10, EXEC_AOE_ALLY_CAP: 20,
   // Survival: a boss/trash death is penalized ONCE (did you die in that category) rather than per
   // event, so a wipe night doesn't flatten the whole raid to 0 and the pillar still ranks within it.
   SURV_BOSS_DEATH: 25, SURV_TRASH_DEATH: 12, SURV_NO_HS_DEATH: 10,
@@ -2891,6 +2895,7 @@ function _perfRows(){
         sunder=byName(((wd.sunderArmor||{}).players)||[]),
         gear=byName(((wd.gearAudit||{}).players)||[]);
   const mcLiable=new Set((wd.mcLiable||[]).map(x=>x.name));
+  const mcKill=new Set((wd.mcLiable||[]).filter(x=>(x.kills||0)>0).map(x=>x.name));  // KILLED a charmed teammate
   const raidMin=((Object.values(wd.boss_times||{}).reduce((s,v)=>s+v,0))||0)/60 || 1;
   const noLog = !(wd.avoidableDmg||[]).length && !(wd.friendlyFire||[]).length;   // log-less week → exec null for all
   // Avoidable execution is RELATIVE and split by POSITIONING COHORT. Melee (melee DPS) must stand in
@@ -2964,7 +2969,12 @@ function _perfRows(){
     // Shield Block cast-rate; bear = Lacerate uptime%) + CD discipline. Avoidable can't fairly score
     // tanks (it just flags whoever tanks most) — that's why theirs is a separate, mitigation-based axis.
     let exec=null;
-    if(!noLog && role!=="Tank"){ const apm=dodgeAvoid(name)/raidMin; const cap=avoidCap[posOf(r.class,role)]||PERF_TUNING.EXEC_AVOID_CAP; let e=100*clamp(1-apm/cap,0,1); e-=Math.min(PERF_TUNING.FF_CAP,((ff[name]||{}).incidents||0)*PERF_TUNING.FF_PER_INCIDENT); if(mcLiable.has(name)) e-=PERF_TUNING.MC_LIABLE_PENALTY; exec=Math.round(clamp(e,0,100)); }
+    if(!noLog && role!=="Tank"){
+      if(mcKill.has(name)) exec=0;   // killing blow on a Mind-Controlled teammate → execution floor
+      else { const apm=dodgeAvoid(name)/raidMin, cap=avoidCap[posOf(r.class,role)]||PERF_TUNING.EXEC_AVOID_CAP; let e=100*clamp(1-apm/cap,0,1);
+        const ffPen=Math.min(PERF_TUNING.FF_CAP,((ff[name]||{}).incidents||0)*PERF_TUNING.FF_PER_INCIDENT), mcPen=mcLiable.has(name)?PERF_TUNING.MC_LIABLE_PENALTY:0;
+        e-=Math.min(PERF_TUNING.EXEC_AOE_ALLY_CAP, ffPen+mcPen);   // AoE-into-allies, combined-capped (kill handled above)
+        exec=Math.round(clamp(e,0,100)); } }
     else if(!noLog && role==="Tank"){
       const t=tank[name]||{}, bm=(t.boss_melee_sec||0);
       if(bm>=30){   // need meaningful tanking time to judge maintenance
@@ -3018,13 +3028,16 @@ function _perfRows(){
     else if(role==="Tank"){ const t=tank[name]||{}; why.perf=`threat parse ${t.vs_replacement??"—"} + survival grade ${(t.survival||{}).score??"—"}, averaged`; }
     else why.perf=dps[name]?`DPS parse ${dps[name].vs_replacement??"—"} (vs all logged)`:"not ranked yet";
     if(noLog) why.exec="no combat log this week";
-    else if(role!=="Tank"){ const av=avoid[name]||{}, apm=dodgeAvoid(name)/raidMin, cap=avoidCap[posOf(r.class,role)];
-      const ps=[`dodgeable avoidable ${Math.round(apm)}/min vs ${posOf(r.class,role)} cap ${Math.round(cap)}`];
-      const ffi=(ff[name]||{}).incidents||0; if(ffi)ps.push(`friendly fire −${Math.min(T.FF_CAP,ffi*T.FF_PER_INCIDENT)}`);
-      if(mcLiable.has(name))ps.push(`MC liability −${T.MC_LIABLE_PENALTY}`);
-      const excl=(av.sources||[]).filter(s=>MELEE_MANDATORY.has(s.ability));
-      if(excl.length)ps.push(`excluded melee-mandatory: ${excl.map(s=>s.ability+" "+Math.round(s.dmg/1000)+"k").join(", ")}`);
-      why.exec=ps.join(" · "); }
+    else if(role!=="Tank"){ const av=avoid[name]||{};
+      if(mcKill.has(name)) why.exec="killed a Mind-Controlled teammate → execution floored to 0";
+      else { const apm=dodgeAvoid(name)/raidMin, cap=avoidCap[posOf(r.class,role)];
+        const ps=[`dodgeable avoidable ${Math.round(apm)}/min vs ${posOf(r.class,role)} cap ${Math.round(cap)}`];
+        const ffPen=Math.min(T.FF_CAP,((ff[name]||{}).incidents||0)*T.FF_PER_INCIDENT), mcPen=mcLiable.has(name)?T.MC_LIABLE_PENALTY:0, aoePen=Math.min(T.EXEC_AOE_ALLY_CAP, ffPen+mcPen);
+        if(aoePen>0){ const lbl=[ffPen?"friendly fire":null, mcPen?"MC liability":null].filter(Boolean).join(" + ");
+          ps.push(`${lbl} −${aoePen}${(ffPen+mcPen)>aoePen?` (capped from −${ffPen+mcPen})`:""}`); }
+        const excl=(av.sources||[]).filter(s=>MELEE_MANDATORY.has(s.ability));
+        if(excl.length)ps.push(`excluded melee-mandatory: ${excl.map(s=>s.ability+" "+Math.round(s.dmg/1000)+"k").join(", ")}`);
+        why.exec=ps.join(" · "); } }
     else { const t=tank[name]||{}, bm=t.boss_melee_sec||0;
       if(bm<30) why.exec="insufficient boss-melee time to grade";
       else { why.exec = r.class==="Druid"
@@ -3059,7 +3072,7 @@ function renderPerformance(){
     return (av-bv)*dir;
   });
   const cols=[["name","Player"],["prep","Prep"],["perf","Perf"],["exec","Exec"],["surv","Surv"],["util","Util"],["composite","Score"]];
-  const titles={prep:"Preparation — consumables (flask/food/weapon oil + in-fight pots, incl. mana gems/potions) minus gear gaps (missing enchants / empty sockets) → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play. DPS: avoidable dmg/min vs your POSITIONING cohort (melee vs ranged) + friendly fire + MC liability. TANKS: active-mitigation maintenance per boss-melee-taken time — plate = Holy Shield/Shield Block cast-rate, bear = Lacerate uptime% — plus CD discipline. (Avoidable can't fairly score tanks; Survival is the outcome side: crushes/crits/deaths.)",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, ele Totem of Wrath, enh Windfury, druid Innervate, hunter Misdirection, warrior Battle Shout, paladin JoW+blessings, priest Fear Ward / mana battery, dispels, interrupts, Sunder) vs an ABSOLUTE target — 'did your job', not vs the best provider. A facet nobody did this week drops out (no penalty, never a 0). Dispels &amp; battle-res are positive-only — credited if you did them, dropped if not (they're usually one person's assignment, so they never drag). Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars, weighted PER SPEC by what that spec is invited for: a top-parse DPS leans on Performance, Ret/Shadow on Utility, tanks on Survival/Execution. (n/5) = computed over the pillars present."};
+  const titles={prep:"Preparation — consumables (flask/food/weapon oil + in-fight pots, incl. mana gems/potions) minus gear gaps (missing enchants / empty sockets) → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play. DPS: avoidable dmg/min vs your POSITIONING cohort (melee vs ranged) + AoE-into-allies (friendly fire + MC liability, combined-capped — a single graze can't tank you; but a KILLING BLOW on a charmed teammate floors execution to 0). TANKS: active-mitigation maintenance per boss-melee-taken time — plate = Holy Shield/Shield Block cast-rate, bear = Lacerate uptime% — plus CD discipline. (Avoidable can't fairly score tanks; Survival is the outcome side: crushes/crits/deaths.)",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, ele Totem of Wrath, enh Windfury, druid Innervate, hunter Misdirection, warrior Battle Shout, paladin JoW+blessings, priest Fear Ward / mana battery, dispels, interrupts, Sunder) vs an ABSOLUTE target — 'did your job', not vs the best provider. A facet nobody did this week drops out (no penalty, never a 0). Dispels &amp; battle-res are positive-only — credited if you did them, dropped if not (they're usually one person's assignment, so they never drag). Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars, weighted PER SPEC by what that spec is invited for: a top-parse DPS leans on Performance, Ret/Shadow on Utility, tanks on Survival/Execution. (n/5) = computed over the pillars present."};
   const arrow=c=>_perfSort.col===c?(_perfSort.dir<0?" ▼":" ▲"):"";
   hd.innerHTML=cols.map(([c,lbl])=>`<th class="${c==='name'?'':'num'}" style="cursor:pointer;${c==='composite'?'color:var(--accent)':''}" title="${titles[c]}" onclick="_perfSortBy('${c}')">${lbl}${arrow(c)}</th>`).join("");
   const cell=v=>v==null?'<span style="color:var(--muted)">—</span>':`<span style="color:${parseColor(v)};font-weight:600">${v}</span>`;
