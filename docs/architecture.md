@@ -127,7 +127,8 @@ flowchart TD
     %% ── Sinks ───────────────────────────────────────────
     subgraph SINKS["Sinks"]
         DB[("cache/raid_history.db<br/>SQLite KPI history")]
-        SNAP_OUT[("cache/week_data/*.json")]
+        SNAP_OUT[("cache/week_data/*.json<br/>POST-map snapshot")]
+        RAW_OUT[("cache/wcl/*.json<br/>PRE-map merged dict")]
         HTML["raid_kpi_dashboard.html"]
         DEPLOY["build_site → .deploy/<br/>→ publish → Netlify"]
     end
@@ -154,19 +155,59 @@ flowchart TD
     INJECT --> HTML
     HTML --> DEPLOY
     SNAP_OUT --> DEPLOY
+    FROMWCL -.->|dump merged dict<br/>every prod run · test-gated| RAW_OUT
 
     classDef src fill:#E6F1FB,stroke:#185FA5,color:#0b2a45;
     classDef data fill:#E1F5EE,stroke:#0F6E56,color:#04342C;
     classDef plain fill:#F1EFE8,stroke:#888780,color:#2C2C2A;
 
     class OAUTH,WCL,LOG,CSV src;
-    class DB,SNAP_IN,SNAP_OUT data;
+    class DB,SNAP_IN,SNAP_OUT,RAW_OUT data;
     class FROMWCL,FROMSNAP,MAPPED,LOOT,VALIDATE,DUMP,ENRICH,WRITE,INJECT,HTML,DEPLOY plain;
 ```
 
 **Legend** — blue: external sources · green: persisted data stores · grey: pipeline steps.
 Solid arrows are the always-run path; dashed arrows are additive/optional inputs that degrade
 silently when absent (OAuth token bootstrap, combat log, loot CSV, the prior-row read).
+
+---
+
+## 3. Offline reprocess — two source tiers
+
+Every prod run dumps **two** snapshots (both test-gated), so a schema / render / metric change can be
+rebuilt across past weeks with **zero WCL**. They differ by *where in the pipeline they freeze* — and
+therefore by what a reprocess can recover.
+
+```mermaid
+flowchart LR
+    WD[("cache/week_data/*.json<br/>POST-map snapshot")]
+    RAW[("cache/wcl/*.json<br/>PRE-map merged dict")]
+    FS["from_snapshot()<br/>default · reprocess.py [html] | --all"]
+    MR["map_from_raw()<br/>re-runs map_to_week_data<br/>reprocess.py --from-raw [--all]"]
+    SPINE["finalize_week → commit_week<br/>(enrich → write → render)"]
+
+    WD --> FS --> SPINE
+    RAW --> MR --> SPINE
+
+    classDef data fill:#E1F5EE,stroke:#0F6E56,color:#04342C;
+    classDef plain fill:#F1EFE8,stroke:#888780,color:#2C2C2A;
+    class WD,RAW data;
+    class FS,MR,SPINE plain;
+```
+
+- **`cache/week_data` (post-map)** — `reprocess.py [<html>] | --all` replays the FROZEN mapped
+  `WEEK_DATA`. Recovers new DB columns/tables, new trends, and render/template changes. It can **not**
+  add a field that `map_to_week_data` newly *computes* — the snapshot predates it.
+- **`cache/wcl` (pre-map)** — `reprocess.py --from-raw <code> | --from-raw --all` RE-RUNS
+  `map_to_week_data` on the merged `wcl` dict, so a **new map-derived metric repopulates offline too**.
+  Only a brand-new WCL *query* (a new `fetch_*`) still needs one live run. The merged dict is JSON-safe
+  by construction (every `set`→sorted list, `defaultdict`→dict at build time) and `map` reads no
+  int-keyed dict, so the round-trip is safe — a defensive `fight_durs` int-key rehydrate future-proofs a
+  later map edit.
+
+Run `--all` **oldest-first** after a schema change (it sorts by `meta.start_ms`): a trend delta reads the
+prior week's DB row, so the predecessor must be rewritten with the new schema first. The cache fills
+*going forward*; weeks raided before a tier shipped are reseeded via `backfill_snapshots.py` or a live run.
 
 ---
 
@@ -185,8 +226,8 @@ silently when absent (OAuth token bootstrap, combat log, loot CSV, the prior-row
   `write_week` (whose `INSERT OR REPLACE` would otherwise clobber that prior row) → render.
 - **Backfill is DB-read-only.** It calls `finalize_week` + the snapshot dump but *not*
   `commit_week`, so it never overwrites log-complete rows with thinner WCL-only data.
-- **The snapshot dump is test-gated.** `--test-db` never pollutes the canonical
-  `cache/week_data/` cache.
+- **Both snapshot dumps are test-gated.** `--test-db` never pollutes the canonical `cache/week_data/`
+  (post-map) or `cache/wcl/` (pre-map, the `--from-raw` source) caches.
 - **The gate is offline.** `check.py` runs the unit suite plus a characterization test — does
   any prod snapshot silently drop a populated `WEEK_DATA` section vs the recorded golden? — with
   zero WCL/DB access, and the pre-commit hook blocks commits on failure.
