@@ -24,6 +24,21 @@ set "LOGFILE=%~dp0run.log"
     echo ============================================================
 ) > "%LOGFILE%"
 
+:: Guard: if a CLOUD run (Actions "Weekly pipeline") pushed state we haven't pulled,
+:: running locally now would compute trends against a stale prior week. The check is
+:: offline-safe (no data branch / no network => proceeds silently).
+python scripts\tools\sync_state.py check
+if %ERRORLEVEL% EQU 0 goto :sync_ok
+echo.
+set /p SYNC_CONT="Continue WITHOUT pulling (trends may be wrong)? [y/N]: "
+if /i "%SYNC_CONT%"=="y" goto :sync_ok
+echo.
+echo Run:   python scripts\tools\sync_state.py pull
+echo then start this script again.
+pause
+exit /b 1
+:sync_ok
+
 set /p REPORT_CODE="Enter WCL report code (e.g. PqynTVBF67pN3Gtg): "
 
 if "%REPORT_CODE%"=="" (

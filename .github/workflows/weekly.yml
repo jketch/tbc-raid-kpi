@@ -74,7 +74,17 @@ jobs:
 
       - name: Publish (Netlify deploy + paste-ready summary below)
         if: ${{ !inputs.test_mode }}
-        run: python scripts/publish.py
+        # The raid-channel blurb also lands on the run's Summary page, so the operator
+        # never has to dig through the raw log for the copy/paste text.
+        run: |
+          set -o pipefail
+          python scripts/publish.py | tee publish.out
+          {
+            echo "## Raid-channel summary"
+            echo '```'
+            sed -n '/copy\/paste into your raid channel/,/────/p' publish.out
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Persist state to the data branch
         if: ${{ success() && !inputs.test_mode }}
