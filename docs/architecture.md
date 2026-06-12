@@ -3,7 +3,8 @@
 The weekly raid-analytics pipeline for TBC Anniversary 25-man content (SSC + TK). One
 maintainer runs `run_weekly.bat`, enters a WCL report code, and the pipeline pulls fight
 data, parses the combat log, computes KPIs, injects them into the dashboard HTML, and
-deploys to Netlify.
+deploys to Netlify. A GitHub Actions **run button** mirrors the whole flow in the cloud for
+weeks nobody can run locally (see *Operator runs — local & cloud* at the end).
 
 The design collapses three formerly-drifted producers (weekly run, backfill, offline
 reprocess) onto **one producer spine** (`week_build.py`), validated against **one contract**
@@ -267,3 +268,48 @@ The pipeline embeds only the **latest** week in `const WEEK_DATA`. `build_site.p
 (each enriched with its own `delta_*` vs the week before it) and a `WEEKS_INDEX` manifest. The
 header date pill becomes a dropdown; `loadWeek(report)` fetches a past week's JSON and mutates
 `WEEK_DATA` in place, then re-renders — so the dashboard shows each week *as it was*.
+
+---
+
+## Operator runs — local & cloud
+
+Two interchangeable ways to run a week, sharing one canonical state (added 2026-06-12).
+
+### Local (`run_weekly.bat`)
+
+- **Combat log auto-discovery** (`log_discovery.py`): with `WOW_LOG_DIR` in `.env`, the run
+  reads the log straight from the game's `Logs\` dir — each `WoWCombatLog*` candidate's
+  first/last timestamps are sniffed cheaply (head+tail 64 KB) and converted onto the report's
+  epoch-ms window; the file covering ≥ 70 % of the window wins, so an alt session's log can't
+  be picked by accident. Precedence: explicit `--log` > `WOW_LOG_DIR` match > newest in
+  `logs/`. After a successful prod run the consumed `.txt` is **zip → verify → moved** to
+  `logs/archive/` (never plain-deleted; `combat_log._open_log` reads the archives directly,
+  so `backfill_snapshots --log <zip>` replays them).
+- **Netlify deploy is a direct REST call** (`publish.py`): zip `.deploy/` → `POST
+  /api/v1/sites/{id}/deploys` (bearer `NETLIFY_AUTH_TOKEN`) → poll to `ready`. No
+  Node/netlify-cli anywhere. The section-loss deploy guard wraps it unchanged.
+
+### Cloud (`.github/workflows/weekly.yml` — the run button)
+
+Actions tab → *Weekly pipeline* → paste the report code. Steps: restore state from the
+**`data` branch** → fetch the **Dropbox drop folder** (`tools/dropbox_drops.py`) → run the
+pipeline → publish → push state back → sweep consumed drops to `/processed/`.
+
+- **State**: the orphan `data` branch is the one place the repo carries real raid data
+  (accepted exception) — `raid_history.db` (trends need the prior week's rows),
+  `cache/week_data/` (the rolling 6-week site), `cache/wcl/` (offline reprocess),
+  `last_deploy.json` (the deploy guard's baseline), item caches. Pushed only on success, so
+  the branch always holds the last *good* state.
+- **Inputs**: drag the **zipped log + loot CSV** into the Dropbox app folder and the cloud
+  week is full-fat — the zip lands in `drops/` (the workflow points `WOW_LOG_DIR` there, so
+  the same window-matcher applies; stale drops score ~0), the CSV lands in `loot/` (newest
+  auto-pick + raid-date filter). Nothing dropped ⇒ the run degrades to log-less (every KPI
+  keeps its WCL headline) and the Loot tab hides.
+- **Sync**: local and cloud share state via `tools/sync_state.py pull|push` (temp git
+  worktree; same allowlist as the workflow). pull/push record the synced `origin/data` commit
+  in `cache/.data_branch_sync`; `sync_state.py check` exits 1 when the branch has moved past
+  it, and **`run_weekly.bat` runs that check first** — a cloud week that was never pulled
+  can't silently corrupt the local trend chain (offline ⇒ the check passes, raid night is
+  never blocked).
+- The pre-commit hook skips worktrees without `scripts/check.py` (the data branch carries no
+  code — there is nothing to gate there).
