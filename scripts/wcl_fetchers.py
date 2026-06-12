@@ -37,6 +37,18 @@ def _loads_alias(t):
     return t or {}
 
 
+def _report(data, *path, default=None):
+    """Null-safe descent into a gql() payload: `_report(data, "events")` ==
+    `data["reportData"]["report"]["events"]` — except a PARTIAL payload (gql() returns
+    usable data even when one alias/field errored; see wcl_client) degrades to `default`
+    instead of a TypeError/KeyError that kills the whole weekly run. Every reportData
+    chain in this module goes through here so one failed field thins ONE KPI, never all."""
+    cur = ((data or {}).get("reportData") or {}).get("report")
+    for k in path:
+        cur = (cur or {}).get(k)
+    return cur if cur is not None else default
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # WCL API helpers
 # ══════════════════════════════════════════════════════════════════════════════
@@ -188,7 +200,7 @@ def fetch_gear_from_events(token: str, report_code: str, fights: list,
             "startTime": float(first["startTime"]),
             "endTime":   float(first["endTime"]),
         })
-        events = data["reportData"]["report"]["events"]["data"]
+        events = _report(data, "events", "data", default=[])
         print(f"  Found {len(events)} combatantinfo events")
         if events:
             print(f"  Sample combatantinfo keys: {list(events[0].keys())}")
@@ -263,7 +275,7 @@ def fetch_actual_crit(token: str, report_code: str, fights: list,
             "startTime": next_ts,
             "endTime": end,
         })
-        result  = data["reportData"]["report"]["events"]
+        result  = _report(data, "events", default={})
         events  = result.get("data", [])
         next_ts = result.get("nextPageTimestamp")
         pages  += 1
@@ -318,9 +330,9 @@ def fetch_damage_by_selection(token: str, report_code: str) -> dict:
     denominator.) Bosses = kill fights; Trash = fights with no encounterID; All = everything.
     Returns {durations:{all,boss,trash} (sec), players:{name:{all:{total,active},boss,trash}}}."""
     try:
-        fights = gql(token, """query($c:String!){reportData{report(code:$c){
+        fights = _report(gql(token, """query($c:String!){reportData{report(code:$c){
             fights{ id kill encounterID startTime endTime }}}}""",
-            {"c": report_code})["reportData"]["report"]["fights"]
+            {"c": report_code}), "fights", default=[])
     except Exception as ex:
         print(f"  Warning: damage-by-selection fights failed: {ex}")
         return {}
@@ -336,9 +348,9 @@ def fetch_damage_by_selection(token: str, report_code: str) -> dict:
         if not ids:
             return {}
         try:
-            t = gql(token, """query($c:String!,$f:[Int]){reportData{report(code:$c){
+            t = _report(gql(token, """query($c:String!,$f:[Int]){reportData{report(code:$c){
                 table(dataType: DamageDone, fightIDs:$f)}}}""",
-                {"c": report_code, "f": ids})["reportData"]["report"]["table"]
+                {"c": report_code, "f": ids}), "table", default={})
             if isinstance(t, str):
                 t = json.loads(t)
             return {e["name"]: {"total": e.get("total", 0), "active": e.get("activeTime", 0)}
@@ -370,10 +382,14 @@ def fetch_master_data(token: str, report_code: str) -> dict:
       name2id   {name: actorID}                   acts     {actorID: actor dict}  (carries petOwner)
       gid2name  {abilityGameID: name}             icons    {ability name: icon-slug}  (first wins)
     """
-    md = gql(token, """query($c:String!){reportData{report(code:$c){masterData{
+    md = _report(gql(token, """query($c:String!){reportData{report(code:$c){masterData{
         actors{ id name type subType petOwner }
         abilities{ gameID name icon } }}}}""",
-             {"c": report_code})["reportData"]["report"]["masterData"]
+             {"c": report_code}), "masterData")
+    if not md:
+        # masterData is load-bearing for ~7 consumers — an empty md would silently blank
+        # them all, so fail LOUD here (the one place a partial payload must not degrade).
+        raise RuntimeError(f"masterData unavailable for {report_code} (partial WCL response)")
     actors    = md.get("actors") or []
     abilities = md.get("abilities") or []
     icons = {}
@@ -443,7 +459,7 @@ def fetch_gear_audit(token: str, report_code: str, kills: list) -> dict:
                    "query($c:String!,$f:Int!){reportData{report(code:$c){"
                    "table(dataType: DamageDone, fightIDs:[$f])}}}",
                    {"c": report_code, "f": int(big["id"])})
-        tbl = blob["reportData"]["report"]["table"]
+        tbl = _report(blob, "table", default={})
         if isinstance(tbl, str):
             tbl = json.loads(tbl)
         entries = (tbl.get("data") or {}).get("entries") or []
@@ -507,7 +523,7 @@ def fetch_fight_roles(token: str, report_code: str, kills: list):
         fid = f["id"]
         durs[fid] = (f["endTime"] - f["startTime"]) / 1000.0
         try:
-            pd = gql(token, Q, {"c": report_code, "f": fid})["reportData"]["report"]["playerDetails"]
+            pd = _report(gql(token, Q, {"c": report_code, "f": fid}), "playerDetails", default={})
             if isinstance(pd, str):
                 pd = json.loads(pd)
             pd = pd.get("data", {}).get("playerDetails", pd.get("data", pd))
@@ -568,7 +584,7 @@ def harden_tank_fights(token: str, report_code: str, kills: list,
             for f in chunk)
         Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
         try:
-            rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+            rep = _report(gql(token, Q, {"c": report_code}), default={})
         except Exception as ex:
             print(f"  Warning: tank-harden DamageTaken batch failed: {ex}")
             continue
@@ -615,7 +631,7 @@ def fetch_healing_by_fight(token: str, report_code: str, kills: list, batch: int
             f'f{f["id"]}: table(dataType: Healing, fightIDs:[{int(f["id"])}])' for f in chunk)
         Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
         try:
-            rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+            rep = _report(gql(token, Q, {"c": report_code}), default={})
             for f in chunk:
                 t = rep.get(f'f{f["id"]}')
                 if isinstance(t, str):
@@ -640,7 +656,7 @@ def fetch_damage_by_fight(token: str, report_code: str, kills: list, batch: int 
             f'f{f["id"]}: table(dataType: DamageDone, fightIDs:[{int(f["id"])}])' for f in chunk)
         Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
         try:
-            rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+            rep = _report(gql(token, Q, {"c": report_code}), default={})
             for f in chunk:
                 t = rep.get(f'f{f["id"]}')
                 if isinstance(t, str):
@@ -754,7 +770,7 @@ def fetch_healing_spells(token: str, report_code: str, fights: list, actors: lis
     try:
         QT = """query($c:String!,$f:[Int]){reportData{report(code:$c){
             table(dataType: Healing, fightIDs:$f, killType:Kills)}}}"""
-        tt = gql(token, QT, {"c": report_code, "f": fight_ids})["reportData"]["report"]["table"]
+        tt = _report(gql(token, QT, {"c": report_code, "f": fight_ids}), "table", default={})
         if isinstance(tt, str):
             tt = json.loads(tt)
         for e in tt.get("data", {}).get("entries", []):
@@ -770,7 +786,7 @@ def fetch_healing_spells(token: str, report_code: str, fights: list, actors: lis
     agg = defaultdict(lambda: defaultdict(lambda: {"casts": 0, "eff": 0, "over": 0, "crits": 0}))
     nxt, pages = start, 0
     while nxt is not None and pages < 25:
-        d = gql(token, Q, {"c": report_code, "f": fight_ids, "s": nxt, "e": end})["reportData"]["report"]["events"]
+        d = _report(gql(token, Q, {"c": report_code, "f": fight_ids, "s": nxt, "e": end}), "events", default={})
         evs = d.get("data", []); nxt = d.get("nextPageTimestamp"); pages += 1
         for ev in evs:
             sid = ev.get("sourceID")
@@ -817,7 +833,7 @@ def fetch_healer_mana(token: str, report_code: str, fight_ids: list) -> dict:
     Q = """query($c:String!,$f:[Int]){reportData{report(code:$c){
         table(dataType: Casts, fightIDs:$f, killType:Kills)}}}"""
     try:
-        t = gql(token, Q, {"c": report_code, "f": fight_ids})["reportData"]["report"]["table"]
+        t = _report(gql(token, Q, {"c": report_code, "f": fight_ids}), "table", default={})
         if isinstance(t, str):
             t = json.loads(t)
         out = {}
@@ -846,7 +862,7 @@ def fetch_role_spell_usage(token, report_code, fight_ids, players):
     Q = """query($c:String!,$f:[Int]){reportData{report(code:$c){
         table(dataType: Casts, fightIDs:$f, killType:Kills)}}}"""
     try:
-        t = gql(token, Q, {"c": report_code, "f": fight_ids})["reportData"]["report"]["table"]
+        t = _report(gql(token, Q, {"c": report_code, "f": fight_ids}), "table", default={})
         if isinstance(t, str):
             t = json.loads(t)
         agg    = defaultdict(lambda: defaultdict(int))   # [role][ability] = casts
@@ -934,7 +950,9 @@ def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
 
     # ability gameID → name, for labeling the biggest hit (from the shared masterData fetch)
     if md is None:
-        md = fetch_master_data(token, report_code)
+        # one masterData fetch per run (b9be8d9) — a silent re-fetch here is how that rule
+        # erodes, so fail loud instead. Pass build_week_data's shared `md`.
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
     abil_name = md["gid2name"]
 
     agg = defaultdict(lambda: {"taken": 0, "dur": 0.0, "hrecv": 0, "fights": 0,
@@ -951,7 +969,7 @@ def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
             for f in chunk)
         Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
         try:
-            rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+            rep = _report(gql(token, Q, {"c": report_code}), default={})
         except Exception as ex:
             print(f"  Warning: tank DamageTaken batch failed: {ex}")
             continue
@@ -993,8 +1011,8 @@ def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
     st = win_s
     while True:
         try:
-            ev = gql(token, QE, {"c": report_code, "ids": fids, "st": st, "en": win_e}
-                     )["reportData"]["report"]["events"]
+            ev = _report(gql(token, QE, {"c": report_code, "ids": fids, "st": st, "en": win_e}),
+                         "events", default={})
         except Exception as ex:
             print(f"  Warning: tank DamageTaken events failed: {ex}")
             break
@@ -1029,8 +1047,8 @@ def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
     st = win_s
     while True:
         try:
-            ev = gql(token, QC, {"c": report_code, "ids": fids, "st": st, "en": win_e}
-                     )["reportData"]["report"]["events"]
+            ev = _report(gql(token, QC, {"c": report_code, "ids": fids, "st": st, "en": win_e}),
+                         "events", default={})
         except Exception as ex:
             print(f"  Warning: tank Casts events failed: {ex}")
             break
@@ -1057,7 +1075,7 @@ def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
             f'f{f["id"]}: table(dataType: DamageDone, fightIDs:[{int(f["id"])}])' for f in chunk)
         Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
         try:
-            rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+            rep = _report(gql(token, Q, {"c": report_code}), default={})
         except Exception as ex:
             print(f"  Warning: raid-DPS batch failed: {ex}")
             continue
@@ -1316,7 +1334,7 @@ def _buff_uptime_batch(token, report_code, fids, players, ability_ids, counts, k
     Q = "query($c:String!){reportData{report(code:$c){" + " ".join(clauses) + "}}}"
     up = defaultdict(float)
     try:
-        rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+        rep = _report(gql(token, Q, {"c": report_code}), default={})
         for al, nm in alias2name.items():
             t = _loads_alias(rep.get(al))
             for a in (t or {}).get("data", {}).get("auras", []):
@@ -1342,13 +1360,15 @@ def build_class_toolkit(token, report_code, kills, md: dict | None = None):
     st   = min(f["startTime"] for f in kills)
     en   = max(f["endTime"]   for f in kills)
     if md is None:
-        md = fetch_master_data(token, report_code)
+        # one masterData fetch per run (b9be8d9) — a silent re-fetch here is how that rule
+        # erodes, so fail loud instead. Pass build_week_data's shared `md`.
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
     # All fights (incl. trash) for the whole-report Arcane Explosion pass below — kills-only
     # would undercount the mage AE meme. masterData (actors/abilities) comes from the shared md.
     try:
-        rep = gql(token, """query($c:String!){reportData{report(code:$c){
+        rep = _report(gql(token, """query($c:String!){reportData{report(code:$c){
             fights{id startTime endTime}}}}""",
-                 {"c": report_code})["reportData"]["report"]
+                 {"c": report_code}), default={})
     except Exception as ex:
         print(f"  Warning: class-toolkit fights fetch failed: {ex}")
         return {}
@@ -1380,8 +1400,8 @@ def build_class_toolkit(token, report_code, kills, md: dict | None = None):
     cur = st
     try:
         for _pg in range(MAX_EVENT_PAGES):
-            ev = gql(token, QC, {"c": report_code, "ids": fids, "st": cur, "en": en}
-                     )["reportData"]["report"]["events"]
+            ev = _report(gql(token, QC, {"c": report_code, "ids": fids, "st": cur, "en": en}),
+                         "events", default={})
             for d in ev.get("data", []):
                 if d.get("type") != "cast":
                     continue
@@ -1427,8 +1447,8 @@ def build_class_toolkit(token, report_code, kills, md: dict | None = None):
             for aid in ae_ids:
                 cur = a_st
                 for _pg in range(MAX_EVENT_PAGES):
-                    ev = gql(token, QA, {"c": report_code, "ids": allids, "st": cur,
-                                         "en": a_en, "a": float(aid)})["reportData"]["report"]["events"]
+                    ev = _report(gql(token, QA, {"c": report_code, "ids": allids, "st": cur,
+                                                 "en": a_en, "a": float(aid)}), "events", default={})
                     for d in ev.get("data", []):
                         if d.get("type") == "cast":
                             nm = id2name.get(d.get("sourceID"))
@@ -1551,7 +1571,7 @@ def fetch_parse_percentiles(token: str, report_code: str, kills: list) -> dict:
     for metric in ("dps", "hps"):
         Q = "query($c:String!){reportData{report(code:$c){rankings(playerMetric:" + metric + ")}}}"
         try:
-            raw = gql(token, Q, {"c": report_code})["reportData"]["report"]["rankings"]
+            raw = _report(gql(token, Q, {"c": report_code}), "rankings", default={})
         except Exception as ex:
             print(f"  Warning: report.rankings({metric}) failed: {ex}")
             continue
@@ -1586,7 +1606,9 @@ def fetch_saves(token: str, report_code: str, kills: list, md: dict | None = Non
     WCL-durable; no combat log needed (a future pass can flag CLUTCH saves by cross-referencing the
     target's HP at cast time from the log)."""
     if md is None:
-        md = fetch_master_data(token, report_code)
+        # one masterData fetch per run (b9be8d9) — a silent re-fetch here is how that rule
+        # erodes, so fail loud instead. Pass build_week_data's shared `md`.
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
     gid2name, id2name, act = md["gid2name"], md["id2name"], md["acts"]
     fids = [f["id"] for f in kills]
     if not fids:
@@ -1601,8 +1623,8 @@ def fetch_saves(token: str, report_code: str, kills: list, md: dict | None = Non
     st = win_s
     while True:
         try:
-            ev = gql(token, Q, {"c": report_code, "ids": fids, "st": st, "en": win_e}
-                     )["reportData"]["report"]["events"]
+            ev = _report(gql(token, Q, {"c": report_code, "ids": fids, "st": st, "en": win_e}),
+                         "events", default={})
         except Exception as ex:
             print(f"  Warning: saves Casts events failed: {ex}")
             break
@@ -1650,7 +1672,9 @@ def fetch_interrupts(token: str, report_code: str, kills: list, md: dict | None 
     if not kills:
         return {}
     if md is None:
-        md = fetch_master_data(token, report_code)
+        # one masterData fetch per run (b9be8d9) — a silent re-fetch here is how that rule
+        # erodes, so fail loud instead. Pass build_week_data's shared `md`.
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
     gid2name, acts = md["gid2name"], md["acts"]
 
     def src_player(sid):
@@ -1669,8 +1693,8 @@ def fetch_interrupts(token: str, report_code: str, kills: list, md: dict | None 
     st = win_s
     for _pg in range(MAX_EVENT_PAGES):
         try:
-            ev = gql(token, Q, {"c": report_code, "ids": fids, "st": st, "en": win_e}
-                     )["reportData"]["report"]["events"]
+            ev = _report(gql(token, Q, {"c": report_code, "ids": fids, "st": st, "en": win_e}),
+                         "events", default={})
         except Exception as ex:
             print(f"  Warning: interrupts events failed: {ex}")
             break
@@ -1707,7 +1731,9 @@ def fetch_dispels(token: str, report_code: str, kills: list, md: dict | None = N
     if not kills:
         return {}
     if md is None:
-        md = fetch_master_data(token, report_code)
+        # one masterData fetch per run (b9be8d9) — a silent re-fetch here is how that rule
+        # erodes, so fail loud instead. Pass build_week_data's shared `md`.
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
     gid2name, id2name, acts = md["gid2name"], md["id2name"], md["acts"]
 
     def src_player(sid):
@@ -1727,8 +1753,8 @@ def fetch_dispels(token: str, report_code: str, kills: list, md: dict | None = N
     st = win_s
     for _pg in range(MAX_EVENT_PAGES):
         try:
-            ev = gql(token, Q, {"c": report_code, "ids": fids, "st": st, "en": win_e}
-                     )["reportData"]["report"]["events"]
+            ev = _report(gql(token, Q, {"c": report_code, "ids": fids, "st": st, "en": win_e}),
+                         "events", default={})
         except Exception as ex:
             print(f"  Warning: dispels events failed: {ex}")
             break
@@ -1768,7 +1794,9 @@ def fetch_ability_icons(token: str, report_code: str, fight_ids: list, md: dict 
     2. DamageTaken table — authoritative icon for whatever actually hit the raid; overrides
        layer 1 to sidestep the wrong-spell-ID / reused-asset problem for raid-facing hits."""
     if md is None:
-        md = fetch_master_data(token, report_code)
+        # one masterData fetch per run (b9be8d9) — a silent re-fetch here is how that rule
+        # erodes, so fail loud instead. Pass build_week_data's shared `md`.
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
     # layer 1 — masterData (precomputed in md; so interrupted/healing casts resolve an icon too)
     icons = dict(md["icons"])
     # layer 2 — DamageTaken (authoritative for raid hits; overrides layer 1)
@@ -1776,7 +1804,7 @@ def fetch_ability_icons(token: str, report_code: str, fight_ids: list, md: dict 
         Q = """query($c:String!,$f:[Int]){reportData{report(code:$c){
             table(dataType: DamageTaken, fightIDs:$f, hostilityType:Friendlies)}}}"""
         try:
-            t = gql(token, Q, {"c": report_code, "f": fight_ids})["reportData"]["report"]["table"]
+            t = _report(gql(token, Q, {"c": report_code, "f": fight_ids}), "table", default={})
             if isinstance(t, str):
                 t = json.loads(t)
             for e in t.get("data", {}).get("entries", []):
@@ -1797,7 +1825,9 @@ def fetch_deaths_split(token: str, report_code: str, md: dict | None = None):
     counts, a per-player list of killing blows {boss, killer, amount, overkill} for the
     death drill-down, and a per-BOSS death tally {boss_name: count} for the Overview tiles."""
     Qf = """query($c:String!){reportData{report(code:$c){fights{ id name encounterID kill }}}}"""
-    fights = gql(token, Qf, {"c": report_code})["reportData"]["report"]["fights"]
+    fights = _report(gql(token, Qf, {"c": report_code}), "fights", default=[])
+    if not fights:                                 # partial payload — degrade to an empty section
+        return {}, {}, {}, {}
     fid_is_boss = {f["id"]: bool(f["encounterID"]) for f in fights}
     fid_is_kill = {f["id"]: bool(f.get("kill")) for f in fights}
     fid_name    = {f["id"]: f.get("name", "") for f in fights}
@@ -1805,13 +1835,15 @@ def fetch_deaths_split(token: str, report_code: str, md: dict | None = None):
     # id → name maps to label the per-death recap timeline (abilities + ALL actors, including
     # NPCs so boss-ability sources resolve) — from the shared masterData fetch.
     if md is None:
-        md = fetch_master_data(token, report_code)
+        # one masterData fetch per run (b9be8d9) — a silent re-fetch here is how that rule
+        # erodes, so fail loud instead. Pass build_week_data's shared `md`.
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
     abil_name  = md["gid2name"]
     actor_name = md["id2name"]
 
     Qd = """query($c:String!,$f:[Int]){reportData{report(code:$c){
         table(dataType: Deaths, fightIDs:$f)}}}"""
-    t = gql(token, Qd, {"c": report_code, "f": list(fid_is_boss)})["reportData"]["report"]["table"]
+    t = _report(gql(token, Qd, {"c": report_code, "f": list(fid_is_boss)}), "table", default={})
     if isinstance(t, str):
         t = json.loads(t)
     boss, trash = {}, {}
@@ -1939,7 +1971,7 @@ def fetch_debuff_coverage(token: str, report_code: str, kills: list) -> dict:
             for f in chunk)
         Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
         try:
-            rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+            rep = _report(gql(token, Q, {"c": report_code}), default={})
         except Exception as ex:
             print(f"  Warning: debuff-coverage batch failed: {ex}")
             rep = {}
@@ -1993,7 +2025,9 @@ def fetch_mana_returns(token: str, report_code: str, kills: list, md: dict | Non
     if not kills:
         return {}
     if md is None:
-        md = fetch_master_data(token, report_code)   # actors carry petOwner (totem→shaman resolution)
+        # one masterData fetch per run (b9be8d9) — a silent re-fetch here is how that rule
+        # erodes, so fail loud instead. Pass build_week_data's shared `md`.
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
     acts = md["acts"]
     def owner(sid):
         a = acts.get(sid, {})
@@ -2019,8 +2053,8 @@ def fetch_mana_returns(token: str, report_code: str, kills: list, md: dict | Non
     cur = st
     try:
         for _pg in range(MAX_EVENT_PAGES):
-            ev = gql(token, QR, {"c": report_code, "ids": fids, "st": cur, "en": en}
-                     )["reportData"]["report"]["events"]
+            ev = _report(gql(token, QR, {"c": report_code, "ids": fids, "st": cur, "en": en}),
+                         "events", default={})
             for d in ev.get("data", []):
                 if d.get("type") != "resourcechange" or d.get("resourceChangeType") != 0:
                     continue
@@ -2066,8 +2100,8 @@ def fetch_mana_returns(token: str, report_code: str, kills: list, md: dict | Non
             for aid in innv_ids:
                 cur = st
                 for _pg in range(MAX_EVENT_PAGES):
-                    ev = gql(token, QI, {"c": report_code, "ids": fids, "st": cur, "en": en,
-                                         "a": float(aid)})["reportData"]["report"]["events"]
+                    ev = _report(gql(token, QI, {"c": report_code, "ids": fids, "st": cur, "en": en,
+                                                 "a": float(aid)}), "events", default={})
                     for d in ev.get("data", []):
                         if d.get("type") != "cast":
                             continue
@@ -2111,7 +2145,9 @@ def fetch_sunder_armor(token: str, report_code: str, kills: list, md: dict | Non
     if not kills:
         return {}
     if md is None:
-        md = fetch_master_data(token, report_code)
+        # one masterData fetch per run (b9be8d9) — a silent re-fetch here is how that rule
+        # erodes, so fail loud instead. Pass build_week_data's shared `md`.
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
     id2name = md["id2name"]
     sunder_ids = [a.get("gameID") for a in (md.get("abilities") or [])
                   if (a.get("name") or "") == "Sunder Armor"]
@@ -2130,8 +2166,8 @@ def fetch_sunder_armor(token: str, report_code: str, kills: list, md: dict | Non
         for aid in sunder_ids:
             cur = st
             for _pg in range(MAX_EVENT_PAGES):
-                ev = gql(token, QD, {"c": report_code, "ids": fids, "st": cur, "en": en,
-                                     "a": float(aid)})["reportData"]["report"]["events"]
+                ev = _report(gql(token, QD, {"c": report_code, "ids": fids, "st": cur, "en": en,
+                                             "a": float(aid)}), "events", default={})
                 for d in ev.get("data", []):
                     nm = id2name.get(d.get("sourceID"))
                     if not nm:
@@ -2171,7 +2207,9 @@ def fetch_mechanic_compliance(token: str, report_code: str, kills: list, md: dic
     Returns {boss: {"encounter_id": id, "mechanics": {mech: {"total": dmg, "events": n,
     "players": {name: {"hits": h, "dmg": d}}}}}} — bosses/mechanics with no hits omitted."""
     if md is None:
-        md = fetch_master_data(token, report_code)
+        # one masterData fetch per run (b9be8d9) — a silent re-fetch here is how that rule
+        # erodes, so fail loud instead. Pass build_week_data's shared `md`.
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
     player_ids = {a["id"] for a in md["players"]}
     id2name = md["id2name"]
     Q = """query($c:String!,$f:Int!,$s:Float!,$e:Float!,$x:String!){reportData{report(code:$c){
@@ -2188,8 +2226,8 @@ def fetch_mechanic_compliance(token: str, report_code: str, kills: list, md: dic
         while st is not None and pages < MAX_EVENT_PAGES:
             pages += 1
             try:
-                ev = gql(token, Q, {"c": report_code, "f": int(f["id"]), "s": st,
-                                    "e": float(f["endTime"]), "x": expr})["reportData"]["report"]["events"]
+                ev = _report(gql(token, Q, {"c": report_code, "f": int(f["id"]), "s": st,
+                                            "e": float(f["endTime"]), "x": expr}), "events", default={})
             except Exception as e:
                 print(f"  Warning: mechanic compliance fetch failed ({f.get('name')}): {e}")
                 break

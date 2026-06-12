@@ -101,6 +101,9 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
             parts = re.split(r'\s{2}', line.strip(), maxsplit=1)
             if len(parts) != 2: continue
             ts_str, data = parts
+            # KNOWN LIMITATION (accepted): naive comma split — a quoted field containing a
+            # comma (no current TBC 2.5 spell/player name has one) would shift every index
+            # after it. If a patch ever introduces one, switch to a quote-aware splitter.
             fields = data.split(",")
             ev = fields[0]
             if ev == "ENCOUNTER_START" and len(fields) > 2:
@@ -163,6 +166,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
     spell_hits   = defaultdict(int)
     dmg_totals   = defaultdict(int)
     interrupts   = defaultdict(list)
+    pet_owner    = {}   # summoned-unit GUID → owner name (SPELL_SUMMON; a pet already out before logging started stays unmapped)
     # Per-fight role signals (by boss name) — ground truth for spec-swap-aware roles,
     # immune to WCL's tank spec-label quirks (Warden/Justicar). See classify below.
     fight_melee_taken  = defaultdict(lambda: defaultdict(int))  # [boss][player] = boss MELEE dmg taken (TANK signal)
@@ -441,6 +445,12 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                 elif lac_on.get(_ln) is None:
                     lac_on[_ln] = ts
 
+            # Pet → owner (SPELL_SUMMON: src summons dest). Tracked OUTSIDE kill windows too —
+            # warlock/hunter pets are summoned before the pull, not during it.
+            if ev == "SPELL_SUMMON" and "Player-" in fields[1] and len(fields) > 5:
+                pet_owner[fields[5]] = player_names.get(
+                    fields[1], fields[2].strip('"').split("-")[0])
+
             if not in_kill(ts): continue
 
             src_guid = fields[1]
@@ -523,10 +533,14 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                         eng_dmg[src_name] += amt
                 except: pass
 
-            # Interrupts: PLAYER (src) interrupts CREATURE (dst)
-            if ev == "SPELL_INTERRUPT" and src_is_player and not dst_is_player:
-                interrupted = fields[13].strip('"') if len(fields) > 13 else "?"
-                interrupts[src_name].append(interrupted)
+            # Interrupts: PLAYER (src) interrupts CREATURE (dst). A pet interrupt (Felhunter
+            # Spell Lock) credits the OWNER via the SPELL_SUMMON map — matching the WCL headline
+            # path (petOwner), so the log fallback agrees with it; an unmapped pet is skipped.
+            if ev == "SPELL_INTERRUPT" and not dst_is_player:
+                int_by = src_name if src_is_player else pet_owner.get(src_guid)
+                if int_by:
+                    interrupted = fields[13].strip('"') if len(fields) > 13 else "?"
+                    interrupts[int_by].append(interrupted)
 
             # Engineering
             if ev == "SPELL_CAST_SUCCESS" and src_is_player:

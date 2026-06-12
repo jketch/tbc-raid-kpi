@@ -1042,7 +1042,7 @@ function renderHealing() {
     const partial = ft && fh < ft;   // part-time healer — flag the small sample
     const fightsCell = `<td class="num" title="healed ${fh} of ${ft} kills${partial?' — metrics scoped to those fights (small sample)':''}"><span style="color:${partial?'var(--orange)':'var(--muted)'}">${fh}/${ft}</span>${partial?' ⚠':''}</td>`;
     return `<tr style="cursor:pointer" onclick="showHealerDrill('${h.name}')" title="click for per-spell breakdown">
-      <td><span class="cname" style="color:${cc}">${h.name}</span></td>
+      <td><span class="cname" style="color:${cc}">${esc(h.name)}</span></td>
       ${fightsCell}
       <td class="num" style="font-weight:600;color:var(--text)">${(h.eff_hps||0).toLocaleString()}${fmtDelta(h.delta_hps, true)}</td>
       <td class="num" style="color:var(--muted)">${hsK(h.eff_heal)}</td>
@@ -1102,7 +1102,7 @@ function renderTanks() {
     const svCell = (svScore==null) ? `<span style="color:var(--muted)">—</span>`
       : `<span class="chip ${svCol}" title="${svTitle}">${svScore}</span>${fmtDelta(sv.delta_score, true)}`;
     return `<tr>
-      <td><span class="cname" style="color:${cc}">${t.name}</span></td>
+      <td><span class="cname" style="color:${cc}">${esc(t.name)}</span></td>
       <td class="num" title="tanked ${fk} of ${ft} kills"><span style="color:${partial?'var(--orange)':'var(--muted)'}">${fk}/${ft}</span>${partial?' ⚠':''}</td>
       <td class="num">${warCell}</td>
       <td class="num">${svCell}</td>
@@ -1148,7 +1148,7 @@ function renderTankPerBoss(data){
       </div>`;
     }).join("");
     return `<div class="tpb-card">
-      <div class="tpb-head"><span class="cname" style="color:${cc}">${t.name}</span></div>
+      <div class="tpb-head"><span class="cname" style="color:${cc}">${esc(t.name)}</span></div>
       ${spike}${rows}
     </div>`;
   }).join("");
@@ -1176,7 +1176,7 @@ function renderOverview(){
       `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)">
          ${gicon(i, "ticon-lg")}
          <span style="flex:1;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">${l}</span>
-         <span style="font-weight:600;font-size:12.5px">${n?`<span class="cname" style="color:${nameColor(n,r)}">${n}</span> `:""}${v}</span></div>`).join("")
+         <span style="font-weight:600;font-size:12.5px">${n?`<span class="cname" style="color:${nameColor(n,r)}">${esc(n)}</span> `:""}${v}</span></div>`).join("")
       : '<div style="color:var(--muted);font-size:12px">No highlights.</div>';
   }
 }
@@ -1378,7 +1378,7 @@ function renderMechanicCompliance(){
     const mechRows = b.mechanics.map((m, ri) => {
       const eaters = m.players.slice(0, 7).map(p => {
         const role = (roster[p.name] || {}).role;
-        return `<span class="cname" style="color:${nameColor(p.name, role)}">${p.name}</span>` +
+        return `<span class="cname" style="color:${nameColor(p.name, role)}">${esc(p.name)}</span>` +
                `<span style="color:var(--muted);font-size:10.5px"> ${fmtK(p.dmg)}${p.hits > 1 ? "&thinsp;(" + p.hits + "×)" : ""}</span>`;
       }).join('<span style="color:var(--dim)"> · </span>');
       const more = m.players.length > 7 ? ` <span style="color:var(--muted);font-size:10.5px">+${m.players.length - 7} more</span>` : "";
@@ -1429,7 +1429,7 @@ function renderSunderArmor(){
       + `<span style="display:inline-block;height:100%;width:${100-effW}%;background:${REF};vertical-align:top"></span>`
       + `</span></span>`;
     return `<tr style="border-top:1px solid var(--surface2);${zebra}">
-      <td style="white-space:nowrap;padding:5px 14px 5px 4px;font-size:12px;${zebra}">${icon}<span class="cname" style="color:${nc}">${p.name}</span></td>
+      <td style="white-space:nowrap;padding:5px 14px 5px 4px;font-size:12px;${zebra}">${icon}<span class="cname" style="color:${nc}">${esc(p.name)}</span></td>
       <td style="text-align:center;padding:5px 10px;${zebra}">${bar}</td>
       ${num(p.total, "var(--text)", p.delta_total)}
       ${num(p.effective, EFF, p.delta_effective)}
@@ -1571,7 +1571,7 @@ function renderPlayerSpells(){
     }).join("");
     const more = Math.max(0, (p.abilities||[]).length - 3);
     return `<div class="spell-card" style="cursor:pointer" onclick="showPlayerSpellDrill('${encodeURIComponent(p.name)}')" title="full spell breakdown">
-      <div class="cname" style="color:${nc};font-weight:700;font-size:13px;margin-bottom:8px">${p.name}${more?`<span style="color:var(--muted);font-weight:400;font-size:10.5px"> +${more} more</span>`:''}</div>
+      <div class="cname" style="color:${nc};font-weight:700;font-size:13px;margin-bottom:8px">${esc(p.name)}${more?`<span style="color:var(--muted);font-weight:400;font-size:10.5px"> +${more} more</span>`:''}</div>
       <div class="pill-row" style="margin-top:0">${pills || '<span style="color:var(--muted);font-size:11px">no casts</span>'}</div>
     </div>`;
   }).join("");
@@ -1596,7 +1596,7 @@ function showPlayerSpellDrill(name){
       <span style="width:48px;text-align:right;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12px">${a.casts.toLocaleString()}</span>
     </div>`;
   }).join("");
-  _openDrill(`<span class="cname" style="color:${cc}">${name}</span> · spell usage`,
+  _openDrill(`<span class="cname" style="color:${cc}">${esc(name)}</span> · spell usage`,
     `${abil.length} abilities · ${tot.toLocaleString()} total casts`, rows, true);
 }
 
@@ -1647,7 +1647,7 @@ function kpiRow(o){
     ${o.rank!=null?`<span style="color:var(--muted);font-size:11px;width:16px;text-align:right;flex-shrink:0">${o.rank}</span>`:''}
     <div style="flex:1;min-width:0">
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
-        <span class="cname" style="color:${nc};font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${o.name}</span>
+        <span class="cname" style="color:${nc};font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.name)}</span>
         <span style="font-weight:600;font-size:12px;color:${val};white-space:nowrap">${o.value}</span>
       </div>
       <div style="height:4px;border-radius:2px;background:var(--surface2);margin-top:5px;overflow:hidden"><div style="height:100%;width:${o.pct}%;background:${o.barColor||o.color||nc}"></div></div>
@@ -1727,7 +1727,7 @@ function showDrill(name, ability){
   const cc = nameColor(name, p.role);
   const hits = (s.hits||[]).slice().sort((a,b) => (b.amt||0) - (a.amt||0));
   document.getElementById("drillTitle").innerHTML =
-    `<span class="cname" style="color:${cc}">${name}</span> · ${ability} · ${hsK(s.dmg)} total`;
+    `<span class="cname" style="color:${cc}">${esc(name)}</span> · ${ability} · ${hsK(s.dmg)} total`;
   document.getElementById("drillBody").innerHTML = hits.length
     ? `<div class="drill-sub">${hits.length} hit${hits.length>1?"s":""}${hits.length>=40?" (capped at 40)":""}, biggest first:</div>`
       + hits.map(h => `<div class="drill-row"><span class="drill-t">${h.t||""}</span><span>${ability}</span><span class="drill-amt">${(h.amt||0).toLocaleString()}</span></div>`).join("")
@@ -1753,7 +1753,7 @@ function showHealerDrill(name){
        <span>${s.spell}</span><span class="drill-t">${s.casts}×</span>
        <span class="drill-amt">${(s.per_cast||0).toLocaleString()}</span>
        <span class="drill-t">${s.overheal_pct}% oh</span><span class="drill-t">${s.crit_pct}% cr</span></div>`).join("");
-  _openDrill(`<span class="cname" style="color:${cc}">${name}</span> · per-spell healing`,
+  _openDrill(`<span class="cname" style="color:${cc}">${esc(name)}</span> · per-spell healing`,
              "spell · casts · per-cast · overheal · crit", rows);
 }
 // Death row → per-death recap, each labeled Boss/Trash · Encounter — killing blow + a verdict
@@ -1806,7 +1806,7 @@ function showDeathDrill(name){
        </span>
        <span class="drill-amt" style="color:var(--muted)">${r.amount?hsK(r.amount):""}${r.overkill?` <span style="font-size:10px">(+${hsK(r.overkill)} ok)</span>`:""}</span></div>`;
   }).join("");
-  _openDrill(`<span class="cname" style="color:${cc}">${name}</span> · ${d.total} death${d.total>1?"s":""}`,
+  _openDrill(`<span class="cname" style="color:${cc}">${esc(name)}</span> · ${d.total} death${d.total>1?"s":""}`,
              "each death: Boss/Trash · Encounter — killing blow · what happened in the final seconds", rows);
 }
 // Single death → last-seconds HP timeline + blow-by-blow ledger (damage + healing)
@@ -1819,7 +1819,7 @@ function showDeathRecap(encName, idx){
   const hptl = r.hp_timeline || [];       // combat-log HP% curve (the crater + heal blips)
   const haveHp = hptl.length >= 2;
   document.getElementById("drillTitle").innerHTML =
-    `<span class="cname" style="color:${cc}">${name}</span> · ${r.boss||"Trash"} — killed by <span style="color:var(--red)">${r.killer}</span>`;
+    `<span class="cname" style="color:${cc}">${esc(name)}</span> · ${r.boss||"Trash"} — killed by <span style="color:var(--red)">${r.killer}</span>`;
   const note = haveHp ? "" :
     `<div style="font-size:10px;color:var(--muted);padding:0 16px 8px;font-style:italic">Damage sequence in the final seconds — no HP curve for this death (sparse samples); the verdict uses the death-window totals${r.window_dmg?` (${hsK(r.window_dmg)} taken / ${hsK(r.window_heal||0)} healed in ${r.window_s}s)`:""}.</div>`;
   document.getElementById("drillBody").innerHTML =
@@ -1873,7 +1873,7 @@ function showFFDrill(name){
     `<div class="drill-row"><span class="drill-t">${h.t||""}</span>
        <span>${h.mech} <span style="color:var(--muted)">(${h.cat})</span></span>
        <span class="drill-amt">${(h.amt||0).toLocaleString()}</span></div>`).join("");
-  _openDrill(`<span class="cname" style="color:${cc}">${name}</span> · friendly fire · ${hsK(f.dmg)}`,
+  _openDrill(`<span class="cname" style="color:${cc}">${esc(name)}</span> · friendly fire · ${hsK(f.dmg)}`,
              `${hits.length} hit${hits.length>1?"s":""}${hits.length>=40?" (capped)":""}`, rows);
 }
 
@@ -1901,7 +1901,7 @@ function avStrip(rank, name, role, num, max, ability, ctxHTML, onclick, extraHTM
     <span class="strip-rank">${rank}</span>
     <span class="strip-ico" style="${ic?`background-image:url('${ic}')`:''}"></span>
     <div style="flex:1;min-width:0">
-      <span class="cname" style="color:${cc};font-weight:600;font-size:12.5px">${name}</span>
+      <span class="cname" style="color:${cc};font-weight:600;font-size:12.5px">${esc(name)}</span>
       <div style="display:flex;align-items:center;gap:9px;margin-top:4px">
         ${avBlocks(max?num/max:0, lead?'#d8924a':'#9c7340')}
         <span class="strip-num" style="flex-shrink:0">${typeof num==="number"&&num>=1000?hsK(num):num}${extraHTML||''}</span>
@@ -2027,7 +2027,7 @@ function showAvoidDrill(encName){
        </span>
        <span class="drill-amt" style="color:#d8924a">${hsK(s.dmg)}</span></div>`;
   }).join("");
-  _openDrill(`<span class="cname" style="color:${cc}">${name}</span> · Avoidable Damage · ${hsK(p.dmg)}`,
+  _openDrill(`<span class="cname" style="color:${cc}">${esc(name)}</span> · Avoidable Damage · ${hsK(p.dmg)}`,
              `${src.length} source${src.length>1?"s":""} · ${totalHits} hits · click a row for the exact hits`, rows);
 }
 
@@ -2057,7 +2057,7 @@ function renderFriendlyFire() {
       <span class="strip-ico" style="${ic?`background-image:url('${ic}')`:''}">${ic?'':'🔥'}</span>
       <div style="flex:1;min-width:0">
         <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
-          <span class="cname" style="color:${cc};font-weight:600;font-size:12.5px">${p.name}</span>
+          <span class="cname" style="color:${cc};font-weight:600;font-size:12.5px">${esc(p.name)}</span>
           <span class="strip-num">${hsK(p.dmg)} · ${p.incidents}×</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
@@ -2162,7 +2162,7 @@ function renderCompliance() {
         note = ` <span style="font-size:10px;color:var(--muted)" title="Primary role: ${p.role} — tanked ${p.fights_tanked}/${ft} fights">⚔ ${p.fights_tanked}/${ft}</span>`;
       else if (p.role === "Healer" && ft > 0 && (p.fights_healed || 0) < ft)
         note = ` <span style="font-size:10px;color:var(--muted)" title="Healed ${p.fights_healed}/${ft} fights">${p.fights_healed}/${ft}</span>`;
-      return `<tr><td><span class="cname" style="color:${nameColor(p.name, p.role)}">${p.name}</span>${note}</td>${cells.map(c => `<td class="num">${c}</td>`).join("")}</tr>`;
+      return `<tr><td><span class="cname" style="color:${nameColor(p.name, p.role)}">${esc(p.name)}</span>${note}</td>${cells.map(c => `<td class="num">${c}</td>`).join("")}</tr>`;
     }).join("") + "</tbody>";
     return `<div style="margin-top:14px">
       <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
@@ -2183,7 +2183,7 @@ function renderMC() {
   const liable = WEEK_DATA.mcLiable || [];
   const spellsStr = obj => Object.entries(obj || {})
     .sort((a,b)=>b[1]-a[1]).map(([s,n]) => n>1 ? `${s} ×${n}` : s).join(", ");
-  const cn = n => `<span class="cname" style="color:${nameColor(n,((WEEK_DATA.roster||{})[n]||{}).role)}">${n}</span>`;
+  const cn = n => `<span class="cname" style="color:${nameColor(n,((WEEK_DATA.roster||{})[n]||{}).role)}">${esc(n)}</span>`;
   // CC spell → icon (the ability that parked the charmed ally)
   const MC_CC = { Cyclone:"spell_nature_cyclone", Polymorph:"spell_nature_polymorph",
     Repentance:"spell_holy_prayerofhealing", Fear:"spell_shadow_possession",
@@ -2232,10 +2232,10 @@ function showMCDrill(name){
   const cc = nameColor(name, p.role);
   const ev = (p.events||[]).slice().sort((a,b)=>(b.kill-a.kill)||(b.amt-a.amt));
   document.getElementById("drillTitle").innerHTML =
-    `<span class="cname" style="color:${cc}">${name}</span> · AoE into controlled allies · ${hsK(p.dmg)}${p.kills?` · ${gicon('inv_misc_bone_humanskull_01','ticon-sm')} ${p.kills} kill${p.kills>1?'s':''}`:''}`;
+    `<span class="cname" style="color:${cc}">${esc(name)}</span> · AoE into controlled allies · ${hsK(p.dmg)}${p.kills?` · ${gicon('inv_misc_bone_humanskull_01','ticon-sm')} ${p.kills} kill${p.kills>1?'s':''}`:''}`;
   document.getElementById("drillBody").innerHTML = ev.length
     ? `<div class="drill-sub">${ev.length} hit${ev.length>1?"s":""} on charmed teammates:</div>`
-      + ev.map(h => `<div class="drill-row"><span class="drill-t">${h.t||""}</span><span>${h.spell} → <span class="cname" style="color:${nameColor(h.victim,((WEEK_DATA.roster||{})[h.victim]||{}).role)}">${h.victim}</span>${h.kill?' '+gicon('inv_misc_bone_humanskull_01','ticon-sm'):''}</span><span class="drill-amt">${(h.amt||0).toLocaleString()}</span></div>`).join("")
+      + ev.map(h => `<div class="drill-row"><span class="drill-t">${h.t||""}</span><span>${h.spell} → <span class="cname" style="color:${nameColor(h.victim,((WEEK_DATA.roster||{})[h.victim]||{}).role)}">${esc(h.victim)}</span>${h.kill?' '+gicon('inv_misc_bone_humanskull_01','ticon-sm'):''}</span><span class="drill-amt">${(h.amt||0).toLocaleString()}</span></div>`).join("")
     : `<div class="drill-sub">No per-hit detail captured.</div>`;
   document.getElementById("drillModal").style.display = "flex";
 }
@@ -2254,7 +2254,7 @@ function renderHealthstones(){
     <div class="strip-row">
       <span class="strip-ico" style="background-image:url('${HS}')"></span>
       <div style="flex:1;min-width:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px">
-        <span class="cname" style="color:${nameColor(p.name,p.role)};font-weight:600;font-size:12.5px">${p.name}</span>
+        <span class="cname" style="color:${nameColor(p.name,p.role)};font-weight:600;font-size:12.5px">${esc(p.name)}</span>
         <span style="font-size:11.5px"><span style="color:var(--red);font-weight:600">${p.total} death${p.total>1?'s':''}</span> <span style="color:var(--dim)">· 0 stones</span></span>
       </div></div>`).join("")
     : '<div style="color:var(--green);font-size:12px">Everyone who died at least reached for a stone. 👍</div>';
@@ -2289,7 +2289,7 @@ function renderDeaths() {
       <span class="strip-ico" style="background-image:url('https://wow.zamimg.com/images/wow/icons/large/inv_misc_bone_humanskull_01.jpg')"></span>
       <div style="flex:1;min-width:0">
         <div style="display:flex;justify-content:space-between;align-items:baseline">
-          <span class="cname" style="color:${cc};font-weight:600;font-size:12.5px">${p.name}</span>
+          <span class="cname" style="color:${cc};font-weight:600;font-size:12.5px">${esc(p.name)}</span>
           <span class="strip-num">${p.total}${fmtDelta(p.delta_deaths, false)}</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
@@ -2355,7 +2355,7 @@ function renderDamage() {
     // WAR — vs same-spec ranked-parse median (mirrors the healer WAR chip). 0/undefined = thin cohort → —.
     const warCell = parseCell(p.vs_replacement, p.delta_vs_replacement);
     return `<tr>
-      <td><span class="cname" style="color:${nc}">${p.name}</span>${spec?`<div style="font-size:10px;color:var(--muted);margin-top:1px;font-weight:400">${spec}</div>`:""}</td>
+      <td><span class="cname" style="color:${nc}">${esc(p.name)}</span>${spec?`<div style="font-size:10px;color:var(--muted);margin-top:1px;font-weight:400">${spec}</div>`:""}</td>
       <td style="text-align:center"><span style="display:inline-block;width:118px;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;vertical-align:middle"><span style="display:block;height:100%;width:${pct}%;background:${nc}"></span></span></td>
       <td style="text-align:left;font-weight:600;color:var(--text);white-space:nowrap">${Math.round(dps).toLocaleString()}${fmtDelta(p.sd.delta_dps, true)}</td>
       <td style="text-align:center;color:${upCol};font-weight:600;white-space:nowrap">${Math.round(up)}%${fmtDelta(p.sd.delta_uptime, true)}</td>
@@ -2390,7 +2390,7 @@ function renderUptimeHeatmap(){
     const cells = bosses.map(b => { const u=lk[b];
       return u==null ? `<td class="num" style="color:var(--muted)">—</td>`
         : `<td class="num" style="background:${col(u)};color:#fff;font-weight:600" title="${Math.round(u)}% on ${b}">${Math.round(u)}</td>`; }).join("");
-    return `<tr><td><span class="cname" style="color:${nameColor(p.name,p.role)}">${p.name}</span></td>${cells}</tr>`;
+    return `<tr><td><span class="cname" style="color:${nameColor(p.name,p.role)}">${esc(p.name)}</span></td>${cells}</tr>`;
   }).join("");
   const avgRow = `<tr style="border-top:2px solid var(--border)"><td style="color:var(--muted);font-style:italic">fight avg</td>${bosses.map(b=>avg[b]==null?'<td class="num">—</td>':`<td class="num" style="color:var(--muted)">${Math.round(avg[b])}</td>`).join("")}</tr>`;
   el.innerHTML = `<table class="mini-table" style="font-size:11.5px;white-space:nowrap"><thead>${head}</thead><tbody>${rows}${avgRow}</tbody></table>`;
@@ -2417,7 +2417,7 @@ function renderHealerUptimeHeatmap(){
     const cells = bosses.map(b => { const u=lk[b];
       return u==null ? `<td class="num" style="color:var(--muted)">—</td>`
         : `<td class="num" style="background:${col(u)};color:#fff;font-weight:600" title="${Math.round(u)}% casting on ${b}">${Math.round(u)}</td>`; }).join("");
-    return `<tr><td><span class="cname" style="color:${nameColor(p.name,p.role)}">${p.name}</span></td>${cells}</tr>`;
+    return `<tr><td><span class="cname" style="color:${nameColor(p.name,p.role)}">${esc(p.name)}</span></td>${cells}</tr>`;
   }).join("");
   const avgRow = `<tr style="border-top:2px solid var(--border)"><td style="color:var(--muted);font-style:italic">fight avg</td>${bosses.map(b=>avg[b]==null?'<td class="num">—</td>':`<td class="num" style="color:var(--muted)">${Math.round(avg[b])}</td>`).join("")}</tr>`;
   el.innerHTML = `<table class="mini-table" style="font-size:11.5px;white-space:nowrap"><thead>${head}</thead><tbody>${rows}${avgRow}</tbody></table>`;
@@ -2438,10 +2438,10 @@ function renderSaves(){
     // "who they helped" — ability → target(s), straight from the targets map
     const detail = Object.entries(p.targets||{}).map(([ab,tg]) =>
       Object.entries(tg).map(([t,n]) =>
-        `${ab} → <span class="cname" style="color:${nameColor(t)}">${t}</span>${n>1?` ×${n}`:''}`).join(", ")
+        `${ab} → <span class="cname" style="color:${nameColor(t)}">${esc(t)}</span>${n>1?` ×${n}`:''}`).join(", ")
     ).join(" · ");
     return `<tr>
-      <td><span class="cname" style="color:${nc}">${p.name}</span></td>
+      <td><span class="cname" style="color:${nc}">${esc(p.name)}</span></td>
       <td class="num" title="emergency protection / battle-res on an ally (Hand of Protection, Lay on Hands, Rebirth…)">${chip(p.save,'saves','var(--gold-soft)')}${fmtDelta(p.delta_save, true)}</td>
       <td class="num" title="reactive help (Hand of Salvation, Blessing of Freedom, Tremor)">${chip(p.utility,'util','var(--muted)')}</td>
       <td style="font-size:10.5px;color:var(--muted);line-height:1.5">${detail||'—'}</td>
@@ -2474,7 +2474,7 @@ function renderDispels(){
   const banner = breakTot
     ? `<div style="margin-bottom:11px;padding:7px 11px;border-left:3px solid var(--accent);background:rgba(200,155,60,.08);border-radius:4px;font-size:12px;line-height:1.5">
          ${gicon("spell_shadow_shadowworddominate")} <b style="color:var(--accent)">${breakTot} Mind Control break${breakTot>1?"s":""}</b>
-         <span style="color:var(--muted)">— freed a charmed ally on Kael (Infinity Blade · Magic Disruption): </span>${breakNames.map(n=>`<span class="cname" style="color:${nameColor(n)}">${n}</span>${breaks[n]>1?` ×${breaks[n]}`:""}`).join(", ")}</div>`
+         <span style="color:var(--muted)">— freed a charmed ally on Kael (Infinity Blade · Magic Disruption): </span>${breakNames.map(n=>`<span class="cname" style="color:${nameColor(n)}">${esc(n)}</span>${breaks[n]>1?` ×${breaks[n]}`:""}`).join(", ")}</div>`
     : "";
   const rows = data.map(p => {
     const nc = nameColor(p.name, p.role);
@@ -2489,9 +2489,9 @@ function renderDispels(){
     }).join("");
     // who they cleansed — ally → ×N (cleanse recipients; purges hit bosses, shown via auras above)
     const who = Object.entries(p.targets||{}).sort((a,b)=>b[1]-a[1]).map(([t,n]) =>
-      `<span class="cname" style="color:${nameColor(t)}">${t}</span>${n>1?` ×${n}`:''}`).join(", ");
+      `<span class="cname" style="color:${nameColor(t)}">${esc(t)}</span>${n>1?` ×${n}`:''}`).join(", ");
     return `<tr>
-      <td><span class="cname" style="color:${nc}">${p.name}</span></td>
+      <td><span class="cname" style="color:${nc}">${esc(p.name)}</span></td>
       <td class="num" title="Harmful effects stripped off teammates (Cleanse, Abolish, Remove Curse, Devour Magic).">${chip(p.cleanse,'ally','var(--healer)')}</td>
       <td class="num" title="Buffs stripped off enemies — enrage/haste/shield removal (Purge, Dispel Magic, Tranq Shot, Devour Magic).">${chip(p.purge,'enemy','var(--orange)')}${fmtDelta(p.delta_total, true)}</td>
       <td style="min-width:160px"><span style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${stripped||'<span style="color:var(--muted)">—</span>'}</span></td>
@@ -2516,10 +2516,10 @@ function renderManaReturns(){
   const k = v => v>=1000 ? (v/1000).toFixed(v>=10000?0:1)+"k" : ""+Math.round(v);
   const provRow = (p, max) => {
     const bar = Math.round(p.mana/max*100);
-    const recv = (p.receivers||[]).length ? `<span style="color:var(--dim);font-size:10.5px;white-space:nowrap">→ ${p.receivers.map(r=>`<span class="cname" style="color:${nameColor(r.name)}">${r.name}</span>`).join(", ")}</span>` : "";
+    const recv = (p.receivers||[]).length ? `<span style="color:var(--dim);font-size:10.5px;white-space:nowrap">→ ${p.receivers.map(r=>`<span class="cname" style="color:${nameColor(r.name)}">${esc(r.name)}</span>`).join(", ")}</span>` : "";
     const dlt = (p.delta_mana!==undefined && Math.abs(p.delta_mana)>=1000) ? `<span style="font-size:9.5px">${fmtDelta(p.delta_mana, true, {divK:true})}</span>` : "";
     return `<div style="display:flex;align-items:center;gap:10px;padding:3px 2px 3px 4px">
-      <span class="cname" style="color:${nameColor(p.name)};min-width:108px;font-weight:600">${p.name}</span>
+      <span class="cname" style="color:${nameColor(p.name)};min-width:108px;font-weight:600">${esc(p.name)}</span>
       <span style="min-width:50px;text-align:right;font-weight:700;color:var(--healer)">${k(p.mana)}</span>
       <span style="flex:0 0 84px"><span style="display:block;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden"><span style="display:block;height:100%;width:${bar}%;background:var(--healer)"></span></span></span>
       <span style="flex:1;display:flex;align-items:center;gap:6px">${dlt}${recv}</span>
@@ -2539,9 +2539,9 @@ function renderManaReturns(){
         ${gicon(mr.innervate.icon,'ticon')}<b style="font-size:12px;color:var(--text)">Innervate</b>
         <span style="color:var(--dim);font-size:10.5px">cast count — emits no mana event to measure</span></div>
       ${casters.map(c=>`<div style="display:flex;align-items:center;gap:10px;padding:3px 2px 3px 4px">
-        <span class="cname" style="color:${nameColor(c.name)};min-width:108px;font-weight:600">${c.name}</span>
+        <span class="cname" style="color:${nameColor(c.name)};min-width:108px;font-weight:600">${esc(c.name)}</span>
         <span style="min-width:50px;text-align:right;font-weight:700;color:var(--healer)">${c.count}×</span>
-        <span style="flex:1;color:var(--dim);font-size:10.5px">${c.targets.length?`→ ${c.targets.map(t=>`<span class="cname" style="color:${nameColor(t)}">${t}</span>`).join(", ")}`:""}</span>
+        <span style="flex:1;color:var(--dim);font-size:10.5px">${c.targets.length?`→ ${c.targets.map(t=>`<span class="cname" style="color:${nameColor(t)}">${esc(t)}</span>`).join(", ")}`:""}</span>
       </div>`).join("")}</div>`;
   }
   el.innerHTML = html;
@@ -2578,7 +2578,7 @@ function renderReactionHeatmap(){
       const border = thin ? `;border:1px dashed ${hexA(heat,.6)}` : "";
       const tip = `${died?'died waiting for a direct heal · ':''}median ${c.median}s to first direct heal after dropping below 50% · ${c.n} danger drop${c.n>1?'s':''} on ${b}${c.n<2?' — single event, not a trend':''}`;
       return `<td class="num" style="background:${hexA(heat,a)};color:${txt};font-weight:600;cursor:pointer${border}" title="${tip}" onclick="showReactionDrill('${encodeURIComponent(n)}','${encodeURIComponent(b)}')">${val}${nTag}</td>`; }).join("");
-    return `<tr><td><span class="cname" style="color:${nameColor(n,role(n))}">${n}</span></td>${cells}</tr>`;
+    return `<tr><td><span class="cname" style="color:${nameColor(n,role(n))}">${esc(n)}</span></td>${cells}</tr>`;
   }).join("");
   el.innerHTML = `<table class="mini-table" style="font-size:11.5px;white-space:nowrap"><thead>${head}</thead><tbody>${rows}</tbody></table>`
     + `<div class="hs-foot" style="margin-top:8px">Cells show <b>median s · n</b> (number of danger drops). <b>Faded/dashed = a single event</b> — one drop, not a trend; read it lightly. Ranking is sample-size weighted.</div>`;
@@ -2589,7 +2589,7 @@ function showReactionDrill(en, eb){
   const cc = nameColor(n, ((WEEK_DATA.roster||{})[n]||{}).role);
   const rows = (c.samples||[]).map((s,i) =>
     `<div class="drill-row" style="grid-template-columns:42px 1fr auto"><span class="drill-t">#${i+1}</span><span>dropped &lt;50% HP → first direct heal</span><span class="drill-amt" style="color:${s>=10?'var(--red)':'var(--text)'}">${s>=10?"☠ "+s+"s":s+"s"}</span></div>`).join("");
-  _openDrill(`<span class="cname" style="color:${cc}">${n}</span> · heal response · ${b}`,
+  _openDrill(`<span class="cname" style="color:${cc}">${esc(n)}</span> · heal response · ${b}`,
              `${c.n} danger drop${c.n>1?"s":""} · median ${c.median}s to first direct heal${c.died?" · died waiting once":""}`, rows);
 }
 
@@ -2686,7 +2686,7 @@ function renderEngTable() {
     const nc = nameColor(p.name, p.role);
     const k = p.dmg >= 1e6 ? (p.dmg / 1e6).toFixed(2) + "M" : (p.dmg / 1e3).toFixed(0) + "K";
     return `<tr>
-      <td><span class="cname" style="color:${nc}">${p.name}</span></td>
+      <td><span class="cname" style="color:${nc}">${esc(p.name)}</span></td>
       <td class="num" style="font-weight:600;color:var(--text)">${p.dmg ? k : "—"}</td>
       ${showSap  ? `<td class="num">${s || "—"}</td>` : ""}
       ${showBomb ? `<td class="num">${b || "—"}</td>` : ""}
@@ -2714,7 +2714,7 @@ function renderInterruptBars() {
     }).join("");
     return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05)">
       <span style="color:var(--muted);font-size:11px;width:16px;text-align:right;flex-shrink:0">${i+1}</span>
-      <span class="cname" style="color:${cc};font-weight:600;font-size:12.5px;width:118px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</span>
+      <span class="cname" style="color:${cc};font-weight:600;font-size:12.5px;width:118px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</span>
       <span style="font-weight:700;font-size:13px;color:var(--text);width:22px;text-align:right;flex-shrink:0">${p.count}</span>
       <span style="flex:1;min-width:0;display:flex;gap:6px;flex-wrap:wrap;align-items:center">${spells||'<span style="color:var(--muted)">—</span>'}</span>
     </div>`;
@@ -3178,7 +3178,7 @@ function renderPerformance(){
     const score=r.composite==null?'<span style="color:var(--muted)">—</span>'
       :`<span style="color:${parseColor(r.composite)};font-weight:800;font-size:13px">${Math.round(r.composite)}</span>${partial}`;
     return `<tr style="cursor:pointer;${active?"background:var(--surface2)":""}" onclick="_perfShow('${encodeURIComponent(r.name)}')" title="click for the full brief">
-      <td><span style="color:var(--muted);font-size:9px">${active?"▸":"›"}</span> <span class="cname" style="color:${nc}">${r.name}</span> <span style="color:var(--muted);font-size:9px">${r.role}</span></td>
+      <td><span style="color:var(--muted);font-size:9px">${active?"▸":"›"}</span> <span class="cname" style="color:${nc}">${esc(r.name)}</span> <span style="color:var(--muted);font-size:9px">${r.role}</span></td>
       <td class="num">${cell(r.prep)}</td><td class="num">${cell(r.perf)}</td><td class="num">${cell(r.exec)}</td>
       <td class="num">${cell(r.surv)}</td><td class="num">${cell(r.util)}</td><td class="num">${score}</td></tr>`;
   };

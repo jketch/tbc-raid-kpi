@@ -122,7 +122,8 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
             # ── DPS parse %: delta the percentile vs last week (top-level on each dsel player).
             for it in (dsel.get("players") or []):
                 pw = pv("dps", it.get("name"), "war")
-                if pw is not None and it.get("vs_replacement"):
+                # `is not None` on BOTH sides — a legitimate 0th-percentile parse still deltas.
+                if pw is not None and it.get("vs_replacement") is not None:
                     it["delta_vs_replacement"] = round(it["vs_replacement"] - pw, 2)
 
             # ── class toolkit: delta the signature metric, but ONLY when the metric KIND
@@ -215,7 +216,7 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
             for it in (week_data.get("tankScorecard") or []):
                 nm = it.get("name")
                 pw = pv("tank_scorecard", nm, "war")
-                if pw is not None and it.get("vs_replacement"):
+                if pw is not None and it.get("vs_replacement") is not None:
                     it["delta_vs_replacement"] = round(it["vs_replacement"] - pw, 2)
                 ps, sv = pv("tank_scorecard", nm, "survival"), it.get("survival")
                 if ps is not None and isinstance(sv, dict) and sv.get("score") is not None:

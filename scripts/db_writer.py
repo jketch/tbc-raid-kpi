@@ -459,7 +459,7 @@ def write_week(week_data: dict, db_path: Path | None = None, *, allow_downgrade:
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (rc, p["name"], p.get("role"), p.get("eff_hps", 0), p.get("eff_heal", 0),
                   p.get("overheal_pct", 0), p.get("activity_pct", 0), p.get("tank_pct", 0),
-                  p.get("mana_eff", 0), p.get("vs_replacement", 0), p.get("top_spell", "")))
+                  p.get("mana_eff", 0), p.get("vs_replacement"), p.get("top_spell", "")))
 
         # ── healing_spells (per healer × spell) ────────────────────────────────
         if "healing" not in dropped:   # preserve existing rows if incoming healing is thin
@@ -584,9 +584,10 @@ def write_week(week_data: dict, db_path: Path | None = None, *, allow_downgrade:
                 ad, at, au = _sd(p, "all")
                 td, tt, tu = _sd(p, "trash")
                 pct = round(bt / raid_tot * 100, 2) if (bt is not None and raid_tot) else None
-                # WAR stored NULL (not 0) when the cohort was too thin to judge, so next week's
-                # delta doesn't diff against a phantom-0 baseline.
-                war = p.get("vs_replacement") or None
+                # WAR stored NULL (not 0) when unranked, so next week's delta doesn't diff
+                # against a phantom-0 baseline. Plain .get (no `or None`, which would also
+                # nuke a legitimate 0th-percentile parse — unranked is already None).
+                war = p.get("vs_replacement")
                 con.execute("""
                     INSERT OR REPLACE INTO dps (report_code, player, role, dps, total, pct_raid, uptime,
                                                 all_dps, all_total, all_uptime, trash_dps, trash_total, trash_uptime, war)
@@ -666,7 +667,7 @@ def write_week(week_data: dict, db_path: Path | None = None, *, allow_downgrade:
         # ── tank scorecard v2 (summary + per-boss) ─────────────────────────────
         for t in (week_data.get("tankScorecard") or []):
             bh = t.get("biggest_hit") or {}
-            war = t.get("vs_replacement") or None   # NULL when cohort too thin (avoid phantom-0 delta)
+            war = t.get("vs_replacement")   # NULL when unranked (plain .get — `or None` would nuke a real 0)
             survival = (t.get("survival") or {}).get("score")
             con.execute("""
                 INSERT OR REPLACE INTO tank_scorecard

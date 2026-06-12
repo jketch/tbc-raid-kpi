@@ -126,8 +126,8 @@ def _netlify_deploy(token: str, site_id: str, zip_bytes: bytes, timeout_s: int =
         dep_id = dep.get("id")
         while dep.get("state") not in ("ready", "error"):
             if time.monotonic() > deadline:
-                print("  ⚠ netlify deploy timed out after 240s — it MAY have landed server-side; "
-                      "check app.netlify.com before re-deploying")
+                print(f"  ⚠ netlify deploy timed out after {timeout_s}s — it MAY have landed "
+                      "server-side; check app.netlify.com before re-deploying")
                 return None
             time.sleep(3)
             p = _get(f"{NETLIFY_API}/deploys/{dep_id}", headers=hdrs, timeout=15)
