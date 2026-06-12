@@ -560,9 +560,6 @@
           <button class="seg-btn on" data-g="flat" onclick="_setPerfGroup(false)">Flat</button>
           <button class="seg-btn" data-g="role" onclick="_setPerfGroup(true)">By role</button>
         </div></div>
-      <div style="margin-left:auto"><div class="ctl-lbl">Find</div>
-        <input id="perfSearch" type="text" placeholder="raider…" autocomplete="off" spellcheck="false" oninput="_setPerfSearch(this.value)"
-               style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 9px;width:120px"></div>
     </div>
     <div class="scroll-x">
       <table class="mini-table" id="perfTable" style="width:100%">
@@ -2776,7 +2773,7 @@ function utilFacetsFor(cls, spec, role){
   }
   return CLASS_UTIL_FACETS[cls] || PERF_ROLE_FACETS[role] || [];
 }
-let _perfRole="all", _perfGroup=false, _perfSearch="";
+let _perfRole="all", _perfGroup=false;
 let _perfSort={col:"composite",dir:-1};
 try {
   _perfRole   = localStorage.getItem("perfRole")   || _perfRole;
@@ -2784,7 +2781,6 @@ try {
 } catch(e){}
 function _setPerfRole(r){ _perfRole=r; document.querySelectorAll("#perfRoleSeg .seg-btn").forEach(b=>b.classList.toggle("on",b.dataset.r===r)); try{localStorage.setItem("perfRole",r);}catch(e){} renderPerformance(); }
 function _setPerfGroup(g){ _perfGroup=g; document.querySelectorAll("#perfGroupSeg .seg-btn").forEach(b=>b.classList.toggle("on",(b.dataset.g==="role")===g)); try{localStorage.setItem("perfGroup",g?"1":"0");}catch(e){} renderPerformance(); }
-function _setPerfSearch(v){ _perfSearch=(v||"").trim().toLowerCase(); renderPerformance(); }
 function _perfSortBy(col){ if(_perfSort.col===col) _perfSort.dir*=-1; else _perfSort={col, dir: col==="name"?1:-1}; renderPerformance(); }
 // ── Performance BRIEF — a right-side flyout drawer (replaces the old inline expand row). Click a
 // record → a focused brief slides in over a scrim with the hard data behind every pillar; the table
@@ -3055,7 +3051,6 @@ function renderPerformance(){
   if(!tb||!hd) return;
   let rows=_perfRows();
   if(_perfRole!=="all") rows=rows.filter(r=>r.role===_perfRole);
-  if(_perfSearch) rows=rows.filter(r=>r.name.toLowerCase().startsWith(_perfSearch));
   const {col,dir}=_perfSort;
   rows.sort((a,b)=>{
     if(col==="name") return a.name.localeCompare(b.name)*dir;   // dir +1 = A→Z (default), -1 = Z→A — matches the ▲/▼
