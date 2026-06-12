@@ -12,9 +12,9 @@ browser-viewable HTML dashboard, and deploys it to Netlify.
 |------|---------|-------|
 | Python | 3.9+ | stdlib only — no `pip install` needed for the core pipeline |
 | Git | any | For cloning and pulling updates |
-| Node.js + npm | any | Only needed for Netlify hosting (optional) |
-| Netlify CLI | latest | `npm install -g netlify-cli` — only for Netlify hosting |
 | Playwright + pypdf | latest | `pip install playwright pypdf` + `playwright install chromium` — only for screenshot/PDF export |
+
+(Netlify hosting needs no extra tooling — deploys go straight to the Netlify REST API.)
 
 ---
 
@@ -71,14 +71,21 @@ ANTHROPIC_API_KEY=sk-ant-...
 The dashboard is a self-contained HTML file — `dashboard/raid_kpi_dashboard.html` — that works
 locally without any hosting. Two options if you want to share it with your raid:
 
-**Option A — Netlify (live URL, always up-to-date)**
+**Option A — Netlify (live URL, always up-to-date; no Node/CLI needed)**
+
+1. Create a site once at `app.netlify.com` (**Add new project → Deploy manually** — drag any
+   placeholder file; the weekly run replaces it). Pick a site name your raid will bookmark.
+2. Copy the **Site ID** from *Site configuration → Site details*.
+3. Create a personal access token: *User settings → Applications → New access token*.
+4. Add both to `.env`:
 
 ```
-netlify login
-netlify sites:create
+NETLIFY_AUTH_TOKEN=your_token_here
+NETLIFY_SITE_ID=your_site_id_here
 ```
 
-Follow the prompts to name your site. This writes `.netlify/state.json` (gitignored).
+(A site previously linked by the old netlify-cli flow keeps working — its id is read from
+`.netlify/state.json`, so only the token line is new.)
 After this, every `run_weekly.bat` run auto-deploys and your raid gets a stable URL to bookmark.
 
 **Option B — Screenshot / PDF export (no hosting needed)**

@@ -1,10 +1,12 @@
-"""Tests for publish._section_loss_guard — the deploy-time section-loss guard.
+"""Tests for the publish layer: the deploy-time section-loss guard + the Netlify REST
+deploy plumbing (config resolution, zip staging, upload/poll loop, skip-when-unconfigured).
 
-Hermetic: builds complete/degraded WEEK_DATA fixtures in-process; no Netlify, no network.
+Hermetic: builds fixtures in-process, fakes the HTTP layer — no Netlify, no network.
 
 Run:  python -m unittest discover -s tests
 """
-import sys, unittest
+import io, json, os, sys, tempfile, unittest, zipfile
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -71,6 +73,121 @@ class TestSectionLossGuard(unittest.TestCase):
 
     def test_no_prev_and_complete_new_is_safe(self):
         self.assertEqual(publish._section_loss_guard(None, complete_week("W4")), [])
+
+
+class TestNetlifyConfig(unittest.TestCase):
+    """_netlify_config resolution: .env > env var; site id from NETLIFY_SITE_ID > state.json.
+    load_env is monkeypatched so the developer's real .env never leaks into the tests."""
+
+    def setUp(self):
+        self._load_env, self._state = publish.load_env, publish.NETLIFY_STATE
+        self._env = mock.patch.dict(os.environ, {}, clear=False)
+        self._env.start()
+        for k in ("NETLIFY_AUTH_TOKEN", "NETLIFY_SITE_ID"):
+            os.environ.pop(k, None)
+        self.tmp = tempfile.TemporaryDirectory()
+        publish.NETLIFY_STATE = Path(self.tmp.name) / "state.json"   # no state by default
+
+    def tearDown(self):
+        publish.load_env, publish.NETLIFY_STATE = self._load_env, self._state
+        self._env.stop()
+        self.tmp.cleanup()
+
+    def test_token_plus_state_json(self):
+        publish.load_env = lambda: {"NETLIFY_AUTH_TOKEN": "tok"}
+        publish.NETLIFY_STATE.write_text(json.dumps({"siteId": "site-1"}), encoding="utf-8")
+        self.assertEqual(publish._netlify_config(), ("tok", "site-1"))
+
+    def test_no_token_is_unconfigured(self):
+        publish.load_env = lambda: {}
+        publish.NETLIFY_STATE.write_text(json.dumps({"siteId": "site-1"}), encoding="utf-8")
+        self.assertIsNone(publish._netlify_config())
+
+    def test_no_site_anywhere_is_unconfigured(self):
+        publish.load_env = lambda: {"NETLIFY_AUTH_TOKEN": "tok"}
+        self.assertIsNone(publish._netlify_config())
+
+    def test_env_var_site_id_works_without_state_json(self):
+        publish.load_env = lambda: {}
+        os.environ["NETLIFY_AUTH_TOKEN"] = "tok"
+        os.environ["NETLIFY_SITE_ID"] = "site-ci"
+        self.assertEqual(publish._netlify_config(), ("tok", "site-ci"))
+
+    def test_dotenv_site_id_beats_state_json(self):
+        publish.load_env = lambda: {"NETLIFY_AUTH_TOKEN": "tok", "NETLIFY_SITE_ID": "site-env"}
+        publish.NETLIFY_STATE.write_text(json.dumps({"siteId": "site-state"}), encoding="utf-8")
+        self.assertEqual(publish._netlify_config(), ("tok", "site-env"))
+
+
+class TestZipDeployDir(unittest.TestCase):
+    def test_relative_sorted_arcnames_and_content(self):
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            (d / "weeks").mkdir()
+            (d / "index.html").write_text("<html>latest</html>", encoding="utf-8")
+            (d / "weeks" / "B.json").write_text('{"b": 1}', encoding="utf-8")
+            (d / "weeks" / "A.json").write_text('{"a": 1}', encoding="utf-8")
+            blob = publish._zip_deploy_dir(d)
+            with zipfile.ZipFile(io.BytesIO(blob)) as zf:
+                self.assertEqual(zf.namelist(), ["index.html", "weeks/A.json", "weeks/B.json"])
+                self.assertEqual(zf.read("index.html").decode("utf-8"), "<html>latest</html>")
+                self.assertEqual(zf.read("weeks/A.json").decode("utf-8"), '{"a": 1}')
+
+
+class _FakeResp:
+    def __init__(self, payload, status=200):
+        self._payload, self.status_code, self.text = payload, status, json.dumps(payload)
+    def json(self):
+        return self._payload
+
+
+class TestNetlifyDeployPoll(unittest.TestCase):
+    """The upload/poll loop, with the HTTP layer faked via the _post/_get seams."""
+
+    def test_processing_then_ready_returns_ssl_url(self):
+        polls = iter([_FakeResp({"id": "d1", "state": "processing"}),
+                      _FakeResp({"id": "d1", "state": "ready", "ssl_url": "https://x.netlify.app"})])
+        with mock.patch.object(publish.time, "sleep"):
+            url = publish._netlify_deploy(
+                "tok", "site", b"zip",
+                _post=lambda *a, **k: _FakeResp({"id": "d1", "state": "uploading"}),
+                _get=lambda *a, **k: next(polls))
+        self.assertEqual(url, "https://x.netlify.app")
+
+    def test_error_state_returns_none(self):
+        with mock.patch.object(publish.time, "sleep"):
+            url = publish._netlify_deploy(
+                "tok", "site", b"zip",
+                _post=lambda *a, **k: _FakeResp({"id": "d1", "state": "uploading"}),
+                _get=lambda *a, **k: _FakeResp({"id": "d1", "state": "error",
+                                                "error_message": "boom"}))
+        self.assertIsNone(url)
+
+    def test_http_failure_returns_none(self):
+        url = publish._netlify_deploy("tok", "site", b"zip",
+                                      _post=lambda *a, **k: _FakeResp({"msg": "nope"}, status=401),
+                                      _get=lambda *a, **k: self.fail("must not poll after a failed upload"))
+        self.assertIsNone(url)
+
+    def test_deadline_expiry_returns_none(self):
+        # timeout_s=0 ⇒ the first deadline check fires before any sleep/poll
+        url = publish._netlify_deploy("tok", "site", b"zip", timeout_s=0,
+                                      _post=lambda *a, **k: _FakeResp({"id": "d1", "state": "uploading"}),
+                                      _get=lambda *a, **k: self.fail("must not poll past the deadline"))
+        self.assertIsNone(url)
+
+
+class TestDeploySkip(unittest.TestCase):
+    def test_unconfigured_skips_before_staging(self):
+        orig_cfg, orig_load = publish._netlify_config, publish._load_last_deploy
+        touched = []
+        publish._netlify_config = lambda: None
+        publish._load_last_deploy = lambda: touched.append("staged")   # first call inside the try
+        try:
+            self.assertIsNone(publish.deploy_netlify())
+            self.assertEqual(touched, [], "unconfigured deploy must return before staging")
+        finally:
+            publish._netlify_config, publish._load_last_deploy = orig_cfg, orig_load
 
 
 if __name__ == "__main__":

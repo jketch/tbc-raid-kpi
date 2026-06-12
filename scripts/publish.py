@@ -5,15 +5,13 @@ Run at the end of run_weekly.bat. SAFE to run before setup is finished — every
 warns and skips if it isn't configured yet, so it never breaks the weekly run.
 
 ────────────────────────────────────────────────────────────────────────────────
-ONE-TIME SETUP — already done. Recorded here in case the link is ever lost:
-  1. (already installed)  npm install -g netlify-cli
-  2. netlify login                       # opens a browser — click Authorize
-  3. netlify sites:create                # creates + auto-links a new site; pick your
-                                         #   team (Marvels) and a site name. This writes
-                                         #   .netlify/state.json, which deploy_netlify()
-                                         #   checks for. (We use sites:create, NOT
-                                         #   `netlify init` — init is for git-based CI we
-                                         #   don't use; this script deploys --dir manually.)
+ONE-TIME SETUP — deploys go straight to the Netlify REST API (no Node/CLI needed):
+  1. Create a site once in the Netlify web UI (Add new project → deploy manually;
+     any name). The Site ID is under Site configuration → Site details.
+  2. Create a personal access token: User settings → Applications → New access token.
+  3. In .env:  NETLIFY_AUTH_TOKEN=<token>
+     Site id resolves from NETLIFY_SITE_ID (.env/env) or .netlify/state.json {"siteId": ...}
+     (this repo's site was linked by the old netlify-cli flow; state.json still holds it).
 Live site:  https://clinquant-taffy-c345c2.netlify.app
 Admin:      https://app.netlify.com/projects/clinquant-taffy-c345c2
 After that, every run_weekly.bat auto-deploys the latest dashboard to that URL.
@@ -22,9 +20,10 @@ Discord auto-post is DISABLED (guild has webhooks locked). The script prints a
 copy/paste blurb instead. To re-enable later: add DISCORD_WEBHOOK_URL to .env and
 uncomment the three lines at the bottom of main().
 ────────────────────────────────────────────────────────────────────────────────
-Only stdlib used (urllib/json/subprocess) — no extra pip installs required.
+stdlib + the pipeline's auto-installed `requests` (imported lazily, only on a
+configured deploy) — no extra installs, no Node.
 """
-import sys, json, shutil, subprocess
+import os, sys, json, shutil, io, time, zipfile
 from pathlib import Path
 
 # Windows cp1252 console can't encode the ✓/⚠/emoji glyphs we print — force UTF-8.
@@ -37,6 +36,8 @@ ROOT      = Path(__file__).resolve().parent.parent
 DASH      = ROOT / "dashboard" / "raid_kpi_dashboard.html"
 DEPLOY    = ROOT / ".deploy"            # netlify serves index.html at the site root
 LAST_DEPLOY = ROOT / "cache" / "last_deploy.json"   # persisted baseline for the section-loss guard
+NETLIFY_API   = "https://api.netlify.com/api/v1"
+NETLIFY_STATE = ROOT / ".netlify" / "state.json"    # site link written by the old CLI flow
 
 
 def _load_last_deploy():
@@ -68,6 +69,77 @@ def load_env() -> dict:
                 k, v = line.split("=", 1)
                 env[k.strip()] = v.strip().strip('"').strip("'")
     return env
+
+
+def _netlify_config():
+    """(token, site_id) when deploys are configured, else None (→ graceful skip).
+    Token: NETLIFY_AUTH_TOKEN — .env wins over the system env (same precedence as
+    wcl_client's autoload). Site id: NETLIFY_SITE_ID (.env/env — the CI path, where
+    .netlify/ doesn't exist) > .netlify/state.json's siteId (the linked-site path)."""
+    env = load_env()
+    token = env.get("NETLIFY_AUTH_TOKEN") or os.environ.get("NETLIFY_AUTH_TOKEN")
+    site  = env.get("NETLIFY_SITE_ID") or os.environ.get("NETLIFY_SITE_ID")
+    if not site:
+        try:
+            if NETLIFY_STATE.exists():
+                site = json.loads(NETLIFY_STATE.read_text(encoding="utf-8")).get("siteId")
+        except Exception:
+            site = None
+    if token and site:
+        return token, site
+    return None
+
+
+def _zip_deploy_dir(deploy_dir: Path) -> bytes:
+    """Zip the staged site for the API deploy — arcnames RELATIVE to the deploy root
+    ('index.html', 'weeks/<code>.json'), walked in sorted order so the archive is
+    byte-stable across runs."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for p in sorted(deploy_dir.rglob("*")):
+            if p.is_file():
+                zf.write(p, p.relative_to(deploy_dir).as_posix())
+    return buf.getvalue()
+
+
+def _netlify_deploy(token: str, site_id: str, zip_bytes: bytes, timeout_s: int = 240,
+                    *, _post=None, _get=None):
+    """Upload the zip to the Netlify API and poll until the deploy is live. Returns the
+    site URL or None. A zip deploy publishes to production once processed (verified
+    against the API docs). `_post`/`_get` are injectable for hermetic tests; the real
+    path imports requests lazily (bootstrapped by wcl_client, the pipeline's one dep).
+    The 240s budget is a TOTAL deadline (upload + polling), matching the old CLI timeout."""
+    if _post is None or _get is None:
+        import wcl_client  # noqa: F401 — auto-installs requests if missing (the blessed bootstrap)
+        import requests
+        _post = _post or requests.post
+        _get  = _get or requests.get
+    hdrs = {"Authorization": f"Bearer {token}"}
+    deadline = time.monotonic() + timeout_s
+    try:
+        r = _post(f"{NETLIFY_API}/sites/{site_id}/deploys", data=zip_bytes,
+                  headers={**hdrs, "Content-Type": "application/zip"}, timeout=(10, 120))
+        if r.status_code >= 300:
+            print(f"  ⚠ netlify deploy failed (HTTP {r.status_code}):\n{r.text[-500:]}")
+            return None
+        dep = r.json()
+        dep_id = dep.get("id")
+        while dep.get("state") not in ("ready", "error"):
+            if time.monotonic() > deadline:
+                print("  ⚠ netlify deploy timed out after 240s — it MAY have landed server-side; "
+                      "check app.netlify.com before re-deploying")
+                return None
+            time.sleep(3)
+            p = _get(f"{NETLIFY_API}/deploys/{dep_id}", headers=hdrs, timeout=15)
+            if p.status_code < 300:
+                dep = p.json()
+        if dep.get("state") == "error":
+            print(f"  ⚠ netlify deploy failed:\n{str(dep.get('error_message') or dep)[-500:]}")
+            return None
+        return dep.get("ssl_url") or dep.get("url") or dep.get("deploy_ssl_url")
+    except Exception as e:
+        print(f"  ⚠ netlify deploy error: {e}")
+        return None
 
 
 def extract_week_data() -> dict:
@@ -170,12 +242,12 @@ def _section_loss_guard(prev_latest, new_latest):
 def deploy_netlify(force: bool = False):
     """Deploy dashboard (as index.html) to the linked Netlify site. Returns live URL or None.
     force: skip the section-loss guard (deploy even if a section regressed to empty)."""
-    if not shutil.which("netlify"):
-        print("  ⚠ netlify CLI not found — skipping deploy (run: npm install -g netlify-cli)")
+    cfg = _netlify_config()
+    if not cfg:
+        print("  ⚠ Netlify not configured — skipping deploy (set NETLIFY_AUTH_TOKEN in .env "
+              "+ a site id via NETLIFY_SITE_ID or .netlify/state.json; see README)")
         return None
-    if not (ROOT / ".netlify").exists():
-        print("  ⚠ no site linked yet — skipping deploy (run `netlify login` then `netlify sites:create` once)")
-        return None
+    token, site_id = cfg
     try:
         DEPLOY.mkdir(exist_ok=True)
         sys.path.insert(0, str(ROOT / "scripts"))
@@ -236,20 +308,7 @@ def deploy_netlify(force: bool = False):
             print("  ╚════════════════════════════════════════════════════════╝")
             print("  Re-run with --force to deploy anyway, or fix the data (likely `reprocess.py --all`).")
             return None
-        netlify_exe = shutil.which("netlify")
-        try:
-            r = subprocess.run(
-                [netlify_exe, "deploy", "--prod", "--dir", str(DEPLOY), "--json"],
-                cwd=ROOT, capture_output=True, text=True, timeout=240)
-        except subprocess.TimeoutExpired:
-            print("  ⚠ netlify deploy timed out after 240s — it MAY have landed server-side; "
-                  "check app.netlify.com before re-deploying")
-            return None
-        if r.returncode != 0:
-            print(f"  ⚠ netlify deploy failed:\n{(r.stderr or r.stdout)[-500:]}")
-            return None
-        data = json.loads(r.stdout)
-        url = data.get("url") or data.get("deploy_url")
+        url = _netlify_deploy(token, site_id, _zip_deploy_dir(DEPLOY))
         if url and new_latest:
             _save_last_deploy(new_latest)   # baseline for the NEXT deploy's section-loss guard
         return url
