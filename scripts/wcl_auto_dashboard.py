@@ -176,26 +176,11 @@ from combat_log import parse_combat_log, _parse_ts, _consumable_category   # noq
 
 
 
-# ── Local item crit cache (persisted across runs) ─────────────────────────────
-ROOT_DIR   = Path(__file__).parent.parent  # Gaming/
-CACHE_FILE = ROOT_DIR / "cache" / "item_crit_cache.json"
-LOGS_DIR   = ROOT_DIR / "logs"
-LOOT_DIR   = ROOT_DIR / "loot"   # ThatsBIS "received" CSV exports — newest *.csv auto-picked
-DASH_FILE      = ROOT_DIR / "dashboard" / "raid_kpi_dashboard.html"
-TEMPLATE_FILE  = ROOT_DIR / "dashboard" / "template.html"
-DEFAULT_TITLE  = "Raid KPI Dashboard — TBC Anniversary"
-
-# Per-week mapped WEEK_DATA snapshots — the source of record for OFFLINE reprocessing
-# (reprocess.py --all) so a schema/trend/render change never needs a WCL re-run. One JSON
-# per report, written every prod run after map_to_week_data() (gitignored, ~MB each).
-WEEK_DATA_CACHE = ROOT_DIR / "cache" / "week_data"
-
-# Per-week PRE-map merged `wcl` dict snapshots — the richer offline-reprocess source (reprocess.py
-# --from-raw). Where WEEK_DATA_CACHE freezes the MAPPED output, this freezes the input to
-# map_to_week_data(), so re-running map offline can repopulate a NEW map-derived metric (the mapped
-# snapshot can't — it predates the field). One JSON per report, written every prod run after
-# merge_log_into_wcl() (gitignored, ~MB each). Only a brand-new WCL *query* still needs a live run.
-WCL_CACHE = ROOT_DIR / "cache" / "wcl"
+# ── Filesystem paths (extracted module) ──────────────────────────────────────
+# All path constants live in paths.py (a pure-constants leaf). Re-exported here so every
+# existing W.DASH_FILE / W.WEEK_DATA_CACHE / W.ROOT_DIR reference keeps resolving.
+from paths import (ROOT_DIR, CACHE_FILE, LOGS_DIR, LOOT_DIR, DASH_FILE, TEMPLATE_FILE,  # noqa: F401
+                   DEFAULT_TITLE, WEEK_DATA_CACHE, WCL_CACHE, ITEM_META_CACHE)          # noqa: F401
 
 # Performance metric = the native WCL PARSE % (rankPercent from report.rankings) — vs the FULL
 # logged population, NOT the old top-100 cohort ratio (which made solid raiders read "below
@@ -2419,7 +2404,7 @@ def fetch_master_data(token: str, report_code: str) -> dict:
 # wowhead's item XML (cached in cache/item_meta_cache.json — fetched once per item, then free).
 # Degrades gracefully: a missing/failed socket lookup just drops that item from the empty-socket tally,
 # and the enchant + item-level half is pure WCL (works even if wowhead is unreachable).
-ITEM_META_CACHE = ROOT_DIR / "cache" / "item_meta_cache.json"
+# (Socket-count cache path: paths.ITEM_META_CACHE.)
 # WCL equipment slot index → name. Enchantable = slots a raider is expected to enchant every week
 # (conservative: rings/offhand/ranged are conditional on class/profession → excluded so we never raise
 # a false "missing enchant"). Shirt/tabard are excluded from the item-level average.
