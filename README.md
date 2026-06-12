@@ -93,9 +93,9 @@ playwright install chromium
 After each weekly run, export the dashboard to per-tab PNGs or a single merged PDF:
 
 ```
-python scripts\screenshot_dashboard.py                  # one PNG per tab → screenshots\
-python scripts\screenshot_dashboard.py --pdf            # merged PDF → screenshots\dashboard.pdf
-python scripts\screenshot_dashboard.py --tabs overview utility  # specific tabs only
+python scripts/tools/screenshot_dashboard.py                  # one PNG per tab → screenshots\
+python scripts/tools/screenshot_dashboard.py --pdf            # merged PDF → screenshots\dashboard.pdf
+python scripts/tools/screenshot_dashboard.py --tabs overview utility  # specific tabs only
 ```
 
 Post the images or PDF directly to your raid Discord channel.
@@ -148,24 +148,30 @@ python scripts\wcl_auto_dashboard.py REPORTCODE --dry-run  # prints week_data JS
 
 ---
 
-## File layout
+## File layout — what you touch weekly vs. never
 
 ```
 tbc-raid-kpi/
-├── run_weekly.bat              ← entry point
-├── .env                        ← your WCL credentials (gitignored)
+│  ── you touch these ─────────────────────────────────────────────────────────
+├── run_weekly.bat              ← THE entry point: double-click, paste the report code
+├── logs/                       ← WEEKLY: drop WoWCombatLog.txt here (newest auto-selected)
+├── loot/                       ← WEEKLY, optional: drop the ThatsBIS received-loot CSV here
+├── .env                        ← one-time: your WCL credentials (gitignored; copy .env.example)
+│  ── you read these ──────────────────────────────────────────────────────────
 ├── README.md                   ← this file (setup guide)
 ├── docs/                       ← architecture + TBC/WCL reference docs
-├── scripts/
-│   ├── wcl_auto_dashboard.py   ← pipeline facade + main() (implementation lives in
-│   │                              wcl_fetchers/week_map/crit_model/trends/render_html + leaves)
-│   ├── db_writer.py            ← SQLite history
-│   ├── publish.py              ← Netlify deploy
-│   └── screenshot_dashboard.py ← export dashboard to PNG/PDF (requires Playwright)
+│  ── the machinery (never touched in weekly use) ─────────────────────────────
+├── scripts/                    ← the pipeline modules (facade: wcl_auto_dashboard.py)
+│   ├── hooks/                  ←   tracked git-hook source (the pre-commit test gate)
+│   └── tools/                  ←   on-demand tools: backfill_snapshots (rebuild past weeks),
+│                                    probe_mechanic_ids (WCL recon), screenshot_dashboard
+│                                    (PNG/PDF export), install_hooks (once per clone)
 ├── dashboard/
-│   ├── template.html           ← markup/CSS/render engine (tracked in git)
-│   └── raid_kpi_dashboard.html ← generated output (gitignored)
-├── logs/                       ← drop WoWCombatLog.txt here
-└── cache/
-    └── raid_history.db         ← weekly KPI history (gitignored)
+│   ├── template.html           ←   markup/CSS/render engine (tracked — the only UI source)
+│   └── raid_kpi_dashboard.html ←   generated output (gitignored; rewritten every run)
+├── tests/                      ← unit suite + golden (run via python scripts/check.py)
+└── cache/                      ← machine-managed state (gitignored): SQLite history DB,
+                                   per-week snapshots, item caches. Never edit by hand.
 ```
+(Also gitignored at root: `.deploy/` + `.netlify/` (Netlify staging/state), `screenshots/`,
+`prompts/` — all machine-managed or scratch.)

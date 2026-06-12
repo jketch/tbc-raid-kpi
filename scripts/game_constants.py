@@ -262,7 +262,7 @@ AVOIDABLE_SPELL_NAMES = {
 # WCL fight name → {abilityGameID: mechanic display name}. The ID-based twin of
 # AVOIDABLE_SPELL_NAMES (SAME curated mechanics — keep the two in sync so the WCL headline
 # and the combat-log drill-down agree on what counts). Every ID below was VERIFIED against
-# live DamageTaken data (scripts/probe_mechanic_ids.py on report J4Ba1j6VAPDmqCFp,
+# live DamageTaken data (scripts/tools/probe_mechanic_ids.py on report J4Ba1j6VAPDmqCFp,
 # 2026-06-12) or carried over from the doc-verified table in docs/TBC_RAID_MECHANICS.md §8
 # — never from memory. Multiple IDs may map to one mechanic name (rank/variant splits).
 # Powers fetch_mechanic_compliance (WCL DamageTaken events per kill fight, zero log) and

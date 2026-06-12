@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-"""Install the tracked git hooks (hooks/*) into .git/hooks/.
+"""Install the tracked git hooks (scripts/hooks/*) into .git/hooks/.
 
-.git/hooks/ isn't version-controlled, so the real hook lives in the tracked hooks/
-dir and this copies it in. Run once per clone (and after editing hooks/pre-commit):
+.git/hooks/ isn't version-controlled, so the real hook lives in the tracked
+scripts/hooks/ dir and this copies it in. Run once per clone (and after editing
+scripts/hooks/pre-commit):
 
-    python scripts/install_hooks.py
+    python scripts/tools/install_hooks.py
 
 Idempotent. On a fresh clone this is the only setup step the integrity gate needs.
 """
@@ -17,8 +18,8 @@ try:
 except Exception:
     pass
 
-ROOT = Path(__file__).resolve().parent.parent
-SRC  = ROOT / "hooks"
+ROOT = Path(__file__).resolve().parents[2]
+SRC  = ROOT / "scripts" / "hooks"
 DST  = ROOT / ".git" / "hooks"
 
 

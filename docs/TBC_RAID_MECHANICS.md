@@ -435,7 +435,7 @@ Per-boss, in the format the **Mechanic-Compliance** tracker consumes. **Avoidabl
 
 Every ✅ ID below was read off a Wowhead `spell=` record or a Warcraft Wiki inline link. These are safe to wire into a per-boss `{ability-ID: mechanic}` map *today*; the avoidable-damage `DamageTaken`-by-ID query keys on these. Abilities marked unverified in §7 are deliberately omitted — key those on the ability **name** until a live WCL `DamageTaken` probe confirms the ID.
 
-> **⚡ = LIVE-verified** (scripts/probe_mechanic_ids.py on report J4Ba1j6VAPDmqCFp, 2026-06-12) — read
+> **⚡ = LIVE-verified** (scripts/tools/probe_mechanic_ids.py on report J4Ba1j6VAPDmqCFp, 2026-06-12) — read
 > straight from DamageTaken events on real kills, the strongest verification tier. Note two aura-vs-splash
 > splits the live probe exposed: Morogrim's damage event is **37852** (38028 is the grave aura) and
 > Solarian's bomb damage is **42787** (33045 is the carried debuff). The wired subset lives in

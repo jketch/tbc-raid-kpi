@@ -8,8 +8,8 @@ except ImportError:
     sys.exit("Playwright is required for screenshots — install it with:\n"
              "  pip install playwright pypdf && playwright install chromium")
 
-DASHBOARD = Path(__file__).parent.parent / "dashboard" / "raid_kpi_dashboard.html"
-OUT_DIR   = Path(__file__).parent.parent / "screenshots"
+DASHBOARD = Path(__file__).resolve().parents[2] / "dashboard" / "raid_kpi_dashboard.html"
+OUT_DIR   = Path(__file__).resolve().parents[2] / "screenshots"
 
 TABS = [
     ("overview", "Overview"),

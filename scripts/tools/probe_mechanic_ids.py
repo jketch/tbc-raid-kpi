@@ -15,12 +15,12 @@ guess. It writes NOTHING (no DB, no HTML, no cache) — pure recon, like a `--dr
 
 Usage
 -----
-    python scripts\probe_mechanic_ids.py REPORTCODE                 # all kills, top 25 abilities each
-    python scripts\probe_mechanic_ids.py REPORTCODE --boss Brutallus # one encounter (name substring)
-    python scripts\probe_mechanic_ids.py REPORTCODE --top 40         # deeper list per boss
-    python scripts\probe_mechanic_ids.py REPORTCODE --min-players 3  # only abilities that hit >=3 players
-    python scripts\probe_mechanic_ids.py REPORTCODE --json out.json  # also dump structured JSON
-    python scripts\probe_mechanic_ids.py REPORTCODE --include-trash  # include non-kill fights too
+    python scripts/tools/probe_mechanic_ids.py REPORTCODE                 # all kills, top 25 abilities each
+    python scripts/tools/probe_mechanic_ids.py REPORTCODE --boss Brutallus # one encounter (name substring)
+    python scripts/tools/probe_mechanic_ids.py REPORTCODE --top 40         # deeper list per boss
+    python scripts/tools/probe_mechanic_ids.py REPORTCODE --min-players 3  # only abilities that hit >=3 players
+    python scripts/tools/probe_mechanic_ids.py REPORTCODE --json out.json  # also dump structured JSON
+    python scripts/tools/probe_mechanic_ids.py REPORTCODE --include-trash  # include non-kill fights too
 
 Notes
 -----
@@ -44,8 +44,8 @@ try:
 except Exception:
     pass
 
-# Run as `python scripts\probe_mechanic_ids.py ...` — make the sibling wcl_client importable.
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Run as `python scripts/tools/probe_mechanic_ids.py ...` — make scripts/ (wcl_client) importable.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from wcl_client import get_token, gql  # noqa: E402
 
 

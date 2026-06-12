@@ -7,8 +7,8 @@
 #
 # Zero WCL, zero DB writes, read-only on prod data — fast enough to run every commit.
 #
-# Source of truth: hooks/pre-commit (tracked). Install/refresh with:
-#     python scripts/install_hooks.py        (or copy this file to .git/hooks/pre-commit)
+# Source of truth: scripts/hooks/pre-commit (tracked). Install/refresh with:
+#     python scripts/tools/install_hooks.py        (or copy this file to .git/hooks/pre-commit)
 # Bypass for a genuine emergency: git commit --no-verify   (avoid — fix the data instead)
 
 python scripts/check.py
