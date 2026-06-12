@@ -77,6 +77,8 @@ SECTIONS = {
     "boss_meta":           Section(WCL,  True,  desc="boss tiles — portrait/delta/deaths/raid-DPS"),
     "healReaction":        Section(LOG,  desc="per-raider/boss reaction-time medians (HP%-timeline)"),
     "debuffCoverage":      Section(WCL,  False, desc="CoE/Misery/SW/ISB/FF/Sunder/Reck/Expose/judgements uptime (empty if none cast)"),
+    "mechanicCompliance":  Section(WCL,  False, predicate=lambda v: isinstance(v, dict) and bool(v.get("bosses")),
+                                   desc="per-boss who-ate-the-mechanic by verified ability-ID (empty: clean week / unmapped bosses)"),
     "gearAudit":           Section(WCL,  False, predicate=_has_players,
                                    desc="per-raider item level / enchant / gem compliance (WCL gear + wowhead sockets)"),
     "sunderArmor":         Section(WCL,  False, predicate=_has_players,
@@ -204,6 +206,7 @@ class WeekData(TypedDict, total=False):
     boss_meta: dict
     healReaction: dict
     debuffCoverage: dict
+    mechanicCompliance: dict
     gearAudit: dict
     sunderArmor: dict
     manaReturns: dict

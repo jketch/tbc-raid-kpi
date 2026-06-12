@@ -678,6 +678,14 @@
       <div id="debuffCoverage" class="scroll-x"></div>
     </div>
 
+    <!-- ═══════ MECHANIC COMPLIANCE — who ate what, per boss (pure WCL) ═══════ -->
+    <div class="card">
+      <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_fire_selfdestruct.jpg" alt=""> Mechanic Compliance — who ate what</div>
+      <div class="hs-sub">Hits from dodgeable boss mechanics, per encounter (WCL ability-ID map — fills in
+        even when no combat log was transferred). Same curated mechanics as Avoidable Damage.</div>
+      <div id="mechCompliance" class="scroll-x"></div>
+    </div>
+
     <!-- ═══════ SUNDER ARMOR — per-warrior armor-debuff quality ═══════ -->
     <div class="card">
       <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/ability_warrior_sunder.jpg" alt=""> Sunder Armor — who built the stack</div>
@@ -1343,6 +1351,49 @@ function renderDebuffCoverage(){
       <tr><th style="text-align:left;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:4px 14px 6px 4px">Boss</th>${iconRow}</tr>
     </thead>
     <tbody>${bossRows}${avgRow}</tbody>
+  </table>`;
+}
+
+// ── MECHANIC COMPLIANCE — per-boss "who ate the mechanic" (pure WCL, ability-ID map)
+function renderMechanicCompliance(){
+  const mc = WEEK_DATA.mechanicCompliance || {};
+  const el = document.getElementById("mechCompliance");
+  if (!el) return;
+  const bosses = (mc.bosses || []).filter(b => (b.mechanics || []).length);
+  if (!bosses.length){ const c = el.closest(".card"); if (c) c.style.display = "none"; return; }
+  const fmtK = v => v >= 10000 ? Math.round(v/1000) + "k" : (v >= 1000 ? (v/1000).toFixed(1) + "k" : v);
+  const roster = WEEK_DATA.roster || {};
+
+  const rows = bosses.map(b => {
+    const eid = b.encounter_id ? b.encounter_id - 100000 : null;
+    const port = eid ? `<img src="https://assets.rpglogs.com/img/warcraft/bosses/${eid}-icon.jpg" style="width:18px;height:18px;border-radius:4px;vertical-align:-4px;margin-right:7px" onerror="this.style.display='none'">` : "";
+    const head = `<tr><td colspan="4" style="padding:9px 4px 4px;font-size:12px;font-weight:700;border-top:1px solid var(--border)">${port}${b.boss}</td></tr>`;
+    const mechRows = b.mechanics.map((m, ri) => {
+      const eaters = m.players.slice(0, 7).map(p => {
+        const role = (roster[p.name] || {}).role;
+        return `<span class="cname" style="color:${nameColor(p.name, role)}">${p.name}</span>` +
+               `<span style="color:var(--muted);font-size:10.5px"> ${fmtK(p.dmg)}${p.hits > 1 ? "&thinsp;(" + p.hits + "×)" : ""}</span>`;
+      }).join('<span style="color:var(--dim)"> · </span>');
+      const more = m.players.length > 7 ? ` <span style="color:var(--muted);font-size:10.5px">+${m.players.length - 7} more</span>` : "";
+      const zebra = ri % 2 ? "background:rgba(255,255,255,.012);" : "";
+      return `<tr style="${zebra}">
+        <td style="white-space:nowrap;padding:4px 12px 4px 14px;font-size:11.5px">${m.icon ? gicon(m.icon) + " " : ""}${m.name}</td>
+        <td style="text-align:right;padding:4px 10px;font-variant-numeric:tabular-nums;font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted)">${m.players_hit}&hairsp;p</td>
+        <td style="text-align:right;padding:4px 10px;font-variant-numeric:tabular-nums;font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600">${fmtK(m.total)}</td>
+        <td style="padding:4px 4px;font-size:11.5px;line-height:1.8">${eaters}${more}</td>
+      </tr>`;
+    }).join("");
+    return head + mechRows;
+  }).join("");
+
+  el.innerHTML = `<table style="border-collapse:collapse;width:100%;min-width:520px">
+    <thead><tr>
+      <th style="text-align:left;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:2px 12px 4px 14px">Mechanic</th>
+      <th style="text-align:right;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:2px 10px 4px">Hit</th>
+      <th style="text-align:right;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:2px 10px 4px">Dmg</th>
+      <th style="text-align:left;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:2px 4px 4px">Eaten by</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
   </table>`;
 }
 
@@ -3121,6 +3172,7 @@ function renderAll(){
   renderAvoidableShame();
   try { const _v = localStorage.getItem("avView"); if (_v) avView(_v); } catch(e){}   // restore By Player/By Boss
   renderDebuffCoverage();
+  renderMechanicCompliance();
   renderSunderArmor();
   renderMC();
   renderDeaths();

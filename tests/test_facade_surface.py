@@ -49,6 +49,7 @@ SHARED_INTERNALS = {
     "expected_crit", "gear_crit_rating", "LUCK_MIN_WEEKS",
     "_effective_role", "_toolkit_metric", "_tank_survival_grade",
     "build_consumable_compliance", "fetch_master_data",
+    "fetch_mechanic_compliance", "MECHANIC_IDS",
     "TOOLKIT_ABILITIES", "DEBUFF_SLOTS", "MANA_SOURCES",
     "CACHE_FILE", "LOGS_DIR", "LOOT_DIR", "TEMPLATE_FILE", "DEFAULT_TITLE",
     "ITEM_META_CACHE",

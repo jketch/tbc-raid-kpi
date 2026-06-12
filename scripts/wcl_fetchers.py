@@ -16,7 +16,8 @@ from collections import defaultdict
 
 from wcl_client import gql
 from paths import ITEM_META_CACHE
-from game_constants import FOOD_BUFF, ELIXIR_BUFFS, HEAL_MANA_COST, EXTERNAL_ABILITIES
+from game_constants import (FOOD_BUFF, ELIXIR_BUFFS, HEAL_MANA_COST, EXTERNAL_ABILITIES,
+                            MECHANIC_IDS)
 from roles import _fight_role
 
 # Hard cap on paginated WCL event queries — guards against a runaway non-null nextPageTimestamp
@@ -2157,3 +2158,59 @@ def fetch_sunder_armor(token: str, report_code: str, kills: list, md: dict | Non
     players.sort(key=lambda x: -x["total"])
     print(f"  ✓ sunder armor: {len(players)} sunderers")
     return {"players": players}
+
+
+def fetch_mechanic_compliance(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
+    """Per-boss "who ate the mechanic" — the WCL-durable headline for avoidable damage
+    (backlog #2 + #7). For each kill fight whose encounter has entries in
+    game_constants.MECHANIC_IDS, pull DamageTaken EVENTS filtered server-side to those
+    ability IDs (filterExpression keeps it to ~1 page/fight) and aggregate per mechanic →
+    per player: hits + damage. Player targets only (pets dropped via md); multiple IDs
+    mapping to one mechanic name merge into one row. Runs every week with zero combat log.
+
+    Returns {boss: {"encounter_id": id, "mechanics": {mech: {"total": dmg, "events": n,
+    "players": {name: {"hits": h, "dmg": d}}}}}} — bosses/mechanics with no hits omitted."""
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    player_ids = {a["id"] for a in md["players"]}
+    id2name = md["id2name"]
+    Q = """query($c:String!,$f:Int!,$s:Float!,$e:Float!,$x:String!){reportData{report(code:$c){
+        events(dataType: DamageTaken, fightIDs:[$f], startTime:$s, endTime:$e,
+               filterExpression:$x, limit:10000){ data nextPageTimestamp }}}}"""
+    out = {}
+    for f in kills:
+        ids = MECHANIC_IDS.get(f.get("name") or "", {})
+        if not ids:
+            continue
+        expr = "ability.id in (" + ", ".join(str(i) for i in sorted(ids)) + ")"
+        boss = out.setdefault(f["name"], {"encounter_id": f.get("encounterID"), "mechanics": {}})
+        st, pages = float(f["startTime"]), 0
+        while st is not None and pages < MAX_EVENT_PAGES:
+            pages += 1
+            try:
+                ev = gql(token, Q, {"c": report_code, "f": int(f["id"]), "s": st,
+                                    "e": float(f["endTime"]), "x": expr})["reportData"]["report"]["events"]
+            except Exception as e:
+                print(f"  Warning: mechanic compliance fetch failed ({f.get('name')}): {e}")
+                break
+            for d in (ev.get("data") or []):
+                tid = d.get("targetID")
+                if tid not in player_ids:
+                    continue
+                mech = ids.get(d.get("abilityGameID"))
+                if not mech:
+                    continue
+                m = boss["mechanics"].setdefault(mech, {"total": 0, "events": 0, "players": {}})
+                amt = d.get("amount", 0) or 0
+                m["total"] += amt
+                m["events"] += 1
+                p = m["players"].setdefault(id2name.get(tid, str(tid)), {"hits": 0, "dmg": 0})
+                p["hits"] += 1
+                p["dmg"] += amt
+            nx = ev.get("nextPageTimestamp")
+            st = float(nx) if nx else None
+    out = {b: v for b, v in out.items() if v["mechanics"]}
+    n_mech = sum(len(v["mechanics"]) for v in out.values())
+    print(f"  ✓ mechanic compliance: {len(out)} bosses, {n_mech} mechanics tracked"
+          if out else "  ✓ mechanic compliance: no mapped mechanics hit anyone (clean week)")
+    return out

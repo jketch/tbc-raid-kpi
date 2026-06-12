@@ -435,6 +435,12 @@ Per-boss, in the format the **Mechanic-Compliance** tracker consumes. **Avoidabl
 
 Every ✅ ID below was read off a Wowhead `spell=` record or a Warcraft Wiki inline link. These are safe to wire into a per-boss `{ability-ID: mechanic}` map *today*; the avoidable-damage `DamageTaken`-by-ID query keys on these. Abilities marked unverified in §7 are deliberately omitted — key those on the ability **name** until a live WCL `DamageTaken` probe confirms the ID.
 
+> **⚡ = LIVE-verified** (scripts/probe_mechanic_ids.py on report J4Ba1j6VAPDmqCFp, 2026-06-12) — read
+> straight from DamageTaken events on real kills, the strongest verification tier. Note two aura-vs-splash
+> splits the live probe exposed: Morogrim's damage event is **37852** (38028 is the grave aura) and
+> Solarian's bomb damage is **42787** (33045 is the carried debuff). The wired subset lives in
+> `game_constants.MECHANIC_IDS` (curated parity with `AVOIDABLE_SPELL_NAMES`).
+
 | Tier | Boss | Avoidable / key ability | Spell ID |
 |---|---|---|---|
 | T4 | Attumen | Shadow Cleave | 29832 |
@@ -462,10 +468,27 @@ Every ✅ ID below was read off a Wowhead `spell=` record or a Warcraft Wiki inl
 | T5 | Lurker Below | Spout | 37433 |
 | T5 | Lurker Below | Geyser | 37478 |
 | T5 | Lurker Below | Water Bolt | 37138 |
-| T5 | Morogrim | Watery Grave | 38028 |
-| T5 | Solarian | Wrath of the Astromancer (bomb) | 33045 |
+| T5 | Lurker Below | Whirl ⚡ | 37363 |
+| T5 | Lurker Below | Scalding Water ⚡ | 37284 |
+| T5 | Leotheras | Whirlwind ⚡ | 37641 |
+| T5 | Leotheras | Chaos Blast ⚡ | 37675 |
+| T5 | Morogrim | Watery Grave (aura) | 38028 |
+| T5 | Morogrim | Watery Grave Explosion (the splash) ⚡ | 37852 |
+| T5 | Karathress | Sear Nova (Caribdis) ⚡ | 38445 |
+| T5 | Vashj | Entangle ⚡ | 38316 |
+| T5 | Vashj | Static Charge (FF-tracked) ⚡ | 38281 |
+| T5 | Void Reaver | Arcane Orb ⚡ | 34190 |
+| T5 | Solarian | Wrath of the Astromancer (bomb DEBUFF) | 33045 |
+| T5 | Solarian | Wrath of the Astromancer (the splash) ⚡ | 42787 |
 | T5 | Solarian | Blinding Light | 33009 |
 | T5 | Solarian | Arcane Missiles | 39414 |
+| T5 | Al'ar | Flame Patch ⚡ | 35383 |
+| T5 | Kael'thas | Nether Vapor ⚡ | 35859 |
+| T5 | Kael'thas | Nether Beam ⚡ | 35873 |
+| T5 | Kael'thas | Arcane Disruption ⚡ | 36834 |
+| T5 | Kael'thas | Shock Barrier ⚡ | 36822 |
+| T5 | Kael'thas | Conflagration (Capernian) ⚡ | 37018 |
+| T5 | Kael'thas | Whirlwind (advisor phase) ⚡ | 36982 |
 | T5 | Al'ar | Flame Quills | 34229 |
 | T5 | Al'ar | Dive Bomb | 35181 |
 | T5 | Al'ar | Ember Blast | 34341 |

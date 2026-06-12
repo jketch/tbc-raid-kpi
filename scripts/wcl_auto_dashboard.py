@@ -93,7 +93,7 @@ from wcl_fetchers import (                                                      
     fetch_parse_percentiles, fetch_saves, fetch_interrupts, fetch_dispels,
     fetch_ability_icons, fetch_deaths_split, _build_death_timeline, DEBUFF_SLOTS,
     _merge_bands, _totem_uptime, fetch_debuff_coverage, MANA_SOURCES, INNERVATE_ICON,
-    fetch_mana_returns, fetch_sunder_armor,
+    fetch_mana_returns, fetch_sunder_armor, fetch_mechanic_compliance,
 )
 
 from week_map import (_tally_spells, _interrupt_row, _ice_player_spells,              # noqa: F401
@@ -392,6 +392,9 @@ def build_week_data(report_code: str, token: str,
                                        for b, u in healer_uptime.get(p["name"], {}).items()]
     # Raid debuff coverage — pure WCL, per boss (CoE/Misery/Shadow Weaving/ISB + armor + judgements)
     debuff_coverage = fetch_debuff_coverage(token, report_code, kills)
+    # Mechanic compliance — per-boss "who ate the mechanic" by verified ability-ID (pure WCL;
+    # the durable headline behind avoidable damage when no combat log was transferred)
+    mech_compliance = fetch_mechanic_compliance(token, report_code, kills, md)
     # Gear readiness audit — item level + enchant + gem/empty-socket compliance (WCL gear + wowhead)
     gear_audit      = fetch_gear_audit(token, report_code, kills)
     # Class toolkit — each DPS's signature class-relative utility (cast-based, pure WCL)
@@ -513,6 +516,8 @@ def build_week_data(report_code: str, token: str,
         "player_spells":   role_spells.get("players", {}),
         # per-boss uptime of key DPS-amplifying raid debuffs (pure WCL)
         "debuff_coverage": debuff_coverage,
+        # per-boss per-mechanic "who ate it" by verified ability-ID (pure WCL)
+        "mech_compliance": mech_compliance,
         # gear readiness audit — item level / enchant / gem compliance (WCL gear + wowhead sockets)
         "gear_audit":      gear_audit,
         # per-player signature class-utility cast counts (pure WCL Casts)

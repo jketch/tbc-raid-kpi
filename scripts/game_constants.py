@@ -257,3 +257,57 @@ AVOIDABLE_SPELL_NAMES = {
     # Dropped (not avoidable): Pounding, Forked Lightning, Earthquake (raid-wide),
     # Arcane Missiles (RNG-targeted cast), Poison Bolt (add damage), Holy Nova (noise).
 }
+
+# ── Mechanic Compliance — the SHARED ability-ID map (backlog #2 + #7) ─────────
+# WCL fight name → {abilityGameID: mechanic display name}. The ID-based twin of
+# AVOIDABLE_SPELL_NAMES (SAME curated mechanics — keep the two in sync so the WCL headline
+# and the combat-log drill-down agree on what counts). Every ID below was VERIFIED against
+# live DamageTaken data (scripts/probe_mechanic_ids.py on report J4Ba1j6VAPDmqCFp,
+# 2026-06-12) or carried over from the doc-verified table in docs/TBC_RAID_MECHANICS.md §8
+# — never from memory. Multiple IDs may map to one mechanic name (rank/variant splits).
+# Powers fetch_mechanic_compliance (WCL DamageTaken events per kill fight, zero log) and
+# the avoidable-damage WCL fallback when no combat log was transferred.
+MECHANIC_IDS = {
+    "Hydross the Unstable": {},     # deliberately empty — no curated avoidable mechanic
+    "The Lurker Below": {
+        37433: "Spout",                      # doc-verified (no hits the probe week)
+        37363: "Whirl",                      # live-verified
+        37478: "Geyser",                     # live-verified
+        37284: "Scalding Water",             # live-verified (melee-mandatory during submerge — exec pillar excludes it)
+    },
+    "Leotheras the Blind": {
+        37641: "Whirlwind",                  # live-verified
+        37675: "Chaos Blast",                # live-verified
+    },
+    "Morogrim Tidewalker": {
+        37852: "Watery Grave Explosion",     # live-verified (38028 is the grave AURA, not the splash)
+    },
+    "Fathom-Lord Karathress": {
+        38445: "Sear Nova",                  # live-verified (Caribdis)
+    },
+    "Lady Vashj": {
+        38316: "Entangle",                   # live-verified (Static Charge stays in FF, not here)
+    },
+    "Void Reaver": {
+        34190: "Arcane Orb",                 # live-verified (was (ID unverified) in the doc)
+    },
+    "High Astromancer Solarian": {
+        33009: "Blinding Light",             # live-verified
+        42787: "Wrath of the Astromancer",   # live-verified (33045 is the bomb DEBUFF; 42787 is the splash)
+    },
+    "Al'ar": {
+        35383: "Flame Patch",                # live-verified
+        34121: "Flame Buffet",               # doc-verified (tank stacks when no melee on platform)
+    },
+    "Kael'thas Sunstrider": {
+        35859: "Nether Vapor",               # live-verified
+        35873: "Nether Beam",                # live-verified
+        36834: "Arcane Disruption",          # live-verified
+        36822: "Shock Barrier",              # live-verified
+        37018: "Conflagration",              # live-verified (Capernian)
+        36982: "Whirlwind",                  # live-verified (advisor phase)
+    },
+    "Gruul the Dragonkiller": {
+        36240: "Cave In",                    # doc-verified (off-report DST clears stay excluded)
+    },
+}

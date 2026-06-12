@@ -202,6 +202,47 @@ def map_to_week_data(wcl: dict) -> WeekData:
             "icon": ICON_OVERRIDES.get(m) or _icons.get(m, "")}
         for m in sorted(_mechs_seen)   # sorted: set iteration is hash-seed-dependent
     }
+
+    # ── Mechanic Compliance — per-boss "who ate it" (pure WCL, verified ability-ID map) ──
+    # The WCL-durable twin of the log-based avoidable view (game_constants.MECHANIC_IDS).
+    _mech_wcl = wcl.get("mech_compliance", {})
+    mech_compliance = {"bosses": [
+        {"boss": boss, "encounter_id": (bv or {}).get("encounter_id"),
+         "mechanics": [
+             {"name": mech, "icon": ICON_OVERRIDES.get(mech) or _icons.get(mech, ""),
+              "total": mv["total"], "events": mv["events"], "players_hit": len(mv["players"]),
+              "players": sorted(({"name": n, "hits": pv["hits"], "dmg": pv["dmg"]}
+                                 for n, pv in mv["players"].items()),
+                                key=lambda x: (-x["dmg"], x["name"]))}
+             for mech, mv in sorted(bv["mechanics"].items(), key=lambda kv: -kv[1]["total"])
+         ]}
+        for boss, bv in _mech_wcl.items()    # insertion order = kill order (deterministic)
+    ]} if _mech_wcl else {}
+
+    # WCL-Durability fallback (#7): no combat log ⇒ no per-player avoidable overlay. Rebuild the
+    # avoidable view from mechanic compliance (the SAME curated mechanics, ID-keyed) so a missing
+    # log THINS the card (no per-hit timestamps) but never blanks it. Log present ⇒ untouched.
+    if not avoidable_list and _mech_wcl:
+        _by_player = {}
+        for boss, bv in _mech_wcl.items():
+            for mech, mv in bv["mechanics"].items():
+                for n, pv in mv["players"].items():
+                    d = _by_player.setdefault(n, {})
+                    d[mech] = d.get(mech, 0) + pv["dmg"]
+        avoidable_list = [
+            {"name": n, "role": roster_idx.get(n, {}).get("role", ""),
+             "class": roster_idx.get(n, {}).get("class", ""),
+             "dmg": sum(d.values()),
+             "sources": sorted(({"ability": a, "dmg": v, "hits": []} for a, v in d.items()),
+                               key=lambda x: -x["dmg"])}
+            for n, d in sorted(_by_player.items(), key=lambda kv: (-sum(kv[1].values()), kv[0]))
+        ]
+        _wcl_mech_boss = {mech: boss for boss, bv in _mech_wcl.items() for mech in bv["mechanics"]}
+        avoidable_mechanics = {
+            m: {"boss": _wcl_mech_boss.get(m, ""),
+                "icon": ICON_OVERRIDES.get(m) or _icons.get(m, "")}
+            for m in sorted(_wcl_mech_boss)
+        }
     # friendly fire (source side) — join with roster for class/role coloring
     friendly_fire = [
         {"name": f["name"],
@@ -357,6 +398,8 @@ def map_to_week_data(wcl: dict) -> WeekData:
         "drums":        wcl.get("drums_log", []),
         "avoidableDmg":        avoidable_list,
         "avoidableMechanics":  avoidable_mechanics,
+        # per-boss per-mechanic "who ate it" grid (pure WCL, verified ability-ID map)
+        "mechanicCompliance":  mech_compliance,
         "friendlyFire":        friendly_fire,
         "mcSaves":             mc_saves,
         "mcLiable":            mc_liable,
