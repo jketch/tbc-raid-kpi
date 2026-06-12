@@ -545,14 +545,8 @@
   <div class="tsec" data-tab="performance">
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/achievement_general.jpg" alt=""> Raider Performance — Officer View</div>
   <div class="card">
-    <div class="hs-sub">A composite <b>Raider Score (0–100)</b> across the five pillars — <b>Preparation · Performance · Execution · Survival · Utility</b> — each normalized to 0–100, blended by the weighting you pick. <b>Click a column to sort.</b> Sub-scores show "—" when a pillar has no data for that raider; the Score is computed over the pillars present and tagged <b>(n/5)</b> when partial. Officer surface (the underlying numbers also live on the public tabs). <b>Utility is the most experimental pillar — treat as directional.</b></div>
+    <div class="hs-sub">A composite <b>Raider Score (0–100)</b> across the five pillars — <b>Preparation · Performance · Execution · Survival · Utility</b> — each normalized to 0–100, then blended by a <b>per-spec weighting</b>: every raider is judged by what their spec is <i>invited for</i> (a top-parse DPS leans on Performance; Ret/Shadow on Utility; tanks on Survival/Execution). <b>Click a column to sort.</b> Sub-scores show "—" when a pillar has no data for that raider; the Score is computed over the pillars present and tagged <b>(n/5)</b> when partial. Officer surface (the underlying numbers also live on the public tabs). <b>Utility is the most experimental pillar — treat as directional.</b></div>
     <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:13px">
-      <div><div class="ctl-lbl">Weighting</div>
-        <div class="seg" id="perfWeightSeg">
-          <button class="seg-btn on" data-w="balanced" onclick="_setPerfWeight('balanced')" title="Roughly equal across pillars (slight tilt to Performance).">Balanced</button>
-          <button class="seg-btn" data-w="perf" onclick="_setPerfWeight('perf')" title="Throughput / parse % dominates.">Performance</button>
-          <button class="seg-btn" data-w="exec" onclick="_setPerfWeight('exec')" title="Clean play — execution + survival — dominates.">Execution</button>
-        </div></div>
       <div><div class="ctl-lbl">Role</div>
         <div class="seg" id="perfRoleSeg">
           <button class="seg-btn on" data-r="all" onclick="_setPerfRole('all')">All</button>
@@ -725,7 +719,7 @@
   <div class="section-label" style="margin-top:24px"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/trade_alchemy.jpg" alt=""> Consumable Compliance</div>
   <div class="card">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_alchemy_endlessflask_06.jpg" alt=""> Consumable Compliance</div>
-    <div class="hs-sub">What each raider brought vs. what's expected for their role. <b>Flask/Elix</b> = a flask or both elixir slots · <b>Alt Pot</b> = a mana rune, Flame Cap, or Nightmare Seed.</div>
+    <div class="hs-sub">What each raider brought vs. what's expected for their role. <b>Flask/Elix</b> = a flask or both elixir slots · <b>Combat Pot</b> = any in-fight potion (combat / mana / healing — all share the potion CD) · <b>Alt Pot</b> = the separate-CD mana sustain: a mana gem, mana rune, Flame Cap, or Nightmare Seed.</div>
     <div id="consumUsage" class="scroll-y"></div>
   </div>
 
@@ -2703,44 +2697,91 @@ const PERF_TUNING = {
 // from Execution scoring so it doesn't punish melee for unavoidable damage (same principle as tanks).
 // Still counted on the Accountability tab. Curated set — refine per boss as needed.
 const MELEE_MANDATORY = new Set(["Whirlwind", "Whirl", "Scalding Water"]);
-const PERF_WEIGHTS = {           // [prep, perf, exec, surv, util]
-  balanced: [1.0, 1.5, 1.0, 1.0, 0.75],   // headline-tilted, slight util discount (default)
-  perf:     [0.75,2.5, 0.75,0.75,0.5 ],   // Performance-led
-  exec:     [1.0, 1.0, 2.0, 1.5, 0.5 ],   // Execution-led (clean play)
+// PER-SPEC weighting (replaces the old global Balanced/Perf/Exec toggle): each raider is judged by
+// what their spec is invited FOR (TBC_RAID_MECHANICS.md §4). The ROLE ARCHETYPE sets the base
+// [prep,perf,exec,surv,util]; for DPS the spec's UTILITY TIER shifts weight perf<->util. prep+surv are
+// universal hygiene (1.0). The composite renormalizes over the present (non-null) pillars, so these are
+// RELATIVE magnitudes. v1 — recalibrate after a real week.
+const PERF_ARCHETYPE = {           // [prep, perf, exec, surv, util]
+  dps0:   [1.0, 2.25, 1.0,  1.0, 0.5 ],   // pure DPS — top-parse classes (locks, mages, rogues, BM/MM hunter, enh)
+  dps1:   [1.0, 1.75, 1.0,  1.0, 1.25],   // utility-flavored DPS (ele, boomkin, survival, feral-cat)
+  dps2:   [1.0, 1.0,  1.0,  1.0, 2.0 ],   // utility-FIRST DPS (Ret, Shadow — personal parse understates them)
+  healer: [1.0, 2.0,  0.5,  1.0, 1.25],   // HPS is the mandate; healers eat little avoidable so exec counts less
+  tank:   [1.0, 1.0,  1.75, 2.0, 0.75],   // survival + active-mitigation execution are the mandate
 };
+const PERF_ARCH_LABEL = {dps0:"pure DPS", dps1:"utility DPS", dps2:"utility-first DPS", healer:"healer", tank:"tank"};
+// DPS utility tiers BY SPEC (tanks/healers resolve by ROLE, see perfArchetype). Tier 2 = utility-first;
+// tier 1 = utility-flavored; everything else = tier 0 (pure parse). "Feral" here means CAT dps — a Feral
+// who TANKED is role=Tank and hits the tank archetype first.
+const PERF_UTIL_TIER2 = new Set(["Retribution","Shadow"]);
+const PERF_UTIL_TIER1 = new Set(["Elemental","Balance","Survival","Feral"]);
+function perfArchetype(cls, spec, role){
+  if(role==="Tank")   return "tank";       // bear/prot — the played role is ground truth (spec-swap aware)
+  if(role==="Healer") return "healer";
+  if(PERF_UTIL_TIER2.has(spec)) return "dps2";
+  if(PERF_UTIL_TIER1.has(spec)) return "dps1";
+  return "dps0";                            // pure-DPS default (and the fallback when spec is blank/unknown)
+}
 const PERF_PILLARS = ["prep","perf","exec","surv","util"];
+// ABSOLUTE per-facet targets — utility is scored vs "did your job", NOT vs the raid's best provider.
+// A cohort curve forced someone to the bottom every week and made a lone ele/warlock auto-100 (it can't
+// tell 98% ToW from 40% if there's only one ele). Score = min(100, value/target). bestF is kept ONLY as
+// an applicability gate: a facet NOBODY did this week (e.g. no Sunder) drops to null, never a damaging 0.
+// Uptimes are %, counts are raw, mana is raw mana returned. The 100k mana target caps the VT-vs-ManaTide
+// mismatch so a Mana Tide reads as a real battery, not 19% of a shadow priest's VT. v1 — calibrate live.
+const PERF_FACET_TARGET = {
+  tow: 95, bshout: 90,                                                       // uptime %
+  wf: 140, md: 6, intr: 4, disp: 4, save: 3, fward: 4, stones: 50, sunder: 40, pala: 500, innervate: 5,  // counts
+  mana: 100000,                                                             // raw mana returned to the raid
+};
+// POSITIVE-ONLY facets — discretionary/assigned utility (dispels, clutch battle-res/externals) that's
+// usually ONE person's job. Credited when you do it, but if you didn't it DROPS OUT (null), never a
+// damaging 0 — so a shadow priest who nailed VT isn't dragged to 50 because the assigned cleanser
+// handled dispels. Signature facets (ToW, Windfury, stones, Innervate, mana battery, MD, Battle Shout,
+// JoW, Fear Ward, interrupts) are NOT here — they're your one job, so a 0 counts.
+const PERF_POSITIVE_ONLY = new Set(["disp","save"]);
 const PERF_ROLE_FACETS = { Physical:["intr","sunder","save"], Caster:["intr","mana","save"], Healer:["save","mana"], Tank:["intr","save"] };
 // Utility is CLASS-shaped, not role-shaped: each class is credited on the utility IT actually
-// provides (vs the raid's best provider of that facet), so a class isn't zeroed for structurally
-// lacking one — a Warlock floored at 0 for having no interrupt/mana-return was the symptom.
+// provides, scored vs an ABSOLUTE target (PERF_FACET_TARGET, not the raid's best), so a class isn't
+// zeroed for structurally lacking one — a Warlock floored at 0 for having no interrupt was the symptom.
 // 'stones' = warlock raid provision (Create / Ritual of Souls); 'save' = saves KPI (protective saves +
 // reactive utility); 'disp' = dispels KPI (cleanse+purge — the cleanser classes' assigned job);
 // 'mana' = mana returned; 'intr' = interrupts (now WCL-durable — works without a combat log);
 // 'sunder' = Sunder Armor upkeep; 'md' = hunter Misdirection/Tranq, 'bshout' = warrior Battle Shout
-// uptime (both the toolkit num). Curse coverage is deliberately ABSENT — it's a shared raid debuff
-// (all warlocks benefit even if two maintain it), so it can't fairly rank individuals.
+// uptime, 'tow' = ele Totem of Wrath uptime%, 'wf' = enh Windfury drops (all the toolkit num — each
+// cohort-scoped to its own class/spec, since the nums aren't comparable across kits). Curse coverage is
+// deliberately ABSENT — a shared raid debuff (all warlocks benefit even if two maintain it).
 const CLASS_UTIL_FACETS = {
-  Warlock:["stones"], Mage:["intr"], Shaman:["mana","intr","disp"],
-  Druid:["mana","save","disp"], Paladin:["pala","disp"], Hunter:["md"], Rogue:["intr"], Warrior:["bshout","sunder"],
+  Warlock:["stones"], Mage:["intr"],
+  Paladin:["pala","disp"], Hunter:["md"], Rogue:["intr"], Warrior:["bshout","sunder"],
 };
-// Priest utility is spec/role-split: a healer (holy/disc) is judged on Fear Ward + dispels, a shadow
-// priest (Caster role) on its VT mana battery + dispels — same class, different kit. 'disp' is added to
-// the assigned cleanser classes (Paladin/Priest/Shaman/Druid) only — incidental dispellers (Mage decurse,
-// Hunter Tranq) keep their primary facet so an empty-dispel week doesn't falsely zero them. Everything
-// else: class map → role fallback. ('pala' = JoW/JoL upkeep + Greater Blessings; 'fward' = Fear Ward.)
-function utilFacetsFor(cls, role){
+// Priest AND Shaman are spec/role-split (same class, different kit per spec); everyone else: class map →
+// role fallback. Priest: healer (holy/disc) → Fear Ward + dispels; shadow (Caster) → VT mana battery +
+// dispels. Shaman: each spec's SIGNATURE TOTEM is the utility identity (the +3% spell-crit Totem of
+// Wrath is THE reason you bring an ele; Windfury for enh) — like warlock=stones / mage=intr, one clean
+// signature beats diluting it against facets the spec barely provides (an ele's tiny Mana Spring vs a
+// resto's Mana Tide was what floored Feelsbaldman at util 6 despite 98.6% ToW). 'disp' = assigned
+// cleansers only. ('pala' = JoW/JoL + Greater Blessings; 'fward' = Fear Ward; 'md' = Misdirection.)
+function utilFacetsFor(cls, spec, role){
   if(cls==="Priest") return role==="Healer" ? ["fward","disp"] : ["mana","disp"];
+  if(cls==="Shaman"){
+    if(role==="Healer")      return ["mana","disp"];   // resto — Mana Tide/Spring battery + cleanses
+    if(spec==="Enhancement") return ["wf"];            // Windfury Totem is the signature
+    return ["tow"];                                    // elemental — Totem of Wrath uptime is the signature
+  }
+  if(cls==="Druid"){                                   // druids have no totem battery — Innervate IS their
+    if(role==="Healer")    return ["innervate","disp"];// mana-return. resto — Innervate + decurse/abolish
+    if(spec==="Balance")   return ["innervate","save"];// boomkin — Innervate + battle-res (Rebirth)
+    return ["innervate","save"];                       // feral cat/bear — Innervate + Rebirth
+  }
   return CLASS_UTIL_FACETS[cls] || PERF_ROLE_FACETS[role] || [];
 }
-let _perfWeight="balanced", _perfRole="all", _perfGroup=false, _perfSearch="";
+let _perfRole="all", _perfGroup=false, _perfSearch="";
 let _perfSort={col:"composite",dir:-1};
 try {
-  const _w = localStorage.getItem("perfWeight");
-  if (_w && PERF_WEIGHTS[_w]) _perfWeight = _w;   // ignore a stale/invalid key so the seg toggle still matches
   _perfRole   = localStorage.getItem("perfRole")   || _perfRole;
   _perfGroup  = localStorage.getItem("perfGroup") === "1";
 } catch(e){}
-function _setPerfWeight(w){ _perfWeight=w; document.querySelectorAll("#perfWeightSeg .seg-btn").forEach(b=>b.classList.toggle("on",b.dataset.w===w)); try{localStorage.setItem("perfWeight",w);}catch(e){} renderPerformance(); }
 function _setPerfRole(r){ _perfRole=r; document.querySelectorAll("#perfRoleSeg .seg-btn").forEach(b=>b.classList.toggle("on",b.dataset.r===r)); try{localStorage.setItem("perfRole",r);}catch(e){} renderPerformance(); }
 function _setPerfGroup(g){ _perfGroup=g; document.querySelectorAll("#perfGroupSeg .seg-btn").forEach(b=>b.classList.toggle("on",(b.dataset.g==="role")===g)); try{localStorage.setItem("perfGroup",g?"1":"0");}catch(e){} renderPerformance(); }
 function _setPerfSearch(v){ _perfSearch=(v||"").trim().toLowerCase(); renderPerformance(); }
@@ -2803,7 +2844,7 @@ function _perfBrief(r){
   const wd=WEEK_DATA, nc=nameColor(r.name,r.role), ri=(wd.roster||{})[r.name]||{};
   const sum=(wd.perfSummaries||{})[r.name];
   const PILL=[["prep","Preparation"],["perf","Performance"],["exec","Execution"],["surv","Survival"],["util","Utility"]];
-  const w=PERF_WEIGHTS[_perfWeight]||PERF_WEIGHTS.balanced;
+  const w=r.w||PERF_ARCHETYPE.dps0;
   const ex=_perfExtra(r.name,r.role,r.class);
   const cards=PILL.map(([k,lbl])=>{
     const v=r[k], col=v==null?"var(--muted)":parseColor(v), wt=w[PERF_PILLARS.indexOf(k)];
@@ -2839,7 +2880,7 @@ function _perfBrief(r){
     ${lead}
     <div style="padding:16px 22px 26px">
       ${cards}
-      <div style="font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.55">Weighting: <b style="color:var(--text)">${_perfWeight}</b>${partial}. Sub-scores normalize each pillar to 0–100; the Raider Score is the ×-weighted blend of the pillars present. Numbers above are the live inputs from the other tabs — this surface only re-joins them.</div>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.55">Weighted as a <b style="color:var(--text)">${PERF_ARCH_LABEL[r.arch]||r.arch}</b>${ri.spec?` (${esc(ri.spec)})`:""}${partial} — each pillar's ×weight is shown above. Sub-scores normalize each pillar to 0–100; the Raider Score is the weighted blend of the pillars present (this surface only re-joins the live inputs from the other tabs).</div>
     </div>`;
 }
 
@@ -2876,6 +2917,11 @@ function _perfRows(){
   const avoidCap={melee:_capFor("melee"), ranged:_capFor("ranged")};
   const mana={};
   ((wd.manaReturns||{}).batteries||[]).forEach(b=>(b.providers||[]).forEach(p=>{ mana[p.name]=(mana[p.name]||0)+(p.mana||0); }));
+  // Innervate emits no energize event (it's a regen buff, not a discrete mana tick), so it's tracked as
+  // a CAST COUNT — it's the druid's mana-return utility (druids have no Mana Tide/Spring), so it's its
+  // own 'innervate' facet rather than 0 mana. (Was the boomkin's structural-zero on the mana facet.)
+  const innv={};
+  (((wd.manaReturns||{}).innervate||{}).casters||[]).forEach(c=>{ innv[c.name]=(innv[c.name]||0)+(c.count||0); });
   // 'save' facet = protective saves + reactive utility (saves KPI). Dispels get their OWN 'disp' facet
   // (cleanse+purge, below) so cleansing is credited to the cleanser classes — not double-counted here.
   const saveTot=n=>{ const s=saves[n]; return s?(s.save||0)+(s.utility||0):0; };
@@ -2884,13 +2930,13 @@ function _perfRows(){
   // toolkit num, but are SEPARATE facet keys so each ranks within its own class cohort — the toolkit
   // num isn't comparable across classes (MD count ~6 vs Battle Shout ~89%).
   const tkNum=n=>(((dps[n]||{}).toolkit||{}).num||0);
-  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="disp"?dispTot(n) : f==="stones"?((usage[n]||{}).stones_made||0) : f==="fward"?((usage[n]||{}).fear_ward||0) : f==="pala"?(((usage[n]||{}).judge_util||0)+((usage[n]||{}).blessing||0)) : (f==="md"||f==="bshout")?tkNum(n) : 0;
+  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="disp"?dispTot(n) : f==="innervate"?(innv[n]||0) : f==="stones"?((usage[n]||{}).stones_made||0) : f==="fward"?((usage[n]||{}).fear_ward||0) : f==="pala"?(((usage[n]||{}).judge_util||0)+((usage[n]||{}).blessing||0)) : (f==="md"||f==="bshout"||f==="tow"||f==="wf")?tkNum(n) : 0;
   // best[facet] scoped to the COHORT that provides it (the classes whose CLASS_UTIL_FACETS list it),
   // NOT the whole raid — so a hunter's Misdirection ranks vs other hunters, not vs a mage's toolkit
   // num. A facet that's naturally class-exclusive (stones) collapses to its one cohort either way.
   const bestF={}, bestN={};   // bestN[f] = who leads facet f (for the drilldown "vs best (X)")
-  Object.entries(roster).forEach(([n,r])=>{ utilFacetsFor(r.class,r.role).forEach(f=>{ const v=facetVal(n,f); if(v>(bestF[f]||0)) bestN[f]=n; bestF[f]=Math.max(bestF[f]||0, v); }); });
-  const FACET_LABEL={intr:"interrupts",sunder:"Sunder",mana:"mana returned",save:"externals",stones:"stones",fward:"Fear Ward",pala:"JoW+blessings",md:"Misdirection",bshout:"Battle Shout"};
+  Object.entries(roster).forEach(([n,r])=>{ utilFacetsFor(r.class,r.spec,r.role).forEach(f=>{ const v=facetVal(n,f); if(v>(bestF[f]||0)) bestN[f]=n; bestF[f]=Math.max(bestF[f]||0, v); }); });
+  const FACET_LABEL={intr:"interrupts",sunder:"Sunder",mana:"mana returned",save:"externals",disp:"dispels",stones:"stones",fward:"Fear Ward",pala:"JoW+blessings",md:"Misdirection",bshout:"Battle Shout",tow:"Totem of Wrath",wf:"Windfury",innervate:"Innervate"};
 
   return Object.entries(roster).map(([name,r])=>{
     const role=r.role, d=deaths[name]||{total:0,trash:0};
@@ -2941,14 +2987,27 @@ function _perfRows(){
     if(role==="Tank" && (tank[name]||{}).survival && (tank[name].survival.score!=null)) surv=tank[name].survival.score;
     else { const boss=(d.total||0)-(d.trash||0), died=(d.total||0)>0, hs=((usage[name]||{}).healthstone)||0;
            surv=Math.round(clamp(100 - (boss>0?PERF_TUNING.SURV_BOSS_DEATH:0) - ((d.trash||0)>0?PERF_TUNING.SURV_TRASH_DEATH:0) - (died&&hs===0?PERF_TUNING.SURV_NO_HS_DEATH:0),0,100)); }
-    // UTILITY (class-shaped, normalized vs the raid's best provider of each facet — experimental).
-    // Scored only on the utility the player's CLASS provides, so a structural gap → null facet (drops
-    // out), not a damaging 0. null when the class contributes no facet this week.
-    const myFacets = utilFacetsFor(r.class, role);
-    const fac=myFacets.map(f=>{ const bv=bestF[f]||0; return bv>0?facetVal(name,f)/bv*100:null; }).filter(v=>v!=null);
-    const util=fac.length?Math.round(fac.reduce((s,v)=>s+v,0)/fac.length):null;
-    // COMPOSITE — weighted over non-null pillars only (renormalized)
-    const pil={prep,perf,exec,surv,util}, w=PERF_WEIGHTS[_perfWeight]||PERF_WEIGHTS.balanced; let num=0,den=0,present=0;
+    // UTILITY (class-shaped, scored vs an ABSOLUTE target per facet — bestF is only the applicability
+    // gate — experimental). Scored only on the utility the player's CLASS provides, so a structural gap
+    // → null facet (drops out), not a damaging 0. null when the class contributes no facet this week.
+    const myFacets = utilFacetsFor(r.class, r.spec, role);
+    // Score = value vs the facet's absolute TARGET (clamped 100), not the cohort best. bestF>0 is just
+    // the applicability gate (a facet nobody did this week → null, not a 0). PRIMARY facets (your
+    // signature — must-do) average together; POSITIVE-ONLY facets (dispels, battle-res — usually one
+    // person's assignment) can ONLY RAISE the result, never drag it below your primary score: util =
+    // max(primary avg, all-facet avg), so a below-target bonus is ignored but an above-target one lifts.
+    const prim=[], bonus=[];
+    myFacets.forEach(f=>{ const bv=bestF[f]||0; if(bv<=0) return;
+      const val=facetVal(name,f), s=Math.min(100,val/(PERF_FACET_TARGET[f]||bv||1)*100);
+      if(PERF_POSITIVE_ONLY.has(f)){ if(val>0) bonus.push(s); } else prim.push(s); });
+    const _avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
+    let util=null;
+    if(prim.length) util=Math.round(bonus.length?Math.max(_avg(prim),_avg(prim.concat(bonus))):_avg(prim));
+    else if(bonus.length) util=Math.round(_avg(bonus));   // edge: a class with only positive-only facets
+    // COMPOSITE — weighted over non-null pillars only (renormalized). Weights come from the raider's
+    // per-spec archetype (role + DPS utility tier), so each is judged by what their spec is invited for.
+    const arch=perfArchetype(r.class, r.spec, role), w=PERF_ARCHETYPE[arch]||PERF_ARCHETYPE.dps0;
+    const pil={prep,perf,exec,surv,util}; let num=0,den=0,present=0;
     PERF_PILLARS.forEach((p,i)=>{ if(pil[p]!=null){ num+=w[i]*pil[p]; den+=w[i]; present++; } });
     // ── DRILLDOWN breakdowns — the exact inputs behind each pillar score (defensible) ──
     const T=PERF_TUNING, why={};
@@ -2981,11 +3040,13 @@ function _perfRows(){
       if(boss>0)ps.push(`died on boss −${T.SURV_BOSS_DEATH}`); if((d.trash||0)>0)ps.push(`died on trash −${T.SURV_TRASH_DEATH}`);
       if((d.total||0)>0 && (((usage[name]||{}).healthstone)||0)===0)ps.push(`no healthstone −${T.SURV_NO_HS_DEATH}`);
       why.surv=ps.length?`${d.total||0} death(s): `+ps.join(" · "):"no deaths"; }
-    const uw=myFacets.map(f=>{ const bv=bestF[f]||0, mv=facetVal(name,f); if(bv<=0)return null;
-      const who=bestN[f]&&bestN[f]!==name?` (best ${bestN[f]})`:(bestN[f]===name?" (you lead)":"");
-      return `${FACET_LABEL[f]||f} ${mv} vs ${bv}${who} → ${Math.round(mv/bv*100)}%`; }).filter(Boolean);
+    const uw=myFacets.map(f=>{ const bv=bestF[f]||0, mv=facetVal(name,f), tgt=PERF_FACET_TARGET[f]||bv||1;
+      if(bv<=0) return null;
+      if(PERF_POSITIVE_ONLY.has(f) && mv<=0) return null;         // dropped out (positive-only) — don't show a 0 that can't drag
+      const mvs=(typeof mv==='number'&&mv%1)?mv.toFixed(1):mv, tag=PERF_POSITIVE_ONLY.has(f)?" (bonus — only lifts)":"";
+      return `${FACET_LABEL[f]||f} ${mvs} vs ${tgt} target → ${Math.round(Math.min(100,mv/tgt*100))}%${tag}`; }).filter(Boolean);
     why.util=uw.length?uw.join(" · "):"no measured utility this week";
-    return { name, role, class:r.class, ...pil, present, composite: den>0?num/den:null, why };
+    return { name, role, class:r.class, spec:r.spec, arch, w, ...pil, present, composite: den>0?num/den:null, why };
   });
 }
 
@@ -3003,7 +3064,7 @@ function renderPerformance(){
     return (av-bv)*dir;
   });
   const cols=[["name","Player"],["prep","Prep"],["perf","Perf"],["exec","Exec"],["surv","Surv"],["util","Util"],["composite","Score"]];
-  const titles={prep:"Preparation — consumables score → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play. DPS: avoidable dmg/min vs your POSITIONING cohort (melee vs ranged) + friendly fire + MC liability. TANKS: active-mitigation maintenance per boss-melee-taken time — plate = Holy Shield/Shield Block cast-rate, bear = Lacerate uptime% — plus CD discipline. (Avoidable can't fairly score tanks; Survival is the outcome side: crushes/crits/deaths.)",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, hunter Misdirection, warrior Battle Shout, paladin JoW+blessings, holy priest Fear Ward, shadow priest mana battery, interrupts, sunder) vs the best provider in its class. A facet nobody in-class did drops out (no penalty). Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars (set the weighting above). (n/5) = computed over the pillars present."};
+  const titles={prep:"Preparation — consumables (flask/food/weapon oil + in-fight pots, incl. mana gems/potions) minus gear gaps (missing enchants / empty sockets) → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play. DPS: avoidable dmg/min vs your POSITIONING cohort (melee vs ranged) + friendly fire + MC liability. TANKS: active-mitigation maintenance per boss-melee-taken time — plate = Holy Shield/Shield Block cast-rate, bear = Lacerate uptime% — plus CD discipline. (Avoidable can't fairly score tanks; Survival is the outcome side: crushes/crits/deaths.)",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, ele Totem of Wrath, enh Windfury, druid Innervate, hunter Misdirection, warrior Battle Shout, paladin JoW+blessings, priest Fear Ward / mana battery, dispels, interrupts, Sunder) vs an ABSOLUTE target — 'did your job', not vs the best provider. A facet nobody did this week drops out (no penalty, never a 0). Dispels &amp; battle-res are positive-only — credited if you did them, dropped if not (they're usually one person's assignment, so they never drag). Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars, weighted PER SPEC by what that spec is invited for: a top-parse DPS leans on Performance, Ret/Shadow on Utility, tanks on Survival/Execution. (n/5) = computed over the pillars present."};
   const arrow=c=>_perfSort.col===c?(_perfSort.dir<0?" ▼":" ▲"):"";
   hd.innerHTML=cols.map(([c,lbl])=>`<th class="${c==='name'?'':'num'}" style="cursor:pointer;${c==='composite'?'color:var(--accent)':''}" title="${titles[c]}" onclick="_perfSortBy('${c}')">${lbl}${arrow(c)}</th>`).join("");
   const cell=v=>v==null?'<span style="color:var(--muted)">—</span>':`<span style="color:${parseColor(v)};font-weight:600">${v}</span>`;
