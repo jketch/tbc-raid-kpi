@@ -2,8 +2,8 @@
 WCL API half. parse_combat_log reads a 180 MB+ log and returns the per-fight overlay dict
 (engineering, drums, interrupts, avoidable mechanics, MC, friendly fire, consumable USE,
 death-recap HP%). Pure of the WCL fetch layer: depends only on game_constants. The overlay
-onto the WCL dict (merge_log_into_wcl) stays in wcl_auto_dashboard — it reaches the crit
-model. wcl_auto_dashboard re-exports parse_combat_log so call sites are unchanged.
+onto the WCL dict (merge_log_into_wcl) lives in week_map.py — it reaches the crit model.
+wcl_auto_dashboard re-exports parse_combat_log so call sites are unchanged.
 """
 import re
 from datetime import date
