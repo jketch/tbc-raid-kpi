@@ -149,9 +149,14 @@ job log. No machine setup at all.
 
 - **One-time:** add four repo secrets (*Settings → Secrets and variables → Actions*):
   `WCL_CLIENT_ID`, `WCL_CLIENT_SECRET`, `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`.
-- **Cloud runs are log-less by design** — every KPI keeps its WCL headline; the combat-log
-  extras stay thin until re-enriched locally (`scripts/tools/backfill_snapshots.py <code>
-  --log <archived log>`). The Loot tab (manual CSV) hides.
+- **Full-fat cloud weeks via the Dropbox drop folder (optional):** drag the **zipped** combat
+  log (right-click → *Send to → Compressed folder*; ~180 MB → ~18 MB) and the ThatsBIS loot CSV
+  into the Dropbox app folder (`Apps/<app name>/`), then dispatch. The run downloads them,
+  window-matches the log against the report (a stale drop is ignored), ingests the loot, and
+  sweeps consumed files into `processed/` on success. **With nothing dropped, the run is
+  log-less** — every KPI keeps its WCL headline; the combat-log extras stay thin until
+  re-enriched locally (`scripts/tools/backfill_snapshots.py <code> --log <archived log>`), and
+  the Loot tab (manual CSV) hides.
 - **State lives on the `data` branch** (history DB + per-week snapshots — the one place this
   repo carries real raid data). Local and cloud runs share it via:
 
@@ -160,7 +165,44 @@ python scripts/tools/sync_state.py pull   # after a cloud-run week, before your 
 python scripts/tools/sync_state.py push   # after local runs, so the cloud is never behind
 ```
 
-- A `test_mode` checkbox on the dispatch form does a `--test-db` proof: no deploy, no state push.
+- A `test_mode` checkbox on the dispatch form does a `--test-db` proof: no deploy, no state
+  push, and dropped files stay in place.
+
+<details>
+<summary><b>One-time Dropbox drop-folder setup</b></summary>
+
+1. Create an app at `dropbox.com/developers/apps` → **Scoped access** → **App folder** →
+   name it (e.g. `raid-kpi-drops`). On the app's *Permissions* tab enable
+   `files.metadata.read`, `files.content.read`, `files.content.write`, then note the
+   **App key** and **App secret** from *Settings*.
+2. Authorize it once — visit (with your app key substituted):
+
+   ```
+   https://www.dropbox.com/oauth2/authorize?client_id=YOUR_APP_KEY&response_type=code&token_access_type=offline
+   ```
+
+   and copy the code it shows. Exchange it for a refresh token (PowerShell):
+
+   ```powershell
+   $cred = "YOUR_APP_KEY:YOUR_APP_SECRET"
+   $auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($cred))
+   Invoke-RestMethod -Method Post -Uri "https://api.dropboxapi.com/oauth2/token" `
+     -Headers @{ Authorization = "Basic $auth" } `
+     -Body @{ code = "THE_CODE"; grant_type = "authorization_code" }
+   ```
+
+   Copy the `refresh_token` from the response (it does not expire).
+3. Add the three repo secrets:
+
+   ```
+   gh secret set DROPBOX_APP_KEY
+   gh secret set DROPBOX_APP_SECRET
+   gh secret set DROPBOX_REFRESH_TOKEN
+   ```
+
+The drop folder then lives at `Dropbox/Apps/<app name>/` in your Dropbox — the app can see
+nothing else of your account.
+</details>
 
 ---
 

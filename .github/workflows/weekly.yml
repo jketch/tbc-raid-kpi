@@ -10,14 +10,18 @@
 # can compute week-over-week trends and stage the rolling 6-week site. Maintainer-approved
 # 2026-06. Local runs sync with it via scripts/tools/sync_state.py pull|push.
 #
-# Cloud runs are the LOG-LESS degradation path BY DESIGN (no combat log in CI): every KPI
-# keeps its WCL headline; MC saves/liabilities, friendly fire, drums, engineering, the
-# consumables-USED bonus, death-recap HP timelines, and tank lowest-HP stay thin until the
-# maintainer re-enriches locally (scripts/tools/backfill_snapshots.py <code> --log
-# <archived log>). Loot (a manual ThatsBIS CSV) has no cloud path — the tab hides.
+# FULL-FAT cloud weeks via the Dropbox drop folder: drag the ZIPPED combat log + the
+# ThatsBIS loot CSV into the app folder, then dispatch — the run fetches them
+# (scripts/tools/dropbox_drops.py), window-matches the log exactly like a local run, and
+# sweeps consumed drops to /processed/ on success. With NOTHING dropped the run degrades
+# to log-less (every KPI keeps its WCL headline; MC/FF/drums/engineering/death-recaps stay
+# thin until re-enriched locally via backfill_snapshots.py <code> --log <archived log>)
+# and the Loot tab hides.
 #
-# Secrets: WCL_CLIENT_ID, WCL_CLIENT_SECRET, NETLIFY_AUTH_TOKEN, NETLIFY_SITE_ID.
-# (No ANTHROPIC_API_KEY on purpose — perf summaries stay a guarded no-op in CI.)
+# Secrets: WCL_CLIENT_ID, WCL_CLIENT_SECRET, NETLIFY_AUTH_TOKEN, NETLIFY_SITE_ID,
+# DROPBOX_APP_KEY, DROPBOX_APP_SECRET, DROPBOX_REFRESH_TOKEN (Dropbox trio optional —
+# unset just disables the drop folder). No ANTHROPIC_API_KEY on purpose — perf summaries
+# stay a guarded no-op in CI.
 name: Weekly pipeline
 
 on:
@@ -42,10 +46,13 @@ jobs:
   weekly:
     runs-on: ubuntu-latest
     env:
-      WCL_CLIENT_ID:      ${{ secrets.WCL_CLIENT_ID }}
-      WCL_CLIENT_SECRET:  ${{ secrets.WCL_CLIENT_SECRET }}
-      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-      NETLIFY_SITE_ID:    ${{ secrets.NETLIFY_SITE_ID }}
+      WCL_CLIENT_ID:        ${{ secrets.WCL_CLIENT_ID }}
+      WCL_CLIENT_SECRET:    ${{ secrets.WCL_CLIENT_SECRET }}
+      NETLIFY_AUTH_TOKEN:   ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID:      ${{ secrets.NETLIFY_SITE_ID }}
+      DROPBOX_APP_KEY:      ${{ secrets.DROPBOX_APP_KEY }}
+      DROPBOX_APP_SECRET:   ${{ secrets.DROPBOX_APP_SECRET }}
+      DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
     steps:
       - uses: actions/checkout@v5
 
@@ -69,7 +76,14 @@ jobs:
             echo "no data branch yet — first run starts from empty state"
           fi
 
-      - name: Run the pipeline (log-less by design)
+      - name: Fetch Dropbox drops (log zip + loot CSV)
+        # No-ops cleanly when the Dropbox secrets are unset; fails the job on a half-fetch
+        # (a partially-downloaded week must not run as if it were complete).
+        run: python scripts/tools/dropbox_drops.py fetch
+
+      - name: Run the pipeline (full-fat when drops are stocked; log-less otherwise)
+        env:
+          WOW_LOG_DIR: ${{ github.workspace }}/drops
         run: python scripts/wcl_auto_dashboard.py "${{ inputs.report_code }}" ${{ inputs.test_mode && '--test-db' || '' }}
 
       - name: Publish (Netlify deploy + paste-ready summary below)
@@ -113,3 +127,8 @@ jobs:
           git -C .state -c user.name="weekly-pipeline" -c user.email="actions@users.noreply.github.com" \
             commit -m "state: ${{ inputs.report_code }}" || echo "no state changes to push"
           git -C .state push origin data
+
+      - name: Archive consumed drops to Dropbox /processed
+        if: ${{ success() && !inputs.test_mode }}
+        # Best-effort sweep (move, never delete) — a cleanup hiccup must not fail a good run.
+        run: python scripts/tools/dropbox_drops.py archive

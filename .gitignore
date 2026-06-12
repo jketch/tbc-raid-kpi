@@ -9,6 +9,9 @@ __pycache__/
 # Combat logs (large, not source) — keep the placeholder README
 logs/*.txt
 !logs/README.txt
+# zipped post-run log archives + cloud drop-folder downloads (CI scratch)
+logs/archive/
+drops/
 
 # ThatsBIS loot CSV exports (player data, not source) — keep the placeholder README
 loot/*.csv
