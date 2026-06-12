@@ -348,7 +348,8 @@ def fetch_damage_by_selection(token: str, report_code: str) -> dict:
     data = {k: table(v) for k, v in sels.items()}
     durations = {k: round(sum(durms[i] for i in v) / 1000) for k, v in sels.items()}
     names = set().union(*(set(d) for d in data.values())) if data else set()
-    players = {nm: {k: data[k].get(nm, {"total": 0, "active": 0}) for k in sels} for nm in names}
+    players = {nm: {k: data[k].get(nm, {"total": 0, "active": 0}) for k in sels}
+               for nm in sorted(names)}   # sorted: deterministic key order across runs
     print(f"  ✓ damage by selection: all={durations['all']}s boss={durations['boss']}s "
           f"trash={durations['trash']}s")
     return {"durations": durations, "players": players}
@@ -1319,7 +1320,7 @@ def _buff_uptime_batch(token, report_code, fids, players, ability_ids, counts, k
             t = _loads_alias(rep.get(al))
             for a in (t or {}).get("data", {}).get("auras", []):
                 up[nm] += a.get("totalUptime", 0)
-        for nm in {n for n in alias2name.values()}:
+        for nm in sorted(set(alias2name.values())):   # sorted: deterministic key order across runs
             counts[nm][out_key] = round(up[nm] / kdur * 100, 1)
     except Exception as ex:
         print(f"  Warning: {label}-uptime batch fetch failed: {ex}")

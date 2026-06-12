@@ -200,7 +200,7 @@ def map_to_week_data(wcl: dict) -> WeekData:
     avoidable_mechanics = {
         m: {"boss": _mech_boss.get(m, ""),
             "icon": ICON_OVERRIDES.get(m) or _icons.get(m, "")}
-        for m in _mechs_seen
+        for m in sorted(_mechs_seen)   # sorted: set iteration is hash-seed-dependent
     }
     # friendly fire (source side) — join with roster for class/role coloring
     friendly_fire = [
@@ -232,7 +232,7 @@ def map_to_week_data(wcl: dict) -> WeekData:
     ci_use = wcl.get("ci_consumables", {})
     cu_use = wcl.get("consum_use", {})
     lbl_use = wcl.get("consum_label", {})
-    consum_names = set(ci_use) | set(cu_use)
+    consum_names = sorted(set(ci_use) | set(cu_use))   # sorted: deterministic output order
     consum_usage = []
     for n in consum_names:
         c = ci_use.get(n, {})

@@ -562,8 +562,8 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
 
     # Build per-player output. Include players who only appear in COMBATANT_INFO
     # (e.g. healers who deal no boss damage) so their gear crit can be backfilled.
-    all_names = (set(swing_crits) | set(spell_crits) | set(dmg_totals)
-                 | set(gear_by_name) | set(avoidable))
+    all_names = sorted(set(swing_crits) | set(spell_crits) | set(dmg_totals)
+                       | set(gear_by_name) | set(avoidable))   # sorted: deterministic dict order
     result = {}
     for name in all_names:
         total_hits  = swing_hits[name] + spell_hits[name]
@@ -644,7 +644,9 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
     # Healer= effective healing is a meaningful share of the raid's AND exceeds own damage.
     # DPS   = dealt damage and is neither. This replaces ~10 per-fight playerDetails calls.
     fight_roles_log = {}
-    _bosses = set(fight_melee_taken) | set(fight_healing_done) | set(fight_damage_done)
+    # sorted at both set→list points: boss-key + name order otherwise vary by hash seed, and
+    # the fid lists built from these downstream must be byte-stable across runs
+    _bosses = sorted(set(fight_melee_taken) | set(fight_healing_done) | set(fight_damage_done))
     for boss in _bosses:
         melee = fight_melee_taken.get(boss, {})
         heald = fight_healing_done.get(boss, {})
@@ -652,7 +654,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
         max_melee  = max(melee.values()) if melee else 0
         total_heal = sum(heald.values()) or 1
         roles = {"Tank": [], "Healer": [], "dps": []}
-        for p in (set(melee) | set(heald) | set(dmgd)):
+        for p in sorted(set(melee) | set(heald) | set(dmgd)):
             mt, hd, dd = melee.get(p, 0), heald.get(p, 0), dmgd.get(p, 0)
             if max_melee and mt >= max(max_melee * 0.25, 20000):
                 roles["Tank"].append(p)
