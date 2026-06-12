@@ -5,7 +5,7 @@ death-recap HP%). Pure of the WCL fetch layer: depends only on game_constants. T
 onto the WCL dict (merge_log_into_wcl) lives in week_map.py — it reaches the crit model.
 wcl_auto_dashboard re-exports parse_combat_log so call sites are unchanged.
 """
-import re
+import re, io, gzip, zipfile
 from datetime import date
 from collections import defaultdict
 
@@ -59,6 +59,21 @@ def _consumable_category(spell: str) -> str:
     if spell.startswith("Scroll of"):          return "scroll"
     return ""
 
+def _open_log(log_path):
+    """Open a combat log for text-line iteration — a plain .txt, or a .zip/.gz archive
+    (the shape log_discovery.archive_log writes, and what backfill --log replays). Always
+    utf-8 / errors='replace', matching the historical open(). .zip reads the first member
+    (sorted — deterministic if a hand-made archive ever has several)."""
+    p = str(log_path).lower()
+    if p.endswith(".gz"):
+        return gzip.open(log_path, "rt", encoding="utf-8", errors="replace")
+    if p.endswith(".zip"):
+        zf = zipfile.ZipFile(log_path)
+        member = sorted(zf.namelist())[0]
+        return io.TextIOWrapper(zf.open(member), encoding="utf-8", errors="replace")
+    return open(log_path, encoding="utf-8", errors="replace")
+
+
 def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
     """
     Parse WoWCombatLog.txt and return a dict with per-player stats
@@ -80,7 +95,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
     # its boss dies within 1.5s of ENCOUNTER_END.
     all_encounters = []   # {name, start, end, result}
     boss_deaths    = []   # {name, ts}
-    with open(log_path, encoding="utf-8", errors="replace") as f:
+    with _open_log(log_path) as f:
         current = None
         for line in f:
             parts = re.split(r'\s{2}', line.strip(), maxsplit=1)
@@ -192,7 +207,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
     hp_samples = defaultdict(lambda: defaultdict(list))  # [player][boss] = [(ts, hp_pct, kind)]
     log_deaths = defaultdict(list)                       # [player] = [(ts, boss)] real UNIT_DIED in a boss window
 
-    with open(log_path, encoding="utf-8", errors="replace") as f:
+    with _open_log(log_path) as f:
         for line in f:
             parts = re.split(r'\s{2}', line.strip(), maxsplit=1)
             if len(parts) != 2: continue

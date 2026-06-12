@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT_DIR   = Path(__file__).parent.parent  # Gaming/
 CACHE_FILE = ROOT_DIR / "cache" / "item_crit_cache.json"
 LOGS_DIR   = ROOT_DIR / "logs"
+LOG_ARCHIVE_DIR = LOGS_DIR / "archive"   # zipped post-run combat logs (backfill --log reads these)
 LOOT_DIR   = ROOT_DIR / "loot"   # ThatsBIS "received" CSV exports — newest *.csv auto-picked
 DASH_FILE      = ROOT_DIR / "dashboard" / "raid_kpi_dashboard.html"
 TEMPLATE_FILE  = ROOT_DIR / "dashboard" / "template.html"

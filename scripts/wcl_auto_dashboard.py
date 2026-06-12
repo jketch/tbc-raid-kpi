@@ -57,8 +57,8 @@ except (AttributeError, ValueError):
 
 from wcl_client import WCL_TOKEN_URL, WCL_API_URL, get_token, gql                     # noqa: F401
 
-from paths import (ROOT_DIR, CACHE_FILE, LOGS_DIR, LOOT_DIR, DASH_FILE, TEMPLATE_FILE,  # noqa: F401
-                   DEFAULT_TITLE, WEEK_DATA_CACHE, WCL_CACHE, ITEM_META_CACHE)          # noqa: F401
+from paths import (ROOT_DIR, CACHE_FILE, LOGS_DIR, LOG_ARCHIVE_DIR, LOOT_DIR, DASH_FILE,  # noqa: F401
+                   TEMPLATE_FILE, DEFAULT_TITLE, WEEK_DATA_CACHE, WCL_CACHE, ITEM_META_CACHE)  # noqa: F401
 
 from roles import (TANK_SPECS, HEALER_SPECS, CASTER_SPECS, PHYSICAL_SPECS,      # noqa: F401
                    _nontank_role, _nonheal_role, _effective_role, _fight_role)  # noqa: F401
@@ -651,13 +651,9 @@ def main():
     parser.add_argument("--client-secret", default=os.getenv("WCL_CLIENT_SECRET"), help="WCL V2 Client Secret")
     parser.add_argument("--out", default=str(DASH_FILE),
                         help="Path to HTML dashboard to update")
-    # Auto-find most recent .txt in logs/ if not specified
-    _auto_log = None
-    _log_files = sorted(LOGS_DIR.glob("WoWCombatLog*.txt"), key=lambda p: p.stat().st_mtime, reverse=True)
-    if _log_files:
-        _auto_log = str(_log_files[0])
-    parser.add_argument("--log", default=_auto_log,
-                        help="Path to WoWCombatLog.txt (default: newest WoWCombatLog*.txt in logs/)")
+    parser.add_argument("--log", default=None,
+                        help="Path to WoWCombatLog.txt/.zip/.gz (default: auto-match WOW_LOG_DIR "
+                             "against the report's time window, else newest WoWCombatLog*.txt in logs/)")
     # Auto-find newest ThatsBIS loot CSV in loot/ — external/optional; absent = Loot card hides.
     _auto_loot = None
     _loot_files = sorted(LOOT_DIR.glob("*.csv"), key=lambda p: p.stat().st_mtime, reverse=True) \
@@ -682,6 +678,21 @@ def main():
     # THIS report's bosses (ignore off-report DST clears like Gruul/HKM) and (b) feed
     # build_week_data so it doesn't re-fetch.
     rep0 = gql(token, Q_REPORT, {"code": args.report_code})["reportData"]["report"]
+
+    # Resolve the combat log. Precedence: explicit --log > a WOW_LOG_DIR file whose time range
+    # covers THIS report's window (read straight from the game's Logs dir — no weekly copy, and
+    # an alt session's file can't be picked by accident) > newest in logs/ (zero-config path).
+    import log_discovery
+    log_path = args.log
+    if log_path is None and os.getenv("WOW_LOG_DIR"):
+        log_path = log_discovery.discover_log(rep0["startTime"], rep0["endTime"],
+                                              os.getenv("WOW_LOG_DIR"))
+    if log_path is None:
+        _log_files = sorted(LOGS_DIR.glob("WoWCombatLog*.txt"), key=lambda p: p.stat().st_mtime, reverse=True)
+        if _log_files:
+            log_path = str(_log_files[0])
+            print(f"  [LOG] using newest in logs/: {_log_files[0].name}")
+
     # Per-player crit baseline from history (gold-standard 'luck' = this week vs your own
     # multi-week average). Read from the SAME db the run will write to, excluding this report.
     from db_writer import crit_history, DB_PATH, DB_PATH_TEST
@@ -693,7 +704,7 @@ def main():
     # from_wcl parses the log (scoped to rep0's bosses) and feeds build_week_data → no double fetch.
     import week_build as wb
     mapped, week_data, log_data = wb.from_wcl(
-        args.report_code, token, log_path=args.log, report=rep0,
+        args.report_code, token, log_path=log_path, report=rep0,
         history=crit_hist)
 
     # finalize_week owns the ONE loot-ingestion point (replacing a raw-dict loot_data block) plus
@@ -725,6 +736,13 @@ def main():
         # to --out explicitly (commit_week renders to DASH_FILE; main honors a custom --out path).
         wb.commit_week(mapped, db_path, is_test=args.test_db, dump=True, render=False)
         inject_into_html(week_data, Path(args.out), mapped=mapped)
+        # Archive the consumed log (auto-picked .txt only — an explicit --log is operator-
+        # managed and may itself be an archive). Zip→verify→remove keeps next week's discovery
+        # list short while preserving the log for backfill_snapshots --log re-enrichment.
+        if (not args.test_db and log_data is not None and args.log is None
+                and log_path and log_path.lower().endswith(".txt")):
+            log_discovery.archive_log(log_path, args.report_code, rep0["startTime"],
+                                      LOG_ARCHIVE_DIR)
         print("\nRun next time with:")
         print(f"  python wcl_auto_dashboard.py {args.report_code} --out \"{args.out}\"")
 

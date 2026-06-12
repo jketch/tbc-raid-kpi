@@ -117,7 +117,13 @@ mkdir logs
 
 ## Weekly usage
 
-1. Copy your `WoWCombatLog.txt` into the `logs\` folder (the newest `.txt` is auto-selected).
+1. Get the combat log in place — two options:
+   - **Hands-off (recommended):** set `WOW_LOG_DIR` in `.env` to your WoW client's `Logs`
+     folder once. Each run auto-picks the file whose timestamps cover the report's raid
+     window (so an alt session's log is never grabbed by mistake) and, after a successful
+     run, zips it into `logs\archive\` — kept for later log re-enrichment, out of next
+     week's way.
+   - **Manual:** copy `WoWCombatLog.txt` into the `logs\` folder (newest `.txt` auto-selected).
 2. Double-click `run_weekly.bat` (or run it in cmd/PowerShell).
 3. Enter the WCL report code when prompted (from `fresh.warcraftlogs.com/reports/XXXXXX`).
 4. The dashboard opens automatically when done.
