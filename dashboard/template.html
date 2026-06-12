@@ -574,7 +574,14 @@
   <div class="tsec" data-tab="loot">
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_gem_diamond_07.jpg" alt=""> Loot Received</div>
   <div class="card gold">
-    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_coin_01.jpg" alt=""> Who received what — this raid night</div>
+    <div class="card-title" style="display:flex;align-items:center;gap:10px">
+      <span><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_coin_01.jpg" alt=""> Who received what — this raid night</span>
+      <span style="flex:1"></span>
+      <div class="seg" id="lootSeg">
+        <button class="seg-btn on" data-v="player" onclick="_setLootView('player')">By player</button>
+        <button class="seg-btn" data-v="boss" onclick="_setLootView('boss')">By boss</button>
+      </div>
+    </div>
     <div class="hs-sub">Awards from this week's raid (ThatsBIS). Hover an item for its tooltip; <b>OS</b> = off-spec.</div>
     <div id="lootDistribution"></div>
   </div>
@@ -1440,6 +1447,12 @@ function renderSunderArmor(){
 }
 
 // ── LOOT — who received what this week (ThatsBIS CSV; Wowhead tooltips/icons)
+let _lootView = "player";
+function _setLootView(v){
+  _lootView = v;
+  try { localStorage.setItem("lootView", v); } catch(e){}
+  renderLoot();
+}
 function renderLoot(){
   const loot = WEEK_DATA.loot || {};
   const el = document.getElementById("lootDistribution");
@@ -1450,29 +1463,61 @@ function renderLoot(){
     const tb = document.querySelector('.tab-btn[data-tab="loot"]'); if (tb) tb.style.display = "none";
     return;
   }
+  document.querySelectorAll("#lootSeg .seg-btn").forEach(b => b.classList.toggle("on", b.dataset.v === _lootView));
   // class color/icon: prefer roster (consistent across the dashboard), fall back to the CSV's own
   // class so an alt not in this week's WCL roster still colors correctly.
   const col = p => (typeof CLASS_COLORS!=="undefined" && CLASS_COLORS[p.class]) || nameColor(p.name) || "var(--text)";
   const ico = p => classIcon(p.name) || (p.class
     ? `https://wow.zamimg.com/images/wow/icons/large/classicon_${encodeURIComponent(p.class.toLowerCase())}.jpg` : null);
-  const blocks = players.map(p => {
-    const c = col(p), ic = ico(p);
-    const head = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;font-size:13px;font-weight:600">
-      ${ic?`<img class="ticon-sm" src="${esc(ic)}" alt="" style="vertical-align:-2px">`:""}
-      <span class="cname" style="color:${c}">${esc(p.name)}</span>
-      <span style="color:var(--muted);font-weight:500;font-size:11px">·&nbsp;${p.items.length}</span></div>`;
-    const items = p.items.map(it => {
-      // power.js iconizes + quality-colors + tooltips this link (whTooltips config in <head>)
-      const link = `<a href="https://www.wowhead.com/tbc/item=${Number(it.item_id)||0}" target="_blank" rel="noopener" style="font-size:12px">${esc(it.item_name)}</a>`;
-      // OS + boss live on a muted sub-line so a long item name never orphans the boss or splits it mid-word
-      const meta = [];
-      if (it.offspec) meta.push(`<span style="border:1px solid var(--border);border-radius:3px;padding:0 3px;letter-spacing:.03em">OS</span>`);
-      if (it.boss) meta.push(esc(it.boss));
-      const sub = meta.length ? `<div style="font-size:10px;color:var(--muted);margin:1px 0 0 20px;line-height:1.2;white-space:nowrap">${meta.join(" · ")}</div>` : "";
-      return `<div style="margin:5px 0;line-height:1.3">${link}${sub}</div>`;
+  // power.js iconizes + quality-colors + tooltips this link (whTooltips config in <head>)
+  const itemLink = it => `<a href="https://www.wowhead.com/tbc/item=${Number(it.item_id)||0}" target="_blank" rel="noopener" style="font-size:12px">${esc(it.item_name)}</a>`;
+  const osPill = `<span style="border:1px solid var(--border);border-radius:3px;padding:0 3px;letter-spacing:.03em">OS</span>`;
+
+  let blocks;
+  if (_lootView === "boss"){
+    // group every award by the boss that dropped it (kill order via boss_times when known)
+    const byBoss = {};
+    players.forEach(p => (p.items||[]).forEach(it => {
+      const b = it.boss || "Trash / other";
+      (byBoss[b] = byBoss[b] || []).push({ p, it });
+    }));
+    // kill order from boss_times; the CSV shortens names ("Lurker Below" vs WCL's
+    // "The Lurker Below"), so match by substring either way
+    const killOrder = Object.keys(WEEK_DATA.boss_times || {});
+    const idx = b => { const i = killOrder.findIndex(k => k === b || k.includes(b) || b.includes(k)); return i === -1 ? 999 : i; };
+    const bosses = Object.keys(byBoss).sort((a, b) => idx(a) - idx(b) || a.localeCompare(b));
+    blocks = bosses.map(boss => {
+      const drops = byBoss[boss];
+      const head = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;font-size:13px;font-weight:600">
+        ${esc(boss)} <span style="color:var(--muted);font-weight:500;font-size:11px">·&nbsp;${drops.length}</span></div>`;
+      const items = drops.map(({p, it}) => {
+        const ic = ico(p);
+        const who = `${ic?`<img class="ticon-sm" src="${esc(ic)}" alt="" style="vertical-align:-2px;margin-right:3px">`:""}<span class="cname" style="color:${col(p)};font-size:11px">${esc(p.name)}</span>`;
+        const sub = `<div style="font-size:10px;color:var(--muted);margin:1px 0 0 20px;line-height:1.2;white-space:nowrap">${who}${it.offspec?` · ${osPill}`:""}</div>`;
+        return `<div style="margin:5px 0;line-height:1.3">${itemLink(it)}${sub}</div>`;
+      }).join("");
+      return `<div style="border:1px solid var(--border);border-radius:10px;padding:11px 13px;background:var(--surface)">${head}${items}</div>`;
     }).join("");
-    return `<div style="border:1px solid var(--border);border-radius:10px;padding:11px 13px;background:var(--surface)">${head}${items}</div>`;
-  }).join("");
+  } else {
+    // by player (default) — busiest recipients first, then alphabetical
+    const ordered = players.slice().sort((a, b) => (b.items||[]).length - (a.items||[]).length || a.name.localeCompare(b.name));
+    blocks = ordered.map(p => {
+      const c = col(p), ic = ico(p);
+      const head = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;font-size:13px;font-weight:600">
+        ${ic?`<img class="ticon-sm" src="${esc(ic)}" alt="" style="vertical-align:-2px">`:""}
+        <span class="cname" style="color:${c}">${esc(p.name)}</span>
+        <span style="color:var(--muted);font-weight:500;font-size:11px">·&nbsp;${p.items.length}</span></div>`;
+      const items = p.items.map(it => {
+        // OS + boss live on a muted sub-line so a long item name never orphans the boss or splits it mid-word
+        const meta = [];
+        if (it.offspec) meta.push(osPill);
+        if (it.boss) meta.push(esc(it.boss));
+        const sub = meta.length ? `<div style="font-size:10px;color:var(--muted);margin:1px 0 0 20px;line-height:1.2;white-space:nowrap">${meta.join(" · ")}</div>` : "";
+        return `<div style="margin:5px 0;line-height:1.3">${itemLink(it)}${sub}</div>`;
+      }).join("");
+      return `<div style="border:1px solid var(--border);border-radius:10px;padding:11px 13px;background:var(--surface)">${head}${items}</div>`;
+    }).join("");
+  }
   const sub = `<div style="font-size:11.5px;color:var(--muted);margin:0 0 12px">${loot.total} item${loot.total===1?"":"s"} to ${players.length} raider${players.length===1?"":"s"}${loot.offspec?` · <b>${loot.offspec}</b> off-spec`:""}</div>`;
   el.innerHTML = sub + `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;align-items:start">${blocks}</div>`;
   if (window.$WowheadPower && $WowheadPower.refreshLinks) $WowheadPower.refreshLinks();
@@ -3194,6 +3239,7 @@ function renderAll(){
   renderPlayerSpells();
   renderCompliance();
   renderGearAudit();
+  try { const _lv = localStorage.getItem("lootView"); if (_lv) _lootView = _lv; } catch(e){}   // restore By player/By boss
   renderLoot();
   renderPerformance();   // officer tab — built for everyone; applyOfficerGate() hides the surface
   (function(){
