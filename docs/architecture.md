@@ -31,7 +31,14 @@ flowchart TD
     SPINE["week_build.py — the spine<br/>from_wcl / from_snapshot<br/>→ finalize_week → commit_week"]
 
     %% ── Core ────────────────────────────────────────────
-    CORE["wcl_auto_dashboard.py — core<br/>WCL fetch + crit model + merge_log_into_wcl<br/>map_to_week_data · enrich_with_trends · inject_into_html<br/>(re-exports the leaves)"]
+    CORE["wcl_auto_dashboard.py — THE FACADE<br/>re-exports the public surface (W.&lt;name&gt;)<br/>build_week_data orchestrator · snapshot dumps · main()"]
+    subgraph IMPL["Implementation modules (behind the facade)"]
+        FETCH["wcl_fetchers.py<br/>every WCL GraphQL fetcher"]
+        WMAP["week_map.py<br/>map_to_week_data · merge_log_into_wcl"]
+        CRIT["crit_model.py<br/>expected-crit model"]
+        TRND["trends.py<br/>enrich_with_trends"]
+        RNDR["render_html.py<br/>inject_into_html"]
+    end
 
     %% ── Sinks / deploy ──────────────────────────────────
     subgraph SINK["Sinks & deploy"]
@@ -44,10 +51,12 @@ flowchart TD
 
     %% ── Leaves ──────────────────────────────────────────
     subgraph LEAF["Leaves — import nothing from the pipeline"]
-        WCLC["wcl_client.py<br/>get_token · gql"]
+        WCLC["wcl_client.py<br/>get_token · gql · .env autoload"]
         GC["game_constants.py<br/>curated name-sets<br/>(TIER-STABLE + T5 seam)"]
         CL["combat_log.py<br/>parse_combat_log"]
         SCHEMA["week_schema.py<br/>validate · regression<br/>populated_sections"]
+        PATHS["paths.py<br/>path constants"]
+        ROLES["roles.py<br/>spec → role"]
     end
 
     RW --> MAIN
@@ -65,6 +74,20 @@ flowchart TD
     CORE -->|re-exports| WCLC
     CORE -->|re-exports| GC
     CORE -->|re-exports| CL
+    CORE -->|re-exports| FETCH
+    CORE -->|re-exports| WMAP
+    CORE -->|re-exports| CRIT
+    CORE -->|re-exports| TRND
+    CORE -->|re-exports| RNDR
+    FETCH --> WCLC
+    FETCH --> ROLES
+    WMAP --> FETCH
+    WMAP --> CRIT
+    CRIT --> WCLC
+    CRIT --> PATHS
+    CRIT --> ROLES
+    RNDR --> WMAP
+    RNDR --> PATHS
     CL --> GC
 
     GATE --> SPINE
@@ -76,14 +99,19 @@ flowchart TD
     classDef plain fill:#F1EFE8,stroke:#888780,color:#2C2C2A;
 
     class SPINE spine;
-    class WCLC,GC,CL,SCHEMA leaf;
+    class WCLC,GC,CL,SCHEMA,PATHS,ROLES leaf;
     class GATE gate;
-    class RW,MAIN,REPRO,BACK,CORE,DBW,PUB plain;
+    class RW,MAIN,REPRO,BACK,CORE,DBW,PUB,FETCH,WMAP,CRIT,TRND,RNDR plain;
 ```
 
-**Legend** — purple: spine · green: leaves · pink: gate · grey: orchestrators/core/sinks.
-The core and the spine import each other; the spine's `import wcl_auto_dashboard` is **lazy
-(inside functions)** to break the cycle, since the core imports the spine for `main()`.
+**Legend** — purple: spine · green: leaves · pink: gate · grey: orchestrators/facade/sinks.
+The facade and the spine import each other; the spine's `import wcl_auto_dashboard` is **lazy
+(inside functions)** to break the cycle, since the facade imports the spine for `main()`.
+**Facade rule (2026-06-12 decomposition):** every consumer keeps importing
+`wcl_auto_dashboard as W` — the implementation modules behind it (`wcl_fetchers`, `week_map`,
+`crit_model`, `trends`, `render_html`) are re-exported, and **no module behind the facade ever
+imports `wcl_auto_dashboard` or `week_build`** (cycles impossible by construction).
+`tests/test_facade_surface.py` freezes the W.<name> surface.
 `run_weekly.bat` runs `main()` and then `publish.py` as **two separate processes** — publish
 reads the HTML `main()` wrote, it isn't called from `main()`. The gate and `db_writer` both
 depend on the `week_schema` contract (characterization / downgrade-guard).

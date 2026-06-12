@@ -19,6 +19,19 @@ except ImportError:
     subprocess.check_call([sys.executable, "-m", "pip", "install", "requests", "--quiet"])
     import requests as _req
 
+# Auto-load .env from the project root (parent of scripts/) — the WCL credentials this
+# transport consumes live there. Lives HERE (not the facade) so any entry point that talks
+# to WCL gets the creds loaded, even one that never imports wcl_auto_dashboard.
+import os as _os
+from pathlib import Path as _Path
+_env_file = _Path(__file__).parent.parent / ".env"
+if _env_file.exists():
+    for _line in _env_file.read_text().splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _k, _v = _line.split("=", 1)
+            _os.environ[_k.strip()] = _v.strip()  # .env always wins over system env vars
+
 WCL_TOKEN_URL = "https://fresh.warcraftlogs.com/oauth/token"
 WCL_API_URL   = "https://www.warcraftlogs.com/api/v2/client"
 

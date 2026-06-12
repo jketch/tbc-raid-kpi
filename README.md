@@ -157,7 +157,8 @@ tbc-raid-kpi/
 ├── README.md                   ← this file (setup guide)
 ├── docs/                       ← architecture + TBC/WCL reference docs
 ├── scripts/
-│   ├── wcl_auto_dashboard.py   ← main pipeline
+│   ├── wcl_auto_dashboard.py   ← pipeline facade + main() (implementation lives in
+│   │                              wcl_fetchers/week_map/crit_model/trends/render_html + leaves)
 │   ├── db_writer.py            ← SQLite history
 │   ├── publish.py              ← Netlify deploy
 │   └── screenshot_dashboard.py ← export dashboard to PNG/PDF (requires Playwright)

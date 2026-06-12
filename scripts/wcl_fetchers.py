@@ -1914,9 +1914,6 @@ DEBUFF_SLOTS = [
     {"key": "jotc",   "label": "Judge: Crusader",    "cat": "Utility", "guids": [27159],        "icon": "spell_holy_holysmite", "soft": True},
 ]
 
-from wcl_fetchers import _merge_bands, _totem_uptime  # noqa: F401
-
-
 def fetch_debuff_coverage(token: str, report_code: str, kills: list) -> dict:
     """WCL-durable raid debuff coverage — runs EVERY week, no combat log needed. For each
     boss kill, the % of fight time each key DPS-amplifying debuff was up on an enemy (WCL

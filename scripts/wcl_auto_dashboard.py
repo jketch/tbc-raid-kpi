@@ -3,30 +3,36 @@
 wcl_auto_dashboard.py — WarcraftLogs API → Raid KPI Dashboard auto-updater
 TBC Anniversary edition
 
-USAGE:
-    python wcl_auto_dashboard.py <REPORT_CODE>
-    python wcl_auto_dashboard.py <REPORT_CODE> --log WoWCombatLog.txt
-    python wcl_auto_dashboard.py <REPORT_CODE> --out "C:/path/to/raid_kpi_dashboard.html"
-    python wcl_auto_dashboard.py <REPORT_CODE> --dry-run   # print JSON only
+THE FACADE + ORCHESTRATOR. The pipeline's implementation lives in leaf modules; this module
+re-exports their public surface — `import wcl_auto_dashboard as W` resolves every W.<name>,
+which is how week_build / reprocess / backfill_snapshots / build_site / preview / the tests
+all consume it (guarded by tests/test_facade_surface.py) — and keeps the orchestration:
+build_week_data() (the WCL fetch recipe), the snapshot dumps, reingest_loot(), and main().
 
+WHAT LIVES WHERE:
+    wcl_client.py      OAuth + gql() transport, .env autoload (pure leaf)
+    paths.py           every filesystem path constant (pure leaf)
+    roles.py           spec → role classification / effective-role logic (pure leaf)
+    crit_model.py      TBC expected-crit model + item-crit cache
+    game_constants.py  curated WoW name-sets (consumables, CC/MC/AoE, FF, eng, drums)
+    combat_log.py      raw WoWCombatLog.txt parser
+    wcl_fetchers.py    every WCL v2 GraphQL fetcher: Q_* strings, fetch_master_data,
+                       damage/crit, roles/healers, tanks, class toolkit, saves/interrupts/
+                       dispels/deaths, debuff coverage, mana returns, sunder, gear audit
+    week_map.py        map_to_week_data + merge_log_into_wcl (pure transforms; the offline
+                       reprocess --from-raw tier re-runs these with zero WCL)
+    week_schema.py     THE CONTRACT — SECTIONS + WeekData TypedDict + validate()
+    week_build.py      THE SPINE — from_wcl → finalize_week → commit_week; calls back
+                       through W.<name> lazily (the ONLY module allowed to import this one)
+    trends.py          enrich_with_trends (delta_* vs the prior week's DB rows)
+    render_html.py     inject_into_html (brace-depth WEEK_DATA injector — never regex)
+    db_writer.py       SQLite persistence
+
+USAGE (unchanged):
+    python wcl_auto_dashboard.py <REPORT_CODE> [--log WoWCombatLog.txt] [--out path.html]
+                                 [--dry-run | --test-db]
     WCL report code = the code in the URL: fresh.warcraftlogs.com/reports/<CODE>
-    --log  = optional path to WoWCombatLog.txt; fills in actual crit %, avoidable damage,
-             interrupts, engineering, and drums that WCL API doesn't expose directly.
-
-SETUP (one time):
-    Set two environment variables from https://www.warcraftlogs.com/api/clients/
-        WCL_CLIENT_ID=your_client_id
-        WCL_CLIENT_SECRET=your_client_secret
-    Or pass them as --client-id / --client-secret flags.
-
-WHAT IT DOES:
-    1. Pulls fight list + player gear from WCL v2 GraphQL
-    2. Looks up crit rating on each item/gem/enchant (cached locally)
-    3. Calculates EXPECTED crit % per player (TBC formula: rating / 22.08 + class base)
-    4. Pulls hit/crit counts from damage table → ACTUAL crit %
-    5. Luck KPI = actual − expected  (green = ran hot, orange = ran cold)
-    6. Pulls deaths, damage totals, avoidable dmg, consumable uptimes
-    7. Injects updated WEEK_DATA into the HTML dashboard
+    Credentials: WCL_CLIENT_ID / WCL_CLIENT_SECRET via .env (auto-loaded by wcl_client) or flags.
 """
 
 from __future__ import annotations
@@ -43,118 +49,64 @@ try:
 except (AttributeError, ValueError):
     pass
 
-# Auto-install requests if missing
-try:
-    import requests as _req
-except ImportError:
-    import subprocess
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests", "--quiet"])
-    import requests as _req  # noqa: F401 — bootstrap import for its install side effect
+# ══════════════════════════════════════════════════════════════════════════════
+# Public surface — re-exports. DO NOT REMOVE entries: external consumers resolve
+# these as W.<name> (tests/test_facade_surface.py freezes the load-bearing set).
+# Importing wcl_client also bootstraps `requests` and auto-loads .env.
+# ══════════════════════════════════════════════════════════════════════════════
 
-# Auto-load .env from Gaming root (parent of scripts/)
-_env_file = Path(__file__).parent.parent / ".env"
-if _env_file.exists():
-    for _line in _env_file.read_text().splitlines():
-        _line = _line.strip()
-        if _line and not _line.startswith("#") and "=" in _line:
-            _k, _v = _line.split("=", 1)
-            os.environ[_k.strip()] = _v.strip()  # .env always wins over system env vars
+from wcl_client import WCL_TOKEN_URL, WCL_API_URL, get_token, gql                     # noqa: F401
 
-# ── WCL endpoints + transport ─────────────────────────────────────────────────
-# OAuth + the GraphQL wrapper live in wcl_client (a pure transport leaf). Re-exported here
-# so every existing W.gql / W.get_token / W.WCL_API_URL reference keeps resolving.
-from wcl_client import WCL_TOKEN_URL, WCL_API_URL, get_token, gql  # noqa: F401 — re-exported (W.WCL_API_URL etc.)
+from paths import (ROOT_DIR, CACHE_FILE, LOGS_DIR, LOOT_DIR, DASH_FILE, TEMPLATE_FILE,  # noqa: F401
+                   DEFAULT_TITLE, WEEK_DATA_CACHE, WCL_CACHE, ITEM_META_CACHE)          # noqa: F401
 
-# ── TBC crit model (extracted module) ─────────────────────────────────────────
-# The expected-crit model (class base / talent / gem / enchant / primary-stat tables +
-# expected_crit), the item-crit cache I/O, and its WCL item lookup live in crit_model.py.
-# Re-exported here so existing bare-name and W.<name> references resolve unchanged.
+from roles import (TANK_SPECS, HEALER_SPECS, CASTER_SPECS, PHYSICAL_SPECS,      # noqa: F401
+                   _nontank_role, _nonheal_role, _effective_role, _fight_role)  # noqa: F401
+
 from crit_model import (CRIT_RATING_PER_PCT, LUCK_MIN_WEEKS, CLASS_BASE_CRIT,        # noqa: F401
                         SPEC_TALENT_CRIT, GEM_CRIT_RATING, ENCHANT_CRIT_RATING,      # noqa: F401
                         AGI_PER_CRIT, INT_PER_CRIT, STAT_CRIT_RATING,                # noqa: F401
                         STAT_SPELL_CRIT, Q_ITEM_STATS, load_cache, save_cache,       # noqa: F401
                         fetch_item_crit, gear_crit_rating, expected_crit)            # noqa: F401
 
-# ── Curated game-data constants + combat-log parser (extracted modules) ──────────
-# game_constants: all curated WoW name-sets (consumables, CC/MC/AoE, friendly-fire,
-#   engineering, drums) + the T5 content seam. combat_log: the raw WoWCombatLog parser.
-# Both are re-exported so every existing W.<name> reference keeps resolving.
 from game_constants import *   # noqa: F401,F403 — curated name-sets, re-exported
 from combat_log import parse_combat_log, _parse_ts, _consumable_category   # noqa: F401
 
+from wcl_fetchers import (                                                            # noqa: F401
+    # core + damage/crit + gear audit
+    _loads_alias, MAX_EVENT_PAGES, Q_REPORT, Q_PLAYER_DETAILS, Q_DAMAGE_TABLE,
+    Q_BUFFS_TABLE, Q_COMBATANT_INFO, Q_DAMAGE_EVENTS, parse_damage_table,
+    fetch_gear_from_events, fetch_actual_crit, merge_actor_names,
+    fetch_damage_by_selection, fetch_master_data, _GEAR_SLOT, _ENCHANTABLE_SLOTS,
+    _ILVL_SKIP_SLOTS, _item_sockets, fetch_gear_audit,
+    # per-fight roles + healers
+    fetch_fight_roles, build_fight_roles_from_log, harden_tank_fights,
+    fetch_healing_by_fight, fetch_damage_by_fight, damage_uptime_by_fight,
+    healer_uptime_by_fight, compute_healing_metrics, fetch_healing_spells,
+    fetch_healer_mana, fetch_role_spell_usage,
+    # tanks + class toolkit
+    TANK_CD_IDS, CD_NAMES, HITTYPE_CRUSH, HITTYPE_CRIT, build_tank_scorecard_extended,
+    _median, compute_death_hp_timelines, compute_reaction_times, TOOLKIT_ABILITIES,
+    _toolkit_metric, _buff_uptime_batch, build_class_toolkit, _tank_survival_grade,
+    # parse % (the dashboard's Performance metric — WCL rankPercent vs the FULL logged
+    # population; see fetch_parse_percentiles) + utility + buffs/debuffs
+    fetch_parse_percentiles, fetch_saves, fetch_interrupts, fetch_dispels,
+    fetch_ability_icons, fetch_deaths_split, _build_death_timeline, DEBUFF_SLOTS,
+    _merge_bands, _totem_uptime, fetch_debuff_coverage, MANA_SOURCES, INNERVATE_ICON,
+    fetch_mana_returns, fetch_sunder_armor,
+)
 
+from week_map import (_tally_spells, _interrupt_row, _ice_player_spells,              # noqa: F401
+                      build_consumable_compliance, map_to_week_data,                  # noqa: F401
+                      merge_log_into_wcl)                                             # noqa: F401
 
-
-
-
-
-
-
-# ── Filesystem paths (extracted module) ──────────────────────────────────────
-# All path constants live in paths.py (a pure-constants leaf). Re-exported here so every
-# existing W.DASH_FILE / W.WEEK_DATA_CACHE / W.ROOT_DIR reference keeps resolving.
-from paths import (ROOT_DIR, CACHE_FILE, LOGS_DIR, LOOT_DIR, DASH_FILE, TEMPLATE_FILE,  # noqa: F401
-                   DEFAULT_TITLE, WEEK_DATA_CACHE, WCL_CACHE, ITEM_META_CACHE)          # noqa: F401
-
-# Performance metric = the native WCL PARSE % (rankPercent from report.rankings) — vs the FULL
-# logged population, NOT the old top-100 cohort ratio (which made solid raiders read "below
-# replacement"). See fetch_parse_percentiles. No cohort cache / baseline / TTL needed — WCL scores
-# it server-side; we just read it. (The old healer_baseline.json + dps/tank_baseline.json caches are
-# now orphaned and can be deleted from cache/.)
-
-# ── WCL fetchers (extracted module) ───────────────────────────────────────────
-# The WCL v2 GraphQL fetch layer lives in wcl_fetchers.py (moving cluster-by-cluster).
-# Re-exported here so existing bare-name and W.<name> references resolve unchanged.
-from wcl_fetchers import (_loads_alias, MAX_EVENT_PAGES, Q_REPORT, Q_PLAYER_DETAILS,         # noqa: F401
-                          Q_DAMAGE_TABLE, Q_BUFFS_TABLE, Q_COMBATANT_INFO, Q_DAMAGE_EVENTS,   # noqa: F401
-                          parse_damage_table, fetch_gear_from_events, fetch_actual_crit,      # noqa: F401
-                          merge_actor_names, fetch_damage_by_selection, fetch_master_data,    # noqa: F401
-                          _GEAR_SLOT, _ENCHANTABLE_SLOTS, _ILVL_SKIP_SLOTS, _item_sockets,    # noqa: F401
-                          fetch_gear_audit)                                                   # noqa: F401
-
-
-# ── Spec → role classification (extracted module) ─────────────────────────────
-# Lives in roles.py (a pure leaf). Re-exported here so existing bare-name references
-# (build_week_data's reclassifier, per-fight roles, map_to_week_data) resolve unchanged.
-from roles import (TANK_SPECS, HEALER_SPECS, CASTER_SPECS, PHYSICAL_SPECS,      # noqa: F401
-                   _nontank_role, _nonheal_role, _effective_role, _fight_role)  # noqa: F401
-
-
-from wcl_fetchers import (fetch_fight_roles, build_fight_roles_from_log,             # noqa: F401
-                          harden_tank_fights, fetch_healing_by_fight,                 # noqa: F401
-                          fetch_damage_by_fight, damage_uptime_by_fight,              # noqa: F401
-                          healer_uptime_by_fight, compute_healing_metrics,            # noqa: F401
-                          fetch_healing_spells, fetch_healer_mana,                    # noqa: F401
-                          fetch_role_spell_usage)                                     # noqa: F401
-
-
-from wcl_fetchers import (TANK_CD_IDS, CD_NAMES, HITTYPE_CRUSH, HITTYPE_CRIT,        # noqa: F401
-                          build_tank_scorecard_extended, _median,                     # noqa: F401
-                          compute_death_hp_timelines, compute_reaction_times,         # noqa: F401
-                          TOOLKIT_ABILITIES, _toolkit_metric, _buff_uptime_batch,     # noqa: F401
-                          build_class_toolkit, _tank_survival_grade)                  # noqa: F401
-
-
-
-
-
-
-from wcl_fetchers import (fetch_parse_percentiles, fetch_saves, fetch_interrupts,    # noqa: F401
-                          fetch_dispels, fetch_ability_icons, fetch_deaths_split,     # noqa: F401
-                          _build_death_timeline, DEBUFF_SLOTS, fetch_debuff_coverage, # noqa: F401
-                          MANA_SOURCES, INNERVATE_ICON, fetch_mana_returns,           # noqa: F401
-                          fetch_sunder_armor)                                         # noqa: F401
-
-
+from trends import enrich_with_trends            # noqa: F401
+from render_html import inject_into_html         # noqa: F401
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Build WEEK_DATA
+# Build WEEK_DATA — the one orchestrator: calls every fetcher in recipe order
 # ══════════════════════════════════════════════════════════════════════════════
-
-
-
-
 
 def build_week_data(report_code: str, token: str,
                     log_data: dict | None = None, report: dict | None = None, history: dict | None = None) -> dict:
@@ -582,26 +534,11 @@ def build_week_data(report_code: str, token: str,
     return week_data
 
 
-# ── wcl dict → WEEK_DATA transform (extracted module) ─────────────────────────
-# map_to_week_data + merge_log_into_wcl live in week_map.py (pure transforms; the offline
-# reprocess tier re-runs them with zero WCL). Re-exported here for W.<name> compat.
-from week_map import (_tally_spells, _interrupt_row, _ice_player_spells,              # noqa: F401
-                      build_consumable_compliance, map_to_week_data,                  # noqa: F401
-                      merge_log_into_wcl)                                             # noqa: F401
-
-
 # ══════════════════════════════════════════════════════════════════════════════
-# Inject WEEK_DATA into HTML dashboard
+# Pipeline tail — snapshot dumps + loot re-ingest (stay here: they ARE the facade's
+# orchestration glue; week_build calls them through W.* at call time, preserving the
+# test_week_build monkeypatch seam. Never import them into week_build directly.)
 # ══════════════════════════════════════════════════════════════════════════════
-
-# ── Pipeline tail (extracted modules) ─────────────────────────────────────────
-# enrich_with_trends lives in trends.py; inject_into_html in render_html.py. Re-exported
-# here so W.<name> keeps resolving — week_build calls through W.* at call time, which is
-# also what keeps test_week_build's monkeypatch seam working. Do not import these
-# directly from week_build.
-from trends import enrich_with_trends            # noqa: F401
-from render_html import inject_into_html         # noqa: F401
-
 
 def dump_week_data_cache(mapped: dict) -> None:
     """Persist a mapped WEEK_DATA dict to cache/week_data/<report>.json — the offline-reprocess
