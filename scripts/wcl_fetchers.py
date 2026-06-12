@@ -16,7 +16,7 @@ from collections import defaultdict
 
 from wcl_client import gql
 from paths import ITEM_META_CACHE
-from game_constants import FOOD_BUFF, ELIXIR_BUFFS, HEAL_MANA_COST
+from game_constants import FOOD_BUFF, ELIXIR_BUFFS, HEAL_MANA_COST, EXTERNAL_ABILITIES
 from roles import _fight_role
 
 # Hard cap on paginated WCL event queries — guards against a runaway non-null nextPageTimestamp
@@ -1528,3 +1528,634 @@ def _totem_uptime(ts: list, kills: list, dur_ms: int) -> float:
             bands.append({"startTime": s, "endTime": min(e, casts[0])})
         covered += _merge_bands(bands)
     return round(covered / total * 100, 1) if total else 0
+
+
+def fetch_parse_percentiles(token: str, report_code: str, kills: list) -> dict:
+    """Per-player WCL PARSE % (rankPercent — the 'All Stars' percentile vs the FULL logged
+    population, not just the top-100 leaderboard) averaged across the night's kills. This is the
+    colored number on the WCL report page — 50 = a typical logged raider, 95+ = elite. Sourced
+    from report.rankings: the `dps` metric covers DPS *and* tanks (tank threat = their dps parse);
+    `hps` covers healers. Returns {name: {"dps": pct|None, "hps": pct|None}}.
+
+    Replaces the old cohort-ratio WAR: that compared to the top-100 parses (≈99th percentile), so a
+    solid raider read ~0.7 'below replacement'; this scores against everyone, so the same raider
+    reads ~75. bracketPercent (ilvl-adjusted) is null on TBC Anniversary logs → rankPercent is
+    authoritative. Values are None when WCL hasn't RANKED the report yet (a report pulled minutes
+    after raid) — the cell then degrades to '—' until a later run picks the ranking up."""
+    fids = [f["id"] for f in kills]
+    if not fids:
+        return {}
+    acc = defaultdict(lambda: {"dps": [], "hps": []})
+    for metric in ("dps", "hps"):
+        Q = "query($c:String!){reportData{report(code:$c){rankings(playerMetric:" + metric + ")}}}"
+        try:
+            raw = gql(token, Q, {"c": report_code})["reportData"]["report"]["rankings"]
+        except Exception as ex:
+            print(f"  Warning: report.rankings({metric}) failed: {ex}")
+            continue
+        if isinstance(raw, str):
+            raw = json.loads(raw)
+        for blk in (raw.get("data") or []):
+            if not blk.get("kill"):
+                continue
+            for _role, rv in (blk.get("roles") or {}).items():
+                for c in (rv.get("characters") or []):
+                    rp = c.get("rankPercent")
+                    if rp is not None and c.get("name"):
+                        acc[c["name"]][metric].append(rp)
+    out = {nm: {"dps": round(sum(v["dps"]) / len(v["dps"])) if v["dps"] else None,
+                "hps": round(sum(v["hps"]) / len(v["hps"])) if v["hps"] else None}
+           for nm, v in acc.items()}
+    n = sum(1 for v in out.values() if v["dps"] is not None or v["hps"] is not None)
+    print(f"  ✓ parse percentiles: {n} players ranked" if n else
+          "  ⚠ parse percentiles: report not ranked by WCL yet (cells show —)")
+    return out
+
+
+
+
+def fetch_saves(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
+    """Per-player protective/external casts ON ALLIES — the 'saving others' kit (paladin Hand of
+    Protection / Sacrifice / Freedom / Salvation, Lay on Hands on others, Cleanse + dispels, druid
+    Rebirth, warlock Soulstone res, priest Pain Suppression…). Pure WCL Casts events filtered to
+    EXTERNAL_ABILITIES (name-keyed; Anniversary-verified) with a friendly-PLAYER target that isn't
+    the caster — so self-casts, untargeted totems, and Environment-target trinket procs all drop.
+    Returns {name: {save, dispel, utility, total, targets:{ability:{target:count}}}}.
+    WCL-durable; no combat log needed (a future pass can flag CLUTCH saves by cross-referencing the
+    target's HP at cast time from the log)."""
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    gid2name, id2name, act = md["gid2name"], md["id2name"], md["acts"]
+    fids = [f["id"] for f in kills]
+    if not fids:
+        return {}
+    win_s = min(f["startTime"] for f in kills)
+    win_e = max(f["endTime"]   for f in kills)
+    Q = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts, limit: 10000){
+            data nextPageTimestamp }}}}"""
+    out = defaultdict(lambda: {"save": 0, "dispel": 0, "utility": 0, "total": 0,
+                               "targets": defaultdict(lambda: defaultdict(int))})
+    st = win_s
+    while True:
+        try:
+            ev = gql(token, Q, {"c": report_code, "ids": fids, "st": st, "en": win_e}
+                     )["reportData"]["report"]["events"]
+        except Exception as ex:
+            print(f"  Warning: saves Casts events failed: {ex}")
+            break
+        for d in ev.get("data", []):
+            if d.get("type") != "cast":
+                continue
+            cat = EXTERNAL_ABILITIES.get(gid2name.get(d.get("abilityGameID"), ""))
+            if not cat or cat == "dispel":
+                # dispels now live in their OWN card (fetch_dispels, from Dispels events — actual
+                # successful removals + offensive purges), so they're filtered off "Saving Others"
+                # to avoid double-counting. Saves here = protective saves + reactive utility only.
+                continue
+            sid, tid = d.get("sourceID"), d.get("targetID")
+            if tid is None or tid == sid:                      # self / untargeted → not "on an ally"
+                continue
+            if act.get(sid, {}).get("type") != "Player":       # caster must be a raider
+                continue
+            if act.get(tid, {}).get("type") != "Player":       # target must be a friendly player
+                continue
+            nm, tgt = id2name.get(sid), id2name.get(tid)
+            if not nm or not tgt:
+                continue
+            r = out[nm]
+            r[cat] += 1
+            r["total"] += 1
+            r["targets"][gid2name.get(d.get("abilityGameID"), "")][tgt] += 1
+        nx = ev.get("nextPageTimestamp")
+        if not nx:
+            break
+        st = nx
+    return {nm: {"save": r["save"], "dispel": r["dispel"], "utility": r["utility"],
+                 "total": r["total"],
+                 "targets": {ab: dict(tg) for ab, tg in r["targets"].items()}}
+            for nm, r in out.items()}
+
+
+def fetch_interrupts(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
+    """WCL-durable interrupt HEADLINE — per-interrupter count + which enemy casts were stopped.
+    From events(dataType: Interrupts): the table() form returns null on the 2.5 Anniversary client,
+    but the events query works (recon 2026-06-11, docs/WCL_API_SURFACE.md). Each interrupt event
+    carries `extraAbilityGameID` = the spell that got cut, so we get the same "spells stopped" tally
+    the combat log gave — now WCL-sourced. Pet interrupts (Felhunter Spell Lock) credit the owning
+    raider via petOwner. The combat log stays a SILENT fallback in map_to_week_data (a missing log
+    thins but never blanks this KPI). Returns {name: {count, spells:{interruptedSpellName: n}}}."""
+    if not kills:
+        return {}
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    gid2name, acts = md["gid2name"], md["acts"]
+
+    def src_player(sid):
+        a = acts.get(sid, {})
+        if a.get("type") == "Pet":                  # Felhunter Spell Lock → credit the warlock
+            a = acts.get(a.get("petOwner"), {})
+        return a.get("name") if a.get("type") == "Player" else None
+
+    fids = [f["id"] for f in kills]
+    win_s = min(f["startTime"] for f in kills)
+    win_e = max(f["endTime"]   for f in kills)
+    Q = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Interrupts, limit: 10000){
+            data nextPageTimestamp }}}}"""
+    out = defaultdict(lambda: {"count": 0, "spells": defaultdict(int)})
+    st = win_s
+    for _pg in range(MAX_EVENT_PAGES):
+        try:
+            ev = gql(token, Q, {"c": report_code, "ids": fids, "st": st, "en": win_e}
+                     )["reportData"]["report"]["events"]
+        except Exception as ex:
+            print(f"  Warning: interrupts events failed: {ex}")
+            break
+        for d in ev.get("data", []):
+            if d.get("type") != "interrupt":
+                continue
+            nm = src_player(d.get("sourceID"))
+            if not nm:
+                continue
+            r = out[nm]
+            r["count"] += 1
+            stopped = gid2name.get(d.get("extraAbilityGameID"), "")
+            if stopped:
+                r["spells"][stopped] += 1
+        nx = ev.get("nextPageTimestamp")
+        if not nx:
+            break
+        st = nx
+    return {nm: {"count": r["count"], "spells": dict(r["spells"])} for nm, r in out.items()}
+
+
+def fetch_dispels(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
+    """Who-dispelled-what — a NEW WCL-durable Utility signal from events(dataType: Dispels) (table()
+    is null on 2.5; events works — recon 2026-06-11). Each event: {sourceID, targetID, abilityGameID
+    (the dispel), extraAbilityGameID (the REMOVED aura), isBuff}. Split by target side:
+      • cleanse — harmful effect stripped off a friendly (Cleanse / Abolish / Remove Curse / Devour
+        Magic on an ally). The defensive, "saved a teammate" half.
+      • purge   — buff stripped off an ENEMY (shaman Purge, priest Dispel Magic, hunter Tranquilizing
+        Shot enrage-strip, Felhunter Devour Magic). The offensive half — has no home elsewhere.
+    Pet dispels credit the owning raider via petOwner. hostilityType defaults to Friendlies (source
+    side), so only raider-cast dispels are returned. Returns
+      {name: {cleanse, purge, total, removed:{auraName:n}, targets:{allyName:n}}}  (targets = cleanse
+    recipients; purge targets are bosses/adds, surfaced via the removed-aura names instead)."""
+    if not kills:
+        return {}
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    gid2name, id2name, acts = md["gid2name"], md["id2name"], md["acts"]
+
+    def src_player(sid):
+        a = acts.get(sid, {})
+        if a.get("type") == "Pet":                  # Felhunter Devour Magic → credit the warlock
+            a = acts.get(a.get("petOwner"), {})
+        return a.get("name") if a.get("type") == "Player" else None
+
+    fids = [f["id"] for f in kills]
+    win_s = min(f["startTime"] for f in kills)
+    win_e = max(f["endTime"]   for f in kills)
+    Q = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Dispels, limit: 10000){
+            data nextPageTimestamp }}}}"""
+    out = defaultdict(lambda: {"cleanse": 0, "purge": 0, "total": 0,
+                               "removed": defaultdict(int), "targets": defaultdict(int)})
+    st = win_s
+    for _pg in range(MAX_EVENT_PAGES):
+        try:
+            ev = gql(token, Q, {"c": report_code, "ids": fids, "st": st, "en": win_e}
+                     )["reportData"]["report"]["events"]
+        except Exception as ex:
+            print(f"  Warning: dispels events failed: {ex}")
+            break
+        for d in ev.get("data", []):
+            if d.get("type") != "dispel":
+                continue
+            nm = src_player(d.get("sourceID"))
+            if not nm:
+                continue
+            tid = d.get("targetID")
+            tgt_is_enemy = acts.get(tid, {}).get("type") == "NPC"
+            r = out[nm]
+            r["total"] += 1
+            removed = gid2name.get(d.get("extraAbilityGameID"), "")
+            if removed:
+                r["removed"][removed] += 1
+            if tgt_is_enemy:                         # buff stripped off a boss/add
+                r["purge"] += 1
+            else:                                    # harmful effect cleansed off an ally
+                r["cleanse"] += 1
+                tgt = id2name.get(tid, "")
+                if tgt:
+                    r["targets"][tgt] += 1
+        nx = ev.get("nextPageTimestamp")
+        if not nx:
+            break
+        st = nx
+    return {nm: {"cleanse": r["cleanse"], "purge": r["purge"], "total": r["total"],
+                 "removed": dict(r["removed"]), "targets": dict(r["targets"])}
+            for nm, r in out.items()}
+
+
+def fetch_ability_icons(token: str, report_code: str, fight_ids: list, md: dict | None = None) -> dict:
+    """Map ability name → real WCL icon slug (no .jpg). Two layers:
+    1. masterData abilities — covers EVERY ability in the report, including casts that
+       never hit the raid (heals, interrupted spells like Holy Smite / Great Heal).
+    2. DamageTaken table — authoritative icon for whatever actually hit the raid; overrides
+       layer 1 to sidestep the wrong-spell-ID / reused-asset problem for raid-facing hits."""
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    # layer 1 — masterData (precomputed in md; so interrupted/healing casts resolve an icon too)
+    icons = dict(md["icons"])
+    # layer 2 — DamageTaken (authoritative for raid hits; overrides layer 1)
+    if fight_ids:
+        Q = """query($c:String!,$f:[Int]){reportData{report(code:$c){
+            table(dataType: DamageTaken, fightIDs:$f, hostilityType:Friendlies)}}}"""
+        try:
+            t = gql(token, Q, {"c": report_code, "f": fight_ids})["reportData"]["report"]["table"]
+            if isinstance(t, str):
+                t = json.loads(t)
+            for e in t.get("data", {}).get("entries", []):
+                for ab in (e.get("abilities") or []):
+                    nm, ic = ab.get("name"), ab.get("icon")
+                    if nm and ic:
+                        icons[nm] = ic.replace(".jpg", "")
+        except Exception as e:
+            print(f"  Warning: ability-icon fetch failed: {e}")
+    return icons
+
+
+def fetch_deaths_split(token: str, report_code: str, md: dict | None = None):
+    """Curated deaths from the WCL Deaths table (WCL excludes Hunter Feign Death,
+    unlike raw combat-log UNIT_DIED). Split boss vs trash by each death's fight —
+    boss fights carry an encounterID, trash fights don't.
+    Returns (boss_deaths, trash_deaths, recaps, deaths_by_boss): per-PLAYER boss/trash
+    counts, a per-player list of killing blows {boss, killer, amount, overkill} for the
+    death drill-down, and a per-BOSS death tally {boss_name: count} for the Overview tiles."""
+    Qf = """query($c:String!){reportData{report(code:$c){fights{ id name encounterID kill }}}}"""
+    fights = gql(token, Qf, {"c": report_code})["reportData"]["report"]["fights"]
+    fid_is_boss = {f["id"]: bool(f["encounterID"]) for f in fights}
+    fid_is_kill = {f["id"]: bool(f.get("kill")) for f in fights}
+    fid_name    = {f["id"]: f.get("name", "") for f in fights}
+
+    # id → name maps to label the per-death recap timeline (abilities + ALL actors, including
+    # NPCs so boss-ability sources resolve) — from the shared masterData fetch.
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    abil_name  = md["gid2name"]
+    actor_name = md["id2name"]
+
+    Qd = """query($c:String!,$f:[Int]){reportData{report(code:$c){
+        table(dataType: Deaths, fightIDs:$f)}}}"""
+    t = gql(token, Qd, {"c": report_code, "f": list(fid_is_boss)})["reportData"]["report"]["table"]
+    if isinstance(t, str):
+        t = json.loads(t)
+    boss, trash = {}, {}
+    deaths_by_boss = defaultdict(int)   # per-encounter tally for the Overview boss tiles
+    recaps = defaultdict(list)
+    for e in t.get("data", {}).get("entries", []):
+        nm  = e.get("name")
+        fid = e.get("fight")
+        d = boss if fid_is_boss.get(fid) else trash
+        d[nm] = d.get(nm, 0) + 1
+        # tile tally counts the KILL pull only — wipe-attempt deaths would inflate it
+        # (a 25-man wipe is 25 deaths), which reads as alarm rather than signal.
+        if fid_is_kill.get(fid):
+            deaths_by_boss[fid_name.get(fid, "")] += 1
+        kb  = e.get("killingBlow") or {}
+        evs = e.get("events") or []
+        # events are NEWEST-first → the fatal hit is the LATEST timestamp, not evs[-1]
+        kbe = max(evs, key=lambda x: x.get("timestamp", 0)) if evs else {}
+        if len(recaps[nm]) < 15:
+            recaps[nm].append({
+                "boss":     fid_name.get(fid, "") if fid_is_boss.get(fid) else "Trash",
+                "killer":   kb.get("name", "?"),
+                "amount":   kbe.get("amount", 0),
+                "overkill": kbe.get("overkill", 0),
+                # window context — was it a burst or a heal gap? (damage/healing are
+                # objects {total,...} in the Deaths table, so pull .total)
+                "window_dmg":  (e.get("damage")  or {}).get("total", 0) if isinstance(e.get("damage"),  dict) else (e.get("damage")  or 0),
+                "window_heal": (e.get("healing") or {}).get("total", 0) if isinstance(e.get("healing"), dict) else (e.get("healing") or 0),
+                "window_s":    round((e.get("deathWindow", 0) or 0) / 1000.0, 1),
+                # the final-seconds blow-by-blow (damage + healing), HP reconstructed
+                "timeline":    _build_death_timeline(evs, abil_name, actor_name),
+            })
+    return boss, trash, dict(recaps), dict(deaths_by_boss)
+
+
+def _build_death_timeline(evs, abil_name, actor_name, max_events=22):
+    """Compact the WCL death-recap events into [{t,type,amt,over,ability,src,hp,mx}],
+    timestamps RELATIVE to the killing blow (0.0s). HP from each event's target
+    resources. Fully defensive — returns [] on any malformed/absent input so a bad
+    event can never break the weekly run."""
+    try:
+        if not evs:
+            return []
+        # WCL returns death-recap events NEWEST-first — sort ascending so the timeline
+        # reads oldest→killing-blow and times are relative to the (latest) fatal hit.
+        evs = sorted(evs, key=lambda e: e.get("timestamp", 0))
+        death_ts = evs[-1].get("timestamp", 0)
+        pts = []
+        for ev in evs:
+            typ = ev.get("type")
+            if   typ == "damage": kind = "dmg"
+            elif typ == "heal":   kind = "heal"
+            else:                 continue
+            amt  = int(ev.get("amount", 0) or 0)
+            over = ev.get("overkill") if kind == "dmg" else ev.get("overheal")
+            over = max(0, int(over or 0))
+            abid = ev.get("abilityGameID")
+            sid  = ev.get("sourceID")
+            ability = abil_name.get(abid) or ("Melee" if abid in (0, 1, None) else "(spell)")
+            pt = {"t": round((ev.get("timestamp", death_ts) - death_ts) / 1000.0, 1),
+                  "type": kind, "amt": amt, "over": over,
+                  "ability": ability, "src": actor_name.get(sid) or "—"}
+            hp = ev.get("hitPoints")
+            mx = ev.get("maxHitPoints")
+            if hp is not None: pt["hp"] = int(hp)
+            if mx:             pt["mx"] = int(mx)
+            pts.append(pt)
+        if pts:
+            pts[-1]["killing"] = True
+        return pts[-max_events:]
+    except Exception:
+        return []
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Debuff coverage — uptime of key DPS-amplifying raid debuffs on each boss (pure WCL)
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Each slot = one raid responsibility; ANY of its GUIDs satisfies it (Sunder OR Expose;
+# Faerie Fire normal OR feral; CoE ranks 27228/27229). Uptime = UNION of every matching aura's bands
+# (NB: there is no "Curse of Shadow" in TBC — it was folded into Curse of the Elements, which already
+#  covers Shadow. See docs/TBC_RAID_MECHANICS.md.)
+# / fight duration, so two fills covering different windows add up correctly. GUIDs + icons
+# verified against live TBC 2.5 Debuffs-table data (hostilityType: Enemies) — not memory.
+# `soft` flags proc-based debuffs (ISB, Crusader) whose natural uptime ceiling is lower, so
+# the dashboard grades them on a gentler scale instead of reading a healthy 60% as "failing".
+DEBUFF_SLOTS = [
+    {"key": "coe",    "label": "Curse of Elements",  "cat": "Magic",   "guids": [27228, 27229], "icon": "spell_shadow_chilltouch"},
+    {"key": "sweav",  "label": "Shadow Weaving",     "cat": "Magic",   "guids": [15258],        "icon": "spell_shadow_blackplague"},
+    {"key": "isb",    "label": "Shadow Vuln. (ISB)", "cat": "Magic",   "guids": [17800],        "icon": "spell_shadow_shadowbolt", "soft": True},
+    {"key": "misery", "label": "Misery",             "cat": "Magic",   "guids": [33200],        "icon": "spell_shadow_misery"},
+    {"key": "sunder", "label": "Sunder / Expose",    "cat": "Armor",   "guids": [25225, 26866], "icon": "ability_warrior_riposte"},
+    {"key": "ff",     "label": "Faerie Fire",        "cat": "Armor",   "guids": [26993, 27011], "icon": "spell_nature_faeriefire"},
+    {"key": "creck",  "label": "Curse of Reckless.", "cat": "Armor",   "guids": [27226],        "icon": "spell_shadow_unholystrength"},
+    {"key": "exposew","label": "Expose Weakness",    "cat": "Armor",   "guids": [34501],        "icon": "ability_rogue_findweakness"},  # Survival hunter, +AP for all physical (live-verified guid)
+    # NOTE: Blood Frenzy is NOT trackable as a debuff slot. It's a hidden passive talent ("Aura is
+    # hidden", Wowhead 29859) — the +4% physical is baked into Rend/Deep Wounds with no separate aura.
+    # 29859 is the talent ID, never an enemy aura, so a slot for it would read 0% forever. The only
+    # signal would be (talent-specced warrior) + Deep Wounds/Rend uptime as a proxy — and Deep Wounds is
+    # applied by ANY warrior regardless of the talent, so that proxy over-credits. Left out by design.
+    {"key": "jow",    "label": "Judge: Wisdom",      "cat": "Utility", "guids": [27164],        "icon": "spell_holy_righteousnessaura"},
+    {"key": "jotc",   "label": "Judge: Crusader",    "cat": "Utility", "guids": [27159],        "icon": "spell_holy_holysmite", "soft": True},
+]
+
+from wcl_fetchers import _merge_bands, _totem_uptime  # noqa: F401
+
+
+def fetch_debuff_coverage(token: str, report_code: str, kills: list) -> dict:
+    """WCL-durable raid debuff coverage — runs EVERY week, no combat log needed. For each
+    boss kill, the % of fight time each key DPS-amplifying debuff was up on an enemy (WCL
+    Debuffs table, hostilityType: Enemies). A slot's uptime is the UNION of every matching
+    aura's bands, so alternate fills (Sunder/Expose, Faerie Fire normal/feral) combine.
+    Returns {slots:[{key,label,cat,icon,soft}],
+             bosses:[{boss,encounter_id,seconds,coverage:{key:pct}}],
+             raid_avg:{key:pct}}  — or {} when there are no kills."""
+    if not kills:
+        return {}
+    guid_slots = {}                         # guid → [slot keys it satisfies]
+    for s in DEBUFF_SLOTS:
+        for g in s["guids"]:
+            guid_slots.setdefault(g, []).append(s["key"])
+    live_icon = {}                          # slot key → live WCL icon slug (preferred)
+    bosses = []
+    for i in range(0, len(kills), 5):
+        chunk = kills[i:i + 5]
+        aliases = "\n".join(
+            f'f{f["id"]}: table(dataType: Debuffs, hostilityType: Enemies, fightIDs:[{int(f["id"])}])'
+            for f in chunk)
+        Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
+        try:
+            rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+        except Exception as ex:
+            print(f"  Warning: debuff-coverage batch failed: {ex}")
+            rep = {}
+        for f in chunk:
+            fid = f["id"]
+            dur_ms = (f["endTime"] - f["startTime"]) or 1
+            t = _loads_alias(rep.get(f'f{fid}'))
+            auras = (t or {}).get("data", {}).get("auras", []) if t else []
+            slot_bands = {s["key"]: [] for s in DEBUFF_SLOTS}
+            for a in auras:
+                for key in guid_slots.get(a.get("guid"), ()):
+                    slot_bands[key].extend(a.get("bands") or [])
+                    if a.get("abilityIcon"):
+                        live_icon.setdefault(key, a["abilityIcon"].replace(".jpg", ""))
+            coverage = {s["key"]: round(_merge_bands(slot_bands[s["key"]]) / dur_ms * 100, 1)
+                        for s in DEBUFF_SLOTS}
+            bosses.append({"boss": f["name"], "encounter_id": f.get("encounterID"),
+                           "seconds": round(dur_ms / 1000), "coverage": coverage})
+    raid_avg = {}
+    for s in DEBUFF_SLOTS:
+        vals = [b["coverage"][s["key"]] for b in bosses]
+        raid_avg[s["key"]] = round(sum(vals) / len(vals), 1) if vals else 0
+    slots_out = [{"key": s["key"], "label": s["label"], "cat": s["cat"],
+                  "icon": live_icon.get(s["key"], s["icon"]), "soft": s.get("soft", False)}
+                 for s in DEBUFF_SLOTS]
+    print(f"  ✓ debuff coverage: {len(bosses)} bosses, {len(DEBUFF_SLOTS)} debuffs tracked")
+    return {"slots": slots_out, "bosses": bosses, "raid_avg": raid_avg}
+
+
+# Raid-facing mana batteries (energize the raid) — what refills the healer corps + casters,
+# split by source so each totem/ability is its own leaderboard. Self counts (the provider is a
+# raid member). Self-only sources (mana gems, Dark/Demonic Rune, Evocation, Life Tap, Spiritual
+# Attunement) and Judgement of Wisdom (its energize goes to the ATTACKER, not the paladin, and
+# feeds melee/casters) are out. Innervate is tracked separately — it emits no mana event (it
+# boosts spirit regen, logged as the target's passive ticks), so it's a cast COUNT, not mana.
+MANA_SOURCES = [
+    {"match": "Vampiric Touch",  "label": "Vampiric Touch",    "icon": "spell_holy_stoicism"},
+    {"match": "Mana Tide Totem", "label": "Mana Tide Totem",   "icon": "spell_frost_summonwaterelemental_2"},
+    {"match": "Mana Spring",     "label": "Mana Spring Totem", "icon": "spell_nature_manaregentotem"},
+]
+INNERVATE_ICON = "spell_nature_lightning"
+
+def fetch_mana_returns(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
+    """Mana RETURNED TO THE RAID, grouped by SOURCE — the mana-battery leaderboards for the
+    Healers & Tanks tab. From WCL Resources `resourcechange` energize events (resourceChangeType
+    0 = mana); provider is owner-resolved (totems log as a pet → credit the shaman via petOwner;
+    VT logs the priest directly). Self mana counts (the provider is part of the raid). Innervate
+    is added as a cast count (it emits no mana event). Returns
+      {batteries:[{label,icon,total,providers:[{name,mana,receivers:[{name,mana}]}]}],
+       innervate:{icon, casters:[{name,count,targets:[name]}]}}."""
+    if not kills:
+        return {}
+    if md is None:
+        md = fetch_master_data(token, report_code)   # actors carry petOwner (totem→shaman resolution)
+    acts = md["acts"]
+    def owner(sid):
+        a = acts.get(sid, {})
+        return acts.get(a.get("petOwner"), {}).get("name") if a.get("petOwner") else a.get("name")
+    gid2src, innv_ids = {}, []
+    for a in (md.get("abilities") or []):
+        nm = a.get("name") or ""
+        for s in MANA_SOURCES:
+            if s["match"] in nm:
+                gid2src[a.get("gameID")] = s
+                break
+        if nm == "Innervate":
+            innv_ids.append(a.get("gameID"))
+    fids = [f["id"] for f in kills]
+    st   = min(f["startTime"] for f in kills)
+    en   = max(f["endTime"]   for f in kills)
+    # ── batteries: Resources energize events, per source → provider → mana + receivers ──
+    bysrc = {s["label"]: defaultdict(lambda: {"mana": 0, "recv": defaultdict(int)})
+             for s in MANA_SOURCES}
+    QR = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Resources,
+               limit: 10000){ data nextPageTimestamp }}}}"""
+    cur = st
+    try:
+        for _pg in range(MAX_EVENT_PAGES):
+            ev = gql(token, QR, {"c": report_code, "ids": fids, "st": cur, "en": en}
+                     )["reportData"]["report"]["events"]
+            for d in ev.get("data", []):
+                if d.get("type") != "resourcechange" or d.get("resourceChangeType") != 0:
+                    continue
+                amt = d.get("resourceChange", 0) or 0
+                src = gid2src.get(d.get("abilityGameID"))
+                if amt <= 0 or not src:
+                    continue
+                pname = owner(d.get("sourceID"))
+                if not pname:
+                    continue
+                slot = bysrc[src["label"]][pname]
+                slot["mana"] += amt                          # self included (raid member)
+                rname = acts.get(d.get("targetID"), {}).get("name")
+                if rname:
+                    slot["recv"][rname] += amt
+            nx = ev.get("nextPageTimestamp")
+            if not nx:
+                break
+            cur = nx
+    except Exception as ex:
+        print(f"  Warning: mana-returns events failed: {ex}")
+    batteries = []
+    for s in MANA_SOURCES:
+        provs = bysrc[s["label"]]
+        if not provs:
+            continue
+        rows = []
+        for nm, d in provs.items():
+            recv = sorted(({"name": r, "mana": m} for r, m in d["recv"].items() if r != nm),
+                          key=lambda x: -x["mana"])[:3]
+            rows.append({"name": nm, "mana": d["mana"], "receivers": recv})
+        rows.sort(key=lambda x: -x["mana"])
+        batteries.append({"label": s["label"], "icon": s["icon"],
+                          "total": sum(r["mana"] for r in rows), "providers": rows})
+
+    # ── Innervate: cast COUNT per druid + targets (no mana event exists) ──
+    innv = defaultdict(lambda: {"count": 0, "targets": defaultdict(int)})
+    if innv_ids:
+        QI = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!,$a:Float!){reportData{report(code:$c){
+            events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts, abilityID:$a,
+                   limit: 10000){ data nextPageTimestamp }}}}"""
+        try:
+            for aid in innv_ids:
+                cur = st
+                for _pg in range(MAX_EVENT_PAGES):
+                    ev = gql(token, QI, {"c": report_code, "ids": fids, "st": cur, "en": en,
+                                         "a": float(aid)})["reportData"]["report"]["events"]
+                    for d in ev.get("data", []):
+                        if d.get("type") != "cast":
+                            continue
+                        nm = owner(d.get("sourceID"))
+                        if not nm:
+                            continue
+                        innv[nm]["count"] += 1
+                        tg = acts.get(d.get("targetID"), {}).get("name")
+                        if tg and tg != nm:
+                            innv[nm]["targets"][tg] += 1
+                    nx = ev.get("nextPageTimestamp")
+                    if not nx:
+                        break
+                    cur = nx
+        except Exception as ex:
+            print(f"  Warning: innervate fetch failed: {ex}")
+    casters = sorted(({"name": nm, "count": d["count"],
+                       "targets": [t for t, _ in sorted(d["targets"].items(), key=lambda x: -x[1])[:3]]}
+                      for nm, d in innv.items()), key=lambda x: -x["count"])
+
+    print(f"  ✓ mana returns: {len(batteries)} battery sources, {len(casters)} innervaters")
+    return {"batteries": batteries, "innervate": {"icon": INNERVATE_ICON, "casters": casters}}
+
+
+def fetch_sunder_armor(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
+    """Per-player Sunder Armor quality — pure WCL, runs every week (no combat log). Sourced from
+    the WCL `Debuffs` event stream for the Sunder Armor aura (over kill fights, enemy targets).
+    Attribution is by `sourceID`, so it credits anyone who builds the stack, including a prot tank
+    applying it via Devastate. (Rogue Expose Armor is a different debuff → excluded.)
+
+      • effective = applydebuff + applydebuffstack  (applications that BUILT a stack, 1→5)
+      • refreshed = refreshdebuff                   (upkeep casts on an already-existing stack)
+      • total     = effective + refreshed           (every Sunder application by this player)
+
+    The Debuffs stream is the authoritative source here: the WCL Casts stream does NOT reconcile
+    1:1 with it (per-warrior cast counts come out *below* the stacks actually applied — e.g. 28
+    stacks built from only 23 recorded casts), so a casts-minus-landed "wasted" figure would go
+    negative and is intentionally not computed. Refresh framing is neutral upkeep, not a fault.
+
+    Returns {players:[{name,total,effective,refreshed}]} sorted by total desc — {} when no kills."""
+    if not kills:
+        return {}
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    id2name = md["id2name"]
+    sunder_ids = [a.get("gameID") for a in (md.get("abilities") or [])
+                  if (a.get("name") or "") == "Sunder Armor"]
+    if not sunder_ids:
+        print("  ✓ sunder armor: no Sunder Armor applications in report")
+        return {}
+
+    fids = [f["id"] for f in kills]
+    st   = min(f["startTime"] for f in kills)
+    en   = max(f["endTime"]   for f in kills)
+    stats = defaultdict(lambda: {"effective": 0, "refreshed": 0})
+    QD = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!,$a:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Debuffs, hostilityType: Enemies,
+               abilityID:$a, limit: 10000){ data nextPageTimestamp }}}}"""
+    try:
+        for aid in sunder_ids:
+            cur = st
+            for _pg in range(MAX_EVENT_PAGES):
+                ev = gql(token, QD, {"c": report_code, "ids": fids, "st": cur, "en": en,
+                                     "a": float(aid)})["reportData"]["report"]["events"]
+                for d in ev.get("data", []):
+                    nm = id2name.get(d.get("sourceID"))
+                    if not nm:
+                        continue
+                    t = d.get("type")
+                    if t in ("applydebuff", "applydebuffstack"):
+                        stats[nm]["effective"] += 1
+                    elif t == "refreshdebuff":
+                        stats[nm]["refreshed"] += 1
+                nx = ev.get("nextPageTimestamp")
+                if not nx:
+                    break
+                cur = nx
+    except Exception as ex:
+        print(f"  Warning: sunder-armor debuff events failed: {ex}")
+
+    players = []
+    for nm, s in stats.items():
+        total = s["effective"] + s["refreshed"]
+        if total == 0:
+            continue
+        players.append({"name": nm, "total": total,
+                        "effective": s["effective"], "refreshed": s["refreshed"]})
+    players.sort(key=lambda x: -x["total"])
+    print(f"  ✓ sunder armor: {len(players)} sunderers")
+    return {"players": players}
