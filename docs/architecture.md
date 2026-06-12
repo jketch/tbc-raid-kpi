@@ -274,6 +274,8 @@ header date pill becomes a dropdown; `loadWeek(report)` fetches a past week's JS
 ## Operator runs — local & cloud
 
 Two interchangeable ways to run a week, sharing one canonical state (added 2026-06-12).
+The operator-facing walkthrough (decision tree, sequence diagrams, guard semantics,
+degraded modes) is [operator_flow.md](operator_flow.md); this section is the design summary.
 
 ### Local (`run_weekly.bat`)
 

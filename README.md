@@ -144,8 +144,9 @@ The pipeline:
 
 When the usual operator can't run locally, anyone with repo access can run the week from the
 GitHub **Actions** tab: *Weekly pipeline → Run workflow → paste the report code*. The run pulls
-the week from WCL, deploys to Netlify, and prints the paste-ready raid-channel summary in the
-job log. No machine setup at all.
+the week from WCL, deploys to Netlify, and prints the paste-ready raid-channel summary on the
+run's Summary page. No machine setup at all. (Flow diagrams + failure modes:
+[docs/operator_flow.md](docs/operator_flow.md).)
 
 - **One-time:** add four repo secrets (*Settings → Secrets and variables → Actions*):
   `WCL_CLIENT_ID`, `WCL_CLIENT_SECRET`, `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`.
