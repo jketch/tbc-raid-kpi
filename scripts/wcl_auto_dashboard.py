@@ -34,6 +34,10 @@ from __future__ import annotations
 import os, sys, json, time, argparse
 from pathlib import Path
 from collections import defaultdict
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:                       # resolved only by a type checker — no runtime import / cycle
+    from week_schema import WeekData
 
 # Force UTF-8 console output — Windows defaults to cp1252, which can't encode the
 # ✓/✅/▲ glyphs this script prints and crashes with UnicodeEncodeError.
@@ -3018,7 +3022,7 @@ def build_consumable_compliance(consumable_usage):
     return out
 
 
-def map_to_week_data(wcl: dict) -> dict:
+def map_to_week_data(wcl: dict) -> WeekData:
     """Convert WCL API output to the WEEK_DATA structure the HTML renders from."""
     players = wcl.get("players", [])
 
@@ -3705,7 +3709,7 @@ def reingest_loot(mapped: dict, csv_path: str | None = None) -> dict:
     return mapped
 
 
-def inject_into_html(week_data: dict, html_path: Path, mapped: dict | None = None):
+def inject_into_html(week_data: dict, html_path: Path, mapped: WeekData | None = None):
     """Read template.html, inject WEEK_DATA, write to html_path (the gitignored output).
 
     Always reads from TEMPLATE_FILE so the output is never the source for the next run.

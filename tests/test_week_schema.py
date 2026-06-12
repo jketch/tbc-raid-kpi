@@ -163,5 +163,17 @@ class TestManifestCoverage(unittest.TestCase):
         self.assertNotIn("meta", ws.populated_sections(rich_week()))
 
 
+class TestTypedContract(unittest.TestCase):
+    """WeekData (the TypedDict) must stay locked to the SECTIONS registry — identical top-level keys.
+    A failure means a section was added/renamed in ONE but not the other; fix BOTH in week_schema.py."""
+
+    def test_weekdata_keys_match_sections(self):
+        self.assertEqual(
+            set(ws.WeekData.__annotations__),
+            set(ws.SECTIONS),
+            "WeekData TypedDict and the SECTIONS registry have drifted — add/rename the key in BOTH.",
+        )
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

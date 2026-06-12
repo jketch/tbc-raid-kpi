@@ -17,6 +17,9 @@ This module is a LEAF: it imports nothing from the pipeline, so anything may imp
 Tier-agnostic — these KPI sections are stable across content tiers (T5 SSC/TK → T6 Hyjal/BT); only the
 *content within* a section (bosses, mechanics) changes, and that lives elsewhere.
 """
+from __future__ import annotations
+
+from typing import TypedDict
 
 WCL      = "wcl"
 LOG      = "log"
@@ -95,6 +98,120 @@ SECTIONS = {
 # Top-level keys that legitimately appear AFTER mapping (enrich / loot mutate in place) and must
 # NOT be reported as "unknown" by validate().
 POST_MAP_KEYS = {"prev"}
+
+
+# ── the TYPED contract: a static mirror of SECTIONS ─────────────────────────────────────
+# WeekData is the compile-time twin of the SECTIONS registry above: it names every top-level key
+# map_to_week_data() emits, so an editor (Pylance) autocompletes WEEK_DATA keys and flags a typo or a
+# dropped section AS YOU TYPE. It is NOT enforced at runtime (a TypedDict is a plain dict then) — the
+# runtime gate stays validate()/regression(). `total=False`: most sections are legitimately optional.
+#
+# DRIFT GUARD: tests/test_week_schema.py asserts set(WeekData.__annotations__) == set(SECTIONS), so the
+# two CANNOT silently diverge — add or rename a section in ONE and check.py fails until BOTH agree.
+# Value types are precise where it pays off (meta + the parse-% rows the COVERAGE_FIELDS guard watches)
+# and the broad container (list/dict) elsewhere — mirroring the WEEK_DATA block in CLAUDE.md.
+
+class WeekMeta(TypedDict, total=False):
+    date: str
+    start_ms: int
+    zone: str
+    kills: int
+    report_code: str
+    log_missing: list
+
+
+class HealingRow(TypedDict, total=False):
+    name: str
+    role: str
+    eff_hps: float
+    eff_heal: float
+    overheal_pct: float
+    activity_pct: float
+    tank_pct: float
+    mana_eff: float
+    vs_replacement: float | None        # WCL HPS parse %; None ⇒ not ranked
+    spells: list
+
+
+class TankRow(TypedDict, total=False):
+    name: str
+    dtps: float
+    taken: float
+    hps_recv: float
+    fights_tanked: int
+    fights_total: int
+    deaths: int
+    phys_pct: float
+    magic_pct: float
+    crush_count: int
+    crit_count: int
+    avoid_pct: float
+    biggest_hit: dict
+    cooldowns: dict
+    per_boss: list
+    lowest_hp: dict
+    survival: dict
+    vs_replacement: float | None        # tank threat = WCL dps parse %; None ⇒ not ranked
+    delta_dtps: float | None
+    delta_vs_replacement: float | None
+
+
+class DpsRow(TypedDict, total=False):
+    name: str
+    role: str
+    effective_role: str
+    toolkit: dict
+    all: dict
+    boss: dict
+    trash: dict
+    vs_replacement: float | None        # WCL dps parse %; None ⇒ not ranked
+    delta_vs_replacement: float | None
+
+
+class DamageBySelection(TypedDict, total=False):
+    durations: dict
+    players: list[DpsRow]
+
+
+class WeekData(TypedDict, total=False):
+    meta: WeekMeta
+    roster: dict
+    consumables: list
+    consumableUsage: list
+    drums: list
+    avoidableDmg: list
+    avoidableMechanics: dict
+    friendlyFire: list
+    mcSaves: list
+    mcLiable: list
+    healthstoneStats: dict
+    healing: list[HealingRow]
+    tankScorecard: list[TankRow]
+    roleSpells: dict
+    playerSpells: dict
+    damage: list
+    uptimeByFight: dict
+    healerUptimeByFight: dict
+    deaths: list
+    casterCrit: list
+    physicalCrit: list
+    tankCrit: list
+    healerCrit: list
+    luckKPI: list
+    engineering: list
+    interrupts: list
+    boss_times: dict
+    boss_meta: dict
+    healReaction: dict
+    debuffCoverage: dict
+    gearAudit: dict
+    sunderArmor: dict
+    manaReturns: dict
+    saves: list
+    dispels: dict
+    loot: dict
+    damageBySelection: DamageBySelection
+    perfSummaries: dict
 
 
 def is_populated(mapped: dict, key: str) -> bool:

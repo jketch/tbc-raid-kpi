@@ -89,7 +89,7 @@ def from_wcl(report_code, token, *, log_path=None, report=None, history=None):
 
 
 # ── 3. The single finalize funnel (EVERY producer calls this) ───────────────────────────
-def finalize_week(mapped, *, has_log=None, loot_csv=None, do_validate=True, label=None):
+def finalize_week(mapped: ws.WeekData, *, has_log=None, loot_csv=None, do_validate=True, label=None) -> ws.WeekData:
     """Apply post-map external enrichment, then validate against the contract. Mutates and returns
     `mapped`. NEVER raises.
 
@@ -107,8 +107,8 @@ def finalize_week(mapped, *, has_log=None, loot_csv=None, do_validate=True, labe
 
 
 # ── 4. The shared persistence tail (main + reprocess) ───────────────────────────────────
-def commit_week(mapped, db_path, *, is_test=False, dump=True, enrich=True,
-               write_db=True, render=False):
+def commit_week(mapped: ws.WeekData, db_path, *, is_test=False, dump=True, enrich=True,
+               write_db=True, render=False) -> ws.WeekData:
     """Persist a finalized week. Encodes the load-bearing order: dump (clean, pre-enrich) →
     enrich_with_trends → write_week → render. Returns `mapped`.
 
