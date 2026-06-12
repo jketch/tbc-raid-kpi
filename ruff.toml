@@ -11,6 +11,13 @@
 # Run locally:  uvx ruff check scripts/ tests/
 target-version = "py39"
 
+# Recon/probe scripts (probe_*.py) are one-off WCL ID-sourcing tools (they feed
+# docs/TBC_RAID_MECHANICS.md), not the weekly pipeline — keep the gate off them so quick recon
+# code never blocks a commit. force-exclude honors this even when a file is passed explicitly
+# (an editor or a future file-scoped hook).
+extend-exclude = ["probe_*.py"]
+force-exclude = true
+
 [lint]
 select = ["F", "E9"]
 # `from game_constants import *` is an intentional curated name-set import (see combat_log.py).
