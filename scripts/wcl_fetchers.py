@@ -12,10 +12,12 @@ move with it. wcl_auto_dashboard re-exports everything, so W.<name> resolves unc
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 
 from wcl_client import gql
 from paths import ITEM_META_CACHE
-from game_constants import FOOD_BUFF, ELIXIR_BUFFS
+from game_constants import FOOD_BUFF, ELIXIR_BUFFS, HEAL_MANA_COST
+from roles import _fight_role
 
 # Hard cap on paginated WCL event queries — guards against a runaway non-null nextPageTimestamp
 # (a known WCL quirk the older loops defend against). A full clear is ~10-20 pages; 40 is slack.
@@ -487,3 +489,397 @@ def fetch_gear_audit(token: str, report_code: str, kills: list) -> dict:
     prepped = sum(1 for p in out if not p["missing_enchants"] and not p["empty_sockets"])
     print(f"  ✓ gear audit: {len(out)} raiders, avg ilvl {avg}, {prepped} fully prepped")
     return {"players": out, "raid_avg_ilvl": avg, "fully_prepped": prepped, "total": len(out)}
+
+
+def fetch_fight_roles(token: str, report_code: str, kills: list):
+    """Per-fight role for each player — the fix for spec-swappers (heal early, DPS late;
+    or prot on some pulls, ret on others). WCL's aggregate playerDetails collapses a night
+    to ONE role; querying per fight + reading each player's per-fight SPEC recovers what
+    they actually did each pull.
+    Returns ({name: {"Healer":[fid..], "Tank":[fid..], "dps":[fid..]}}, {fid: duration_s})."""
+    roles = defaultdict(lambda: {"Healer": [], "Tank": [], "dps": []})
+    durs  = {}
+    Q = """query($c:String!,$f:Int!){reportData{report(code:$c){
+        playerDetails(fightIDs:[$f], killType:Kills)}}}"""
+    for f in kills:
+        fid = f["id"]
+        durs[fid] = (f["endTime"] - f["startTime"]) / 1000.0
+        try:
+            pd = gql(token, Q, {"c": report_code, "f": fid})["reportData"]["report"]["playerDetails"]
+            if isinstance(pd, str):
+                pd = json.loads(pd)
+            pd = pd.get("data", {}).get("playerDetails", pd.get("data", pd))
+        except Exception:
+            continue
+        for bucket in ("tanks", "healers", "dps"):
+            for p in (pd.get(bucket) or []):
+                specs = p.get("specs") or []
+                spec  = specs[0].get("spec", "") if specs else ""
+                roles[p["name"]][_fight_role(spec, bucket)].append(fid)
+    return {n: dict(d) for n, d in roles.items()}, durs
+
+
+def build_fight_roles_from_log(log_roles: dict, kills: list):
+    """Convert combat-log per-fight roles (keyed by boss NAME) into the fid-keyed shape
+    used downstream, by matching boss names to WCL kills. Free (no API), and the boss-melee
+    tank signal is immune to WCL's spec-label quirks. Returns (fight_roles, fight_durs).
+    Coverage is reported so the caller can fall back to the API path if names don't line up."""
+    name_to_fids = defaultdict(list)
+    durs = {}
+    for f in kills:
+        name_to_fids[f["name"]].append(f["id"])
+        durs[f["id"]] = (f["endTime"] - f["startTime"]) / 1000.0
+    roles = defaultdict(lambda: {"Healer": [], "Tank": [], "dps": []})
+    matched = 0
+    for boss, rr in (log_roles or {}).items():
+        fids = name_to_fids.get(boss, [])
+        if not fids:
+            continue
+        matched += 1
+        for role, names in rr.items():
+            for nm in names:
+                for fid in fids:
+                    roles[nm].setdefault(role, []).append(fid)
+    coverage = matched / len(log_roles) if log_roles else 0.0
+    return {n: dict(d) for n, d in roles.items()}, durs, coverage
+
+
+def harden_tank_fights(token: str, report_code: str, kills: list,
+                       fight_roles: dict, tank_names: set, batch: int = 5):
+    """WCL-durable per-fight tank attribution — the fix for ferals ('Warden') and other
+    specs WCL's per-fight playerDetails mislabels, which otherwise drop a real tank from the
+    scorecard on log-less (backfilled) weeks. A boss's main-hand 'Melee' auto-attack only ever
+    lands on its current target, so boss-melee-taken is a near-pure tank signal. We restrict
+    detection to known roster tanks (`tank_names`) — that removes the only false positives the
+    raw signal has (a DPS threat-slip or an add's melee on a non-tank) — and we ONLY ADD fights
+    (union with the spec path, never remove), so this can't regress today's numbers. The
+    combat-log role path already carries this signal, so this runs only on the API fallback.
+    Mutates `fight_roles` in place (adds fids to each tank's 'Tank' list, drops them from
+    'dps'/'Healer'). Cheap: ~2 batched DamageTaken-table queries."""
+    if not tank_names:
+        return
+    added = 0
+    for i in range(0, len(kills), batch):
+        chunk = kills[i:i + batch]
+        aliases = "\n".join(
+            f'f{f["id"]}: table(dataType: DamageTaken, fightIDs:[{int(f["id"])}], hostilityType: Friendlies)'
+            for f in chunk)
+        Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
+        try:
+            rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+        except Exception as ex:
+            print(f"  Warning: tank-harden DamageTaken batch failed: {ex}")
+            continue
+        for f in chunk:
+            fid = f["id"]
+            t = _loads_alias(rep.get(f'f{fid}'))
+            # boss-melee taken, restricted to roster tanks
+            melee = {}
+            for e in (t or {}).get("data", {}).get("entries", []):
+                nm = e.get("name")
+                if nm not in tank_names:
+                    continue
+                m = sum(ab.get("total", 0) for ab in (e.get("abilities") or [])
+                        if ab.get("name") == "Melee")
+                if m > 0:
+                    melee[nm] = m
+            if not melee:
+                continue
+            top = max(melee.values())
+            for nm, m in melee.items():
+                if m < top * 0.15:        # didn't tank this fight (incidental/threat-slip melee)
+                    continue
+                fr = fight_roles.setdefault(nm, {"Healer": [], "Tank": [], "dps": []})
+                tank_l = fr.setdefault("Tank", [])
+                if fid not in tank_l:
+                    tank_l.append(fid)
+                    added += 1
+                # a fight they tanked isn't a fight they DPS'd/healed
+                for b in ("dps", "Healer"):
+                    if fid in fr.get(b, []):
+                        fr[b].remove(fid)
+    if added:
+        print(f"   Tank attribution hardened from WCL DamageTaken: +{added} tank-fight(s)")
+
+
+def fetch_healing_by_fight(token: str, report_code: str, kills: list, batch: int = 5) -> dict:
+    """Per-fight Healing tables (heal-fight scoping for the scoped healer metrics + tank healing
+    received). Uses GraphQL field ALIASING to fetch `batch` fights per HTTP request instead of one
+    request each — collapses ~10 round-trips into ~2."""
+    by = {}
+    for i in range(0, len(kills), batch):
+        chunk = kills[i:i + batch]
+        aliases = "\n".join(
+            f'f{f["id"]}: table(dataType: Healing, fightIDs:[{int(f["id"])}])' for f in chunk)
+        Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
+        try:
+            rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+            for f in chunk:
+                t = rep.get(f'f{f["id"]}')
+                if isinstance(t, str):
+                    t = json.loads(t)
+                by[f["id"]] = (t or {}).get("data", {}).get("entries", [])
+        except Exception as ex:
+            print(f"  Warning: healing-by-fight batch failed: {ex}")
+            for f in chunk:
+                by[f["id"]] = []
+    return by
+
+
+def fetch_damage_by_fight(token: str, report_code: str, kills: list, batch: int = 5) -> dict:
+    """Per-fight DamageDone tables (needed for per-boss vs-replacement DPS/Tank WAR + the
+    uptime heatmap). Aliased like fetch_healing_by_fight — `batch` fights per HTTP request.
+    Returns {fid: [entries]}. ONE fetch feeds both damage_uptime_by_fight and the WAR
+    computations (was a separate fetch_uptime_by_fight pagination of these same tables)."""
+    by = {}
+    for i in range(0, len(kills), batch):
+        chunk = kills[i:i + batch]
+        aliases = "\n".join(
+            f'f{f["id"]}: table(dataType: DamageDone, fightIDs:[{int(f["id"])}])' for f in chunk)
+        Q = f"query($c:String!){{reportData{{report(code:$c){{ {aliases} }}}}}}"
+        try:
+            rep = gql(token, Q, {"c": report_code})["reportData"]["report"]
+            for f in chunk:
+                t = rep.get(f'f{f["id"]}')
+                if isinstance(t, str):
+                    t = json.loads(t)
+                by[f["id"]] = (t or {}).get("data", {}).get("entries", [])
+        except Exception as ex:
+            print(f"  Warning: damage-by-fight batch failed: {ex}")
+            for f in chunk:
+                by[f["id"]] = []
+    return by
+
+
+def damage_uptime_by_fight(dmg_by_fight: dict, kills: list) -> dict:
+    """Per-fight active-time % per player, so a structurally-low fight (submerge/phase, e.g.
+    Vashj P2 for casters, Lurker dives) is visible instead of silently dragging the raid-wide
+    number. Derived from the already-fetched per-fight DamageDone tables (dmg_by_fight) — the
+    damage analog of healer_uptime_by_fight, so NO extra API call. Returns { player: {boss: pct} }."""
+    out = defaultdict(dict)
+    fid_boss = {f["id"]: f["name"] for f in kills}
+    fid_dur  = {f["id"]: (f["endTime"] - f["startTime"]) / 1000.0 for f in kills}
+    for fid, entries in (dmg_by_fight or {}).items():
+        boss = fid_boss.get(fid)
+        dur  = fid_dur.get(fid, 0) or 1
+        if not boss:
+            continue
+        for e in (entries or []):
+            at = e.get("activeTime", 0) / 1000.0
+            out[e.get("name")][boss] = round(at / dur * 100, 1)
+    return dict(out)
+
+
+def healer_uptime_by_fight(heal_by_fight: dict, kills: list) -> dict:
+    """Per-fight healer CASTING activity % ({name: {boss: pct}}) — the healing analog of
+    fetch_uptime_by_fight. Reuses the already-fetched raw heal_by_fight ({fid: [entries]}),
+    so NO extra API call. Each entry's activeTime / fight_duration = the share of the fight
+    the healer was actively casting. Filtered to Healer role downstream (at emit time)."""
+    out = defaultdict(dict)
+    fid_boss = {f["id"]: f["name"] for f in kills}
+    fid_dur  = {f["id"]: (f["endTime"] - f["startTime"]) / 1000.0 for f in kills}
+    for fid, entries in (heal_by_fight or {}).items():
+        boss = fid_boss.get(fid)
+        dur  = fid_dur.get(fid, 0) or 1
+        if not boss:
+            continue
+        for e in (entries or []):
+            name = e.get("name")
+            at   = e.get("activeTime", 0) / 1000.0
+            if name and at > 0:
+                out[name][boss] = round(at / dur * 100, 1)
+    return dict(out)
+
+
+def compute_healing_metrics(heal_by_fight: dict, fight_roles: dict, fight_durs: dict,
+                            tank_names: set | None = None) -> dict:
+    """Healing throughput + efficiency SCOPED to each healer's heal-fights only.
+    A spec-swapper (heal early, DPS late) is judged on the fights they actually healed,
+    so activity/HPS reflect their healing window — not the whole raid. Adds fights_healed."""
+    tank_names = tank_names or set()
+    agg = defaultdict(lambda: {"eff": 0, "over": 0, "active_ms": 0, "dur": 0.0,
+                               "tank_h": 0, "tot_t": 0, "spells": defaultdict(int), "fights": 0})
+    for fid, entries in heal_by_fight.items():
+        dur = fight_durs.get(fid, 0)
+        for e in entries:
+            nm = e.get("name")
+            # only credit this fight if the player was classified a HEALER on it
+            if fid not in fight_roles.get(nm, {}).get("Healer", []):
+                continue
+            a = agg[nm]
+            a["eff"]       += e.get("total", 0)
+            a["over"]      += e.get("overheal", 0)
+            a["active_ms"] += e.get("activeTime", 0)
+            a["dur"]       += dur
+            a["fights"]    += 1
+            for x in (e.get("targets") or []):
+                a["tot_t"] += x.get("total", 0)
+                if x.get("name") in tank_names:
+                    a["tank_h"] += x.get("total", 0)
+            for ab in (e.get("abilities") or []):
+                a["spells"][ab.get("name")] += ab.get("total", 0)
+    out = {}
+    for nm, a in agg.items():
+        if a["dur"] <= 0:
+            continue
+        raw = a["eff"] + a["over"]
+        top = max(a["spells"].items(), key=lambda x: x[1])[0] if a["spells"] else ""
+        out[nm] = {
+            "eff_heal":      a["eff"],
+            "eff_hps":       round(a["eff"] / a["dur"]),
+            "overheal_pct":  round(a["over"] / raw * 100, 1) if raw else 0.0,
+            "activity_pct":  round(a["active_ms"] / 1000.0 / a["dur"] * 100, 1),
+            "tank_pct":      round(a["tank_h"] / a["tot_t"] * 100, 1) if a["tot_t"] else 0.0,
+            "top_spell":     top,
+            "fights_healed": a["fights"],
+        }
+    return out
+
+
+def fetch_healing_spells(token: str, report_code: str, fights: list, actors: list) -> dict:
+    """Per-healer per-spell breakdown from healing events: casts, effective, overheal%,
+    heal-per-cast, crit%. HoT ticks (tick=true) count toward healing but not casts/crit
+    (they can't crit in TBC). Returns { player: [ {spell, casts, eff, per_cast, overheal_pct, crit_pct} ] }."""
+    if not fights:
+        return {}
+    id_to_name = {a["id"]: a["name"] for a in (actors or []) if a.get("type") == "Player"}
+    fight_ids = [f["id"] for f in fights]
+    start = float(min(f["startTime"] for f in fights))
+    end   = float(max(f["endTime"]   for f in fights))
+
+    # ability guid → name from the Healing table (events only carry the numeric id)
+    abil_name = {}
+    try:
+        QT = """query($c:String!,$f:[Int]){reportData{report(code:$c){
+            table(dataType: Healing, fightIDs:$f, killType:Kills)}}}"""
+        tt = gql(token, QT, {"c": report_code, "f": fight_ids})["reportData"]["report"]["table"]
+        if isinstance(tt, str):
+            tt = json.loads(tt)
+        for e in tt.get("data", {}).get("entries", []):
+            for ab in (e.get("abilities") or []):
+                if ab.get("guid"):
+                    abil_name[ab["guid"]] = ab.get("name")
+    except Exception:
+        pass
+
+    Q = """query($c:String!,$f:[Int],$s:Float!,$e:Float!){reportData{report(code:$c){
+        events(dataType: Healing, fightIDs:$f, startTime:$s, endTime:$e, limit:10000,
+               hostilityType:Friendlies){ data nextPageTimestamp }}}}"""
+    agg = defaultdict(lambda: defaultdict(lambda: {"casts": 0, "eff": 0, "over": 0, "crits": 0}))
+    nxt, pages = start, 0
+    while nxt is not None and pages < 25:
+        d = gql(token, Q, {"c": report_code, "f": fight_ids, "s": nxt, "e": end})["reportData"]["report"]["events"]
+        evs = d.get("data", []); nxt = d.get("nextPageTimestamp"); pages += 1
+        for ev in evs:
+            sid = ev.get("sourceID")
+            if sid is None:
+                continue
+            a = agg[sid][ev.get("abilityGameID")]
+            a["eff"]  += ev.get("amount", 0)
+            a["over"] += ev.get("overheal", 0)
+            if not ev.get("tick"):                 # direct heal = a cast (HoT ticks excluded)
+                a["casts"] += 1
+                if ev.get("hitType") == 2:
+                    a["crits"] += 1
+        if not nxt:
+            break
+
+    out = {}
+    for sid, spells in agg.items():
+        name = id_to_name.get(sid)
+        if not name:
+            continue
+        rows = []
+        for aid, s in spells.items():
+            raw = s["eff"] + s["over"]
+            if s["eff"] <= 0:
+                continue
+            rows.append({
+                "spell":        abil_name.get(aid, str(aid)),
+                "casts":        s["casts"],
+                "eff":          s["eff"],
+                "per_cast":     round(s["eff"] / s["casts"]) if s["casts"] else 0,
+                "overheal_pct": round(s["over"] / raw * 100, 1) if raw else 0.0,
+                "crit_pct":     round(s["crits"] / s["casts"] * 100, 1) if s["casts"] else 0.0,
+            })
+        out[name] = sorted(rows, key=lambda x: -x["eff"])
+    return out
+
+
+def fetch_healer_mana(token: str, report_code: str, fight_ids: list) -> dict:
+    """Estimated mana spent ON HEALING per player = heal casts × spell cost. Cast counts
+    come from the WCL Casts table (counts HoT applications too, unlike heal events).
+    Returns { player: mana_spent }. It's an estimate (flat max-rank costs, pre-talent)."""
+    if not fight_ids:
+        return {}
+    Q = """query($c:String!,$f:[Int]){reportData{report(code:$c){
+        table(dataType: Casts, fightIDs:$f, killType:Kills)}}}"""
+    try:
+        t = gql(token, Q, {"c": report_code, "f": fight_ids})["reportData"]["report"]["table"]
+        if isinstance(t, str):
+            t = json.loads(t)
+        out = {}
+        for e in t.get("data", {}).get("entries", []):
+            spent = 0
+            for ab in (e.get("abilities") or []):
+                cost = HEAL_MANA_COST.get(ab.get("name"))
+                if cost:                                    # only heal spells contribute
+                    spent += ab.get("total", 0) * cost
+            if spent:
+                out[e.get("name")] = spent
+        return out
+    except Exception as ex:
+        print(f"  Warning: mana fetch failed: {ex}")
+        return {}
+
+
+def fetch_role_spell_usage(token, report_code, fight_ids, players):
+    """Top abilities CAST per role + per player — what each role/player is actually doing.
+    Aggregates the Casts table. Returns
+      { "roles":   { role: [{ability, casts, players}] },
+        "players": { role: [{name, role, total, abilities:[{ability, casts}]}] } }."""
+    if not fight_ids:
+        return {"roles": {}, "players": {}}
+    role_of = {p["name"]: p.get("role", "") for p in players}
+    Q = """query($c:String!,$f:[Int]){reportData{report(code:$c){
+        table(dataType: Casts, fightIDs:$f, killType:Kills)}}}"""
+    try:
+        t = gql(token, Q, {"c": report_code, "f": fight_ids})["reportData"]["report"]["table"]
+        if isinstance(t, str):
+            t = json.loads(t)
+        agg    = defaultdict(lambda: defaultdict(int))   # [role][ability] = casts
+        users  = defaultdict(lambda: defaultdict(set))   # [role][ability] = {players}
+        pcasts = defaultdict(lambda: defaultdict(int))   # [name][ability]  = casts
+        for e in t.get("data", {}).get("entries", []):
+            nm0 = e.get("name")
+            role = role_of.get(nm0)
+            if role not in ("Caster", "Physical", "Tank", "Healer"):
+                continue
+            for ab in (e.get("abilities") or []):
+                nm, n = ab.get("name"), ab.get("total", 0)
+                if nm and n:
+                    agg[role][nm] += n
+                    users[role][nm].add(nm0)
+                    pcasts[nm0][nm] += n
+        roles = {}
+        for role, abils in agg.items():
+            roles[role] = sorted(
+                [{"ability": a, "casts": c, "players": len(users[role][a])} for a, c in abils.items()],
+                key=lambda x: -x["casts"])[:12]
+        by_player = defaultdict(list)
+        for nm0, abils in pcasts.items():
+            role = role_of.get(nm0)
+            total = sum(abils.values())
+            by_player[role].append({
+                "name": nm0, "role": role, "total": total,
+                # keep a fuller list (cards show the top 3; the click-through drill shows all)
+                "abilities": sorted(
+                    [{"ability": a, "casts": c} for a, c in abils.items()],
+                    key=lambda x: -x["casts"])[:20],
+            })
+        for role in by_player:
+            by_player[role].sort(key=lambda x: -x["total"])
+        return {"roles": roles, "players": dict(by_player)}
+    except Exception as ex:
+        print(f"  Warning: spell-usage fetch failed: {ex}")
+        return {"roles": {}, "players": {}}
