@@ -46,7 +46,7 @@ _SECTION_TABLE = {
     "healing": "healing", "sunderArmor": "sunder_armor", "manaReturns": "mana_returns",
     "debuffCoverage": "debuff_coverage", "loot": "loot", "luckKPI": "luck_kpi",
     "deaths": "deaths", "consumables": "consumables", "roster": "roster",
-    "saves": "saves", "damageBySelection": "dps", "boss_times": "boss_times",
+    "saves": "saves", "dispels": "dispels", "damageBySelection": "dps", "boss_times": "boss_times",
 }
 
 
@@ -255,6 +255,16 @@ CREATE TABLE IF NOT EXISTS saves (
     utility      INTEGER,   -- reactive help (Hand of Salvation / Blessing of Freedom / Tremor)
     total        INTEGER,
     targets      TEXT,      -- JSON {ability: {target: count}}
+    PRIMARY KEY (report_code, player)
+);
+
+CREATE TABLE IF NOT EXISTS dispels (
+    report_code  TEXT,
+    player       TEXT,
+    cleanse      INTEGER,   -- harmful effect stripped off an ally (Cleanse, Abolish, Remove Curse…)
+    purge        INTEGER,   -- buff stripped off an enemy (Purge, Dispel Magic, Tranq Shot, Devour Magic)
+    total        INTEGER,   -- cleanse + purge
+    removed      TEXT,      -- JSON {auraName: count} — what was stripped
     PRIMARY KEY (report_code, player)
 );
 
@@ -630,6 +640,15 @@ def write_week(week_data: dict, db_path: Path = None, *, allow_downgrade: bool =
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (rc, p["name"], p.get("save", 0), p.get("dispel", 0), p.get("utility", 0),
                   p.get("total", 0), json.dumps(p.get("targets") or {})))
+
+        # ── dispels & purges (cleanses off allies + offensive purges on enemies) ──
+        for p in (week_data.get("dispels") or []):
+            con.execute("""
+                INSERT OR REPLACE INTO dispels
+                  (report_code, player, cleanse, purge, total, removed)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (rc, p["name"], p.get("cleanse", 0), p.get("purge", 0), p.get("total", 0),
+                  json.dumps({r["aura"]: r["n"] for r in (p.get("removed") or [])})))
 
         # ── loot received this week (external ThatsBIS CSV; flatten player→items) ──
         _loot = week_data.get("loot") or {}

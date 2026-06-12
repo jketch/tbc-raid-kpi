@@ -1732,7 +1732,10 @@ def fetch_saves(token: str, report_code: str, kills: list, md: dict = None) -> d
             if d.get("type") != "cast":
                 continue
             cat = EXTERNAL_ABILITIES.get(gid2name.get(d.get("abilityGameID"), ""))
-            if not cat:
+            if not cat or cat == "dispel":
+                # dispels now live in their OWN card (fetch_dispels, from Dispels events — actual
+                # successful removals + offensive purges), so they're filtered off "Saving Others"
+                # to avoid double-counting. Saves here = protective saves + reactive utility only.
                 continue
             sid, tid = d.get("sourceID"), d.get("targetID")
             if tid is None or tid == sid:                      # self / untargeted → not "on an ally"
@@ -1755,6 +1758,128 @@ def fetch_saves(token: str, report_code: str, kills: list, md: dict = None) -> d
     return {nm: {"save": r["save"], "dispel": r["dispel"], "utility": r["utility"],
                  "total": r["total"],
                  "targets": {ab: dict(tg) for ab, tg in r["targets"].items()}}
+            for nm, r in out.items()}
+
+
+def fetch_interrupts(token: str, report_code: str, kills: list, md: dict = None) -> dict:
+    """WCL-durable interrupt HEADLINE — per-interrupter count + which enemy casts were stopped.
+    From events(dataType: Interrupts): the table() form returns null on the 2.5 Anniversary client,
+    but the events query works (recon 2026-06-11, docs/WCL_API_SURFACE.md). Each interrupt event
+    carries `extraAbilityGameID` = the spell that got cut, so we get the same "spells stopped" tally
+    the combat log gave — now WCL-sourced. Pet interrupts (Felhunter Spell Lock) credit the owning
+    raider via petOwner. The combat log stays a SILENT fallback in map_to_week_data (a missing log
+    thins but never blanks this KPI). Returns {name: {count, spells:{interruptedSpellName: n}}}."""
+    if not kills:
+        return {}
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    gid2name, acts = md["gid2name"], md["acts"]
+
+    def src_player(sid):
+        a = acts.get(sid, {})
+        if a.get("type") == "Pet":                  # Felhunter Spell Lock → credit the warlock
+            a = acts.get(a.get("petOwner"), {})
+        return a.get("name") if a.get("type") == "Player" else None
+
+    fids = [f["id"] for f in kills]
+    win_s = min(f["startTime"] for f in kills)
+    win_e = max(f["endTime"]   for f in kills)
+    Q = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Interrupts, limit: 10000){
+            data nextPageTimestamp }}}}"""
+    out = defaultdict(lambda: {"count": 0, "spells": defaultdict(int)})
+    st = win_s
+    for _pg in range(MAX_EVENT_PAGES):
+        try:
+            ev = gql(token, Q, {"c": report_code, "ids": fids, "st": st, "en": win_e}
+                     )["reportData"]["report"]["events"]
+        except Exception as ex:
+            print(f"  Warning: interrupts events failed: {ex}")
+            break
+        for d in ev.get("data", []):
+            if d.get("type") != "interrupt":
+                continue
+            nm = src_player(d.get("sourceID"))
+            if not nm:
+                continue
+            r = out[nm]
+            r["count"] += 1
+            stopped = gid2name.get(d.get("extraAbilityGameID"), "")
+            if stopped:
+                r["spells"][stopped] += 1
+        nx = ev.get("nextPageTimestamp")
+        if not nx:
+            break
+        st = nx
+    return {nm: {"count": r["count"], "spells": dict(r["spells"])} for nm, r in out.items()}
+
+
+def fetch_dispels(token: str, report_code: str, kills: list, md: dict = None) -> dict:
+    """Who-dispelled-what — a NEW WCL-durable Utility signal from events(dataType: Dispels) (table()
+    is null on 2.5; events works — recon 2026-06-11). Each event: {sourceID, targetID, abilityGameID
+    (the dispel), extraAbilityGameID (the REMOVED aura), isBuff}. Split by target side:
+      • cleanse — harmful effect stripped off a friendly (Cleanse / Abolish / Remove Curse / Devour
+        Magic on an ally). The defensive, "saved a teammate" half.
+      • purge   — buff stripped off an ENEMY (shaman Purge, priest Dispel Magic, hunter Tranquilizing
+        Shot enrage-strip, Felhunter Devour Magic). The offensive half — has no home elsewhere.
+    Pet dispels credit the owning raider via petOwner. hostilityType defaults to Friendlies (source
+    side), so only raider-cast dispels are returned. Returns
+      {name: {cleanse, purge, total, removed:{auraName:n}, targets:{allyName:n}}}  (targets = cleanse
+    recipients; purge targets are bosses/adds, surfaced via the removed-aura names instead)."""
+    if not kills:
+        return {}
+    if md is None:
+        md = fetch_master_data(token, report_code)
+    gid2name, id2name, acts = md["gid2name"], md["id2name"], md["acts"]
+
+    def src_player(sid):
+        a = acts.get(sid, {})
+        if a.get("type") == "Pet":                  # Felhunter Devour Magic → credit the warlock
+            a = acts.get(a.get("petOwner"), {})
+        return a.get("name") if a.get("type") == "Player" else None
+
+    fids = [f["id"] for f in kills]
+    win_s = min(f["startTime"] for f in kills)
+    win_e = max(f["endTime"]   for f in kills)
+    Q = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Dispels, limit: 10000){
+            data nextPageTimestamp }}}}"""
+    out = defaultdict(lambda: {"cleanse": 0, "purge": 0, "total": 0,
+                               "removed": defaultdict(int), "targets": defaultdict(int)})
+    st = win_s
+    for _pg in range(MAX_EVENT_PAGES):
+        try:
+            ev = gql(token, Q, {"c": report_code, "ids": fids, "st": st, "en": win_e}
+                     )["reportData"]["report"]["events"]
+        except Exception as ex:
+            print(f"  Warning: dispels events failed: {ex}")
+            break
+        for d in ev.get("data", []):
+            if d.get("type") != "dispel":
+                continue
+            nm = src_player(d.get("sourceID"))
+            if not nm:
+                continue
+            tid = d.get("targetID")
+            tgt_is_enemy = acts.get(tid, {}).get("type") == "NPC"
+            r = out[nm]
+            r["total"] += 1
+            removed = gid2name.get(d.get("extraAbilityGameID"), "")
+            if removed:
+                r["removed"][removed] += 1
+            if tgt_is_enemy:                         # buff stripped off a boss/add
+                r["purge"] += 1
+            else:                                    # harmful effect cleansed off an ally
+                r["cleanse"] += 1
+                tgt = id2name.get(tid, "")
+                if tgt:
+                    r["targets"][tgt] += 1
+        nx = ev.get("nextPageTimestamp")
+        if not nx:
+            break
+        st = nx
+    return {nm: {"cleanse": r["cleanse"], "purge": r["purge"], "total": r["total"],
+                 "removed": dict(r["removed"]), "targets": dict(r["targets"])}
             for nm, r in out.items()}
 
 
@@ -2667,6 +2792,8 @@ def build_week_data(report_code: str, token: str,
     mana_returns  = fetch_mana_returns(token, report_code, kills, md)
     sunder_armor  = fetch_sunder_armor(token, report_code, kills, md)
     saves         = fetch_saves(token, report_code, kills, md)   # protective/external casts on allies
+    interrupts_wcl = fetch_interrupts(token, report_code, kills, md)  # WCL-durable interrupt headline
+    dispels       = fetch_dispels(token, report_code, kills, md)  # who-dispelled-what (cleanses + purges)
     damage_by_sel = fetch_damage_by_selection(token, report_code)
     class_toolkit = build_class_toolkit(token, report_code, kills, md)
     # Fold the biggest Shadow Bolt crit (tracked free during the crit pass) into the toolkit
@@ -2788,8 +2915,12 @@ def build_week_data(report_code: str, token: str,
         "mana_returns":    mana_returns,
         # per-player Sunder Armor quality (effective/refreshed/wasted, pure WCL)
         "sunder_armor":    sunder_armor,
-        # protective/external casts on allies (paladin Hands, dispels, battle-res) — "saving others"
+        # protective/external casts on allies (paladin Hands, battle-res, reactive utility) — "saving others"
         "saves":           saves,
+        # WCL-durable interrupt headline (events) — name → {count, spells}; map prefers this, log fallback
+        "interrupts_wcl":  interrupts_wcl,
+        # who-dispelled-what — cleanses off allies + offensive purges on enemies (WCL Dispels events)
+        "dispels":         dispels,
         # per-player damage + active time split All/Bosses/Trash (WCL-style DPS denominator)
         "damage_by_sel":   damage_by_sel,
     }
@@ -2810,6 +2941,22 @@ def _tally_spells(names, icons=None):
         agg[s] = agg.get(s, 0) + 1
     return sorted(({"spell": s, "n": n, "icon": icons.get(s, "")} for s, n in agg.items()),
                   key=lambda x: -x["n"])
+
+
+def _interrupt_row(p, intr_wcl, icons):
+    """One interrupts-KPI row for player `p`, preferring the WCL headline (events) and falling back
+    to the combat log only when WCL has no row for them. Returns None if neither source has kicks.
+    WCL `spells` is {interruptedSpellName: count}; the log path tallies its raw interrupt_list."""
+    w = (intr_wcl or {}).get(p["name"])
+    if w and w.get("count", 0) > 0:
+        spells = sorted(({"spell": s, "n": n, "icon": (icons or {}).get(s, "")}
+                         for s, n in (w.get("spells") or {}).items()), key=lambda x: -x["n"])
+        return {"name": p["name"], "role": p["role"], "count": w["count"], "spells": spells}
+    log_n = p.get("interrupt_count", 0)
+    if log_n > 0:
+        return {"name": p["name"], "role": p["role"], "count": log_n,
+                "spells": _tally_spells(p.get("interrupt_list"), icons)}
+    return None
 
 
 def _ice_player_spells(player_spells, icons):
@@ -2834,11 +2981,15 @@ def build_consumable_compliance(consumable_usage):
         has_guardian = any(x in GUARDIAN_ELIXIRS for x in elixirs)
         has_battle   = any(x not in GUARDIAN_ELIXIRS for x in elixirs)
         flask_ok = bool(e.get("flask")) or (has_battle and has_guardian)
-        # Alt pot priority: Nightmare Seed > Flame Cap > Dark/Demonic Rune (show the item name)
+        # Alt-pot slot = the situational mana-sustain / utility consumable. Priority (show the item
+        # name): Nightmare Seed > Flame Cap > Dark/Demonic Rune > Mana Gem. A mage's Mana Gem is its
+        # SEPARATE-cooldown mana sustain (a mage can use a gem AND a potion), so it fills this slot
+        # when no rune/seed/cap was used — crediting an Arcane mage who lives on gems (was uncredited).
         if   e.get("nightmare_seed"): alt_pot = "Nightmare Seed"
         elif e.get("flamecap"):       alt_pot = "Flame Cap"
         elif e.get("rune_name"):      alt_pot = e["rune_name"]
         elif e.get("rune"):           alt_pot = "Mana Rune"   # used but specific name not captured
+        elif e.get("mana_gem"):       alt_pot = "Mana Gem"    # mage conjured gem (Replenish Mana)
         else:                         alt_pot = None
         out.append({
             "name":  e["name"],
@@ -2951,6 +3102,7 @@ def map_to_week_data(wcl: dict) -> dict:
     ]
     # mechanic → {boss, icon} for the legend (icon: real WCL slug, with overrides)
     _icons     = wcl.get("ability_icons", {})
+    _intr_wcl  = wcl.get("interrupts_wcl", {})   # WCL interrupt headline; log is the fallback
     _mech_boss = wcl.get("avoidable_mech_boss", {})
     _mechs_seen = {a for p in players for a in (p.get("avoidable_sources") or {})}
     avoidable_mechanics = {
@@ -3013,6 +3165,7 @@ def map_to_week_data(wcl: dict) -> dict:
             "flask": flask, "elixirs": elixirs, "food": food,
             "scrolls": c.get("scrolls", []), "weapon_oil": bool(c.get("weapon_oil")),
             "potion": u.get("potion", 0), "rune": u.get("rune", 0),
+            "mana_gem": u.get("mana_gem", 0),         # mage Mana Emerald/Ruby on-use (Replenish Mana)
             "healthstone": u.get("healthstone", 0),
             "stones_made": u.get("stones_made", 0),   # warlock raid provision (utility): Create/Ritual of Souls
             "fear_ward":   u.get("fear_ward", 0),      # holy/disc priest anti-fear utility (cast count)
@@ -3172,11 +3325,12 @@ def map_to_week_data(wcl: dict) -> dict:
              for p in players if p.get("eng")],
             key=lambda x: -x["dmg"]
         ),
+        # Interrupts — WCL headline (events) with the combat log as a silent fallback. WCL gives
+        # the count AND which enemy casts were stopped (extraAbilityGameID); the log only fills in
+        # when WCL has no row for a player (log present, WCL thin) — so a missing log thins, never
+        # blanks, the KPI (WCL-Durability Principle).
         "interrupts":   sorted(
-            [{"name": p["name"], "role": p["role"], "count": p.get("interrupt_count", 0),
-              # which casts they actually stopped (combat-log interrupt_list → spell tally)
-              "spells": _tally_spells(p.get("interrupt_list"), _icons)}
-             for p in players if p.get("interrupt_count", 0) > 0],
+            filter(None, (_interrupt_row(p, _intr_wcl, _icons) for p in players)),
             key=lambda x: -x["count"]
         ),
         "boss_times":   wcl.get("boss_times", {}),
@@ -3186,15 +3340,30 @@ def map_to_week_data(wcl: dict) -> dict:
         "gearAudit":      wcl.get("gear_audit", {}),
         "sunderArmor":    wcl.get("sunder_armor", {}),
         # "saving others" — protective/external casts on allies, ranked by saves then total.
-        # Positive call-out surface (no shame); empty list ⇒ a quiet week, not a bug.
+        # Dispels are filtered off here (they own the dispels card below); this is protective
+        # saves + reactive utility only. Positive call-out surface; empty list ⇒ a quiet week.
         "saves": (lambda sv: sorted(
             ({"name": nm, "role": roster_idx.get(nm, {}).get("role", ""),
               "class": roster_idx.get(nm, {}).get("class", ""),
-              "save": d.get("save", 0), "dispel": d.get("dispel", 0),
+              "save": d.get("save", 0),
               "utility": d.get("utility", 0), "total": d.get("total", 0),
               "targets": d.get("targets", {})}
              for nm, d in sv.items() if d.get("total", 0) > 0),
             key=lambda x: (-x["save"], -x["total"], x["name"])))(wcl.get("saves", {}) or {}),
+        # who-dispelled-what — cleanses off allies + offensive purges on enemies (WCL Dispels events).
+        # `removed` = the auras stripped (with live icons), the "what"; targets = cleanse recipients.
+        # Ranked by total then cleanses. Empty list ⇒ no dispels this week (not a bug).
+        "dispels": (lambda dp: sorted(
+            ({"name": nm, "role": roster_idx.get(nm, {}).get("role", ""),
+              "class": roster_idx.get(nm, {}).get("class", ""),
+              "cleanse": d.get("cleanse", 0), "purge": d.get("purge", 0),
+              "total": d.get("total", 0),
+              "removed": sorted(({"aura": a, "n": n, "icon": _icons.get(a, "")}
+                                 for a, n in (d.get("removed") or {}).items()),
+                                key=lambda x: -x["n"]),
+              "targets": d.get("targets", {})}
+             for nm, d in dp.items() if d.get("total", 0) > 0),
+            key=lambda x: (-x["total"], -x["cleanse"], x["name"])))(wcl.get("dispels", {}) or {}),
         "manaReturns":    wcl.get("mana_returns", {}),
         "loot":           wcl.get("loot_data", {}),   # this-week loot, external ThatsBIS CSV (degrades to {})
         # DPS table data split All/Bosses/Trash — each with its own WCL-style denominator.
@@ -3410,6 +3579,7 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
                 ("deaths",        "deaths",         "total", "total", "delta_deaths"),
                 ("drums",         "drums",          "score", "score", "delta_drums"),
                 ("saves",         "saves",          "save",  "save",  "delta_save"),
+                ("dispels",       "dispels",        "total", "total", "delta_total"),
                 # tank DTPS (lower better → HTML renders ▼ green via fmtDelta(...,false)).
                 # Absent until 2 weeks of the new tank_scorecard table exist (no backfill).
                 ("tankScorecard", "tank_scorecard", "dtps",  "dtps",  "delta_dtps"),

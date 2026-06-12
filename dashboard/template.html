@@ -870,10 +870,19 @@
 
   <!-- ═══════════════ SAVES & EXTERNALS ═══════════════ -->
   <div class="tsec" data-tab="utility">
-  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_sealofprotection.jpg" alt=""> Saving Others — Hands, Dispels &amp; Battle-Res</div>
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_sealofprotection.jpg" alt=""> Saving Others — Hands &amp; Battle-Res</div>
   <div class="card gold">
-    <div class="hs-sub">Protective &amp; external casts <b>on teammates</b> — paladin Hand of Protection / Sacrifice / Lay on Hands / Salvation / Freedom, dispels (Cleanse, Abolish, Tranq…), druid Rebirth &amp; Innervate-class help. <b>Maintained buffs and routine shields (PW:Shield, Earth Shield, Blessings) are excluded</b> — this is clutch help, not upkeep. Hover a row for <b>who they helped</b>.</div>
+    <div class="hs-sub">Protective &amp; external casts <b>on teammates</b> — paladin Hand of Protection / Sacrifice / Lay on Hands / Salvation / Freedom, druid Rebirth &amp; Innervate-class help. <b>Maintained buffs and routine shields (PW:Shield, Earth Shield, Blessings) are excluded</b> — this is clutch help, not upkeep. <b>Dispels &amp; purges have their own card below.</b> Hover a row for <b>who they helped</b>.</div>
     <div class="scroll-x"><div id="savesCard"></div></div>
+  </div>
+  </div>
+
+  <!-- ═══════════════ DISPELS & PURGES ═══════════════ -->
+  <div class="tsec" data-tab="utility">
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_dispelmagic.jpg" alt=""> Dispels &amp; Purges — Who Stripped What</div>
+  <div class="card">
+    <div class="hs-sub"><b>Cleanses</b> strip a harmful effect off a teammate (Cleanse, Abolish, Remove Curse, Felhunter Devour Magic); <b>purges</b> strip a buff off an <b>enemy</b> (shaman Purge, priest Dispel Magic, hunter Tranquilizing Shot enrage-strip, Devour Magic). From WCL <b>Dispels</b> events — actual successful removals, not just casts. Hover a row to see <b>what was stripped</b> and <b>who was cleansed</b>.</div>
+    <div class="scroll-x"><div id="dispelsCard"></div></div>
   </div>
   </div>
 
@@ -2333,7 +2342,7 @@ function renderHealerUptimeHeatmap(){
 function renderSaves(){
   const el = document.getElementById("savesCard"); if(!el) return;
   const data = WEEK_DATA.saves || [];
-  if(!data.length){ el.innerHTML = '<div style="color:var(--muted);font-size:12px">No external saves or dispels cast on allies this week.</div>'; return; }
+  if(!data.length){ el.innerHTML = '<div style="color:var(--muted);font-size:12px">No external saves cast on allies this week.</div>'; return; }
   const chip = (n, lbl, col) => n>0
     ? `<span style="color:${col};font-weight:700">${n}</span> <span style="color:var(--muted);font-size:10px">${lbl}</span>`
     : `<span style="color:var(--dim)">·</span>`;
@@ -2347,7 +2356,6 @@ function renderSaves(){
     return `<tr>
       <td><span class="cname" style="color:${nc}">${p.name}</span></td>
       <td class="num" title="emergency protection / battle-res on an ally (Hand of Protection, Lay on Hands, Rebirth…)">${chip(p.save,'saves','var(--gold-soft)')}${fmtDelta(p.delta_save, true)}</td>
-      <td class="num" title="harmful effects stripped off allies (Cleanse, Abolish, Tranq…)">${chip(p.dispel,'disp','var(--blue)')}</td>
       <td class="num" title="reactive help (Hand of Salvation, Blessing of Freedom, Tremor)">${chip(p.utility,'util','var(--muted)')}</td>
       <td style="font-size:10.5px;color:var(--muted);line-height:1.5">${detail||'—'}</td>
     </tr>`;
@@ -2355,9 +2363,60 @@ function renderSaves(){
   el.innerHTML = `<table class="mini-table" style="width:100%">
     <thead><tr><th>Player</th>
       <th class="num" title="Emergency protection or battle-res on an ally — the clutch saves.">Saves</th>
-      <th class="num" title="Harmful debuffs cleansed off allies.">Dispels</th>
       <th class="num" title="Reactive utility on allies (threat dump, freedom, fear break).">Utility</th>
       <th>Who they helped</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
+function renderDispels(){
+  const el = document.getElementById("dispelsCard"); if(!el) return;
+  const data = WEEK_DATA.dispels || [];
+  if(!data.length){ el.innerHTML = '<div style="color:var(--muted);font-size:12px">No dispels or purges this week.</div>'; return; }
+  // CLUTCH removals — freeing a Mind-Controlled ally is a different tier from cleansing a routine
+  // debuff. On Kael'thas the MC break is the Infinity Blade (a one-hand dagger looted in P2): its
+  // "Magic Disruption" proc (36478) dispels Kael's Mind Control on a melee hit — so even classes with
+  // no native dispel break MCs by wielding it (hunters did it here). The T5 metric.
+  const CLUTCH = new Set(["Mind Control"]);
+  const chip = (n, lbl, col) => n>0
+    ? `<span style="color:${col};font-weight:700">${n}</span> <span style="color:var(--muted);font-size:10px">${lbl}</span>`
+    : `<span style="color:var(--dim)">·</span>`;
+  // clutch summary — who broke Mind Controls (the Kael Warp-Slicer save), and how many
+  const breaks = {};
+  data.forEach(p => (p.removed||[]).forEach(s => { if(CLUTCH.has(s.aura)) breaks[p.name] = (breaks[p.name]||0) + (s.n||0); }));
+  const breakNames = Object.keys(breaks), breakTot = breakNames.reduce((t,n)=>t+breaks[n],0);
+  const banner = breakTot
+    ? `<div style="margin-bottom:11px;padding:7px 11px;border-left:3px solid var(--accent);background:rgba(200,155,60,.08);border-radius:4px;font-size:12px;line-height:1.5">
+         ${gicon("spell_shadow_shadowworddominate")} <b style="color:var(--accent)">${breakTot} Mind Control break${breakTot>1?"s":""}</b>
+         <span style="color:var(--muted)">— freed a charmed ally on Kael (Infinity Blade · Magic Disruption): </span>${breakNames.map(n=>`<span class="cname" style="color:${nameColor(n)}">${n}</span>${breaks[n]>1?` ×${breaks[n]}`:""}`).join(", ")}</div>`
+    : "";
+  const rows = data.map(p => {
+    const nc = nameColor(p.name, p.role);
+    // what was stripped — removed-aura icon pills (×N), the "what" of who-dispelled-what.
+    // CLUTCH removals (Mind Control) get a gold border — they're the high-value breaks, not routine cleanses.
+    const stripped = (p.removed||[]).map(s => {
+      const ic = s.icon ? gicon(s.icon) : "";
+      const cl = CLUTCH.has(s.aura);
+      const st = cl ? ' style="border:1px solid var(--accent);color:var(--accent);font-weight:700"' : '';
+      const tt = cl ? ' title="Clutch break — freed a Mind-Controlled ally"' : '';
+      return `<span class="ipill"${st}${tt}>${ic}${s.aura}${s.n>1?`<span class="ix">×${s.n}</span>`:""}</span>`;
+    }).join("");
+    // who they cleansed — ally → ×N (cleanse recipients; purges hit bosses, shown via auras above)
+    const who = Object.entries(p.targets||{}).sort((a,b)=>b[1]-a[1]).map(([t,n]) =>
+      `<span class="cname" style="color:${nameColor(t)}">${t}</span>${n>1?` ×${n}`:''}`).join(", ");
+    return `<tr>
+      <td><span class="cname" style="color:${nc}">${p.name}</span></td>
+      <td class="num" title="Harmful effects stripped off teammates (Cleanse, Abolish, Remove Curse, Devour Magic).">${chip(p.cleanse,'ally','var(--healer)')}</td>
+      <td class="num" title="Buffs stripped off enemies — enrage/haste/shield removal (Purge, Dispel Magic, Tranq Shot, Devour Magic).">${chip(p.purge,'enemy','var(--orange)')}${fmtDelta(p.delta_total, true)}</td>
+      <td style="min-width:160px"><span style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${stripped||'<span style="color:var(--muted)">—</span>'}</span></td>
+      <td style="font-size:10.5px;color:var(--muted);line-height:1.5">${who||'—'}</td>
+    </tr>`;
+  }).join("");
+  el.innerHTML = banner + `<table class="mini-table" style="width:100%">
+    <thead><tr><th>Player</th>
+      <th class="num" title="Cleanses — harmful effects removed from teammates.">Cleanses</th>
+      <th class="num" title="Purges — buffs removed from enemies (Δ = total dispels vs last week).">Purges</th>
+      <th>What they stripped</th>
+      <th>Who they cleansed</th></tr></thead>
     <tbody>${rows}</tbody></table>`;
 }
 
@@ -2654,20 +2713,23 @@ const PERF_ROLE_FACETS = { Physical:["intr","sunder","save"], Caster:["intr","ma
 // Utility is CLASS-shaped, not role-shaped: each class is credited on the utility IT actually
 // provides (vs the raid's best provider of that facet), so a class isn't zeroed for structurally
 // lacking one — a Warlock floored at 0 for having no interrupt/mana-return was the symptom.
-// 'stones' = warlock raid provision (Create / Ritual of Souls); 'save'/'dispel' from the saves KPI;
-// 'mana' = mana returned; 'intr' = interrupts; 'sunder' = Sunder Armor upkeep; 'md' = hunter
-// Misdirection/Tranq, 'bshout' = warrior Battle Shout uptime (both the toolkit num). Curse coverage is
-// deliberately ABSENT — it's a shared raid debuff (all warlocks benefit even if two maintain it), so
-// it can't fairly rank individuals.
+// 'stones' = warlock raid provision (Create / Ritual of Souls); 'save' = saves KPI (protective saves +
+// reactive utility); 'disp' = dispels KPI (cleanse+purge — the cleanser classes' assigned job);
+// 'mana' = mana returned; 'intr' = interrupts (now WCL-durable — works without a combat log);
+// 'sunder' = Sunder Armor upkeep; 'md' = hunter Misdirection/Tranq, 'bshout' = warrior Battle Shout
+// uptime (both the toolkit num). Curse coverage is deliberately ABSENT — it's a shared raid debuff
+// (all warlocks benefit even if two maintain it), so it can't fairly rank individuals.
 const CLASS_UTIL_FACETS = {
-  Warlock:["stones"], Mage:["intr"], Shaman:["mana","intr"],
-  Druid:["mana","save"], Paladin:["pala"], Hunter:["md"], Rogue:["intr"], Warrior:["bshout","sunder"],
+  Warlock:["stones"], Mage:["intr"], Shaman:["mana","intr","disp"],
+  Druid:["mana","save","disp"], Paladin:["pala","disp"], Hunter:["md"], Rogue:["intr"], Warrior:["bshout","sunder"],
 };
-// Priest utility is spec/role-split: a healer (holy/disc) is judged on Fear Ward, a shadow priest
-// (Caster role) on its VT mana battery — same class, different kit. Everything else: class map → role
-// fallback. ('pala' = JoW/JoL upkeep + Greater Blessings; 'fward' = Fear Ward casts.)
+// Priest utility is spec/role-split: a healer (holy/disc) is judged on Fear Ward + dispels, a shadow
+// priest (Caster role) on its VT mana battery + dispels — same class, different kit. 'disp' is added to
+// the assigned cleanser classes (Paladin/Priest/Shaman/Druid) only — incidental dispellers (Mage decurse,
+// Hunter Tranq) keep their primary facet so an empty-dispel week doesn't falsely zero them. Everything
+// else: class map → role fallback. ('pala' = JoW/JoL upkeep + Greater Blessings; 'fward' = Fear Ward.)
 function utilFacetsFor(cls, role){
-  if(cls==="Priest") return role==="Healer" ? ["fward"] : ["mana"];
+  if(cls==="Priest") return role==="Healer" ? ["fward","disp"] : ["mana","disp"];
   return CLASS_UTIL_FACETS[cls] || PERF_ROLE_FACETS[role] || [];
 }
 let _perfWeight="balanced", _perfRole="all", _perfGroup=false, _perfSearch="";
@@ -2718,7 +2780,8 @@ function _perfRenderDrawer(){
 function _perfExtra(name,role,cls){
   const wd=WEEK_DATA, by=a=>Object.fromEntries((a||[]).map(x=>[x.name,x]));
   const dps=by((wd.damageBySelection||{}).players), heal=by(wd.healing), tank=by(wd.tankScorecard),
-        avoid=by(wd.avoidableDmg), deaths=by(wd.deaths), usage=by(wd.consumableUsage), cons=by(wd.consumables);
+        avoid=by(wd.avoidableDmg), deaths=by(wd.deaths), usage=by(wd.consumableUsage), cons=by(wd.consumables),
+        intr=by(wd.interrupts), disp=by(wd.dispels);
   const fmt=n=>n>=1e6?(n/1e6).toFixed(2)+"M":n>=1e3?Math.round(n/1e3)+"k":String(Math.round(n||0));
   const out={prep:"",perf:"",exec:"",surv:"",util:""};
   if(role==="Healer"&&heal[name]) out.perf=`${fmt(heal[name].eff_hps)} effective HPS · ${Math.round(heal[name].overheal_pct||0)}% overheal`;
@@ -2728,6 +2791,12 @@ function _perfExtra(name,role,cls){
     out.exec=`${fmt(a.dmg)} avoidable taken`+(src?` · worst: ${src.ability} ${fmt(src.dmg)}`:""); }
   const d=deaths[name]; if(d&&(d.total||0)>0) out.surv=`${d.total} death(s)`+((d.trash||0)?` — ${d.total-d.trash} boss / ${d.trash} trash`:" — all on bosses");
   const c=cons[name]; if(c&&(c.badges||[]).length){ const b=(c.badges||[]).map(x=>typeof x==="string"?x:(x&&(x.label||x.name)||"")).filter(Boolean); if(b.length)out.prep="extras: "+b.join(", "); }
+  // UTILITY hard-data — interrupts (WCL-durable) + dispels/purges, the two signals wired into the pillar
+  const iv=intr[name], dv=disp[name], ub=[];
+  if(iv&&(iv.count||0)>0) ub.push(`${iv.count} interrupt${iv.count>1?"s":""}`);
+  if(dv&&(dv.cleanse||0)>0) ub.push(`${dv.cleanse} cleanse${dv.cleanse>1?"s":""}`);
+  if(dv&&(dv.purge||0)>0) ub.push(`${dv.purge} purge${dv.purge>1?"s":""}`);
+  if(ub.length) out.util=ub.join(" · ");
   return out;
 }
 function _perfBrief(r){
@@ -2781,7 +2850,8 @@ function _perfRows(){
   const cons=byName(wd.consumables), dps=byName((wd.damageBySelection||{}).players), heal=byName(wd.healing),
         tank=byName(wd.tankScorecard), avoid=byName(wd.avoidableDmg), ff=byName(wd.friendlyFire),
         deaths=byName(wd.deaths), usage=byName(wd.consumableUsage), saves=byName(wd.saves),
-        intr=byName(wd.interrupts), sunder=byName(((wd.sunderArmor||{}).players)||[]),
+        dispels=byName(wd.dispels), intr=byName(wd.interrupts),
+        sunder=byName(((wd.sunderArmor||{}).players)||[]),
         gear=byName(((wd.gearAudit||{}).players)||[]);
   const mcLiable=new Set((wd.mcLiable||[]).map(x=>x.name));
   const raidMin=((Object.values(wd.boss_times||{}).reduce((s,v)=>s+v,0))||0)/60 || 1;
@@ -2806,12 +2876,15 @@ function _perfRows(){
   const avoidCap={melee:_capFor("melee"), ranged:_capFor("ranged")};
   const mana={};
   ((wd.manaReturns||{}).batteries||[]).forEach(b=>(b.providers||[]).forEach(p=>{ mana[p.name]=(mana[p.name]||0)+(p.mana||0); }));
-  const saveTot=n=>{ const s=saves[n]; return s?(s.save||0)+(s.dispel||0)+(s.utility||0):0; };
+  // 'save' facet = protective saves + reactive utility (saves KPI). Dispels get their OWN 'disp' facet
+  // (cleanse+purge, below) so cleansing is credited to the cleanser classes — not double-counted here.
+  const saveTot=n=>{ const s=saves[n]; return s?(s.save||0)+(s.utility||0):0; };
+  const dispTot=n=>{ const d=dispels[n]; return d?(d.cleanse||0)+(d.purge||0):0; };   // dispel utility (cleanse+purge)
   // 'md' (hunter Misdirection) and 'bshout' (warrior Battle Shout uptime) both read the player's
   // toolkit num, but are SEPARATE facet keys so each ranks within its own class cohort — the toolkit
   // num isn't comparable across classes (MD count ~6 vs Battle Shout ~89%).
   const tkNum=n=>(((dps[n]||{}).toolkit||{}).num||0);
-  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="stones"?((usage[n]||{}).stones_made||0) : f==="fward"?((usage[n]||{}).fear_ward||0) : f==="pala"?(((usage[n]||{}).judge_util||0)+((usage[n]||{}).blessing||0)) : (f==="md"||f==="bshout")?tkNum(n) : 0;
+  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="disp"?dispTot(n) : f==="stones"?((usage[n]||{}).stones_made||0) : f==="fward"?((usage[n]||{}).fear_ward||0) : f==="pala"?(((usage[n]||{}).judge_util||0)+((usage[n]||{}).blessing||0)) : (f==="md"||f==="bshout")?tkNum(n) : 0;
   // best[facet] scoped to the COHORT that provides it (the classes whose CLASS_UTIL_FACETS list it),
   // NOT the whole raid — so a hunter's Misdirection ranks vs other hunters, not vs a mage's toolkit
   // num. A facet that's naturally class-exclusive (stones) collapses to its one cohort either way.
@@ -2992,6 +3065,7 @@ function renderAll(){
   renderHealerUptimeHeatmap();
   renderManaReturns();
   renderSaves();
+  renderDispels();
   renderTanks();
   renderEngTable();
   renderInterruptBars();

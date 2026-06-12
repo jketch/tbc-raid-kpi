@@ -44,6 +44,15 @@ def _consumable_category(spell: str) -> str:
     if spell.startswith("Create "):           return ""        # warlock making stones, not using
     if "Healthstone" in spell:                 return "healthstone"
     if spell in ("Dark Rune", "Demonic Rune"): return "rune"
+    # Mana gem (mage-conjured Mana Emerald/Ruby/etc.) — the on-use casts "Replenish Mana" (27103) for
+    # ALL ranks. A SEPARATE cooldown from potions (a mage can pop a gem AND a potion), so it's its own
+    # category — the situational mana-sustain slot for casters. (Was invisible: an Arcane mage's whole
+    # consumable game is gems, and the old map returned "" for "Replenish Mana" → potion:0, no credit.)
+    if spell == "Replenish Mana":              return "mana_gem"
+    # Super Mana Potion logs its CAST as "Restore Mana" (41618), NOT "… Potion" — so the generic
+    # "Potion" match below misses it (a real gap: ~hundreds of casts/raid were invisible). It's a mana
+    # POTION (shares the potion/combat-pot cooldown), so it's the "potion" category + the potion slot.
+    if spell == "Restore Mana":                return "potion"
     if "Flame Cap" in spell:                   return "flamecap"
     if "Nightmare Seed" in spell:              return "nightmare_seed"
     if "Potion" in spell:                      return "potion"
@@ -275,6 +284,18 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                 if _cat:
                     consum_use[_pn][_cat] += 1
                     consum_label[_pn].setdefault(_cat, _spell)   # specific name: Dark Rune / Flame Cap / Nightmare Seed
+                    # ANY potion shares the single 2-min potion cooldown, so any potion cast = a
+                    # potion-slot use. Most pots log a "… Potion" cast (Healing / Rejuvenation Potion /
+                    # Mad Alchemist's / Super Rejuvenation…) or the shared mana-pot cast "Restore Mana"
+                    # (41618/28499/17531 — all named "Restore Mana", the log can't tell Super Mana Potion
+                    # / Bottled Nethergon / Injector / Unstable / Auchenai apart → generic "Mana Potion").
+                    # Buff-only pots (Destruction / Haste / Insane Strength / Ironshield / protection)
+                    # come via the SPELL_AURA_APPLIED branch below.
+                    if _cat == "potion":
+                        _mp = "Mana Potion" if _spell == "Restore Mana" else _spell
+                        _cp = consum_label[_pn].setdefault("combat_pots", [])
+                        if _mp not in _cp:
+                            _cp.append(_mp)
                 # Warlock raid PROVISION (utility KPI): stones + insurance the warlock supplies.
                 # Sourced from the combat log DIRECTLY (not the kill-scoped saves KPI, which misses
                 # wipe-protection soulstones). Ritual of Souls (soulwell) supplies the whole raid;

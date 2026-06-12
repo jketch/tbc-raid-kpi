@@ -98,6 +98,7 @@ POTION_NAME = {
 POTION_BUFF_IDS = {
     "28507": "Haste Potion",        # item 22838 — melee/caster haste combat pot
     "6615":  "Free Action Potion",  # situational survival (e.g. Lady Vashj Entangle)
+    "28515": "Ironshield Potion",   # +2500 armor (item 22849) — defensive/tank combat pot, buff-only
 }
 
 # Protection (resist) potions — share the potion CD, used on T5 resist mechanics (Hydross
