@@ -22,7 +22,7 @@ Usage:
 When the golden legitimately changes (you ADDED a section, or a week genuinely has
 new data), re-run with --bless and commit tests/characterization.json alongside.
 """
-import sys, json, io, unittest, contextlib
+import sys, json, unittest
 from pathlib import Path
 
 # Windows cp1252 console can't encode the ✓/⚠/✗ glyphs we print — force UTF-8.

@@ -71,7 +71,6 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
     stays scoped to the report code you entered.
     """
     print(f"\n[LOG] Parsing combat log: {log_path}")
-    from collections import defaultdict
 
     # Pass 1: identify all successful-kill encounter windows, split into in-report (kept)
     # vs off-report (excluded).

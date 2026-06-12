@@ -24,7 +24,7 @@ uncomment the three lines at the bottom of main().
 ────────────────────────────────────────────────────────────────────────────────
 Only stdlib used (urllib/json/subprocess) — no extra pip installs required.
 """
-import os, sys, json, shutil, subprocess
+import sys, json, shutil, subprocess
 from pathlib import Path
 
 # Windows cp1252 console can't encode the ✓/⚠/emoji glyphs we print — force UTF-8.

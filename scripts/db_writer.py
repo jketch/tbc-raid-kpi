@@ -21,6 +21,8 @@ Usage:
   write_week(week_data)   # week_data = output of map_to_week_data()
 """
 
+from __future__ import annotations
+
 import sqlite3
 import json
 import sys
@@ -323,7 +325,7 @@ CREATE TABLE IF NOT EXISTS loot (
 
 # ── Writer ────────────────────────────────────────────────────────────────────
 
-def write_week(week_data: dict, db_path: Path = None, *, allow_downgrade: bool = False) -> None:
+def write_week(week_data: dict, db_path: Path | None = None, *, allow_downgrade: bool = False) -> None:
     """
     Upsert all KPI tables from a WEEK_DATA dict (output of map_to_week_data()).
     Safe to call multiple times for the same report_code — will overwrite.
@@ -566,7 +568,6 @@ def write_week(week_data: dict, db_path: Path = None, *, allow_downgrade: bool =
         dsp_rows  = dsel.get("players") or []
         if dsp_rows:
             durs     = dsel.get("durations") or {}
-            boss_dur = durs.get("boss") or 0
             raid_tot = sum((p.get("boss") or {}).get("total", 0) for p in dsp_rows) or 0
             def _sd(p, sel):
                 """(dps, total, uptime%) for a selection — or (None,None,None) when the
@@ -722,7 +723,7 @@ def query(sql: str, params: tuple = ()) -> list[dict]:
         con.close()
 
 
-def crit_history(db_path=None, exclude_report: str = None, window: int = 8) -> dict:
+def crit_history(db_path=None, exclude_report: str | None = None, window: int = 8) -> dict:
     """Per-player crit baseline from history: {player: {"mean", "n", "std"}} over the most
     recent `window` weeks of `luck_kpi.actual`, EXCLUDING `exclude_report` (so an idempotent
     re-run of the current week never baselines against itself). This is the gold-standard
@@ -777,7 +778,7 @@ def trend(player: str, kpi: str = "luck") -> list[dict]:
     """, (player,))
 
 
-def shame_board(week: str = None) -> list[dict]:
+def shame_board(week: str | None = None) -> list[dict]:
     """
     Hall of Shame for a given week (or latest if omitted):
     worst avoidable damage, most deaths, lowest consumable score.

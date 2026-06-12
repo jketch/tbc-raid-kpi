@@ -20,5 +20,7 @@ jobs:
           python-version: '3.12'
       - name: Install runtime deps
         run: pip install requests
+      - name: Lint (ruff — correctness net, see ruff.toml)
+        run: pip install ruff && ruff check scripts/ tests/
       - name: Run the gate (unit suite)
         run: python scripts/check.py --tests

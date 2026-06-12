@@ -23,6 +23,8 @@ Usage:
     python scripts/backfill_snapshots.py <REPORT> [<REPORT> ...]
     python scripts/backfill_snapshots.py <REPORT> --log logs/WoWCombatLog-MMDDYY_HHMMSS.txt
 """
+from __future__ import annotations
+
 import sys, os, argparse
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -31,7 +33,7 @@ import week_build as wb
 from db_writer import crit_history, DB_PATH
 
 
-def backfill(report_code: str, token: str, log_path: str = None) -> None:
+def backfill(report_code: str, token: str, log_path: str | None = None) -> None:
     tag = "log-complete" if log_path else "no log"
     print(f"\n=== backfill snapshot: {report_code} ({tag}, read-only DB) ===")
     crit_hist = crit_history(DB_PATH, exclude_report=report_code)        # READ-only

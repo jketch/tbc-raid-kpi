@@ -29,9 +29,10 @@ WHAT IT DOES:
     7. Injects updated WEEK_DATA into the HTML dashboard
 """
 
-import os, sys, json, re, time, argparse, base64, urllib.request, urllib.parse
+from __future__ import annotations
+
+import os, sys, json, time, argparse
 from pathlib import Path
-from typing import Optional
 from collections import defaultdict
 
 # Force UTF-8 console output — Windows defaults to cp1252, which can't encode the
@@ -48,7 +49,7 @@ try:
 except ImportError:
     import subprocess
     subprocess.check_call([sys.executable, "-m", "pip", "install", "requests", "--quiet"])
-    import requests as _req
+    import requests as _req  # noqa: F401 — bootstrap import for its install side effect
 
 # Auto-load .env from Gaming root (parent of scripts/)
 _env_file = Path(__file__).parent.parent / ".env"
@@ -62,7 +63,7 @@ if _env_file.exists():
 # ── WCL endpoints + transport ─────────────────────────────────────────────────
 # OAuth + the GraphQL wrapper live in wcl_client (a pure transport leaf). Re-exported here
 # so every existing W.gql / W.get_token / W.WCL_API_URL reference keeps resolving.
-from wcl_client import WCL_TOKEN_URL, WCL_API_URL, get_token, gql
+from wcl_client import WCL_TOKEN_URL, WCL_API_URL, get_token, gql  # noqa: F401 — re-exported (W.WCL_API_URL etc.)
 
 # ── TBC crit rating conversion ────────────────────────────────────────────────
 # At level 70: every 22.08 crit rating = 1% crit (melee & spell, same value)
@@ -457,7 +458,7 @@ def parse_damage_table(raw_table) -> dict[str, dict]:
 
 
 def fetch_gear_from_events(token: str, report_code: str, fights: list,
-                           actors: list = None) -> dict[str, list]:
+                           actors: list | None = None) -> dict[str, list]:
     """
     Pull COMBATANT_INFO events and return per-player gear crit rating shortcut.
     WCL exposes critMelee/critRanged/critSpell directly — no item lookup needed.
@@ -546,7 +547,7 @@ def fetch_actual_crit(token: str, report_code: str, fights: list,
     next_ts = start
     pages = 0
 
-    print(f"  Fetching damage events for crit counting (this may take a moment)...")
+    print("  Fetching damage events for crit counting (this may take a moment)...")
     while next_ts is not None and pages < MAX_EVENT_PAGES:
         data = gql(token, Q_DAMAGE_EVENTS, {
             "code": report_code,
@@ -856,7 +857,7 @@ def healer_uptime_by_fight(heal_by_fight: dict, kills: list) -> dict:
 
 
 def compute_healing_metrics(heal_by_fight: dict, fight_roles: dict, fight_durs: dict,
-                            tank_names: set = None) -> dict:
+                            tank_names: set | None = None) -> dict:
     """Healing throughput + efficiency SCOPED to each healer's heal-fights only.
     A spec-swapper (heal early, DPS late) is judged on the fights they actually healed,
     so activity/HPS reflect their healing window — not the whole raid. Adds fights_healed."""
@@ -919,7 +920,7 @@ HITTYPE_CRIT  = 2
 
 def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
                                   fight_roles: dict, fight_durs: dict,
-                                  heal_by_fight: dict, actors: list, md: dict = None):
+                                  heal_by_fight: dict, actors: list, md: dict | None = None):
     """WCL-durable tank survivability — the source of record, run EVERY week (no combat
     log needed). One consolidated kill-fight pass, scoped to the fights each player TANKED
     (prot/ret-swap aware):
@@ -1384,7 +1385,7 @@ def _toolkit_metric(cls, spec, c, kill_min):
             goa, sw = g("goa_totem", 0), g("wf_swaps", 0)
             twisting = sw >= 20 and goa >= 10                 # alternating both air totems
             cell = {"label": "Windfury", "value": str(g("wf_totem", 0)), "num": g("wf_totem", 0),
-                    "title": (f"Windfury Totem drops" + (f" · {goa} Grace of Air" if goa else "")
+                    "title": ("Windfury Totem drops" + (f" · {goa} Grace of Air" if goa else "")
                               + (f" · {sw} WF↔GoA swaps (twisting)" if twisting else "") + bl_d),
                     "icon_ability": "Windfury Totem", "fallback": "spell_nature_windfury"}
             if twisting:
@@ -1393,13 +1394,13 @@ def _toolkit_metric(cls, spec, c, kill_min):
         up = g("tow_up")
         if up is not None:                                   # elemental — modeled ToW uptime
             return {"label": "ToW uptime", "value": f"~{up:g}%", "num": up,
-                    "title": (f"Totem of Wrath uptime — modeled from recast cadence "
-                              f"(totem buffs aren't logged as auras in 2.5)" + bl_d),
+                    "title": ("Totem of Wrath uptime — modeled from recast cadence "
+                              "(totem buffs aren't logged as auras in 2.5)" + bl_d),
                     "icon_ability": "Totem of Wrath", "fallback": "spell_fire_totemofwrath"}
         air = g("woa_totem", 0) + g("tow_totem", 0)
         if air > 0:                                           # ele w/o ToW casts — air totems
             return {"label": "Air totems", "value": str(air), "num": air,
-                    "title": f"Wrath of Air + Totem of Wrath drops" + bl_d,
+                    "title": "Wrath of Air + Totem of Wrath drops" + bl_d,
                     "icon_ability": "Wrath of Air Totem", "fallback": "spell_nature_slowingtotem"}
         return {"label": "Bloodlust", "value": str(bl), "num": bl,   # resto-who-DPS'd / no totems
                 "title": "Bloodlust/Heroism casts", "icon_ability": "Bloodlust",
@@ -1439,7 +1440,7 @@ def _toolkit_metric(cls, spec, c, kill_min):
         if g("mangle", 0) > 0:
             rb = g("rebirth", 0)
             return {"label": "Mangles", "value": str(g("mangle", 0)), "num": g("mangle", 0),
-                    "title": f"Mangle casts" + (f" · {rb} Battle Rez" if rb else ""),
+                    "title": "Mangle casts" + (f" · {rb} Battle Rez" if rb else ""),
                     "icon_ability": "Mangle (Cat)", "fallback": "ability_druid_mangle2"}
         rb, dc = g("rebirth", 0), g("decurse_druid", 0)
         extra = " · ".join(x for x in [f"{rb} Rez" if rb else "", f"{dc} Decurse" if dc else ""] if x)
@@ -1492,7 +1493,7 @@ def _buff_uptime_batch(token, report_code, fids, players, ability_ids, counts, k
         print(f"  Warning: {label}-uptime batch fetch failed: {ex}")
 
 
-def build_class_toolkit(token, report_code, kills, md: dict = None):
+def build_class_toolkit(token, report_code, kills, md: dict | None = None):
     """Per-player cast counts of every TOOLKIT_ABILITIES spell, from WCL Casts EVENTS over
     the kill windows (durable; runs every week, no combat log). Returns
     {name: {canonical_key: count}}. The per-class metric resolution happens in
@@ -1705,7 +1706,7 @@ def _tank_survival_grade(tm: dict, deaths: int, cls: str = "") -> dict:
     return {"score": max(0, score), "flags": flags}
 
 
-def fetch_saves(token: str, report_code: str, kills: list, md: dict = None) -> dict:
+def fetch_saves(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
     """Per-player protective/external casts ON ALLIES — the 'saving others' kit (paladin Hand of
     Protection / Sacrifice / Freedom / Salvation, Lay on Hands on others, Cleanse + dispels, druid
     Rebirth, warlock Soulstone res, priest Pain Suppression…). Pure WCL Casts events filtered to
@@ -1768,7 +1769,7 @@ def fetch_saves(token: str, report_code: str, kills: list, md: dict = None) -> d
             for nm, r in out.items()}
 
 
-def fetch_interrupts(token: str, report_code: str, kills: list, md: dict = None) -> dict:
+def fetch_interrupts(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
     """WCL-durable interrupt HEADLINE — per-interrupter count + which enemy casts were stopped.
     From events(dataType: Interrupts): the table() form returns null on the 2.5 Anniversary client,
     but the events query works (recon 2026-06-11, docs/WCL_API_SURFACE.md). Each interrupt event
@@ -1821,7 +1822,7 @@ def fetch_interrupts(token: str, report_code: str, kills: list, md: dict = None)
     return {nm: {"count": r["count"], "spells": dict(r["spells"])} for nm, r in out.items()}
 
 
-def fetch_dispels(token: str, report_code: str, kills: list, md: dict = None) -> dict:
+def fetch_dispels(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
     """Who-dispelled-what — a NEW WCL-durable Utility signal from events(dataType: Dispels) (table()
     is null on 2.5; events works — recon 2026-06-11). Each event: {sourceID, targetID, abilityGameID
     (the dispel), extraAbilityGameID (the REMOVED aura), isBuff}. Split by target side:
@@ -1890,7 +1891,7 @@ def fetch_dispels(token: str, report_code: str, kills: list, md: dict = None) ->
             for nm, r in out.items()}
 
 
-def fetch_ability_icons(token: str, report_code: str, fight_ids: list, md: dict = None) -> dict:
+def fetch_ability_icons(token: str, report_code: str, fight_ids: list, md: dict | None = None) -> dict:
     """Map ability name → real WCL icon slug (no .jpg). Two layers:
     1. masterData abilities — covers EVERY ability in the report, including casts that
        never hit the raid (heals, interrupted spells like Holy Smite / Great Heal).
@@ -1918,7 +1919,7 @@ def fetch_ability_icons(token: str, report_code: str, fight_ids: list, md: dict 
     return icons
 
 
-def fetch_deaths_split(token: str, report_code: str, md: dict = None):
+def fetch_deaths_split(token: str, report_code: str, md: dict | None = None):
     """Curated deaths from the WCL Deaths table (WCL excludes Hunter Feign Death,
     unlike raw combat-log UNIT_DIED). Split boss vs trash by each death's fight —
     boss fights carry an encounterID, trash fights don't.
@@ -2145,7 +2146,7 @@ MANA_SOURCES = [
 ]
 INNERVATE_ICON = "spell_nature_lightning"
 
-def fetch_mana_returns(token: str, report_code: str, kills: list, md: dict = None) -> dict:
+def fetch_mana_returns(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
     """Mana RETURNED TO THE RAID, grouped by SOURCE — the mana-battery leaderboards for the
     Healers & Tanks tab. From WCL Resources `resourcechange` energize events (resourceChangeType
     0 = mana); provider is owner-resolved (totems log as a pet → credit the shaman via petOwner;
@@ -2255,7 +2256,7 @@ def fetch_mana_returns(token: str, report_code: str, kills: list, md: dict = Non
     return {"batteries": batteries, "innervate": {"icon": INNERVATE_ICON, "casters": casters}}
 
 
-def fetch_sunder_armor(token: str, report_code: str, kills: list, md: dict = None) -> dict:
+def fetch_sunder_armor(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
     """Per-player Sunder Armor quality — pure WCL, runs every week (no combat log). Sourced from
     the WCL `Debuffs` event stream for the Sunder Armor aura (over kill fights, enemy targets).
     Attribution is by `sourceID`, so it credits anyone who builds the stack, including a prot tank
@@ -2509,7 +2510,7 @@ def fetch_gear_audit(token: str, report_code: str, kills: list) -> dict:
 
 
 def build_week_data(report_code: str, token: str,
-                    log_data: dict = None, report: dict = None, history: dict = None) -> dict:
+                    log_data: dict | None = None, report: dict | None = None, history: dict | None = None) -> dict:
     cache = load_cache()
     print(f"\n[1/5] Fetching report metadata: {report_code}")
     if report is None:   # may be pre-fetched by main() to avoid a duplicate call
@@ -2604,7 +2605,6 @@ def build_week_data(report_code: str, token: str,
     # (spec sets are module-level constants, shared with fetch_fight_roles)
     for p in players:
         spec = p.get("spec", "")
-        cls  = p.get("type", "")
         # Re-classify based on spec — more reliable than WCL's role bucket
         if spec in CASTER_SPECS:
             p["role"] = "Caster"
@@ -2639,7 +2639,7 @@ def build_week_data(report_code: str, token: str,
     save_cache(cache)
 
     # ── Actual crit from damage events + deaths table ─────────────────────
-    print(f"\n[4/5] Fetching damage events & death table...")
+    print("\n[4/5] Fetching damage events & death table...")
     crit_counts_by_id = fetch_actual_crit(token, report_code, kills, crit_track_ids=sb_ids)
     crit_by_name      = merge_actor_names(crit_counts_by_id, actors)
 
@@ -2819,7 +2819,7 @@ def build_week_data(report_code: str, token: str,
     print(f"  ✓ class toolkit: {len(class_toolkit)} players with utility casts")
 
     # ── Assemble WEEK_DATA ─────────────────────────────────────────────────
-    print(f"\n[5/5] Assembling WEEK_DATA...")
+    print("\n[5/5] Assembling WEEK_DATA...")
 
     # Crit lists by role
     def crit_list(role):
@@ -3677,7 +3677,7 @@ def dump_wcl_raw_cache(raw: dict) -> None:
         print(f"  ⚠ wcl raw cache write failed: {e}")
 
 
-def reingest_loot(mapped: dict, csv_path: str = None) -> dict:
+def reingest_loot(mapped: dict, csv_path: str | None = None) -> dict:
     """Re-attach a week's loot to a MAPPED week_data from a ThatsBIS 'received' CSV, keyed on the
     raid-night date (from meta.start_ms). Loot is normally ingested ONLY by the live pipeline's
     `--loot` step (main()), so the OFFLINE rebuild paths — backfill_snapshots.py (rebuilds a
@@ -3705,7 +3705,7 @@ def reingest_loot(mapped: dict, csv_path: str = None) -> dict:
     return mapped
 
 
-def inject_into_html(week_data: dict, html_path: Path, mapped: dict = None):
+def inject_into_html(week_data: dict, html_path: Path, mapped: dict | None = None):
     """Read template.html, inject WEEK_DATA, write to html_path (the gitignored output).
 
     Always reads from TEMPLATE_FILE so the output is never the source for the next run.
@@ -3915,7 +3915,7 @@ def main():
         print("ERROR: Set WCL_CLIENT_ID and WCL_CLIENT_SECRET env vars, or pass --client-id / --client-secret")
         sys.exit(1)
 
-    print(f"Authenticating with WCL...")
+    print("Authenticating with WCL...")
     token = get_token(args.client_id, args.client_secret)
     print("  ✓ Token obtained")
 
@@ -3966,7 +3966,7 @@ def main():
         # to --out explicitly (commit_week renders to DASH_FILE; main honors a custom --out path).
         wb.commit_week(mapped, db_path, is_test=args.test_db, dump=True, render=False)
         inject_into_html(week_data, Path(args.out), mapped=mapped)
-        print(f"\nRun next time with:")
+        print("\nRun next time with:")
         print(f"  python wcl_auto_dashboard.py {args.report_code} --out \"{args.out}\"")
 
 

@@ -1,0 +1,17 @@
+# Ruff config — a correctness net, not a style nag.
+#
+# Deliberately scoped to Pyflakes (F) + syntax errors (E9): this catches unused imports,
+# unused/undefined variables, redefinitions, and f-string slips — the mistakes that actually
+# break a weekly run — while staying SILENT on this project's intentional conventions:
+#   • one-line imports  (`import os, sys, json, re, time`)         → would be E401
+#   • compact bodies    (`def _has_players(v): return ...`)        → would be E701/E702
+#   • `sys.path.insert(...)` before local imports                  → would be E402
+#   • broad `try/except` degradation guards                        → would be E722
+#
+# Run locally:  uvx ruff check scripts/ tests/
+target-version = "py39"
+
+[lint]
+select = ["F", "E9"]
+# `from game_constants import *` is an intentional curated name-set import (see combat_log.py).
+ignore = ["F403", "F405"]

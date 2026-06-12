@@ -7,6 +7,8 @@ talks to WCL goes through `gql()`; `wcl_auto_dashboard` re-exports these so exis
 OAuth host is fresh.warcraftlogs.com; ALL queries hit www.warcraftlogs.com/api/v2/client
 (same API, different token issuer) — see CLAUDE.md.
 """
+from __future__ import annotations
+
 import time
 
 # Auto-install requests if missing (mirrors the main module's bootstrap).
@@ -46,7 +48,7 @@ def get_token(client_id: str, client_secret: str, retries: int = 5) -> str:
             time.sleep(wait)
 
 
-def gql(token: str, query: str, variables: dict = None, retries: int = 5) -> dict:
+def gql(token: str, query: str, variables: dict | None = None, retries: int = 5) -> dict:
     attempt = 0          # network/HTTP retry budget
     rate_waits = 0       # 429s use their OWN bounded counter so a slow point-budget
     MAX_RATE_WAITS = 6   # cooldown doesn't burn the network-retry budget

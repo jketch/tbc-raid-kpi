@@ -19,6 +19,8 @@ DESIGN GUARANTEES
 Tone follows CLAUDE.md: clean, principal-level, raiders who know the game. Positive call-outs are
 fine; NO naming-and-shaming, no moralizing. Frame a weak number as a concrete, fixable observation.
 """
+from __future__ import annotations
+
 import os
 import json
 
@@ -183,7 +185,7 @@ _OUT_SCHEMA = {
 }
 
 
-def generate(mapped: dict, *, model: str = None, verbose: bool = True) -> dict:
+def generate(mapped: dict, *, model: str | None = None, verbose: bool = True) -> dict:
     """Return {name: one-line summary} for the week, or {} on ANY failure. Never raises.
 
     Guarded end-to-end: missing key/SDK, the API call, and output parsing each fall through to {}.
@@ -243,7 +245,7 @@ def generate(mapped: dict, *, model: str = None, verbose: bool = True) -> dict:
         return {}
 
 
-def attach(mapped: dict, *, model: str = None, verbose: bool = True) -> dict:
+def attach(mapped: dict, *, model: str | None = None, verbose: bool = True) -> dict:
     """Generate and attach `mapped['perfSummaries']` in place (only if non-empty). Returns `mapped`."""
     summaries = generate(mapped, model=model, verbose=verbose)
     if summaries:
