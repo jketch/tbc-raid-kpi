@@ -11,6 +11,14 @@
 #     python scripts/tools/install_hooks.py        (or copy this file to .git/hooks/pre-commit)
 # Bypass for a genuine emergency: git commit --no-verify   (avoid — fix the data instead)
 
+# Worktrees of the orphan `data` branch (sync_state.py / the weekly workflow's state
+# commits) carry NO code — there is nothing to gate there, so skip instead of failing
+# on the missing script. Any branch that has check.py still gets the full gate.
+if [ ! -f scripts/check.py ]; then
+  echo "pre-commit: scripts/check.py not in this worktree (data branch) — gate skipped"
+  exit 0
+fi
+
 python scripts/check.py
 status=$?
 if [ $status -ne 0 ]; then
