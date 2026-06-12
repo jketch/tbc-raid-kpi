@@ -1,0 +1,105 @@
+# Weekly pipeline — the zero-install "run button".
+#
+# Actions tab → "Weekly pipeline" → Run workflow → paste the WCL report code. The run
+# fetches the week from WCL, rebuilds the rolling multi-week site, deploys to Netlify,
+# prints the paste-ready raid-channel summary into the job log, and persists pipeline
+# state on the `data` branch.
+#
+# ACCEPTED EXCEPTION: the `data` branch ships real raid data (the KPI history DB +
+# per-week snapshots) inside this otherwise template-clean repo — required so cloud runs
+# can compute week-over-week trends and stage the rolling 6-week site. Maintainer-approved
+# 2026-06. Local runs sync with it via scripts/tools/sync_state.py pull|push.
+#
+# Cloud runs are the LOG-LESS degradation path BY DESIGN (no combat log in CI): every KPI
+# keeps its WCL headline; MC saves/liabilities, friendly fire, drums, engineering, the
+# consumables-USED bonus, death-recap HP timelines, and tank lowest-HP stay thin until the
+# maintainer re-enriches locally (scripts/tools/backfill_snapshots.py <code> --log
+# <archived log>). Loot (a manual ThatsBIS CSV) has no cloud path — the tab hides.
+#
+# Secrets: WCL_CLIENT_ID, WCL_CLIENT_SECRET, NETLIFY_AUTH_TOKEN, NETLIFY_SITE_ID.
+# (No ANTHROPIC_API_KEY on purpose — perf summaries stay a guarded no-op in CI.)
+name: Weekly pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      report_code:
+        description: "WCL report code (fresh.warcraftlogs.com/reports/<CODE>)"
+        required: true
+      test_mode:
+        description: "Proof run: --test-db, no deploy, no state push"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write          # push to the data branch
+
+concurrency:
+  group: weekly-state      # two simultaneous runs would clobber each other's state push
+  cancel-in-progress: false
+
+jobs:
+  weekly:
+    runs-on: ubuntu-latest
+    env:
+      WCL_CLIENT_ID:      ${{ secrets.WCL_CLIENT_ID }}
+      WCL_CLIENT_SECRET:  ${{ secrets.WCL_CLIENT_SECRET }}
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID:    ${{ secrets.NETLIFY_SITE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install requests
+
+      - name: Restore state from the data branch
+        # The branch holds cache/: raid_history.db (trends read the PRIOR week's rows),
+        # week_data/ (build_site stages the newest 6), wcl/ (offline reprocess tier),
+        # last_deploy.json (the section-loss guard's baseline), item caches.
+        run: |
+          mkdir -p cache
+          if git fetch --depth=1 origin data:refs/remotes/origin/data 2>/dev/null; then
+            git worktree add --detach .state origin/data
+            cp -a .state/cache/. cache/ 2>/dev/null || true
+            echo "state restored:" && ls -la cache
+          else
+            echo "no data branch yet — first run starts from empty state"
+          fi
+
+      - name: Run the pipeline (log-less by design)
+        run: python scripts/wcl_auto_dashboard.py "${{ inputs.report_code }}" ${{ inputs.test_mode && '--test-db' || '' }}
+
+      - name: Publish (Netlify deploy + paste-ready summary below)
+        if: ${{ !inputs.test_mode }}
+        run: python scripts/publish.py
+
+      - name: Persist state to the data branch
+        if: ${{ success() && !inputs.test_mode }}
+        # Allowlist copy — never the test DB or scratch files. A failed pipeline pushes
+        # nothing, so the data branch always holds the last GOOD state.
+        run: |
+          set -e
+          if [ ! -d .state ]; then
+            git worktree add --detach .state
+            git -C .state checkout --orphan data
+            git -C .state rm -rfq . 2>/dev/null || true
+          else
+            git -C .state checkout -B data origin/data
+          fi
+          mkdir -p .state/cache
+          rm -rf .state/cache/week_data .state/cache/wcl
+          cp -r cache/week_data .state/cache/ 2>/dev/null || true
+          cp -r cache/wcl .state/cache/ 2>/dev/null || true
+          cp cache/raid_history.db .state/cache/ 2>/dev/null || true
+          cp cache/last_deploy.json .state/cache/ 2>/dev/null || true
+          cp cache/item_*.json .state/cache/ 2>/dev/null || true
+          printf '%s\n' "Pipeline state for the weekly workflow (cache/ DB + snapshots)." \
+            "Real raid data — accepted exception; see .github/workflows/weekly.yml." \
+            > .state/README.md
+          git -C .state add -A
+          git -C .state -c user.name="weekly-pipeline" -c user.email="actions@users.noreply.github.com" \
+            commit -m "state: ${{ inputs.report_code }}" || echo "no state changes to push"
+          git -C .state push origin data

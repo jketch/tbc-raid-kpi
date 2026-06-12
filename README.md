@@ -140,6 +140,30 @@ The pipeline:
 
 ---
 
+## Cloud run (GitHub Actions) — the zero-install fallback
+
+When the usual operator can't run locally, anyone with repo access can run the week from the
+GitHub **Actions** tab: *Weekly pipeline → Run workflow → paste the report code*. The run pulls
+the week from WCL, deploys to Netlify, and prints the paste-ready raid-channel summary in the
+job log. No machine setup at all.
+
+- **One-time:** add four repo secrets (*Settings → Secrets and variables → Actions*):
+  `WCL_CLIENT_ID`, `WCL_CLIENT_SECRET`, `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`.
+- **Cloud runs are log-less by design** — every KPI keeps its WCL headline; the combat-log
+  extras stay thin until re-enriched locally (`scripts/tools/backfill_snapshots.py <code>
+  --log <archived log>`). The Loot tab (manual CSV) hides.
+- **State lives on the `data` branch** (history DB + per-week snapshots — the one place this
+  repo carries real raid data). Local and cloud runs share it via:
+
+```
+python scripts/tools/sync_state.py pull   # after a cloud-run week, before your next local run
+python scripts/tools/sync_state.py push   # after local runs, so the cloud is never behind
+```
+
+- A `test_mode` checkbox on the dispatch form does a `--test-db` proof: no deploy, no state push.
+
+---
+
 ## Pulling updates
 
 ```
