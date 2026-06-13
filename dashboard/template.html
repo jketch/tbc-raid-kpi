@@ -1312,6 +1312,16 @@ function renderDebuffCoverage(){
   if (!slots.length || !bosses.length){ const c = el.closest(".card"); if (c) c.style.display = "none"; return; }
   const catColor = { Magic:"var(--caster)", Armor:"var(--physical)", Utility:"var(--accent)" };
 
+  // Armor-slot provenance note: the "Sunder / Expose" slot unions both abilities, so it can read
+  // healthy with ZERO warrior Sunders (a rogue's Expose Armor filled it). The Sunder Armor card hides
+  // when empty, so the fact lives in THIS column's hover tooltip — only when warriors are rostered
+  // (you'd expect Sunders) AND the slot is actually covered. Neutral: Expose-for-Sunder is a comp call.
+  const _sunderEmpty = !(((WEEK_DATA.sunderArmor||{}).players||[]).length);
+  const _warriors = Object.values(WEEK_DATA.roster||{}).some(r => r.class === "Warrior");
+  const _sunderAvg = Math.round((dc.raid_avg||{}).sunder || 0);
+  const _exposeNote = (_sunderEmpty && _warriors && _sunderAvg > 0)
+    ? ` — held by Expose Armor this week (no warrior Sunder Armor logged; the two share this slot)` : "";
+
   // group boundaries: first slot of each category gets a vertical divider so the
   // three debuff systems parse at a glance.
   const groupStart = slots.map((s,i) => i === 0 || slots[i-1].cat !== s.cat);
@@ -1326,7 +1336,7 @@ function renderDebuffCoverage(){
     return `<th colspan="${c.n}" style="text-align:center;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:${col};padding:4px 0 5px;border-bottom:2px solid ${col};border-left:${divL}">${c.cat}</th>`;
   }).join("");
   const iconRow = slots.map((s,i) =>
-    `<th title="${s.label}${s.soft?' — proc-based, graded gentler':''}" style="padding:6px 7px 7px;text-align:center;${sep(i)}">${gicon(s.icon)}${s.soft?'<span style="color:var(--muted);font-size:8px;vertical-align:super">~</span>':''}</th>`).join("");
+    `<th title="${s.label}${s.soft?' — proc-based, graded gentler':''}${s.key==="sunder"?_exposeNote:''}" style="padding:6px 7px 7px;text-align:center;${sep(i)}">${gicon(s.icon)}${s.key==="sunder"&&_exposeNote?'<span style="color:var(--amber);font-size:8px;vertical-align:super">*</span>':s.soft?'<span style="color:var(--muted);font-size:8px;vertical-align:super">~</span>':''}</th>`).join("");
 
   const cell = (pct, soft, i, bg) => {
     const v = Math.round(pct || 0);
