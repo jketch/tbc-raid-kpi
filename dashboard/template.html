@@ -2732,6 +2732,7 @@ function _tabKeys(e){
 
 // ═══════════════ PERFORMANCE TAB (officer-gated) ═══════════════
 // v1 scoring tuning — recalibrate after a real week. All pillar sub-scores are 0–100.
+// __PERF_SCORING_PURE_BEGIN__ — pure, DOM-free scoring core; extracted by tests/perf_scoring.test.mjs (node --test). Keep free of document/window/localStorage.
 const PERF_TUNING = {
   // Execution avoidable is scored RELATIVE, per positioning cohort (melee vs ranged): the cap is the
   // cohort's 90th-percentile avoidable/min, floored. The FLOOR doubles as the ranged-softening lever
@@ -2865,6 +2866,7 @@ function utilFacetsFor(cls, spec, role){
   }
   return CLASS_UTIL_FACETS[cls] || PERF_ROLE_FACETS[role] || [];
 }
+// __PERF_SCORING_PURE_END__
 let _perfRole="all", _perfGroup=false;
 let _perfSort={col:"composite",dir:-1};
 try {
@@ -2973,6 +2975,7 @@ function _perfBrief(r){
 }
 
 // Build per-player pillar sub-scores (0–100 or null) from WEEK_DATA + the composite for the active weighting.
+// __PERF_SCORING_PURE_BEGIN__
 function _perfRows(){
   const wd=WEEK_DATA, roster=wd.roster||{}, clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
   const byName=arr=>Object.fromEntries((arr||[]).map(x=>[x.name,x]));
@@ -3148,6 +3151,7 @@ function _perfRows(){
   });
 }
 
+// __PERF_SCORING_PURE_END__
 function renderPerformance(){
   const tb=document.getElementById("perfTbody"), hd=document.getElementById("perfHead");
   if(!tb||!hd) return;

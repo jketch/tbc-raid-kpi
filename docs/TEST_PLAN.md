@@ -185,7 +185,16 @@ session (ret seal-twist, rogue Expose, the falsy-zero) was verified by eyeballin
 This phase makes it testable. **Gate on Phase 0 being green** (0a/0b are the net for touching the
 monolith).
 
-### ☐ 2a. Extract the scoring into a DOM-free module
+### ☑ 2a. Extract the scoring into a DOM-free module — done as **test-in-place** (not a file move)
+> **Approach decision (2026-06-13):** a literal extraction to `dashboard/perf_scoring.js` collides with
+> the single-file deploy model — byte-identical output only holds if the injector inlines the file back
+> (touching the fragile brace-walk + breaking direct-template preview), and a shipped second file breaks
+> the self-contained `index.html`. So instead the pure core is **fenced in place** with
+> `// __PERF_SCORING_PURE_BEGIN__/_END__` markers (two non-contiguous blocks: the `PERF_*` consts +
+> `perfArchetype`/`utilFacetsFor`, and `_perfRows`; the DOM/drawer code between them is excluded). The
+> Node test reads the markers out of `template.html` and evals them in a `vm` sandbox — zero duplication,
+> zero deploy change. Proven inert: `replay_render` byte-diff before/after = only the 4 marker comment
+> lines. The real file-extraction is folded into backlog #8 (needs a bundler — see CLAUDE.md).
 - Pull the scoring surface out of `dashboard/template.html` into `dashboard/perf_scoring.js` (a plain
   module with **no DOM access** — pure functions over a `WEEK_DATA`-shaped object): the `PERF_*`
   constants, `perfArchetype`, `utilFacetsFor`, `facetVal`, and `_perfRows` (or a pure core of it that
@@ -195,7 +204,7 @@ monolith).
 - This is a *narrow slice* of the backlogged full template decomposition — do only the scoring, not the
   render functions.
 
-### ☐ 2b. `tests/perf_scoring.test.mjs` — JS unit tests under `node --test`
+### ☑ 2b. `tests/perf_scoring.test.mjs` — JS unit tests under `node --test`
 - Use Node's built-in runner (`node --test`) — no new npm deps. Add `node --test dashboard/*.test.mjs`
   as a CI step (and document the Node version floor).
 - **Cases (the properties hand-checked this session):**

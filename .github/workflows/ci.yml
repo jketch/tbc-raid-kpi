@@ -24,3 +24,11 @@ jobs:
         run: pip install ruff && ruff check scripts/ tests/
       - name: Run the gate (unit suite)
         run: python scripts/check.py --tests
+      # JS scoring tests — extract the pure perf-scoring core from template.html and exercise it
+      # under Node's built-in runner (stable since Node 20). No npm deps, no build. See
+      # tests/perf_scoring.test.mjs + the // __PERF_SCORING_PURE__ markers in template.html.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run the JS scoring tests (node --test)
+        run: node --test tests/*.test.mjs
