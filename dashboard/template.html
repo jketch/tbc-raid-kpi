@@ -2155,12 +2155,20 @@ function renderCompliance() {
     : ok(p.flask_name || ((p.elixirs||[]).length>=2 ? "2 Elixirs" : "✓"),
          p.flask_name || (p.elixirs||[]).join(" + "));
   const potCell = arr => (arr && arr.length) ? arr.map(x => ok(x, "combat-log buff event")).join("<br>") : no;
-  const item = v => v ? ok(v) : no;
+  // Mana-less classes have NO real alt-pot slot in TBC — Dark/Demonic Runes and mana gems
+  // need a mana pool, and Flame Cap / Nightmare Seed are niche, not standard prep
+  // (TBC_RAID_MECHANICS.md §6f: runes are "casters/healers"). The slot reads n/a for them
+  // and drops out of their compliance denominator; using one anyway still counts (bonus).
+  const MANALESS = new Set(["Warrior", "Rogue"]);
+  const isManaless = p => MANALESS.has((((WEEK_DATA.roster||{})[p.name])||{}).class);
+  const altCell = p => p.alt_pot ? ok(p.alt_pot)
+    : isManaless(p) ? '<span style="color:var(--muted)" title="no mana pool — runes/gems don\'t apply; Flame Cap / Nightmare Seed are niche, not expected">n/a</span>'
+    : no;
   const filled = (p, combat) => (p.flask?1:0)+(p.food?1:0)+(p.weapon?1:0)+(p.alt_pot?1:0)+(combat&&(p.combat_pots||[]).length?1:0);
-  // Compliant = most consumables covered, not every slot: ≥3 of 4 (tanks/healers),
-  // ≥4 of 5 (caster/melee DPS, who also carry a combat pot).
-  const total = combat => combat ? 5 : 4;
-  const need  = combat => combat ? 4 : 3;
+  // Compliant = most consumables covered, not every slot: all but one slot, with the alt-pot
+  // slot excluded from the denominator for mana-less classes (it doesn't exist for them).
+  const total = (p, combat) => (combat ? 5 : 4) - (isManaless(p) ? 1 : 0);
+  const need  = (p, combat) => total(p, combat) - 1;
 
   el.innerHTML = ROLES.map(R => {
     // Bucket by effective_role so hybrid players (e.g. tanks on only 1 fight) appear in
@@ -2168,14 +2176,14 @@ function renderCompliance() {
     const rows = data.filter(p => (p.effective_role || p.role) === R.key);
     if (!rows.length) return "";
     rows.sort((a, b) => filled(b, R.combat) - filled(a, R.combat) || a.name.localeCompare(b.name));
-    const nComp = rows.filter(p => filled(p, R.combat) >= need(R.combat)).length;
+    const nComp = rows.filter(p => filled(p, R.combat) >= need(p, R.combat)).length;
     const cc = nComp === rows.length ? "var(--green)" : nComp > rows.length / 2 ? "var(--accent)" : "var(--red)";
     const cols = ["Flask/Elix", "Food", "Weapon"].concat(R.combat ? ["Combat Pot"] : []).concat(["Alt Pot"]);
     const head = `<thead><tr><th style="text-align:left">Player</th>${cols.map(c => `<th class="num">${c}</th>`).join("")}</tr></thead>`;
     const body = "<tbody>" + rows.map(p => {
       const cells = [flaskCell(p), p.food ? chk("food buff at pull") : no, p.weapon ? chk("weapon oil at pull") : no]
         .concat(R.combat ? [potCell(p.combat_pots)] : [])
-        .concat([item(p.alt_pot)]);
+        .concat([altCell(p)]);
       // Annotation for hybrid players: tank who appears in DPS section, or partial-night healer
       const effectiveRole = p.effective_role || p.role;
       const ft = p.fights_total || 0;
@@ -2189,13 +2197,13 @@ function renderCompliance() {
     return `<div style="margin-top:14px">
       <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
         <span class="subsection-label" style="margin:0">${R.label}</span>
-        <span style="font-size:11px;font-weight:700;color:${cc}" title="compliant = ${need(R.combat)} of ${total(R.combat)} consumables covered">${nComp} / ${rows.length} compliant</span>
+        <span style="font-size:11px;font-weight:700;color:${cc}" title="compliant = all-but-one consumable slot covered (mana-less classes have no alt-pot slot, so it's excluded from their denominator)">${nComp} / ${rows.length} compliant</span>
       </div>
       <div class="scroll-x"><table class="mini-table">${head}${body}</table></div>
     </div>`;
   }).join("") + `
     <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);line-height:1.6">
-      <b style="color:var(--dim)">How this is measured</b> — <b>Flask · Elixirs · Food · Weapon oil</b> are read from the <b>pull-time COMBATANT_INFO snapshot</b> (catches buffs applied before the pull); <b>combat pots</b> (incl. Haste · Free Action · resist/protection) and <b>runes</b> from <b>combat-log buff events</b>. Flask/Elix passes on a flask <i>or</i> both elixir slots (battle + guardian). Ambiguous-named pots (Haste, Free Action) are matched by spell ID so trinket procs don't inflate them. <b>Compliant</b> = ≥3 of 4 (tanks·healers) · ≥4 of 5 (DPS, who also carry a combat pot). Players who tank fewer than half their fights are evaluated against the DPS threshold and appear in their DPS section (⚔ N/T annotation). Partial-night healers show their healed fight count. Hover any ✓ or item for the exact source.
+      <b style="color:var(--dim)">How this is measured</b> — <b>Flask · Elixirs · Food · Weapon oil</b> are read from the <b>pull-time COMBATANT_INFO snapshot</b> (catches buffs applied before the pull); <b>combat pots</b> (incl. Haste · Free Action · resist/protection) and <b>runes</b> from <b>combat-log buff events</b>. Flask/Elix passes on a flask <i>or</i> both elixir slots (battle + guardian). Ambiguous-named pots (Haste, Free Action) are matched by spell ID so trinket procs don't inflate them. <b>Compliant</b> = all-but-one consumable slot covered (4 of 4 → 3 for tanks·healers; 5 → 4 for DPS who also carry a combat pot). The <b>Alt Pot</b> slot (mana gem / rune / Flame Cap / Nightmare Seed) needs a mana pool, so it reads <i>n/a</i> and drops out of the denominator for mana-less classes (Warrior · Rogue). Players who tank fewer than half their fights are evaluated against the DPS threshold and appear in their DPS section (⚔ N/T annotation). Partial-night healers show their healed fight count. Hover any ✓ or item for the exact source.
     </div>`;
 }
 
@@ -2514,8 +2522,8 @@ function renderDispels(){
       `<span class="cname" style="color:${nameColor(t)}">${esc(t)}</span>${n>1?` ×${n}`:''}`).join(", ");
     return `<tr>
       <td><span class="cname" style="color:${nc}">${esc(p.name)}</span></td>
-      <td class="num" title="Harmful effects stripped off teammates (Cleanse, Abolish, Remove Curse, Devour Magic).">${chip(p.cleanse,'ally','var(--healer)')}</td>
-      <td class="num" title="Buffs stripped off enemies — enrage/haste/shield removal (Purge, Dispel Magic, Tranq Shot, Devour Magic).">${chip(p.purge,'enemy','var(--orange)')}${fmtDelta(p.delta_total, true)}</td>
+      <td class="num" title="Harmful effects stripped off teammates (Cleanse, Abolish, Remove Curse, Devour Magic). Delta = total dispels (cleanse+purge) vs last week.">${chip(p.cleanse,'ally','var(--healer)')}${fmtDelta(p.delta_total, true)}</td>
+      <td class="num" title="Buffs stripped off enemies — enrage/haste/shield removal (Purge, Dispel Magic, Tranq Shot, Devour Magic).">${chip(p.purge,'enemy','var(--orange)')}</td>
       <td style="min-width:160px"><span style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${stripped||'<span style="color:var(--muted)">—</span>'}</span></td>
       <td style="font-size:10.5px;color:var(--muted);line-height:1.5">${who||'—'}</td>
     </tr>`;
