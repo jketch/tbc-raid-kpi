@@ -39,7 +39,7 @@ make refactors safe, and a path to testing the Performance scoring.
 These don't just add coverage — once green, no change can silently alter dashboard output without a red
 test. Land these before touching `template.html`.
 
-### ☐ 0a. `tests/test_inject_roundtrip.py` — the brace-depth injector
+### ☑ 0a. `tests/test_inject_roundtrip.py` — the brace-depth injector
 - **Targets:** `render_html.inject_into_html` (writer) ↔ `week_build.extract_week_data` (reader). They
   share the string/escape-aware brace walk that CLAUDE.md warns "a regex would corrupt."
 - **Cases:**
@@ -55,7 +55,7 @@ test. Land these before touching `template.html`.
 - **DoD:** all 4 cases pass; deliberately swapping the brace walk for a naive `re.sub(r'\{.*?\};')`
   makes case 2 fail (proves the test has teeth).
 
-### ☐ 0b. `tests/test_determinism.py` — byte-stable output in CI
+### ☑ 0b. `tests/test_determinism.py` — byte-stable output in CI
 - **Target:** the set→list-sorted determinism guarantee, currently only checked by hand via
   `replay_render.py` + `fc /b`.
 - **Cases:**
@@ -70,7 +70,7 @@ test. Land these before touching `template.html`.
 
 ## Phase 1 — independent Python value tests (no template dependency)
 
-### ☐ 1a. `tests/test_combat_log.py` — the raw-log parser (BIGGEST gap)
+### ☑ 1a. `tests/test_combat_log.py` — the raw-log parser (BIGGEST gap)
 `scripts/combat_log.py` (~666 lines) parses the most fragile input and has **zero** tests. Build a tiny
 synthetic-log helper, then assert behavior. Log line format: `TIMESTAMP<2+ spaces>EVENT,field,field,…`;
 timestamp is `M/D H:MM:SS.mmm`. Read the field indices straight from `parse_combat_log` (e.g.
@@ -102,7 +102,7 @@ interrupted spell = `fields[13]`).
 - **DoD:** the 9 cases pass; reverting the pet-interrupt change (case 5) or the Hydross promotion
   (case 1) turns the suite red.
 
-### ☐ 1b. `tests/test_trends.py` — week-over-week enrichment
+### ☑ 1b. `tests/test_trends.py` — week-over-week enrichment
 `scripts/trends.enrich_with_trends(week_data, db_path)` is subtle, load-bearing, and has had real bugs.
 Test against a `tempfile` SQLite seeded via `db_writer.write_week(prior_week, db_path)`.
 
@@ -124,7 +124,7 @@ Test against a `tempfile` SQLite seeded via `db_writer.write_week(prior_week, db
 - **Infra:** `db_writer.write_week(wd, tmp_db)` to seed; then `enrich_with_trends(current, tmp_db)`.
 - **DoD:** cases pass; reverting the `is not None` fix flips case 2 red.
 
-### ☐ 1c. `tests/test_crit_model.py` — TBC crit math
+### ☑ 1c. `tests/test_crit_model.py` — TBC crit math
 `scripts/crit_model.expected_crit` is pure (class/talent/gem/enchant/primary-stat tables). Lock it.
 - **Cases:** 3–5 known `(class, spec, gear-crit-rating, primary stat) → expected %` cases covering at
   least one melee (agi-scaled), one caster (int-scaled), and the talent/base contribution. Pull the
@@ -134,7 +134,7 @@ Test against a `tempfile` SQLite seeded via `db_writer.write_week(prior_week, db
   inject a fake cache — keep this file to the pure model.
 - **DoD:** the frozen cases pass; a typo in a crit table flips them.
 
-### ☐ 1d. `tests/test_merge_log.py` — the log overlay + graceful degradation
+### ☑ 1d. `tests/test_merge_log.py` — the log overlay + graceful degradation
 `week_map.merge_log_into_wcl(wcl, log_data)` overlays combat-log results onto the wcl dict and reaches
 the crit model (backfills tank/healer gear-crit, which WCL emits as 0).
 - **Cases:**
@@ -145,7 +145,7 @@ the crit model (backfills tank/healer gear-crit, which WCL emits as 0).
      already in `test_week_map.py`.)
 - **DoD:** both pass.
 
-### ☐ 1e. `tests/test_db_writer_roundtrip.py` — write → read → assert
+### ☑ 1e. `tests/test_db_writer_roundtrip.py` — write → read → assert
 You have a downgrade-*guard* test; add a write-then-read round-trip (the `eff_hps`-vs-`hps` column
 gotcha lives here).
 - **Cases:**
@@ -157,7 +157,7 @@ gotcha lives here).
   path; `query()` defaults to prod — use `sqlite3` directly on the temp path or extend the helper).
 - **DoD:** a renamed/typo'd column flips case 1.
 
-### ☐ 1f. `tests/test_fetch_helpers.py` — the pure helpers in `wcl_fetchers.py`
+### ☑ 1f. `tests/test_fetch_helpers.py` — the pure helpers in `wcl_fetchers.py`
 The fetch layer is WCL-coupled, but its helpers are pure and free to test.
 - **Targets & cases:**
   - `_report(payload, *path, default)` (this-session addition): a full payload descends correctly; a
