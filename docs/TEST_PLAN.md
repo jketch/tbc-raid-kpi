@@ -7,6 +7,11 @@ make refactors safe, and a path to testing the Performance scoring.
 
 **Status legend:** ☐ not started · ◐ in progress · ☑ done. Update inline as you go.
 
+> **Status (2026-06-13):** Phases 0–2 are ☑ — 222 Python unit tests + the `node --test` JS scoring
+> suite; CI runs all three gates (ruff · `check.py --tests` · `node --test tests/*.test.mjs`, Node 20).
+> The original build-out is **done**. A second-pass backlog of modules the first pass never named is at
+> the bottom of this doc — see *"Still uncovered."*
+
 ---
 
 ## Conventions (read first)
@@ -255,3 +260,33 @@ runner (Node) and a template change.
 - CI runs the Python gate **and** `node --test` (after Phase 2).
 - A deliberate regression in each fixed-this-session behavior (pet interrupts, falsy-zero, death-timeline
   ability, ret/rogue scoring) turns a test red — the suite has teeth, not just coverage.
+
+---
+
+## Still uncovered (second-pass backlog — NOT in the original plan)
+
+Phases 0–2 closed the gaps we set out to. These modules were never named in the first pass and remain
+untested — ranked by risk. None block the handoff; they're the next slice when test work resumes.
+
+- **`loot_parser.py`** (M) — ThatsBIS CSV → `WEEK_DATA.loot`. Fragile external input: CSV column drift
+  + the raid-night date filter (matches awards to `meta.start_ms`'s **local** date). Cases (tiny temp
+  CSV fixture): award on the raid night → parsed; award on an adjacent night → excluded; off-spec flag;
+  no CSV / empty → `{}` (card hides).
+- **`build_site.py`** (M) — multi-week staging. Cases (monkeypatch enrich/loot like `test_week_build.py`,
+  write to a temp `.deploy`): newest-6 selection + ordering by `start_ms`; the latest week embedded
+  **verbatim** from the HTML while earlier weeks are enriched; `WEEKS_INDEX` manifest shape; the
+  partial-`weeks/` cleanup on a mid-build failure.
+- **`roles.py`** (S, pure — surprising omission) — `_effective_role` / `_fight_role` / `_nontank_role`
+  / `_nonheal_role`: load-bearing hybrid/spec-swap classification that buckets raiders across every
+  card. Cases: tank who tanked <50% → off-role; healer who healed <50% → off-role; per-fight spec→role
+  mapping (Prot→Tank, Feral by bucket, blank-spec fallback).
+- **`wcl_client.py`** (S, with an injected fake `requests`) — `get_token`/`gql` retry/backoff. The
+  **partial-payload return** that `_report` defends against ORIGINATES here and is untested. Cases: a
+  429 honors `Retry-After` within the bounded counter; a 5xx retries then succeeds; a GraphQL `errors`
+  payload **with** usable `data` returns the partial (not raise); a null payload raises.
+- **`week_schema.validate()` tiering** (S) — `test_week_schema.py` covers the drift-guard, not the
+  WARN-vs-INFO logic. Cases: a required WCL section empty on a kills>0 week → WARN; a LOG-tier section
+  empty → INFO; `has_log`/`has_loot` only sharpen wording, never upgrade INFO→WARN.
+
+Acceptably skipped (orchestration / dev tools / data-only): `reprocess.py`, `replay_render.py`,
+`preview.py`, `perf_summaries.py` (dormant — no API key), `game_constants.py`, `paths.py`.
