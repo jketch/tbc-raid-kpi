@@ -1362,21 +1362,7 @@ function renderSunderArmor(){
   const el = document.getElementById("sunderArmor");
   if (!el) return;
   const players = sa.players || [];
-  if (!players.length){
-    // No Sunder applications. If warriors raided AND the armor-debuff slot was still covered
-    // (rogue Expose Armor — the Debuff Coverage slot unions both), say so explicitly instead
-    // of silently hiding — "no data" and "nobody sundered" are different facts.
-    const warriors = Object.values(WEEK_DATA.roster||{}).some(r => r.class === "Warrior");
-    const dcb = ((WEEK_DATA.debuffCoverage||{}).bosses)||[];
-    const exposeCov = dcb.length ? dcb.reduce((s,b)=>s+((b.coverage||{}).sunder||0),0)/dcb.length : 0;
-    if (warriors && exposeCov > 0){
-      el.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:6px 2px">No Sunder Armor
-        applications this week — the armor-debuff slot was maintained by <b>Expose Armor</b>
-        (${Math.round(exposeCov)}% avg uptime; see Debuff Coverage).</div>`;
-      return;
-    }
-    const c = el.closest(".card"); if (c) c.style.display = "none"; return;
-  }
+  if (!players.length){ const c = el.closest(".card"); if (c) c.style.display = "none"; return; }
   const maxTotal = Math.max(...players.map(p => p.total)) || 1;
   const EFF = "var(--physical)", REF = "var(--accent)";
   const num = (v, col, delta) => `<td style="text-align:right;padding:5px 12px;font-variant-numeric:tabular-nums;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:${col};white-space:nowrap">${(v||0).toLocaleString()}${delta!==undefined?fmtDelta(delta, true):""}</td>`;
