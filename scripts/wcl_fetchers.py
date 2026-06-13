@@ -754,10 +754,15 @@ def compute_healing_metrics(heal_by_fight: dict, fight_roles: dict, fight_durs: 
     return out
 
 
-def fetch_healing_spells(token: str, report_code: str, fights: list, actors: list) -> dict:
+def fetch_healing_spells(token: str, report_code: str, fights: list, actors: list,
+                         md: dict | None = None) -> dict:
     """Per-healer per-spell breakdown from healing events: casts, effective, overheal%,
     heal-per-cast, crit%. HoT ticks (tick=true) count toward healing but not casts/crit
-    (they can't crit in TBC). Returns { player: [ {spell, casts, eff, per_cast, overheal_pct, crit_pct} ] }."""
+    (they can't crit in TBC) — a row with casts 0 is HoT-tick-only (per_cast is None there,
+    rendered as ticks). Downranked casts (downranking is core TBC healing) keep their own
+    row, labeled "(downranked)" so twin rows are distinguishable AND don't collide on the
+    healing_spells DB primary key (player, spell).
+    Returns { player: [ {spell, casts, eff, per_cast, overheal_pct, crit_pct} ] }."""
     if not fights:
         return {}
     id_to_name = {a["id"]: a["name"] for a in (actors or []) if a.get("type") == "Player"}
@@ -765,8 +770,10 @@ def fetch_healing_spells(token: str, report_code: str, fights: list, actors: lis
     start = float(min(f["startTime"] for f in fights))
     end   = float(max(f["endTime"]   for f in fights))
 
-    # ability guid → name from the Healing table (events only carry the numeric id)
-    abil_name = {}
+    # ability guid → name: masterData covers EVERY id in the report (incl. low ranks and
+    # racials like Gift of the Naaru that a name-from-Healing-table-only map missed — those
+    # rendered as raw numeric ids); the Healing table overlay stays as the precise layer.
+    abil_name = dict((md or {}).get("gid2name") or {})
     try:
         QT = """query($c:String!,$f:[Int]){reportData{report(code:$c){
             table(dataType: Healing, fightIDs:$f, killType:Kills)}}}"""
@@ -807,19 +814,30 @@ def fetch_healing_spells(token: str, report_code: str, fights: list, actors: lis
         name = id_to_name.get(sid)
         if not name:
             continue
-        rows = []
+        # Rank disambiguation: same spell NAME under several gameIDs = downranking (TBC rank
+        # chains ascend by id, so the HIGHEST id is the top rank and keeps the plain name;
+        # lower ids get "(downranked)"). Identical twin rows confused readers and silently
+        # collided on the healing_spells DB primary key.
+        by_label = defaultdict(list)
         for aid, s in spells.items():
-            raw = s["eff"] + s["over"]
-            if s["eff"] <= 0:
-                continue
-            rows.append({
-                "spell":        abil_name.get(aid, str(aid)),
-                "casts":        s["casts"],
-                "eff":          s["eff"],
-                "per_cast":     round(s["eff"] / s["casts"]) if s["casts"] else 0,
-                "overheal_pct": round(s["over"] / raw * 100, 1) if raw else 0.0,
-                "crit_pct":     round(s["crits"] / s["casts"] * 100, 1) if s["casts"] else 0.0,
-            })
+            if s["eff"] > 0:
+                by_label[abil_name.get(aid, str(aid))].append((aid if isinstance(aid, int) else -1, aid, s))
+        rows = []
+        for label, variants in by_label.items():
+            variants.sort(key=lambda v: -v[0])             # highest rank (id) first
+            for i, (_, aid, s) in enumerate(variants):
+                raw = s["eff"] + s["over"]
+                suffix = "" if i == 0 else (" (downranked)" if i == 1 else f" (downranked {i})")
+                rows.append({
+                    "spell":        label + suffix,
+                    "casts":        s["casts"],
+                    "eff":          s["eff"],
+                    # casts 0 = HoT-tick-only healing (Renew/Rejuv) — a 0 "per cast" reads as
+                    # broken, so it's None and the drill renders "ticks" instead.
+                    "per_cast":     round(s["eff"] / s["casts"]) if s["casts"] else None,
+                    "overheal_pct": round(s["over"] / raw * 100, 1) if raw else 0.0,
+                    "crit_pct":     round(s["crits"] / s["casts"] * 100, 1) if s["casts"] else 0.0,
+                })
         out[name] = sorted(rows, key=lambda x: -x["eff"])
     return out
 
@@ -1900,9 +1918,15 @@ def _build_death_timeline(evs, abil_name, actor_name, max_events=22):
             amt  = int(ev.get("amount", 0) or 0)
             over = ev.get("overkill") if kind == "dmg" else ev.get("overheal")
             over = max(0, int(over or 0))
-            abid = ev.get("abilityGameID")
+            # Deaths-table events embed an `ability` OBJECT ({name, guid, abilityIcon}) — NOT the
+            # abilityGameID field regular events carry (probed live 2026-06-13; reading only
+            # abilityGameID labeled every recap hit "Melee"). The embedded name is authoritative;
+            # the masterData map stays as fallback for any event that lacks it.
+            abil = ev.get("ability") or {}
+            abid = abil.get("guid", ev.get("abilityGameID"))
             sid  = ev.get("sourceID")
-            ability = abil_name.get(abid) or ("Melee" if abid in (0, 1, None) else "(spell)")
+            ability = (abil.get("name") or abil_name.get(abid)
+                       or ("Melee" if abid in (0, 1, None) else "(spell)"))
             pt = {"t": round((ev.get("timestamp", death_ts) - death_ts) / 1000.0, 1),
                   "type": kind, "amt": amt, "over": over,
                   "ability": ability, "src": actor_name.get(sid) or "—"}

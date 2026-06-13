@@ -336,7 +336,7 @@ def build_week_data(report_code: str, token: str,
     # Healer throughput/efficiency metrics — SCOPED to each healer's heal-fights.
     heal_by_fight   = fetch_healing_by_fight(token, report_code, kills)
     healing_metrics = compute_healing_metrics(heal_by_fight, fight_roles, fight_durs, tank_names)
-    healing_spells  = fetch_healing_spells(token, report_code, kills, actors)
+    healing_spells  = fetch_healing_spells(token, report_code, kills, actors, md)
     healer_mana     = fetch_healer_mana(token, report_code, fight_ids)
     # Performance metric — native WCL PARSE % (rankPercent vs the FULL logged population, not the
     # old top-100 cohort ratio). ONE fetch (report.rankings) covers all roles: the dps parse feeds

@@ -603,7 +603,7 @@
     </div>
     <div class="stat-tile">
       <div class="val" id="totalDeaths">—</div>
-      <div class="lbl">Total Deaths</div>
+      <div class="lbl" title="every death all night — boss pulls AND trash. The 💀 chips on the boss tiles count the kill pull only, so the two legitimately differ.">Total Deaths · incl. trash</div>
       <div class="stat-delta" id="deltaDeaths"></div>
     </div>
     <div class="stat-tile">
@@ -649,7 +649,7 @@
   <div class="tsec" data-tab="utility">
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_drum_03.jpg" alt=""> Drums of Battle</div>
   <div class="card">
-    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_drum_03.jpg" alt=""> Drums of Battle Efficiency</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_drum_03.jpg" alt=""> Efficiency per drummer</div>
     <div class="hs-sub">Per drummer: <b>casts</b> · <b>buffs/drum</b> (allies hit per cast — positioning/timing) · bar &amp; number = total <b>ally-buffs delivered</b>.</div>
     <div class="drum-card" id="drumRows"></div>
   </div>
@@ -730,7 +730,7 @@
   <!-- ═══════════════ CONSUMABLE COMPLIANCE ═══════════════ -->
   <div class="section-label" style="margin-top:24px"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/trade_alchemy.jpg" alt=""> Consumable Compliance</div>
   <div class="card">
-    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_alchemy_endlessflask_06.jpg" alt=""> Consumable Compliance</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_alchemy_endlessflask_06.jpg" alt=""> Per-raider compliance grid</div>
     <div class="hs-sub">What each raider brought vs. what's expected for their role. <b>Flask/Elix</b> = a flask or both elixir slots · <b>Combat Pot</b> = any in-fight potion (combat / mana / healing — all share the potion CD) · <b>Alt Pot</b> = the separate-CD mana sustain: a mana gem, mana rune, Flame Cap, or Nightmare Seed.</div>
     <div id="consumUsage" class="scroll-y"></div>
   </div>
@@ -815,7 +815,7 @@
     <div class="scroll-x">
       <table class="mini-table" id="healTable">
         <thead>
-          <tr><th>Healer</th><th class="num">Fights</th><th class="num">Eff HPS</th><th class="num">Eff Healing</th><th class="num">Overheal</th><th class="num">Activity</th><th class="num">Tank Heal</th><th class="num">HP/Mana</th><th class="num" title="WCL healing parse percentile vs all logged same-spec parses. 50 = typical, 95+ = elite. Color = WCL bracket.">Parse %</th><th>Top Heal</th></tr>
+          <tr><th>Healer</th><th class="num">Fights</th><th class="num">Eff HPS</th><th class="num">Eff Healing</th><th class="num">Overheal</th><th class="num">Activity</th><th class="num">Tank Heal</th><th class="num" title="effective HEALING per point of mana spent (estimated from cast counts × max-rank costs) — not hit points">Heal/Mana</th><th class="num" title="WCL healing parse percentile vs all logged same-spec parses. 50 = typical, 95+ = elite. Color = WCL bracket.">Parse %</th><th>Top Heal</th></tr>
         </thead>
         <tbody id="healTbody"></tbody>
       </table>
@@ -853,8 +853,8 @@
     <!-- Engineering + Interrupts stacked (right column) -->
     <div style="display:flex;flex-direction:column;gap:24px">
       <div class="card physical">
-        <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_gizmo_supersappercharge.jpg" alt=""> Sapper/Grenade Usage &amp; Damage</div>
-        <div class="hs-sub">Sapper/bomb damage dealt to bosses, with per-item use counts.</div>
+        <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_gizmo_supersappercharge.jpg" alt=""> Sapper &amp; Bomb Usage &amp; Damage</div>
+        <div class="hs-sub">Sapper &amp; bomb (Fel Iron Bomb / Adamantite Grenade) damage dealt to bosses, with per-item use counts.</div>
         <div class="scroll-x">
           <table class="mini-table" id="engTable" style="table-layout:fixed;width:100%">
             <thead><tr id="engHead"></tr></thead>
@@ -878,7 +878,7 @@
   <div class="tsec" data-tab="utility">
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_sealofprotection.jpg" alt=""> Saving Others — Hands &amp; Battle-Res</div>
   <div class="card gold">
-    <div class="hs-sub">Protective &amp; external casts <b>on teammates</b> — paladin Hand of Protection / Sacrifice / Lay on Hands / Salvation / Freedom, druid Rebirth &amp; Innervate-class help. <b>Maintained buffs and routine shields (PW:Shield, Earth Shield, Blessings) are excluded</b> — this is clutch help, not upkeep. <b>Dispels &amp; purges have their own card below.</b> Hover a row for <b>who they helped</b>.</div>
+    <div class="hs-sub">Protective &amp; external casts <b>on teammates</b> — the clutch single-target paladin Hands (Protection / Sacrifice / Salvation / Freedom — the Anniversary client's names for the old single-target Blessings), Lay on Hands on an ally, druid Rebirth &amp; Innervate-class help. <b>Maintained buffs and routine shields (PW:Shield, Earth Shield, Greater Blessings) are excluded</b> — this is clutch help, not upkeep. <b>Dispels &amp; purges have their own card below.</b> Hover a row for <b>who they helped</b>.</div>
     <div class="scroll-x"><div id="savesCard"></div></div>
   </div>
   </div>
@@ -1057,10 +1057,13 @@ function renderHealing() {
 }
 
 // ── TANK SCORECARD v2 — survivability + mitigation, scoped to tank-fights (swap-aware)
-const CD_ABBR = { "Shield Wall":"SW", "Last Stand":"LS", "Frenzied Regen":"FR",
-                  "Barkskin":"BS", "Lay on Hands":"LoH" };
-const CD_BY_CLASS = { Warrior:["Shield Wall","Last Stand"], Druid:["Frenzied Regen","Barkskin"],
-                      Paladin:["Lay on Hands"] };
+// Keys MUST match wcl_fetchers.CD_NAMES exactly ("Frenzied Regeneration", not "Frenzied
+// Regen" — the short key silently rendered ×0 for every bear). BSk not BS (Battle Shout).
+const CD_ABBR = { "Shield Wall":"SW", "Last Stand":"LS", "Frenzied Regeneration":"FR",
+                  "Barkskin":"BSk", "Lay on Hands":"LoH",
+                  "Divine Shield":"DS", "Divine Protection":"DP" };
+const CD_BY_CLASS = { Warrior:["Shield Wall","Last Stand"], Druid:["Frenzied Regeneration","Barkskin"],
+                      Paladin:["Lay on Hands","Divine Shield","Divine Protection"] };
 function renderTanks() {
   const data = WEEK_DATA.tankScorecard || [];
   const tbody = document.getElementById("tankTbody");
@@ -1092,7 +1095,7 @@ function renderTanks() {
     const cds = CD_BY_CLASS[cls] || Object.keys(t.cooldowns || {});
     const cdStr = cds.map(cd => {
       const n = (t.cooldowns || {})[cd] || 0;
-      return `<span style="color:${n>0?'var(--text)':'var(--muted)'}" title="${cd}${cd==='Barkskin'?' — drops Bear Form (off-tank only)':''}">${CD_ABBR[cd]||cd}×${n}</span>`;
+      return `<span style="color:${n>0?'var(--text)':'var(--muted)'}" title="${cd}${cd==='Barkskin'?' — usable in Bear Form in TBC (no form restriction)':''}">${CD_ABBR[cd]||cd}×${n}</span>`;
     }).join(" ") || '<span style="color:var(--muted)">—</span>';
     // Performance pillar (two facets): threat WAR (cohort DPS) + absolute survivability grade.
     const warCell = parseCell(t.vs_replacement, t.delta_vs_replacement);
@@ -1410,7 +1413,21 @@ function renderSunderArmor(){
   const el = document.getElementById("sunderArmor");
   if (!el) return;
   const players = sa.players || [];
-  if (!players.length){ const c = el.closest(".card"); if (c) c.style.display = "none"; return; }
+  if (!players.length){
+    // No Sunder applications. If warriors raided AND the armor-debuff slot was still covered
+    // (rogue Expose Armor — the Debuff Coverage slot unions both), say so explicitly instead
+    // of silently hiding — "no data" and "nobody sundered" are different facts.
+    const warriors = Object.values(WEEK_DATA.roster||{}).some(r => r.class === "Warrior");
+    const dcb = ((WEEK_DATA.debuffCoverage||{}).bosses)||[];
+    const exposeCov = dcb.length ? dcb.reduce((s,b)=>s+((b.coverage||{}).sunder||0),0)/dcb.length : 0;
+    if (warriors && exposeCov > 0){
+      el.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:6px 2px">No Sunder Armor
+        applications this week — the armor-debuff slot was maintained by <b>Expose Armor</b>
+        (${Math.round(exposeCov)}% avg uptime; see Debuff Coverage).</div>`;
+      return;
+    }
+    const c = el.closest(".card"); if (c) c.style.display = "none"; return;
+  }
   const maxTotal = Math.max(...players.map(p => p.total)) || 1;
   const EFF = "var(--physical)", REF = "var(--accent)";
   const num = (v, col, delta) => `<td style="text-align:right;padding:5px 12px;font-variant-numeric:tabular-nums;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:${col};white-space:nowrap">${(v||0).toLocaleString()}${delta!==undefined?fmtDelta(delta, true):""}</td>`;
@@ -1750,9 +1767,9 @@ function showHealerDrill(name){
   const cc = nameColor(name, h.role);
   const rows = (h.spells||[]).map(s =>
     `<div class="drill-row" style="grid-template-columns:1fr 44px 66px 52px 46px">
-       <span>${s.spell}</span><span class="drill-t">${s.casts}×</span>
-       <span class="drill-amt">${(s.per_cast||0).toLocaleString()}</span>
-       <span class="drill-t">${s.overheal_pct}% oh</span><span class="drill-t">${s.crit_pct}% cr</span></div>`).join("");
+       <span>${s.spell}</span><span class="drill-t">${s.casts ? s.casts+"×" : "HoT"}</span>
+       <span class="drill-amt">${s.per_cast != null ? s.per_cast.toLocaleString() : "ticks"}</span>
+       <span class="drill-t">${s.overheal_pct}% oh</span><span class="drill-t">${s.casts ? s.crit_pct+"% cr" : "—"}</span></div>`).join("");
   _openDrill(`<span class="cname" style="color:${cc}">${esc(name)}</span> · per-spell healing`,
              "spell · casts · per-cast · overheal · crit", rows);
 }
@@ -2081,8 +2098,13 @@ function renderGearAudit() {
   if (!rows.length) { if (card) card.style.display = "none"; if (label) label.style.display = "none"; return; }
   if (card) card.style.display = ""; if (label) label.style.display = "";
   const head = document.getElementById("gearAuditHead");
+  // Gear rides on ONE DamageDone table, so raiders absent from that fight (typically healers who
+  // dealt no damage) aren't audited — name them so "17/23" doesn't read as a raid-wide 17/25.
+  const audited = new Set(rows.map(p => p.name));
+  const unaudited = Object.keys(WEEK_DATA.roster || {}).filter(n => !audited.has(n)).sort();
   if (head) head.innerHTML = `Raid avg item level <b style="color:var(--text)">${ga.raid_avg_ilvl}</b> · ` +
-    `<b style="color:var(--green)">${ga.fully_prepped}/${ga.total}</b> fully prepped.`;
+    `<b style="color:var(--green)">${ga.fully_prepped}/${ga.total}</b> fully prepped.` +
+    (unaudited.length ? ` <span style="color:var(--muted)">Not audited (no gear data this week): ${unaudited.map(esc).join(", ")}.</span>` : "");
   const gap = p => (p.missing_enchants || []).length + (p.empty_sockets > 0 ? 1 : 0);
   const sorted = [...rows].sort((a, b) => (gap(b) - gap(a)) || a.name.localeCompare(b.name));
   const row = p => {
@@ -2443,7 +2465,7 @@ function renderSaves(){
     return `<tr>
       <td><span class="cname" style="color:${nc}">${esc(p.name)}</span></td>
       <td class="num" title="emergency protection / battle-res on an ally (Hand of Protection, Lay on Hands, Rebirth…)">${chip(p.save,'saves','var(--gold-soft)')}${fmtDelta(p.delta_save, true)}</td>
-      <td class="num" title="reactive help (Hand of Salvation, Blessing of Freedom, Tremor)">${chip(p.utility,'util','var(--muted)')}</td>
+      <td class="num" title="reactive help (Hand of Salvation, Hand of Freedom, Tremor)">${chip(p.utility,'util','var(--muted)')}</td>
       <td style="font-size:10.5px;color:var(--muted);line-height:1.5">${detail||'—'}</td>
     </tr>`;
   }).join("");
@@ -2664,7 +2686,7 @@ function renderLuckGrid() {
   const disc = document.getElementById("luckDisclaimer");
   if (disc) disc.innerHTML = building.length === all.length
     ? "📊 <b>Building baselines</b> — luck unlocks once a player has 3 weeks of history. Each weekly run adds to it automatically."
-    : "🎲 Luck = this week's crit vs your own multi-week average (controls for gear/spec/buffs — pure RNG). A <b>sustained</b> step up is a gear upgrade (🔼); a one-week spike is hot dice. The sparkline shows which.";
+    : "🎲 Luck = this week's crit vs your own multi-week average (controls for gear/spec/buffs — pure RNG). A <b>sustained</b> step up is a gear upgrade (🔼); a one-week spike is hot dice. The sparkline shows which. <span style='color:var(--muted)'>Crit is measured from damage events — a healer who cast no damage spells won't appear here.</span>";
 }
 
 // ── ENGINEERING TABLE (single card — damage + per-ability counts)
@@ -2800,7 +2822,7 @@ const MELEE_MANDATORY = new Set(["Whirlwind", "Whirl", "Scalding Water"]);
 // universal hygiene (1.0). The composite renormalizes over the present (non-null) pillars, so these are
 // RELATIVE magnitudes. v1 — recalibrate after a real week.
 const PERF_ARCHETYPE = {           // [prep, perf, exec, surv, util]
-  dps0:   [1.0, 2.25, 1.0,  1.0, 0.5 ],   // pure DPS — top-parse classes (locks, mages, rogues, BM/MM hunter, enh)
+  dps0:   [1.0, 2.25, 1.0,  1.0, 0.5 ],   // pure DPS — top-parse classes (locks, mages, rogues, BM/MM hunter, fury/arms)
   dps1:   [1.0, 1.75, 1.0,  1.0, 1.25],   // utility-flavored DPS (ele, enh, boomkin, survival, feral-cat)
   dps2:   [1.0, 1.0,  1.0,  1.0, 2.0 ],   // utility-FIRST DPS (Ret, Shadow — personal parse understates them)
   healer: [1.0, 2.0,  0.5,  1.0, 1.25],   // HPS is the mandate; healers eat little avoidable so exec counts less
@@ -2810,6 +2832,10 @@ const PERF_ARCH_LABEL = {dps0:"pure DPS", dps1:"utility DPS", dps2:"utility-firs
 // DPS utility tiers BY SPEC (tanks/healers resolve by ROLE, see perfArchetype). Tier 2 = utility-first;
 // tier 1 = utility-flavored; everything else = tier 0 (pure parse). "Feral" here means CAT dps — a Feral
 // who TANKED is role=Tank and hits the tank archetype first.
+// NB (flagged in the 2026-06-13 external review): docs/TBC_RAID_MECHANICS.md ranks Ele/Enh/Balance a
+// utility tier HIGHER than this map does. Here only Ret/Shadow are tier-2 — the rationale is that their
+// PERSONAL parse structurally understates them, while ele/enh/boomkin still parse on their own bar.
+// Maintainer to confirm this retune or align the doc — one of the two should state the decision.
 const PERF_UTIL_TIER2 = new Set(["Retribution","Shadow"]);
 const PERF_UTIL_TIER1 = new Set(["Elemental","Enhancement","Balance","Survival","Feral"]);
 function perfArchetype(cls, spec, role){

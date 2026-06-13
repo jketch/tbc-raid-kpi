@@ -441,12 +441,14 @@ def map_to_week_data(wcl: dict) -> WeekData:
              for p in players if p.get("total_dmg", 0) > 0),
             key=lambda x: -x["total_dmg"]),
         # Healer casting-uptime per fight — the Healers & Tanks tab analog of uptimeByFight.
-        # Filtered by effective_role so a resto player who mostly DPS'd drops out of the
-        # healer chart (and into the DPS one).
+        # Inclusion matches the healer SCORECARD (anyone who healed ≥1 fight as a healer, via
+        # healing_metrics), not effective_role — a spec-swapper who healed part of the night
+        # showed on the scorecard but vanished from this heatmap (2026-06-13 review #10).
         "healerUptimeByFight": sorted(
             ({"name": p["name"], "role": p["role"], "effective_role": _eff(p),
               "uptime_by_fight": p.get("healer_uptime_by_fight", [])}
-             for p in players if _eff(p) == "Healer"),
+             for p in players
+             if _eff(p) == "Healer" or p["name"] in heal_metrics),
             key=lambda x: x["name"]),
         "deaths":       death_list,
         "casterCrit":   crit_list("Caster"),
