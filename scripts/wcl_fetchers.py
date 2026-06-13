@@ -2220,6 +2220,82 @@ def fetch_sunder_armor(token: str, report_code: str, kills: list, md: dict | Non
     return {"players": players}
 
 
+def fetch_expose_armor(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
+    """Per-rogue Expose Armor UPTIME on bosses — a Combat rogue's armor-debuff contribution. Expose
+    Armor fills the SAME raid debuff slot as warrior Sunder Armor (the two are mutually exclusive — a
+    rogue assigned Expose holds the slot so the warriors don't Sunder), but it's a DIFFERENT debuff, so
+    fetch_sunder_armor excludes it and the per-rogue contribution went uncredited. Pure WCL: WCL Debuffs
+    EVENTS for Expose Armor (over kill fights, enemy targets) → reconstruct each source's applied bands
+    (applydebuff → removedebuff, per source+target so multi-add Expose doesn't double-count), merge,
+    divide by total boss fight time. Attribution by `sourceID`. Returns
+      {players:[{name, uptime, applications}]} sorted by uptime desc — {} when no kills / no Expose."""
+    if not kills:
+        return {}
+    if md is None:
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
+    id2name = md["id2name"]
+    expose_ids = [a.get("gameID") for a in (md.get("abilities") or [])
+                  if (a.get("name") or "") == "Expose Armor"]
+    if not expose_ids:
+        print("  ✓ expose armor: no Expose Armor applications in report")
+        return {}
+
+    fids = [f["id"] for f in kills]
+    st   = min(f["startTime"] for f in kills)
+    en   = max(f["endTime"]   for f in kills)
+    total_ms = sum(f["endTime"] - f["startTime"] for f in kills) or 1
+    bands = defaultdict(list)              # name → [{startTime,endTime}] (merged later)
+    opened = {}                            # (sourceID, targetID) → band start ts
+    apps   = defaultdict(int)              # name → apply+refresh count (maintenance volume)
+    QD = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!,$a:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Debuffs, hostilityType: Enemies,
+               abilityID:$a, limit: 10000){ data nextPageTimestamp }}}}"""
+    try:
+        for aid in expose_ids:
+            cur = st
+            for _pg in range(MAX_EVENT_PAGES):
+                ev = _report(gql(token, QD, {"c": report_code, "ids": fids, "st": cur, "en": en,
+                                             "a": float(aid)}), "events", default={})
+                for d in ev.get("data", []):
+                    sid = d.get("sourceID")
+                    nm = id2name.get(sid)
+                    if not nm:
+                        continue
+                    t, ts, tid = d.get("type"), d.get("timestamp"), d.get("targetID")
+                    key = (sid, tid)
+                    if t == "applydebuff":
+                        opened[key] = ts
+                        apps[nm] += 1
+                    elif t == "refreshdebuff":
+                        apps[nm] += 1
+                        opened.setdefault(key, ts)        # keep an open band alive
+                    elif t == "removedebuff":
+                        s0 = opened.pop(key, None)
+                        if s0 is not None:
+                            bands[nm].append({"startTime": s0, "endTime": ts})
+                nx = ev.get("nextPageTimestamp")
+                if not nx:
+                    break
+                cur = nx
+    except Exception as ex:
+        print(f"  Warning: expose-armor debuff events failed: {ex}")
+    # close any band still up at the end of the logged window (debuff lasted to fight end)
+    for (sid, tid), s0 in opened.items():
+        nm = id2name.get(sid)
+        if nm:
+            bands[nm].append({"startTime": s0, "endTime": en})
+
+    players = []
+    for nm in sorted(set(bands) | set(apps)):
+        up = round(_merge_bands(bands.get(nm, [])) / total_ms * 100, 1)
+        if up <= 0 and apps.get(nm, 0) == 0:
+            continue
+        players.append({"name": nm, "uptime": up, "applications": apps.get(nm, 0)})
+    players.sort(key=lambda x: (-x["uptime"], -x["applications"], x["name"]))
+    print(f"  ✓ expose armor: {len(players)} rogue(s) maintaining the armor slot")
+    return {"players": players}
+
+
 def fetch_mechanic_compliance(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
     """Per-boss "who ate the mechanic" — the WCL-durable headline for avoidable damage
     (backlog #2 + #7). For each kill fight whose encounter has entries in

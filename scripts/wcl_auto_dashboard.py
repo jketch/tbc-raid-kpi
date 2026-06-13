@@ -93,7 +93,7 @@ from wcl_fetchers import (                                                      
     fetch_parse_percentiles, fetch_saves, fetch_interrupts, fetch_dispels,
     fetch_ability_icons, fetch_deaths_split, _build_death_timeline, DEBUFF_SLOTS,
     _merge_bands, _totem_uptime, fetch_debuff_coverage, MANA_SOURCES, INNERVATE_ICON,
-    fetch_mana_returns, fetch_sunder_armor, fetch_mechanic_compliance,
+    fetch_mana_returns, fetch_sunder_armor, fetch_expose_armor, fetch_mechanic_compliance,
 )
 
 from week_map import (_tally_spells, _interrupt_row, _ice_player_spells,              # noqa: F401
@@ -400,6 +400,7 @@ def build_week_data(report_code: str, token: str,
     # Class toolkit — each DPS's signature class-relative utility (cast-based, pure WCL)
     mana_returns  = fetch_mana_returns(token, report_code, kills, md)
     sunder_armor  = fetch_sunder_armor(token, report_code, kills, md)
+    expose_armor  = fetch_expose_armor(token, report_code, kills, md)   # rogue armor-debuff (fills the Sunder slot)
     saves         = fetch_saves(token, report_code, kills, md)   # protective/external casts on allies
     interrupts_wcl = fetch_interrupts(token, report_code, kills, md)  # WCL-durable interrupt headline
     dispels       = fetch_dispels(token, report_code, kills, md)  # who-dispelled-what (cleanses + purges)
@@ -526,6 +527,8 @@ def build_week_data(report_code: str, token: str,
         "mana_returns":    mana_returns,
         # per-player Sunder Armor quality (effective/refreshed/wasted, pure WCL)
         "sunder_armor":    sunder_armor,
+        # per-rogue Expose Armor uptime — same armor slot as Sunder, mutually exclusive (pure WCL)
+        "expose_armor":    expose_armor,
         # protective/external casts on allies (paladin Hands, battle-res, reactive utility) — "saving others"
         "saves":           saves,
         # WCL-durable interrupt headline (events) — name → {count, spells}; map prefers this, log fallback

@@ -2808,6 +2808,7 @@ const PERF_FACET_TARGET = {
   tow: 95, bshout: 90,                                                       // uptime %
   wf: 140, md: 6, intr: 4, disp: 4, save: 3, fward: 4, stones: 50, sunder: 40, pala: 500, innervate: 5,  // counts
   twist: 5,            // ret Seal of Command casts/min — ~5/min = actively twisting (vs ~0.3 set-and-forget). v1.
+  expose: 80,          // rogue Expose Armor uptime % — held the armor slot most of the night (positive-only). v1.
   mana: 100000,                                                             // raw mana returned to the raid
 };
 // POSITIVE-ONLY facets — discretionary/assigned utility (dispels, clutch battle-res/externals) that's
@@ -2815,7 +2816,7 @@ const PERF_FACET_TARGET = {
 // damaging 0 — so a shadow priest who nailed VT isn't dragged to 50 because the assigned cleanser
 // handled dispels. Signature facets (ToW, Windfury, stones, Innervate, mana battery, MD, Battle Shout,
 // JoW, Fear Ward, interrupts) are NOT here — they're your one job, so a 0 counts.
-const PERF_POSITIVE_ONLY = new Set(["disp","save"]);
+const PERF_POSITIVE_ONLY = new Set(["disp","save","expose"]);
 const PERF_ROLE_FACETS = { Physical:["intr","sunder","save"], Caster:["intr","mana","save"], Healer:["save","mana"], Tank:["intr","save"] };
 // Utility is CLASS-shaped, not role-shaped: each class is credited on the utility IT actually
 // provides, scored vs an ABSOLUTE target (PERF_FACET_TARGET, not the raid's best), so a class isn't
@@ -2829,7 +2830,9 @@ const PERF_ROLE_FACETS = { Physical:["intr","sunder","save"], Caster:["intr","ma
 // deliberately ABSENT — a shared raid debuff (all warlocks benefit even if two maintain it).
 const CLASS_UTIL_FACETS = {     // Paladin is spec/role-split in utilFacetsFor (Ret 'twist' vs Prot/Holy 'pala')
   Warlock:["stones"], Mage:["intr"],
-  Hunter:["md"], Rogue:["intr"], Warrior:["bshout","sunder"],
+  // Rogue: 'intr' (Kick) is the baseline; 'expose' (Expose Armor uptime — fills the Sunder slot) is
+  // positive-only, so the ASSIGNED Expose rogue is credited while a pure-DPS rogue isn't penalized.
+  Hunter:["md"], Rogue:["intr","expose"], Warrior:["bshout","sunder"],
 };
 // Priest AND Shaman are spec/role-split (same class, different kit per spec); everyone else: class map →
 // role fallback. Priest: healer (holy/disc) → Fear Ward + dispels; shadow (Caster) → VT mana battery +
@@ -2978,6 +2981,7 @@ function _perfRows(){
         deaths=byName(wd.deaths), usage=byName(wd.consumableUsage), saves=byName(wd.saves),
         dispels=byName(wd.dispels), intr=byName(wd.interrupts),
         sunder=byName(((wd.sunderArmor||{}).players)||[]),
+        expose=byName(((wd.exposeArmor||{}).players)||[]),
         gear=byName(((wd.gearAudit||{}).players)||[]);
   const mcLiable=new Set((wd.mcLiable||[]).map(x=>x.name));
   const mcKill=new Set((wd.mcLiable||[]).filter(x=>(x.kills||0)>0).map(x=>x.name));  // KILLED a charmed teammate
@@ -3016,13 +3020,13 @@ function _perfRows(){
   // toolkit num, but are SEPARATE facet keys so each ranks within its own class cohort — the toolkit
   // num isn't comparable across classes (MD count ~6 vs Battle Shout ~89%).
   const tkNum=n=>(((dps[n]||{}).toolkit||{}).num||0);
-  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="disp"?dispTot(n) : f==="innervate"?(innv[n]||0) : f==="stones"?((usage[n]||{}).stones_made||0) : f==="fward"?((usage[n]||{}).fear_ward||0) : f==="pala"?(((usage[n]||{}).judge_util||0)+((usage[n]||{}).blessing||0)) : (f==="md"||f==="bshout"||f==="tow"||f==="wf"||f==="twist")?tkNum(n) : 0;
+  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="expose"?((expose[n]||{}).uptime||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="disp"?dispTot(n) : f==="innervate"?(innv[n]||0) : f==="stones"?((usage[n]||{}).stones_made||0) : f==="fward"?((usage[n]||{}).fear_ward||0) : f==="pala"?(((usage[n]||{}).judge_util||0)+((usage[n]||{}).blessing||0)) : (f==="md"||f==="bshout"||f==="tow"||f==="wf"||f==="twist")?tkNum(n) : 0;
   // best[facet] scoped to the COHORT that provides it (the classes whose CLASS_UTIL_FACETS list it),
   // NOT the whole raid — so a hunter's Misdirection ranks vs other hunters, not vs a mage's toolkit
   // num. A facet that's naturally class-exclusive (stones) collapses to its one cohort either way.
   const bestF={}, bestN={};   // bestN[f] = who leads facet f (for the drilldown "vs best (X)")
   Object.entries(roster).forEach(([n,r])=>{ utilFacetsFor(r.class,r.spec,r.role).forEach(f=>{ const v=facetVal(n,f); if(v>(bestF[f]||0)) bestN[f]=n; bestF[f]=Math.max(bestF[f]||0, v); }); });
-  const FACET_LABEL={intr:"interrupts",sunder:"Sunder",mana:"mana returned",save:"externals",disp:"dispels",stones:"stones",fward:"Fear Ward",pala:"JoW+blessings",md:"Misdirection",bshout:"Battle Shout",tow:"Totem of Wrath",wf:"Windfury",innervate:"Innervate",twist:"Seal twists/min"};
+  const FACET_LABEL={intr:"interrupts",sunder:"Sunder",mana:"mana returned",save:"externals",disp:"dispels",stones:"stones",fward:"Fear Ward",pala:"JoW+blessings",md:"Misdirection",bshout:"Battle Shout",tow:"Totem of Wrath",wf:"Windfury",innervate:"Innervate",twist:"Seal twists/min",expose:"Expose Armor %"};
 
   return Object.entries(roster).map(([name,r])=>{
     const role=r.role, d=deaths[name]||{total:0,trash:0};
@@ -3157,7 +3161,7 @@ function renderPerformance(){
     return (av-bv)*dir;
   });
   const cols=[["name","Player"],["prep","Prep"],["perf","Perf"],["exec","Exec"],["surv","Surv"],["util","Util"],["composite","Score"]];
-  const titles={prep:"Preparation — consumables (flask/food/weapon oil + in-fight pots, incl. mana gems/potions) minus gear gaps (missing enchants / empty sockets) → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play. DPS: avoidable dmg/min vs your POSITIONING cohort (melee vs ranged) + AoE-into-allies (friendly fire + MC liability, combined-capped — a single graze can't tank you; but a KILLING BLOW on a charmed teammate floors execution to 0). TANKS: active-mitigation maintenance per boss-melee-taken time — plate = Holy Shield/Shield Block cast-rate, bear = Lacerate uptime% — plus CD discipline. (Avoidable can't fairly score tanks; Survival is the outcome side: crushes/crits/deaths.)",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, ele Totem of Wrath, enh Windfury, druid Innervate, hunter Misdirection, warrior Battle Shout, ret paladin seal-twist cadence / prot+holy paladin JoW+blessings, priest Fear Ward / mana battery, dispels, interrupts, Sunder) vs an ABSOLUTE target — 'did your job', not vs the best provider. A facet nobody did this week drops out (no penalty, never a 0). Dispels &amp; battle-res are positive-only — credited if you did them, dropped if not (they're usually one person's assignment, so they never drag). Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars, weighted PER SPEC by what that spec is invited for: a top-parse DPS leans on Performance, Ret/Shadow on Utility, tanks on Survival/Execution. (n/5) = computed over the pillars present."};
+  const titles={prep:"Preparation — consumables (flask/food/weapon oil + in-fight pots, incl. mana gems/potions) minus gear gaps (missing enchants / empty sockets) → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play. DPS: avoidable dmg/min vs your POSITIONING cohort (melee vs ranged) + AoE-into-allies (friendly fire + MC liability, combined-capped — a single graze can't tank you; but a KILLING BLOW on a charmed teammate floors execution to 0). TANKS: active-mitigation maintenance per boss-melee-taken time — plate = Holy Shield/Shield Block cast-rate, bear = Lacerate uptime% — plus CD discipline. (Avoidable can't fairly score tanks; Survival is the outcome side: crushes/crits/deaths.)",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, ele Totem of Wrath, enh Windfury, druid Innervate, hunter Misdirection, warrior Battle Shout, ret paladin seal-twist cadence / prot+holy paladin JoW+blessings, priest Fear Ward / mana battery, dispels, interrupts, Sunder, rogue Expose Armor uptime) vs an ABSOLUTE target — 'did your job', not vs the best provider. A facet nobody did this week drops out (no penalty, never a 0). Dispels &amp; battle-res are positive-only — credited if you did them, dropped if not (they're usually one person's assignment, so they never drag). Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars, weighted PER SPEC by what that spec is invited for: a top-parse DPS leans on Performance, Ret/Shadow on Utility, tanks on Survival/Execution. (n/5) = computed over the pillars present."};
   const arrow=c=>_perfSort.col===c?(_perfSort.dir<0?" ▼":" ▲"):"";
   hd.innerHTML=cols.map(([c,lbl])=>`<th class="${c==='name'?'':'num'}" style="cursor:pointer;${c==='composite'?'color:var(--accent)':''}" title="${titles[c]}" onclick="_perfSortBy('${c}')">${lbl}${arrow(c)}</th>`).join("");
   const cell=v=>v==null?'<span style="color:var(--muted)">—</span>':`<span style="color:${parseColor(v)};font-weight:600">${v}</span>`;

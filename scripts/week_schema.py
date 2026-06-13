@@ -83,6 +83,8 @@ SECTIONS = {
                                    desc="per-raider item level / enchant / gem compliance (WCL gear + wowhead sockets)"),
     "sunderArmor":         Section(WCL,  False, predicate=_has_players,
                                    desc="per-warrior Sunder quality (empty: no warriors / no sunders)"),
+    "exposeArmor":         Section(WCL,  False, predicate=_has_players,
+                                   desc="per-rogue Expose Armor uptime — fills the Sunder armor slot (empty: no rogue Expose)"),
     "manaReturns":         Section(WCL,  False, predicate=_has_batteries,
                                    desc="mana returned to raid by source (empty if comp returns none)"),
     "saves":               Section(WCL,  False,
@@ -209,6 +211,7 @@ class WeekData(TypedDict, total=False):
     mechanicCompliance: dict
     gearAudit: dict
     sunderArmor: dict
+    exposeArmor: dict
     manaReturns: dict
     saves: list
     dispels: dict

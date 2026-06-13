@@ -85,6 +85,7 @@ def _fixture():
                           "trash": {"total": 200_000, "active": 100_000}},
             },
         },
+        "expose_armor": {"players": [{"name": "Huntz", "uptime": 67.8, "applications": 52}]},
     }
 
 
@@ -242,6 +243,19 @@ class TestHealing(unittest.TestCase):
         self.assertEqual(h["name"], "Healz")
         self.assertEqual(h["mana_eff"], 20.0)            # 3,000,000 eff / 150,000 mana
         self.assertIsNone(h["vs_replacement"])           # not ranked → None, renders "—"
+
+
+class TestExposeArmor(unittest.TestCase):
+    def test_expose_armor_passthrough(self):
+        # exposeArmor (rogue armor-debuff uptime — the Sunder slot's twin) maps straight through.
+        wd = map_to_week_data(_fixture())
+        self.assertEqual(wd["exposeArmor"], {"players": [{"name": "Huntz", "uptime": 67.8, "applications": 52}]})
+
+    def test_expose_armor_empty_when_absent(self):
+        wcl = _fixture()
+        del wcl["expose_armor"]
+        wd = map_to_week_data(wcl)
+        self.assertEqual(wd["exposeArmor"], {})   # absent → {} (card/facet drops out, no crash)
 
 
 class TestDeterminism(unittest.TestCase):

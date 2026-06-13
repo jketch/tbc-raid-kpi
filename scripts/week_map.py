@@ -476,6 +476,8 @@ def map_to_week_data(wcl: dict) -> WeekData:
         "debuffCoverage": wcl.get("debuff_coverage", {}),
         "gearAudit":      wcl.get("gear_audit", {}),
         "sunderArmor":    wcl.get("sunder_armor", {}),
+        # per-rogue Expose Armor uptime — the rogue's share of the armor-debuff slot (Sunder's twin)
+        "exposeArmor":    wcl.get("expose_armor", {}),
         # "saving others" — protective/external casts on allies, ranked by saves then total.
         # Dispels are filtered off here (they own the dispels card below); this is protective
         # saves + reactive utility only. Positive call-out surface; empty list ⇒ a quiet week.
