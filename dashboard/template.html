@@ -2832,10 +2832,9 @@ const PERF_ARCH_LABEL = {dps0:"pure DPS", dps1:"utility DPS", dps2:"utility-firs
 // DPS utility tiers BY SPEC (tanks/healers resolve by ROLE, see perfArchetype). Tier 2 = utility-first;
 // tier 1 = utility-flavored; everything else = tier 0 (pure parse). "Feral" here means CAT dps — a Feral
 // who TANKED is role=Tank and hits the tank archetype first.
-// NB (flagged in the 2026-06-13 external review): docs/TBC_RAID_MECHANICS.md ranks Ele/Enh/Balance a
-// utility tier HIGHER than this map does. Here only Ret/Shadow are tier-2 — the rationale is that their
-// PERSONAL parse structurally understates them, while ele/enh/boomkin still parse on their own bar.
-// Maintainer to confirm this retune or align the doc — one of the two should state the decision.
+// Tier-2 is reserved for specs whose PERSONAL parse structurally understates them (Ret, Shadow);
+// ele/enh/boomkin carry a defining buff but still parse on their own bar → tier 1. Decision
+// confirmed 2026-06-13; docs/TBC_RAID_MECHANICS.md §2 states the same rule (kept in sync).
 const PERF_UTIL_TIER2 = new Set(["Retribution","Shadow"]);
 const PERF_UTIL_TIER1 = new Set(["Elemental","Enhancement","Balance","Survival","Feral"]);
 function perfArchetype(cls, spec, role){

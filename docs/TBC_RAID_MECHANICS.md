@@ -97,6 +97,12 @@ For each: **mandate** (the pillar that defines value) and **raid utility** (what
 Util tier: **0** = selfish output, **1** = damage-first with a real raid buff riding along, **2** =
 support-first (you invite them *for* the utility; personal parse is secondary).
 
+> **Tier-2 is reserved for specs whose personal parse structurally UNDERSTATES them** — Ret (buff-bot;
+> low-tier personal DPS by design) and Shadow (most of its value lands in *other* casters' parses).
+> Ele / Enh / Balance carry a defining group buff, but they still parse on their own bar, so they are
+> **tier 1** (utility-flavored), not tier 2. This matches the dashboard's `PERF_UTIL_TIER1/2` sets in
+> template.html (decision confirmed 2026-06-13 — doc aligned to the code).
+
 ### Warrior
 - **Protection (Tank)** — *mandate:* Survival + mitigation-Execution (Shield Block, high armor,
   Defensive Stance); best physical-mitigation main tank. *Utility:* Commanding Shout (raid HP),
@@ -154,10 +160,10 @@ support-first (you invite them *for* the utility; personal parse is secondary).
   **Mana Tide** (Resto talent, group mana). **Tier: High.**
 - **Elemental (DPS)** — *mandate:* caster-group enabler. *Utility:* **Totem of Wrath** (+3% spell crit
   & +3% spell hit to the party — defines caster groups), Bloodlust, Wrath of Air, **Unleashed Rage**?
-  (no — that's Enhance). **Tier: 2.**
+  (no — that's Enhance). **Tier: 1** (the totem is defining, but an ele still parses on its own bar).
 - **Enhancement (DPS)** — *mandate:* melee-group enabler. *Utility:* **Windfury Totem** (huge melee
   AP/attack-speed proc — defines the melee group), **Unleashed Rage** (+10% party AP, Enhance talent),
-  Strength of Earth, Grace of Air, Bloodlust. **Tier: 2.**
+  Strength of Earth, Grace of Air, Bloodlust. **Tier: 1** (same reasoning as Elemental).
 
 ### Mage
 - **Arcane (DPS)** — *mandate:* Performance (top burst/sustained caster). *Utility:* **Arcane
@@ -184,7 +190,7 @@ support-first (you invite them *for* the utility; personal parse is secondary).
   + Innervate. **Tier: 1 (utility-flavored).**
 - **Balance (Boomkin)** — *mandate:* caster enabler. *Utility:* **Moonkin Aura** (+5% party spell crit),
   **Improved Faerie Fire** (+3% spell hit), **Innervate** (mana lifeline), **Rebirth**, Insect Swarm,
-  decurse. **Tier: 2.**
+  decurse. **Tier: 1** (aura/IFF ride along; the boomkin's own parse still stands).
 - **Restoration (Healer)** — *mandate:* Performance (HoT-blanket raid smoothing). *Utility:*
   **Innervate**, **Rebirth**, Tranquility, **Leader of the Pack**? (no — that's Feral), Mark of the
   Wild (raid stats), decurse. **Tier: Med-High.**
