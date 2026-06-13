@@ -68,7 +68,7 @@ graph LR
 | **Casts** | entries[] incl. **gear, talents**, abilities, targets | ✓ (toolkit) | gear/talents ride along |
 | **DamageDone** | entries[] incl. **gear[], talents[]**, abilities, targets | ✓ (DPS) | **GEAR = enchant/gem/ilvl audit (see below)** |
 | **DamageTaken** | entries[] incl. sources, overheal, abilities | ✓ (tanks) | per-source breakdown for non-tanks |
-| **Deaths** | entries[] incl. **overkill, killingBlow, deathWindow, events** | ✓ (recap) | overkill / killingBlow depth for Survival |
+| **Deaths** | entries[] incl. **overkill, killingBlow, deathWindow, events** | ✓ (recap) | overkill / killingBlow depth for Survival. ⚠ recap `events[]` embed an **`ability` OBJECT** (`{name, guid, abilityIcon}`), NOT the flat `abilityGameID`/`type` that DamageDone/DamageTaken events carry — read `ev.ability.name` (see note below) |
 | **Debuffs** | auras[] (uptime/bands) | ✓ (debuff coverage) | — |
 | **Healing** | entries[] incl. overheal, abilities, targets | ✓ (healers) | enemy-healing (proved MS value) |
 | **Resources** | resources[] | ✓ (mana returns) | self-sustain view |
@@ -126,6 +126,16 @@ the preparation signal the tool was built to surface. **Highest-value find of th
     **This one matches the "dormant for another edition" hypothesis.**
   Net: Interrupts + Dispels are real WCL-durable wins via `events()`; Threat/Survivability are genuinely
   out for TBC.
+
+## Gotchas (cost real debugging)
+- **Deaths recap event shape (2026-06-13).** A Deaths-table entry's `events[]` are NOT shaped like
+  DamageDone/DamageTaken events. Each carries the ability as an **embedded object** —
+  `ev.ability = {name, guid, type, abilityIcon}` — and has **no top-level `abilityGameID`**. Code that
+  read only `abilityGameID` (the shape every other dataType uses) silently resolved every recap hit to
+  the `Melee` default, so a 308-event death timeline read "Melee" for spell deaths whose killingBlow
+  said otherwise. Read `ev.ability.name` first; keep the masterData `gid2name[ev.ability.guid]` map as a
+  fallback. (`killingBlow` is the same object shape — `{name, guid, abilityIcon}`.) Fixed in
+  `_build_death_timeline`.
 
 ## Depth upgrades (cheap, additive)
 - **Deaths**: `overkill` (how hard the killing blow over-killed) + `killingBlow` (what ability) →
