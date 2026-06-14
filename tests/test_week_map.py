@@ -235,6 +235,22 @@ class TestConsumables(unittest.TestCase):
         out2 = classify_pull_auras([self._aura("Relentless Assault of Shattrath", 123456)])
         self.assertEqual(out2["flask"], "Flask of Relentless Assault (Shattrath)")
 
+    def test_recognize_zanza_buffs_as_elixirs(self):
+        # Zanza potion buffs log as "<Effect> of Zanza" (Spirit/Swiftness/Sheen) — stat consumables,
+        # counted as an elixir slot via the suffix (covers all three, incl. ones we never ID).
+        out = classify_pull_auras([
+            self._aura("Spirit of Zanza", 24382),
+            self._aura("Swiftness of Zanza", 24383),
+        ])
+        self.assertEqual(out["elixirs"], ["Spirit of Zanza", "Swiftness of Zanza"])
+        # now recognized → the canary must NOT flag it as a missed consumable:
+        zanza = [{"name": "Spirit of Zanza", "ability": 24382, "source": 7}]
+        self.assertEqual(unrecognized_self_buffs(zanza, 7), [])
+
+    def test_recognize_scroll_rank_iv_protection(self):
+        # "Armor" (12175 = Scroll of Protection rank IV) was unmapped; rank V (33079) already was.
+        self.assertEqual(classify_pull_auras([self._aura("Armor", 12175)])["scrolls"], ["Scroll of Protection"])
+
     def test_recognize_scrolls_by_id(self):
         # Scrolls log under a BARE stat name (no "Scroll of " prefix) — recognized by ID only.
         # 33080 logs as "Versatility" on Anniversary but is Scroll of Spirit.

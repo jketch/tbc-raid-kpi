@@ -149,6 +149,7 @@ FLASK_EFFECT_NAMES = {
 # the IV rank (12174/12179) is the vanilla holdover. A scroll is a minor positive-only prep extra.
 SCROLL_AURA_IDS = {
     12174: "Scroll of Agility",      # ✅ live (rank IV, +17 agi)
+    12175: "Scroll of Protection",   # ✅ live (rank IV, +200 armor; logs as "Armor")
     12179: "Scroll of Strength",     # ✅ live (rank IV, +17 str)
     33077: "Scroll of Agility",      # ✅ live (rank V, +20 agi)
     33078: "Scroll of Intellect",    # rank V (+20 int) — same Scroll-V block

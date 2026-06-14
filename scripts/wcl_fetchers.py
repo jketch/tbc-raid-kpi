@@ -196,6 +196,7 @@ def _consumable_from_aura(name: str, ability) -> tuple:
     if aid in ELIXIR_AURA_IDS:                                 return "elixir", bn or ELIXIR_AURA_IDS[aid][0]
     if bn == FOOD_BUFF:                                        return "food",   None
     if bn.startswith("Elixir of") or bn in ELIXIR_BUFFS:       return "elixir", bn
+    if bn.endswith(" of Zanza"):                               return "elixir", bn   # Spirit/Swiftness/Sheen of Zanza — stat-buff consumables, count as an elixir slot
     if aid in SCROLL_AURA_IDS:                                 return "scroll", SCROLL_AURA_IDS[aid]
     if bn.startswith("Scroll of"):                             return "scroll", bn
     return None, None
@@ -326,9 +327,15 @@ def fetch_gear_from_events(token: str, report_code: str, fights: list,
         if canary:   # surface candidate MISSED consumables so a new tier/rename self-reports
             shown = ", ".join(f"{n} ({p})" for n, p in sorted(canary.items())[:12])
             more = "" if len(canary) <= 12 else f" (+{len(canary) - 12} more)"
-            print(f"  ⚠ consumable canary: {len(canary)} self-applied pull aura(s) not recognized as a "
-                  f"consumable/known self-buff — if any is a new flask/elixir/scroll, add its spell-ID to "
-                  f"game_constants (audit: scripts/tools/probe_consumable_ids.py): {shown}{more}")
+            msg = (f"  consumable canary: {len(canary)} self-applied pull aura(s) not recognized as a "
+                   f"consumable/known self-buff — if any is a new flask/elixir/scroll, add its spell-ID to "
+                   f"game_constants (audit: scripts/tools/probe_consumable_ids.py): {shown}{more}")
+            # The warning is cosmetic; never let a console-encoding hiccup on a non-UTF-8 stdout abort
+            # the whole fetch (the outer except would otherwise drop ALL consumables for the run).
+            try:
+                print("  ⚠" + msg)
+            except Exception:
+                print(msg.encode("ascii", "replace").decode("ascii"))
         gear_map["__consumables__"] = {name: merge_pull_consumables(pulls)
                                        for name, pulls in ci_pulls.items()}
         gear_map["__group_buffs__"] = gbuffs
