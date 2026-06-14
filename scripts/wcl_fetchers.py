@@ -1236,8 +1236,9 @@ def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
 
     # ── 5) defensive-CD COVERAGE VALUE — 'reverse bloodlust': unmitigated damage faced during each
     #       CD's aura window vs the tank's baseline incoming (well-timed CD → >1×; lull → low) ──
-    cd_val = _tank_cd_value(token, report_code, fids, win_s, win_e, agg, dmg_ev, unmit_total,
-                            tank_ids, id2name)
+    fid_end = {f["id"]: f["endTime"] for f in kills}   # fight boundaries — keeps a CD window from a
+    cd_val = _tank_cd_value(token, report_code, fids, win_s, win_e, fid_end, agg, dmg_ev,   # trash-gap
+                            unmit_total, tank_ids, id2name)                                  # mispair
 
     # ── assemble ──
     out = {}
@@ -1284,14 +1285,43 @@ def _cd_cover(wins, ev_list, base_dps):
     return round((tot_unmit / tot_sec) / base_dps, 2)
 
 
-def _tank_cd_value(token, report_code, fids, win_s, win_e, agg, dmg_ev, unmit_total, tank_ids, id2name):
-    """Per-tank defensive-CD COVERAGE VALUE — the 'reverse bloodlust'. For each CD's aura WINDOWS (Buffs
-    events applybuff→removebuff = the exact span, NO guessed durations), the UNMITIGATED damage the tank
+def _cd_windows(evs, fid_end, max_cd_ms=25000):
+    """Pure: reconstruct defensive-CD aura windows from one (tank, CD) Buffs-event stream. ROBUST to the
+    kill-scoped events query dropping a removebuff that expired in a trash gap between bosses — which would
+    otherwise pair an applybuff to a LATER boss's removebuff (a giant phantom window that craters the
+    coverage value). Pairs applybuff→removebuff WITHIN THE SAME FIGHT only; an orphaned applybuff (missing
+    or cross-fight removebuff) is capped at max_cd_ms and clamped to its fight's end (every TBC defensive CD
+    is ≤ ~20s, so the cap only ever bounds a broken pairing, never a real window). evs = [(type, ts, fight)]
+    chronological; fid_end = {fight: endTime ms}. Returns [(start, end)]."""
+    evs = sorted(evs, key=lambda e: (e[1] if e[1] is not None else 0))
+    out, band = [], None                          # band = (start_ts, fight)
+    def _close(s0, f0, end_ts):
+        end = min(end_ts, s0 + max_cd_ms, fid_end.get(f0, s0 + max_cd_ms))
+        if end > s0:
+            out.append((s0, end))
+    for typ, ts, fight in evs:
+        if ts is None:
+            continue
+        if typ == "applybuff":
+            if band:                              # prior band never closed (removebuff dropped) → cap it
+                _close(band[0], band[1], band[0] + max_cd_ms)
+            band = (ts, fight)
+        elif typ == "removebuff" and band:
+            s0, f0 = band; band = None
+            _close(s0, f0, ts if fight == f0 else s0 + max_cd_ms)   # cross-fight removebuff ⇒ cap, ignore it
+    if band:
+        _close(band[0], band[1], band[0] + max_cd_ms)
+    return out
+
+
+def _tank_cd_value(token, report_code, fids, win_s, win_e, fid_end, agg, dmg_ev, unmit_total, tank_ids, id2name):
+    """Per-tank defensive-CD COVERAGE VALUE — the 'reverse bloodlust'. For each CD's aura WINDOW (Buffs
+    events applybuff→removebuff, fight-scoped + capped via _cd_windows), the UNMITIGATED damage the tank
     FACED during the window ÷ window-seconds, over their baseline unmitigated DTPS. >1× = the CD covered
-    heavier-than-average incoming (well-timed on a spike); <1× = popped in a lull. Lay on Hands
-    (CD_NO_AURA) has no mitigation window → absent (count-only). Pure WCL, no combat log. One Buffs-events
-    query per CD aura. Returns {name: {cd_name: cover_ratio}}."""
-    windows, opened = defaultdict(list), {}     # (name, cd_name) → [(start,end)] ; open band start
+    heavier-than-average incoming (well-timed on a spike); <1× = popped in a lull. Lay on Hands + Divine
+    Shield (CD_NO_COVERAGE) have no measurable mitigation window → absent (count-only). Pure WCL, no combat
+    log. One Buffs-events query per CD aura. Returns {name: {cd_name: cover_ratio}}."""
+    raw = defaultdict(list)                       # (name, cd_name) → [(type, ts, fight)]
     QB = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!,$a:Float!){reportData{report(code:$c){
         events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Buffs, abilityID:$a,
                limit: 10000){ data nextPageTimestamp }}}}"""
@@ -1309,16 +1339,8 @@ def _tank_cd_value(token, report_code, fids, win_s, win_e, agg, dmg_ev, unmit_to
                     if sid not in tank_ids:        # self-buff: tank is the source (and target)
                         continue
                     nm = id2name.get(sid)
-                    if not nm:
-                        continue
-                    t, ts = d.get("type"), d.get("timestamp")
-                    key = (nm, cd_name)
-                    if t == "applybuff":
-                        opened[key] = ts
-                    elif t == "removebuff":
-                        s0 = opened.pop(key, None)
-                        if s0 is not None and ts is not None:
-                            windows[key].append((s0, ts))
+                    if nm:
+                        raw[(nm, cd_name)].append((d.get("type"), d.get("timestamp"), d.get("fight")))
                 nx = ev.get("nextPageTimestamp")
                 if not nx:
                     break
@@ -1326,11 +1348,9 @@ def _tank_cd_value(token, report_code, fids, win_s, win_e, agg, dmg_ev, unmit_to
     except Exception as ex:
         print(f"  Warning: tank CD-value buffs failed: {ex}")
         return {}
-    for key, s0 in opened.items():                 # CD still up at the logged window end
-        if s0 is not None:
-            windows[key].append((s0, win_e))
     res = defaultdict(dict)
-    for (nm, cd_name), wins in sorted(windows.items()):   # sorted → deterministic
+    for (nm, cd_name), evs in sorted(raw.items()):   # sorted → deterministic
+        wins = _cd_windows(evs, fid_end)
         dur = agg.get(nm, {}).get("dur", 0)
         base_dps = (unmit_total.get(nm, 0) / dur) if dur > 0 else 0
         cover = _cd_cover(sorted(wins), dmg_ev.get(nm) or [], base_dps)

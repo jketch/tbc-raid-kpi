@@ -74,6 +74,7 @@
     "populated": [
       "avoidableDmg",
       "avoidableMechanics",
+      "bloodlustWindows",
       "boss_meta",
       "boss_times",
       "casterCrit",
@@ -83,6 +84,7 @@
       "damageBySelection",
       "deaths",
       "debuffCoverage",
+      "debuffRampSpeed",
       "dispels",
       "drums",
       "engineering",
@@ -114,6 +116,7 @@
     "keys": [
       "avoidableDmg",
       "avoidableMechanics",
+      "bloodlustWindows",
       "boss_meta",
       "boss_times",
       "casterCrit",
@@ -123,6 +126,7 @@
       "damageBySelection",
       "deaths",
       "debuffCoverage",
+      "debuffRampSpeed",
       "dispels",
       "drums",
       "engineering",
