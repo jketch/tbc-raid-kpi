@@ -138,13 +138,17 @@
     {
       "name": "Cindybrooke",
       "role": "Physical",
-      "flask": false,
-      "flask_name": null,
+      "flask": true,
+      "flask_name": "Flask of Relentless Assault",
       "elixirs": [],
       "food": true,
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Strength"
+      ],
       "effective_role": "Physical",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -153,13 +157,16 @@
     {
       "name": "Dmbp",
       "role": "Tank",
-      "flask": false,
-      "flask_name": null,
+      "flask": true,
+      "flask_name": "Flask of Blinding Light",
       "elixirs": [],
       "food": true,
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [
+        "Scroll of Protection"
+      ],
       "effective_role": "Tank",
       "fights_tanked": 8,
       "fights_healed": 0,
@@ -168,13 +175,16 @@
     {
       "name": "Feelsbaldman",
       "role": "Caster",
-      "flask": false,
-      "flask_name": null,
+      "flask": true,
+      "flask_name": "Flask of Supreme Power",
       "elixirs": [],
       "food": true,
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [
+        "Scroll of Protection"
+      ],
       "effective_role": "Caster",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -183,13 +193,19 @@
     {
       "name": "Philliam",
       "role": "Physical",
-      "flask": false,
-      "flask_name": null,
-      "elixirs": [],
+      "flask": true,
+      "flask_name": "Flask of Relentless Assault",
+      "elixirs": [
+        "Mighty Agility"
+      ],
       "food": true,
       "weapon": false,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Strength"
+      ],
       "effective_role": "Physical",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -198,15 +214,20 @@
     {
       "name": "Blunderdin",
       "role": "Tank",
-      "flask": false,
-      "flask_name": null,
+      "flask": true,
+      "flask_name": "Flask of Relentless Assault",
       "elixirs": [
-        "Mighty Agility"
+        "Mighty Agility",
+        "Spirit of Zanza"
       ],
-      "food": false,
-      "weapon": false,
+      "food": true,
+      "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Strength"
+      ],
       "effective_role": "Physical",
       "fights_tanked": 4,
       "fights_healed": 0,
@@ -215,15 +236,21 @@
     {
       "name": "Faeriefireqt",
       "role": "Tank",
-      "flask": false,
+      "flask": true,
       "flask_name": null,
       "elixirs": [
+        "Gift of Arthas",
         "Mighty Agility"
       ],
-      "food": false,
+      "food": true,
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Protection",
+        "Scroll of Strength"
+      ],
       "effective_role": "Tank",
       "fights_tanked": 9,
       "fights_healed": 0,
@@ -232,15 +259,17 @@
     {
       "name": "Alldorin",
       "role": "Caster",
-      "flask": false,
-      "flask_name": null,
+      "flask": true,
+      "flask_name": "Flask of Pure Death",
       "elixirs": [
-        "Elixir of Draenic Wisdom"
+        "Elixir of Draenic Wisdom",
+        "Major Shadow Power"
       ],
       "food": true,
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [],
       "effective_role": "Caster",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -249,15 +278,17 @@
     {
       "name": "Seedemup",
       "role": "Caster",
-      "flask": false,
-      "flask_name": null,
+      "flask": true,
+      "flask_name": "Flask of Pure Death",
       "elixirs": [
-        "Elixir of Draenic Wisdom"
+        "Elixir of Draenic Wisdom",
+        "Major Shadow Power"
       ],
       "food": true,
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [],
       "effective_role": "Caster",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -275,6 +306,9 @@
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [
+        "Scroll of Spirit"
+      ],
       "effective_role": "Healer",
       "fights_tanked": 0,
       "fights_healed": 10,
@@ -290,6 +324,10 @@
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Strength"
+      ],
       "effective_role": "Physical",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -308,6 +346,7 @@
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [],
       "effective_role": "Caster",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -318,11 +357,14 @@
       "role": "Physical",
       "flask": true,
       "flask_name": "Flask of Relentless Assault",
-      "elixirs": [],
+      "elixirs": [
+        "Mighty Agility"
+      ],
       "food": true,
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [],
       "effective_role": "Physical",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -331,7 +373,7 @@
     {
       "name": "Cheesecurds",
       "role": "Physical",
-      "flask": false,
+      "flask": true,
       "flask_name": null,
       "elixirs": [
         "Greater Versatility",
@@ -341,6 +383,10 @@
       "weapon": false,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Strength"
+      ],
       "effective_role": "Physical",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -349,7 +395,7 @@
     {
       "name": "Jadyx",
       "role": "Physical",
-      "flask": false,
+      "flask": true,
       "flask_name": null,
       "elixirs": [
         "Greater Versatility",
@@ -359,6 +405,9 @@
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [
+        "Scroll of Agility"
+      ],
       "effective_role": "Physical",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -369,11 +418,17 @@
       "role": "Physical",
       "flask": true,
       "flask_name": "Flask of Relentless Assault",
-      "elixirs": [],
+      "elixirs": [
+        "Mighty Agility"
+      ],
       "food": true,
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Strength"
+      ],
       "effective_role": "Physical",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -386,9 +441,13 @@
       "flask_name": "Flask of Relentless Assault",
       "elixirs": [],
       "food": true,
-      "weapon": false,
+      "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Strength"
+      ],
       "effective_role": "Physical",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -397,7 +456,7 @@
     {
       "name": "Moojerked",
       "role": "Healer",
-      "flask": false,
+      "flask": true,
       "flask_name": null,
       "elixirs": [
         "Greater Versatility",
@@ -407,6 +466,7 @@
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [],
       "effective_role": "Caster",
       "fights_tanked": 0,
       "fights_healed": 1,
@@ -415,7 +475,7 @@
     {
       "name": "Mucoid",
       "role": "Physical",
-      "flask": false,
+      "flask": true,
       "flask_name": null,
       "elixirs": [
         "Greater Versatility",
@@ -425,6 +485,9 @@
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [
+        "Scroll of Agility"
+      ],
       "effective_role": "Physical",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -443,6 +506,7 @@
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [],
       "effective_role": "Healer",
       "fights_tanked": 0,
       "fights_healed": 10,
@@ -461,6 +525,7 @@
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [],
       "effective_role": "Healer",
       "fights_tanked": 0,
       "fights_healed": 10,
@@ -479,6 +544,7 @@
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [],
       "effective_role": "Healer",
       "fights_tanked": 0,
       "fights_healed": 10,
@@ -494,6 +560,7 @@
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [],
       "effective_role": "Physical",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -509,6 +576,7 @@
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [],
       "effective_role": "Caster",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -527,6 +595,9 @@
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [
+        "Scroll of Spirit"
+      ],
       "effective_role": "Caster",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -535,7 +606,7 @@
     {
       "name": "Zyph",
       "role": "Physical",
-      "flask": false,
+      "flask": true,
       "flask_name": null,
       "elixirs": [
         "Greater Versatility",
@@ -545,6 +616,7 @@
       "weapon": true,
       "combat_pots": [],
       "alt_pot": null,
+      "scrolls": [],
       "effective_role": "Physical",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -562,10 +634,13 @@
       "name": "Cindybrooke",
       "role": "Physical",
       "class": "Rogue",
-      "flask": "",
+      "flask": "Flask of Relentless Assault",
       "elixirs": [],
       "food": true,
-      "scrolls": [],
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Strength"
+      ],
       "weapon_oil": true,
       "potion": 0,
       "rune": 0,
@@ -579,7 +654,7 @@
       "rune_name": null,
       "flamecap": false,
       "nightmare_seed": false,
-      "prepared": false,
+      "prepared": true,
       "effective_role": "Physical",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -589,10 +664,12 @@
       "name": "Dmbp",
       "role": "Tank",
       "class": "Paladin",
-      "flask": "",
+      "flask": "Flask of Blinding Light",
       "elixirs": [],
       "food": true,
-      "scrolls": [],
+      "scrolls": [
+        "Scroll of Protection"
+      ],
       "weapon_oil": true,
       "potion": 0,
       "rune": 0,
@@ -606,7 +683,7 @@
       "rune_name": null,
       "flamecap": false,
       "nightmare_seed": false,
-      "prepared": false,
+      "prepared": true,
       "effective_role": "Tank",
       "fights_tanked": 8,
       "fights_healed": 0,
@@ -616,10 +693,12 @@
       "name": "Feelsbaldman",
       "role": "Caster",
       "class": "Shaman",
-      "flask": "",
+      "flask": "Flask of Supreme Power",
       "elixirs": [],
       "food": true,
-      "scrolls": [],
+      "scrolls": [
+        "Scroll of Protection"
+      ],
       "weapon_oil": true,
       "potion": 0,
       "rune": 0,
@@ -633,7 +712,7 @@
       "rune_name": null,
       "flamecap": false,
       "nightmare_seed": false,
-      "prepared": false,
+      "prepared": true,
       "effective_role": "Caster",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -643,10 +722,15 @@
       "name": "Philliam",
       "role": "Physical",
       "class": "Paladin",
-      "flask": "",
-      "elixirs": [],
+      "flask": "Flask of Relentless Assault",
+      "elixirs": [
+        "Mighty Agility"
+      ],
       "food": true,
-      "scrolls": [],
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Strength"
+      ],
       "weapon_oil": false,
       "potion": 0,
       "rune": 0,
@@ -660,7 +744,7 @@
       "rune_name": null,
       "flamecap": false,
       "nightmare_seed": false,
-      "prepared": false,
+      "prepared": true,
       "effective_role": "Physical",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -670,13 +754,17 @@
       "name": "Blunderdin",
       "role": "Tank",
       "class": "Paladin",
-      "flask": "",
+      "flask": "Flask of Relentless Assault",
       "elixirs": [
-        "Mighty Agility"
+        "Mighty Agility",
+        "Spirit of Zanza"
       ],
-      "food": false,
-      "scrolls": [],
-      "weapon_oil": false,
+      "food": true,
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Strength"
+      ],
+      "weapon_oil": true,
       "potion": 0,
       "rune": 0,
       "mana_gem": 0,
@@ -689,7 +777,7 @@
       "rune_name": null,
       "flamecap": false,
       "nightmare_seed": false,
-      "prepared": false,
+      "prepared": true,
       "effective_role": "Physical",
       "fights_tanked": 4,
       "fights_healed": 0,
@@ -701,10 +789,15 @@
       "class": "Druid",
       "flask": "",
       "elixirs": [
+        "Gift of Arthas",
         "Mighty Agility"
       ],
-      "food": false,
-      "scrolls": [],
+      "food": true,
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Protection",
+        "Scroll of Strength"
+      ],
       "weapon_oil": true,
       "potion": 0,
       "rune": 0,
@@ -718,7 +811,7 @@
       "rune_name": null,
       "flamecap": false,
       "nightmare_seed": false,
-      "prepared": false,
+      "prepared": true,
       "effective_role": "Tank",
       "fights_tanked": 9,
       "fights_healed": 0,
@@ -728,9 +821,10 @@
       "name": "Alldorin",
       "role": "Caster",
       "class": "Warlock",
-      "flask": "",
+      "flask": "Flask of Pure Death",
       "elixirs": [
-        "Elixir of Draenic Wisdom"
+        "Elixir of Draenic Wisdom",
+        "Major Shadow Power"
       ],
       "food": true,
       "scrolls": [],
@@ -747,7 +841,7 @@
       "rune_name": null,
       "flamecap": false,
       "nightmare_seed": false,
-      "prepared": false,
+      "prepared": true,
       "effective_role": "Caster",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -757,9 +851,10 @@
       "name": "Seedemup",
       "role": "Caster",
       "class": "Warlock",
-      "flask": "",
+      "flask": "Flask of Pure Death",
       "elixirs": [
-        "Elixir of Draenic Wisdom"
+        "Elixir of Draenic Wisdom",
+        "Major Shadow Power"
       ],
       "food": true,
       "scrolls": [],
@@ -776,7 +871,7 @@
       "rune_name": null,
       "flamecap": false,
       "nightmare_seed": false,
-      "prepared": false,
+      "prepared": true,
       "effective_role": "Caster",
       "fights_tanked": 0,
       "fights_healed": 0,
@@ -791,7 +886,9 @@
         "Healing Power"
       ],
       "food": true,
-      "scrolls": [],
+      "scrolls": [
+        "Scroll of Spirit"
+      ],
       "weapon_oil": true,
       "potion": 0,
       "rune": 0,
@@ -818,7 +915,10 @@
       "flask": "Flask of Relentless Assault",
       "elixirs": [],
       "food": true,
-      "scrolls": [],
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Strength"
+      ],
       "weapon_oil": true,
       "potion": 0,
       "rune": 0,
@@ -873,7 +973,9 @@
       "role": "Physical",
       "class": "Shaman",
       "flask": "Flask of Relentless Assault",
-      "elixirs": [],
+      "elixirs": [
+        "Mighty Agility"
+      ],
       "food": true,
       "scrolls": [],
       "weapon_oil": true,
@@ -905,7 +1007,10 @@
         "Mighty Agility"
       ],
       "food": true,
-      "scrolls": [],
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Strength"
+      ],
       "weapon_oil": false,
       "potion": 0,
       "rune": 0,
@@ -935,7 +1040,9 @@
         "Mighty Agility"
       ],
       "food": true,
-      "scrolls": [],
+      "scrolls": [
+        "Scroll of Agility"
+      ],
       "weapon_oil": true,
       "potion": 0,
       "rune": 0,
@@ -960,9 +1067,14 @@
       "role": "Physical",
       "class": "Shaman",
       "flask": "Flask of Relentless Assault",
-      "elixirs": [],
+      "elixirs": [
+        "Mighty Agility"
+      ],
       "food": true,
-      "scrolls": [],
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Strength"
+      ],
       "weapon_oil": true,
       "potion": 0,
       "rune": 0,
@@ -989,8 +1101,11 @@
       "flask": "Flask of Relentless Assault",
       "elixirs": [],
       "food": true,
-      "scrolls": [],
-      "weapon_oil": false,
+      "scrolls": [
+        "Scroll of Agility",
+        "Scroll of Strength"
+      ],
+      "weapon_oil": true,
       "potion": 0,
       "rune": 0,
       "mana_gem": 0,
@@ -1049,7 +1164,9 @@
         "Mighty Agility"
       ],
       "food": true,
-      "scrolls": [],
+      "scrolls": [
+        "Scroll of Agility"
+      ],
       "weapon_oil": true,
       "potion": 0,
       "rune": 0,
@@ -1223,7 +1340,9 @@
         "Spellpower Elixir"
       ],
       "food": true,
-      "scrolls": [],
+      "scrolls": [
+        "Scroll of Spirit"
+      ],
       "weapon_oil": true,
       "potion": 0,
       "rune": 0,
@@ -9147,5 +9266,33 @@
         }
       }
     ]
-  }
+  },
+  "groupBuffGear": [
+    {
+      "name": "Alldorin",
+      "role": "Caster",
+      "class": "Warlock",
+      "buffs": [
+        {
+          "item": "Eye of the Night",
+          "label": "+34 spell power (party)"
+        }
+      ]
+    },
+    {
+      "name": "Zetla",
+      "role": "Caster",
+      "class": "Mage",
+      "buffs": [
+        {
+          "item": "Chain of the Twilight Owl",
+          "label": "+2% spell crit (party)"
+        },
+        {
+          "item": "Eye of the Night",
+          "label": "+34 spell power (party)"
+        }
+      ]
+    }
+  ]
 }
