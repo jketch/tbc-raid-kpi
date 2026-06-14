@@ -46,6 +46,11 @@ jobs:
   weekly:
     runs-on: ubuntu-latest
     env:
+      # The runner is UTC, but the pipeline is raider-local throughout (combat-log timestamps are
+      # naive local wall-clock, loot uses the local raid date, the dashboard shows local time).
+      # Pin the runner to the raid timezone so a cloud run behaves exactly like a local one —
+      # fixes combat-log window-matching, the loot raid-date, and the displayed raid date together.
+      TZ: America/Denver
       WCL_CLIENT_ID:        ${{ secrets.WCL_CLIENT_ID }}
       WCL_CLIENT_SECRET:    ${{ secrets.WCL_CLIENT_SECRET }}
       NETLIFY_AUTH_TOKEN:   ${{ secrets.NETLIFY_AUTH_TOKEN }}
