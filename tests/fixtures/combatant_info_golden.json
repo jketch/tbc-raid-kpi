@@ -1,0 +1,3171 @@
+{
+ "_meta": {
+  "note": "Real pull-time auras (trimmed to ability/name/source). `expected` = best-of-night classify_pull_auras+merge_pull_consumables, HUMAN-VERIFIED against ground truth. Re-bless with scripts/tools/capture_consumable_fixture.py. Hermetic golden — no network.",
+  "report": "J4Ba1j6VAPDmqCFp",
+  "source": "live WCL COMBATANT_INFO, all kills"
+ },
+ "players": {
+  "Alldorin": {
+   "expected": {
+    "elixirs": [
+     "Elixir of Draenic Wisdom",
+     "Major Shadow Power"
+    ],
+    "flask": "Flask of Pure Death",
+    "food": true,
+    "scrolls": [],
+    "weapon_oil": true
+   },
+   "pulls": [
+    {
+     "auras": [
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 11
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 39627,
+       "name": "Elixir of Draenic Wisdom",
+       "source": 11
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 11
+      },
+      {
+       "ability": 28503,
+       "name": "Major Shadow Power",
+       "source": 11
+      }
+     ],
+     "fight": "Al'ar",
+     "sourceID": 11,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 28540,
+       "name": "Flask of Pure Death",
+       "source": 11
+      },
+      {
+       "ability": 24907,
+       "name": "Moonkin Aura",
+       "source": 15
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 11
+      },
+      {
+       "ability": 27149,
+       "name": "Devotion Aura",
+       "source": 12
+      }
+     ],
+     "fight": "Void Reaver",
+     "sourceID": 11,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 24907,
+       "name": "Moonkin Aura",
+       "source": 15
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27149,
+       "name": "Devotion Aura",
+       "source": 12
+      },
+      {
+       "ability": 28540,
+       "name": "Flask of Pure Death",
+       "source": 11
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 11
+      }
+     ],
+     "fight": "High Astromancer Solarian",
+     "sourceID": 11,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 27149,
+       "name": "Devotion Aura",
+       "source": 12
+      },
+      {
+       "ability": 24907,
+       "name": "Moonkin Aura",
+       "source": 15
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 28540,
+       "name": "Flask of Pure Death",
+       "source": 11
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 11
+      }
+     ],
+     "fight": "Hydross the Unstable",
+     "sourceID": 11,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 11
+      },
+      {
+       "ability": 24907,
+       "name": "Moonkin Aura",
+       "source": 15
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 28540,
+       "name": "Flask of Pure Death",
+       "source": 11
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 11
+      }
+     ],
+     "fight": "The Lurker Below",
+     "sourceID": 11,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 27149,
+       "name": "Devotion Aura",
+       "source": 12
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 24907,
+       "name": "Moonkin Aura",
+       "source": 15
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 11
+      },
+      {
+       "ability": 28540,
+       "name": "Flask of Pure Death",
+       "source": 11
+      }
+     ],
+     "fight": "Morogrim Tidewalker",
+     "sourceID": 11,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 24907,
+       "name": "Moonkin Aura",
+       "source": 15
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 11
+      },
+      {
+       "ability": 27149,
+       "name": "Devotion Aura",
+       "source": 12
+      },
+      {
+       "ability": 28540,
+       "name": "Flask of Pure Death",
+       "source": 11
+      }
+     ],
+     "fight": "Fathom-Lord Karathress",
+     "sourceID": 11,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27149,
+       "name": "Devotion Aura",
+       "source": 12
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      },
+      {
+       "ability": 24907,
+       "name": "Moonkin Aura",
+       "source": 15
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 11
+      },
+      {
+       "ability": 28540,
+       "name": "Flask of Pure Death",
+       "source": 11
+      }
+     ],
+     "fight": "Leotheras the Blind",
+     "sourceID": 11,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 27149,
+       "name": "Devotion Aura",
+       "source": 12
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      },
+      {
+       "ability": 24907,
+       "name": "Moonkin Aura",
+       "source": 15
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 11
+      },
+      {
+       "ability": 28540,
+       "name": "Flask of Pure Death",
+       "source": 11
+      }
+     ],
+     "fight": "Lady Vashj",
+     "sourceID": 11,
+     "weapon_oil": true
+    }
+   ]
+  },
+  "Blunderdin": {
+   "expected": {
+    "elixirs": [
+     "Mighty Agility"
+    ],
+    "flask": "Flask of Relentless Assault",
+    "food": true,
+    "scrolls": [
+     "Scroll of Agility",
+     "Scroll of Strength"
+    ],
+    "weapon_oil": true
+   },
+   "pulls": [
+    {
+     "auras": [
+      {
+       "ability": 25780,
+       "name": "Righteous Fury",
+       "source": 6
+      },
+      {
+       "ability": 28497,
+       "name": "Mighty Agility",
+       "source": 6
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 36
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 6
+      },
+      {
+       "ability": 24932,
+       "name": "Leader of the Pack",
+       "source": 35
+      }
+     ],
+     "fight": "Al'ar",
+     "sourceID": 6,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 6
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 24932,
+       "name": "Leader of the Pack",
+       "source": 35
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 33077,
+       "name": "Agility",
+       "source": 6
+      },
+      {
+       "ability": 28520,
+       "name": "Flask of Relentless Assault",
+       "source": 6
+      },
+      {
+       "ability": 33082,
+       "name": "Strength",
+       "source": 6
+      },
+      {
+       "ability": 33256,
+       "name": "Well Fed",
+       "source": 6
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 36
+      }
+     ],
+     "fight": "Void Reaver",
+     "sourceID": 6,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 24932,
+       "name": "Leader of the Pack",
+       "source": 35
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 33077,
+       "name": "Agility",
+       "source": 6
+      },
+      {
+       "ability": 28520,
+       "name": "Flask of Relentless Assault",
+       "source": 6
+      },
+      {
+       "ability": 33082,
+       "name": "Strength",
+       "source": 6
+      },
+      {
+       "ability": 33256,
+       "name": "Well Fed",
+       "source": 6
+      },
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 6
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 36
+      }
+     ],
+     "fight": "High Astromancer Solarian",
+     "sourceID": 6,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 6
+      },
+      {
+       "ability": 24932,
+       "name": "Leader of the Pack",
+       "source": 35
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 28520,
+       "name": "Flask of Relentless Assault",
+       "source": 6
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 36
+      }
+     ],
+     "fight": "Hydross the Unstable",
+     "sourceID": 6,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 6
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 28520,
+       "name": "Flask of Relentless Assault",
+       "source": 6
+      },
+      {
+       "ability": 33077,
+       "name": "Agility",
+       "source": 6
+      },
+      {
+       "ability": 33082,
+       "name": "Strength",
+       "source": 6
+      }
+     ],
+     "fight": "The Lurker Below",
+     "sourceID": 6,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 33077,
+       "name": "Agility",
+       "source": 6
+      },
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 6
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 24932,
+       "name": "Leader of the Pack",
+       "source": 35
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 28520,
+       "name": "Flask of Relentless Assault",
+       "source": 6
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 36
+      },
+      {
+       "ability": 33256,
+       "name": "Well Fed",
+       "source": 6
+      },
+      {
+       "ability": 33082,
+       "name": "Strength",
+       "source": 6
+      }
+     ],
+     "fight": "Morogrim Tidewalker",
+     "sourceID": 6,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 25780,
+       "name": "Righteous Fury",
+       "source": 6
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 6
+      },
+      {
+       "ability": 24932,
+       "name": "Leader of the Pack",
+       "source": 35
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 28520,
+       "name": "Flask of Relentless Assault",
+       "source": 6
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 36
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      }
+     ],
+     "fight": "Fathom-Lord Karathress",
+     "sourceID": 6,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 6
+      },
+      {
+       "ability": 24932,
+       "name": "Leader of the Pack",
+       "source": 35
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 28520,
+       "name": "Flask of Relentless Assault",
+       "source": 6
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 36
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      }
+     ],
+     "fight": "Leotheras the Blind",
+     "sourceID": 6,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 6
+      },
+      {
+       "ability": 24932,
+       "name": "Leader of the Pack",
+       "source": 35
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 36
+      },
+      {
+       "ability": 12174,
+       "name": "Agility",
+       "source": 6
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 28520,
+       "name": "Flask of Relentless Assault",
+       "source": 6
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      }
+     ],
+     "fight": "Lady Vashj",
+     "sourceID": 6,
+     "weapon_oil": true
+    }
+   ]
+  },
+  "Feelsbaldman": {
+   "expected": {
+    "elixirs": [],
+    "flask": "Flask of Supreme Power",
+    "food": true,
+    "scrolls": [],
+    "weapon_oil": true
+   },
+   "pulls": [
+    {
+     "auras": [
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 25
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 17628,
+       "name": "Supreme Power",
+       "source": 25
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 11
+      }
+     ],
+     "fight": "Al'ar",
+     "sourceID": 25,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 17628,
+       "name": "Supreme Power",
+       "source": 25
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 25
+      },
+      {
+       "ability": 24907,
+       "name": "Moonkin Aura",
+       "source": 15
+      },
+      {
+       "ability": 27149,
+       "name": "Devotion Aura",
+       "source": 12
+      }
+     ],
+     "fight": "Void Reaver",
+     "sourceID": 25,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 17628,
+       "name": "Supreme Power",
+       "source": 25
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 25
+      },
+      {
+       "ability": 24907,
+       "name": "Moonkin Aura",
+       "source": 15
+      },
+      {
+       "ability": 27149,
+       "name": "Devotion Aura",
+       "source": 12
+      }
+     ],
+     "fight": "High Astromancer Solarian",
+     "sourceID": 25,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 17628,
+       "name": "Supreme Power",
+       "source": 25
+      },
+      {
+       "ability": 24907,
+       "name": "Moonkin Aura",
+       "source": 15
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27149,
+       "name": "Devotion Aura",
+       "source": 12
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 25
+      }
+     ],
+     "fight": "Hydross the Unstable",
+     "sourceID": 25,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 17628,
+       "name": "Supreme Power",
+       "source": 25
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 11
+      },
+      {
+       "ability": 24907,
+       "name": "Moonkin Aura",
+       "source": 15
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 25
+      }
+     ],
+     "fight": "The Lurker Below",
+     "sourceID": 25,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 27149,
+       "name": "Devotion Aura",
+       "source": 12
+      },
+      {
+       "ability": 24907,
+       "name": "Moonkin Aura",
+       "source": 15
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 17628,
+       "name": "Supreme Power",
+       "source": 25
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 25
+      }
+     ],
+     "fight": "Morogrim Tidewalker",
+     "sourceID": 25,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 17628,
+       "name": "Supreme Power",
+       "source": 25
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 25
+      },
+      {
+       "ability": 27149,
+       "name": "Devotion Aura",
+       "source": 12
+      }
+     ],
+     "fight": "Fathom-Lord Karathress",
+     "sourceID": 25,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      },
+      {
+       "ability": 17628,
+       "name": "Supreme Power",
+       "source": 25
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 25
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      }
+     ],
+     "fight": "Leotheras the Blind",
+     "sourceID": 25,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 24907,
+       "name": "Moonkin Aura",
+       "source": 15
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 27149,
+       "name": "Devotion Aura",
+       "source": 12
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      },
+      {
+       "ability": 17628,
+       "name": "Supreme Power",
+       "source": 25
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 25
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      }
+     ],
+     "fight": "Lady Vashj",
+     "sourceID": 25,
+     "weapon_oil": true
+    }
+   ]
+  },
+  "Moojerked": {
+   "expected": {
+    "elixirs": [
+     "Greater Versatility",
+     "Spellpower Elixir"
+    ],
+    "flask": "",
+    "food": true,
+    "scrolls": [],
+    "weapon_oil": true
+   },
+   "pulls": [
+    {
+     "auras": [
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      },
+      {
+       "ability": 28509,
+       "name": "Greater Versatility",
+       "source": 4
+      },
+      {
+       "ability": 33721,
+       "name": "Spellpower Elixir",
+       "source": 4
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 4
+      }
+     ],
+     "fight": "Al'ar",
+     "sourceID": 4,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 28509,
+       "name": "Greater Versatility",
+       "source": 4
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 4
+      },
+      {
+       "ability": 33721,
+       "name": "Spellpower Elixir",
+       "source": 4
+      }
+     ],
+     "fight": "Void Reaver",
+     "sourceID": 4,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 28509,
+       "name": "Greater Versatility",
+       "source": 4
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 4
+      },
+      {
+       "ability": 33721,
+       "name": "Spellpower Elixir",
+       "source": 4
+      }
+     ],
+     "fight": "High Astromancer Solarian",
+     "sourceID": 4,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 28509,
+       "name": "Greater Versatility",
+       "source": 4
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 4
+      },
+      {
+       "ability": 33721,
+       "name": "Spellpower Elixir",
+       "source": 4
+      }
+     ],
+     "fight": "Hydross the Unstable",
+     "sourceID": 4,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 28509,
+       "name": "Greater Versatility",
+       "source": 4
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 4
+      },
+      {
+       "ability": 33721,
+       "name": "Spellpower Elixir",
+       "source": 4
+      }
+     ],
+     "fight": "The Lurker Below",
+     "sourceID": 4,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 4
+      },
+      {
+       "ability": 28509,
+       "name": "Greater Versatility",
+       "source": 4
+      }
+     ],
+     "fight": "Morogrim Tidewalker",
+     "sourceID": 4,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 33721,
+       "name": "Spellpower Elixir",
+       "source": 4
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 4
+      },
+      {
+       "ability": 28509,
+       "name": "Greater Versatility",
+       "source": 4
+      }
+     ],
+     "fight": "Fathom-Lord Karathress",
+     "sourceID": 4,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 33721,
+       "name": "Spellpower Elixir",
+       "source": 4
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 4
+      },
+      {
+       "ability": 28509,
+       "name": "Greater Versatility",
+       "source": 4
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      }
+     ],
+     "fight": "Leotheras the Blind",
+     "sourceID": 4,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 33721,
+       "name": "Spellpower Elixir",
+       "source": 4
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 4
+      },
+      {
+       "ability": 28509,
+       "name": "Greater Versatility",
+       "source": 4
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      }
+     ],
+     "fight": "Lady Vashj",
+     "sourceID": 4,
+     "weapon_oil": true
+    }
+   ]
+  },
+  "Philliam": {
+   "expected": {
+    "elixirs": [
+     "Mighty Agility"
+    ],
+    "flask": "",
+    "food": true,
+    "scrolls": [
+     "Scroll of Agility",
+     "Scroll of Strength"
+    ],
+    "weapon_oil": false
+   },
+   "pulls": [
+    {
+     "auras": [
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 33
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 12174,
+       "name": "Agility",
+       "source": 33
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 9
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 18
+      },
+      {
+       "ability": 28497,
+       "name": "Mighty Agility",
+       "source": 33
+      },
+      {
+       "ability": 33256,
+       "name": "Well Fed",
+       "source": 33
+      },
+      {
+       "ability": 12179,
+       "name": "Strength",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      }
+     ],
+     "fight": "Al'ar",
+     "sourceID": 33,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 33
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 28497,
+       "name": "Mighty Agility",
+       "source": 33
+      },
+      {
+       "ability": 12174,
+       "name": "Agility",
+       "source": 33
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 9
+      },
+      {
+       "ability": 12179,
+       "name": "Strength",
+       "source": 33
+      },
+      {
+       "ability": 33256,
+       "name": "Well Fed",
+       "source": 33
+      }
+     ],
+     "fight": "Void Reaver",
+     "sourceID": 33,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 33
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 28497,
+       "name": "Mighty Agility",
+       "source": 33
+      },
+      {
+       "ability": 12174,
+       "name": "Agility",
+       "source": 33
+      },
+      {
+       "ability": 12179,
+       "name": "Strength",
+       "source": 33
+      },
+      {
+       "ability": 33256,
+       "name": "Well Fed",
+       "source": 33
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 9
+      }
+     ],
+     "fight": "High Astromancer Solarian",
+     "sourceID": 33,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 33
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 9
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 28497,
+       "name": "Mighty Agility",
+       "source": 33
+      },
+      {
+       "ability": 12174,
+       "name": "Agility",
+       "source": 33
+      },
+      {
+       "ability": 33256,
+       "name": "Well Fed",
+       "source": 33
+      },
+      {
+       "ability": 12179,
+       "name": "Strength",
+       "source": 33
+      }
+     ],
+     "fight": "Hydross the Unstable",
+     "sourceID": 33,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 33
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 28497,
+       "name": "Mighty Agility",
+       "source": 33
+      },
+      {
+       "ability": 12174,
+       "name": "Agility",
+       "source": 33
+      },
+      {
+       "ability": 33256,
+       "name": "Well Fed",
+       "source": 33
+      },
+      {
+       "ability": 12179,
+       "name": "Strength",
+       "source": 33
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 9
+      }
+     ],
+     "fight": "The Lurker Below",
+     "sourceID": 33,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 9
+      }
+     ],
+     "fight": "Morogrim Tidewalker",
+     "sourceID": 33,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 9
+      }
+     ],
+     "fight": "Fathom-Lord Karathress",
+     "sourceID": 33,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 9
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      }
+     ],
+     "fight": "Leotheras the Blind",
+     "sourceID": 33,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 28497,
+       "name": "Mighty Agility",
+       "source": 33
+      },
+      {
+       "ability": 12174,
+       "name": "Agility",
+       "source": 33
+      },
+      {
+       "ability": 12179,
+       "name": "Strength",
+       "source": 33
+      },
+      {
+       "ability": 20218,
+       "name": "Sanctity Aura",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 2048,
+       "name": "Battle Shout",
+       "source": 9
+      },
+      {
+       "ability": 27141,
+       "name": "Greater Blessing of Might",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      }
+     ],
+     "fight": "Lady Vashj",
+     "sourceID": 33,
+     "weapon_oil": false
+    }
+   ]
+  },
+  "Shieldwagon": {
+   "expected": {
+    "elixirs": [
+     "Elixir of Draenic Wisdom",
+     "Healing Power"
+    ],
+    "flask": "",
+    "food": true,
+    "scrolls": [],
+    "weapon_oil": true
+   },
+   "pulls": [
+    {
+     "auras": [
+      {
+       "ability": 39627,
+       "name": "Elixir of Draenic Wisdom",
+       "source": 18
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 32999,
+       "name": "Prayer of Spirit",
+       "source": 5
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 18
+      },
+      {
+       "ability": 33268,
+       "name": "Well Fed",
+       "source": 18
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 5
+      },
+      {
+       "ability": 28491,
+       "name": "Healing Power",
+       "source": 18
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 31035,
+       "name": "Chain of the Twilight Owl",
+       "source": 13
+      }
+     ],
+     "fight": "Al'ar",
+     "sourceID": 18,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 18
+      },
+      {
+       "ability": 39627,
+       "name": "Elixir of Draenic Wisdom",
+       "source": 18
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 33268,
+       "name": "Well Fed",
+       "source": 18
+      },
+      {
+       "ability": 28491,
+       "name": "Healing Power",
+       "source": 18
+      }
+     ],
+     "fight": "Void Reaver",
+     "sourceID": 18,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 18
+      },
+      {
+       "ability": 39627,
+       "name": "Elixir of Draenic Wisdom",
+       "source": 18
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 33268,
+       "name": "Well Fed",
+       "source": 18
+      },
+      {
+       "ability": 28491,
+       "name": "Healing Power",
+       "source": 18
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 13
+      },
+      {
+       "ability": 31035,
+       "name": "Chain of the Twilight Owl",
+       "source": 5
+      }
+     ],
+     "fight": "High Astromancer Solarian",
+     "sourceID": 18,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 33268,
+       "name": "Well Fed",
+       "source": 18
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 39627,
+       "name": "Elixir of Draenic Wisdom",
+       "source": 18
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 5
+      },
+      {
+       "ability": 31035,
+       "name": "Chain of the Twilight Owl",
+       "source": 13
+      },
+      {
+       "ability": 28491,
+       "name": "Healing Power",
+       "source": 18
+      }
+     ],
+     "fight": "Hydross the Unstable",
+     "sourceID": 18,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 33268,
+       "name": "Well Fed",
+       "source": 18
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 39627,
+       "name": "Elixir of Draenic Wisdom",
+       "source": 18
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 28491,
+       "name": "Healing Power",
+       "source": 18
+      }
+     ],
+     "fight": "The Lurker Below",
+     "sourceID": 18,
+     "weapon_oil": false
+    },
+    {
+     "auras": [
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 39627,
+       "name": "Elixir of Draenic Wisdom",
+       "source": 18
+      },
+      {
+       "ability": 28491,
+       "name": "Healing Power",
+       "source": 18
+      }
+     ],
+     "fight": "Morogrim Tidewalker",
+     "sourceID": 18,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 13
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 39627,
+       "name": "Elixir of Draenic Wisdom",
+       "source": 18
+      },
+      {
+       "ability": 33268,
+       "name": "Well Fed",
+       "source": 18
+      },
+      {
+       "ability": 28491,
+       "name": "Healing Power",
+       "source": 18
+      },
+      {
+       "ability": 31035,
+       "name": "Chain of the Twilight Owl",
+       "source": 5
+      }
+     ],
+     "fight": "Fathom-Lord Karathress",
+     "sourceID": 18,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 13
+      },
+      {
+       "ability": 39627,
+       "name": "Elixir of Draenic Wisdom",
+       "source": 18
+      },
+      {
+       "ability": 33268,
+       "name": "Well Fed",
+       "source": 18
+      },
+      {
+       "ability": 28491,
+       "name": "Healing Power",
+       "source": 18
+      },
+      {
+       "ability": 31035,
+       "name": "Chain of the Twilight Owl",
+       "source": 5
+      }
+     ],
+     "fight": "Leotheras the Blind",
+     "sourceID": 18,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 13
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 31035,
+       "name": "Chain of the Twilight Owl",
+       "source": 5
+      },
+      {
+       "ability": 39627,
+       "name": "Elixir of Draenic Wisdom",
+       "source": 18
+      },
+      {
+       "ability": 33268,
+       "name": "Well Fed",
+       "source": 18
+      },
+      {
+       "ability": 28491,
+       "name": "Healing Power",
+       "source": 18
+      }
+     ],
+     "fight": "Lady Vashj",
+     "sourceID": 18,
+     "weapon_oil": true
+    }
+   ]
+  },
+  "Zetla": {
+   "expected": {
+    "elixirs": [
+     "Elixir of Draenic Wisdom",
+     "Spellpower Elixir"
+    ],
+    "flask": "Flask of Blinding Light",
+    "food": true,
+    "scrolls": [
+     "Scroll of Spirit"
+    ],
+    "weapon_oil": true
+   },
+   "pulls": [
+    {
+     "auras": [
+      {
+       "ability": 32999,
+       "name": "Prayer of Spirit",
+       "source": 5
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 18
+      },
+      {
+       "ability": 31035,
+       "name": "Chain of the Twilight Owl",
+       "source": 13
+      },
+      {
+       "ability": 33721,
+       "name": "Spellpower Elixir",
+       "source": 13
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 13
+      },
+      {
+       "ability": 39627,
+       "name": "Elixir of Draenic Wisdom",
+       "source": 13
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 5
+      }
+     ],
+     "fight": "Al'ar",
+     "sourceID": 13,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 13
+      },
+      {
+       "ability": 28521,
+       "name": "Flask of Blinding Light",
+       "source": 13
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 18
+      },
+      {
+       "ability": 33080,
+       "name": "Versatility",
+       "source": 13
+      }
+     ],
+     "fight": "Void Reaver",
+     "sourceID": 13,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 13
+      },
+      {
+       "ability": 28521,
+       "name": "Flask of Blinding Light",
+       "source": 13
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 18
+      },
+      {
+       "ability": 31035,
+       "name": "Chain of the Twilight Owl",
+       "source": 5
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 13
+      },
+      {
+       "ability": 33080,
+       "name": "Versatility",
+       "source": 13
+      }
+     ],
+     "fight": "High Astromancer Solarian",
+     "sourceID": 13,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 13
+      },
+      {
+       "ability": 28521,
+       "name": "Flask of Blinding Light",
+       "source": 13
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 33080,
+       "name": "Versatility",
+       "source": 13
+      },
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 31035,
+       "name": "Chain of the Twilight Owl",
+       "source": 13
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 5
+      }
+     ],
+     "fight": "Hydross the Unstable",
+     "sourceID": 13,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 13
+      },
+      {
+       "ability": 28521,
+       "name": "Flask of Blinding Light",
+       "source": 13
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 33080,
+       "name": "Versatility",
+       "source": 13
+      },
+      {
+       "ability": 31035,
+       "name": "Chain of the Twilight Owl",
+       "source": 13
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 5
+      }
+     ],
+     "fight": "The Lurker Below",
+     "sourceID": 13,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 33080,
+       "name": "Versatility",
+       "source": 13
+      },
+      {
+       "ability": 28521,
+       "name": "Flask of Blinding Light",
+       "source": 13
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 13
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      }
+     ],
+     "fight": "Morogrim Tidewalker",
+     "sourceID": 13,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 33080,
+       "name": "Versatility",
+       "source": 13
+      },
+      {
+       "ability": 28521,
+       "name": "Flask of Blinding Light",
+       "source": 13
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 13
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 13
+      },
+      {
+       "ability": 31035,
+       "name": "Chain of the Twilight Owl",
+       "source": 5
+      }
+     ],
+     "fight": "Fathom-Lord Karathress",
+     "sourceID": 13,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 33080,
+       "name": "Versatility",
+       "source": 13
+      },
+      {
+       "ability": 28521,
+       "name": "Flask of Blinding Light",
+       "source": 13
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 13
+      },
+      {
+       "ability": 31035,
+       "name": "Chain of the Twilight Owl",
+       "source": 5
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 13
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      }
+     ],
+     "fight": "Leotheras the Blind",
+     "sourceID": 13,
+     "weapon_oil": true
+    },
+    {
+     "auras": [
+      {
+       "ability": 27127,
+       "name": "Arcane Brilliance",
+       "source": 13
+      },
+      {
+       "ability": 33080,
+       "name": "Versatility",
+       "source": 13
+      },
+      {
+       "ability": 28521,
+       "name": "Flask of Blinding Light",
+       "source": 13
+      },
+      {
+       "ability": 27143,
+       "name": "Greater Blessing of Wisdom",
+       "source": 33
+      },
+      {
+       "ability": 25895,
+       "name": "Greater Blessing of Salvation",
+       "source": 12
+      },
+      {
+       "ability": 33263,
+       "name": "Well Fed",
+       "source": 13
+      },
+      {
+       "ability": 39374,
+       "name": "Prayer of Shadow Protection",
+       "source": 3
+      },
+      {
+       "ability": 31033,
+       "name": "Eye of the Night",
+       "source": 13
+      },
+      {
+       "ability": 31035,
+       "name": "Chain of the Twilight Owl",
+       "source": 5
+      },
+      {
+       "ability": 25898,
+       "name": "Greater Blessing of Kings",
+       "source": 6
+      }
+     ],
+     "fight": "Lady Vashj",
+     "sourceID": 13,
+     "weapon_oil": true
+    }
+   ]
+  }
+ }
+}
