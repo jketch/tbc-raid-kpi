@@ -29,8 +29,8 @@ screenshots/
 # cache/replay_baseline.html (~25k lines), cache/.data_branch_sync, and FUSE .fuse_hidden* cruft.
 cache/
 
-# Claude Code machine-local settings
-.claude/settings.local.json
+# Claude Code config — kept entirely local (same stance as CLAUDE.md: no Claude tooling ships to clones)
+.claude/
 CLAUDE.md
 # Maintainer-local session handoff (same species as CLAUDE.md — never ship to clones)
 HANDOFF.md
