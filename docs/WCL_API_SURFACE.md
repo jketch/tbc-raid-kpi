@@ -26,7 +26,7 @@ graph LR
   R --> PD["playerDetails<br/>→ roles"]
 
   T --> DD["DamageDone<br/>✓ Performance (DPS)"]
-  DD --> GEAR["★ gear array: enchant · gem · ilvl<br/>UNTAPPED → Prep audit"]
+  DD --> GEAR["★ gear array: enchant · gem · ilvl<br/>✓ Gear Readiness / Prep audit"]
   T --> HE["Healing<br/>✓ Performance (HPS) + enemy-heal"]
   T --> DT["DamageTaken<br/>✓ Tanks / Survival"]
   T --> BU["Buffs<br/>✓ toolkit uptime"]
@@ -36,8 +36,8 @@ graph LR
   T --> DTH["Deaths<br/>✓ recap — overkill / killingBlow UNTAPPED"]
   T --> SU["Summary<br/>untapped — consolidation + raid ilvl"]
   T --> SM["Summons<br/>untapped — pets / totems"]
-  T --> IN["Interrupts<br/>via events() — WCL-durable, untapped"]
-  T --> DI["Dispels<br/>via events() — Utility signal, untapped"]
+  T --> IN["Interrupts<br/>✓ via events() — WCL-durable headline"]
+  T --> DI["Dispels<br/>✓ via events() — fetch_dispels (cleanse/purge + latency)"]
   T --> TH["Threat<br/>DEAD on 2.5 — no threat values logged"]
   T --> SV["Survivability<br/>DEAD on 2.5 — retail-only metric"]
 
@@ -51,8 +51,8 @@ graph LR
   classDef root fill:#1e293b,stroke:#64748b,color:#e2e8f0;
 
   class API,R,T,E root;
-  class F,DD,HE,DT,BU,DE,CA,RE,DTH,RK,MD,PD,CI,EV used;
-  class SU,SM,G,IN,DI untapped;
+  class F,DD,HE,DT,BU,DE,CA,RE,DTH,RK,MD,PD,CI,EV,IN,DI used;
+  class SU,SM,G untapped;
   class TH,SV dead;
   class GEAR star;
 ```
@@ -66,21 +66,21 @@ graph LR
 | **Summary** | totalTime, **itemLevel**, **composition**, damageDone, healingDone, damageTaken, deathEvents, playerDetails | ✗ | One-query overview — consolidation/efficiency; raid avg ilvl |
 | **Buffs** | auras[] (uptime/bands) | ✓ (toolkit uptimes) | — |
 | **Casts** | entries[] incl. **gear, talents**, abilities, targets | ✓ (toolkit) | gear/talents ride along |
-| **DamageDone** | entries[] incl. **gear[], talents[]**, abilities, targets | ✓ (DPS) | **GEAR = enchant/gem/ilvl audit (see below)** |
+| **DamageDone** | entries[] incl. **gear[], talents[]**, abilities, targets | ✓ (DPS + gear audit) | **✓ SHIPPED — `fetch_gear_audit` → `WEEK_DATA.gearAudit` (enchant/gem/ilvl Prep audit; see below)** |
 | **DamageTaken** | entries[] incl. sources, overheal, abilities | ✓ (tanks) | per-source breakdown for non-tanks. ⚠ DamageTaken **events** also carry **`unmitigatedAmount`** (raw pre-mitigation incoming) + **`mitigated`** (live-verified 2026-06-14) — powers the tank **CD coverage value** (unmitigated faced during a defensive aura window ÷ baseline unmit DTPS). Events carry **no `hitPoints`** (null) — can't read tank HP-at-a-timestamp from them |
 | **Deaths** | entries[] incl. **overkill, killingBlow, deathWindow, events** | ✓ (recap) | overkill / killingBlow depth for Survival. ⚠ recap `events[]` embed an **`ability` OBJECT** (`{name, guid, abilityIcon}`), NOT the flat `abilityGameID`/`type` that DamageDone/DamageTaken events carry — read `ev.ability.name` (see note below) |
 | **Debuffs** | auras[] (uptime/bands) | ✓ (debuff coverage) | — |
 | **Healing** | entries[] incl. overheal, abilities, targets | ✓ (healers) | enemy-healing (proved MS value) |
 | **Resources** | resources[] | ✓ (mana returns) | self-sustain view |
 | **Summons** | entries[] (pets/totems) | ✗ | pet/totem uptime |
-| **Dispels** | entries (nested) — **returned null via table()** | ✗ | needs events() or unavailable on 2.5 |
-| **Interrupts** | entries (nested) — **returned null via table()** | ✗ (combat-log instead) | needs events() or unavailable on 2.5 |
+| **Dispels** | entries (nested) — **null via table(); use events()** | ✓ (events()) | ✓ SHIPPED — `fetch_dispels` (+ `_dispel_latency`) → `WEEK_DATA.dispels` (cleanse/purge + reaction latency) |
+| **Interrupts** | entries (nested) — **null via table(); use events()** | ✓ (events()) | ✓ SHIPPED — `fetch_interrupts` → `WEEK_DATA.interrupts` (WCL-durable headline + combat-log fallback) |
 | **Threat** | threat — **returned null via table()** | ✗ | needs events()/sourceID or unavailable on 2.5 |
 | **Survivability** | players/fights/actortotals — **returned null** | ✗ | WCL's own survival metric; may be unavailable on 2.5 |
 
 ---
 
-## ★ The big untapped vein: GEAR (enchants + gems + item level)
+## ★ GEAR (enchants + gems + item level) — SHIPPED (was the big untapped vein)
 
 `DamageDone`/`Casts` entries carry a full **`gear[]`** array per raider — live-confirmed rich:
 
@@ -91,7 +91,8 @@ graph LR
 ```
 
 Per raider we can read **every item**, its **enchant** (id + name, or absent), its **gems** (ids), and
-**item level**. This is a premier "tryhard prep" signal we don't capture at all today:
+**item level** — now captured by the **Gear Readiness Prep audit** (`fetch_gear_audit` →
+`WEEK_DATA.gearAudit` → `renderGearAudit`):
 - **Enchant compliance** — which enchantable slots are missing an enchant (direct: `permanentEnchant`
   present or not; needs a whitelist of enchantable slots — head/shoulder/chest/cloak/wrist/hands/legs/
   feet/weapon/rings-if-enchanter).
@@ -100,8 +101,9 @@ Per raider we can read **every item**, its **enchant** (id + name, or absent), i
   gems. Quick gem stat lookup reuses the existing item cache.
 - **Item level** — per-item + raider average; surfaces an un-upgraded slot.
 
-**→ Feeds the Prep pillar** (today only consumables). "Fully enchanted + gemmed + geared" is exactly
-the preparation signal the tool was built to surface. **Highest-value find of the recon.**
+**→ Feeds the Prep pillar** (the Performance tab subtracts per missing enchant / empty socket).
+"Fully enchanted + gemmed + geared" is exactly the preparation signal the tool was built to surface.
+**This was the highest-value find of the recon — and it shipped.**
 
 > **Two gear sources, two shapes (don't conflate):** the `DamageDone`/`Casts` entry gear above has a
 > **`slot` field** (used by the gear-readiness audit). The **`COMBATANT_INFO` event gear** (what
@@ -176,10 +178,10 @@ the preparation signal the tool was built to surface. **Highest-value find of th
 ---
 
 ## Recommendation
-The standout is the **gear enchant/gem/ilvl Prep audit** — fully available, zero new query type
-(rides on the DamageDone fetch we already run), and it fills the biggest gap in the Prep pillar.
-Build that first. Threat/Survivability are tempting but returned empty on 2.5 — gate any plan on a
-follow-up `events()` probe confirming they exist on this client.
+The standout — the **gear enchant/gem/ilvl Prep audit** — has **shipped** (`fetch_gear_audit`, rides on
+the DamageDone fetch we already run; feeds the Prep pillar). Of what remains untapped, **Summary**
+(one-query composition + raid-avg-ilvl overview) and **Summons** (pet/totem uptime) are the cheap
+additive wins. Threat/Survivability returned empty on 2.5 — genuinely dead, don't retry.
 
 > Source: live recon vs report `J4Ba1j6VAPDmqCFp`. Re-confirm field availability if WCL changes the
 > 2.5 schema. Companion to `docs/TBC_RAID_MECHANICS.md`.
