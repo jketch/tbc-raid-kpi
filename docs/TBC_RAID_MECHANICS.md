@@ -350,6 +350,20 @@ What "tryhard prep" actually means, and the source-of-record for the Raid-Prep 0
 - **Superior Wizard Oil** (+42 spell dmg) vs **Brilliant Wizard Oil** (+36 spell dmg, +14 crit rating) — casters.
 - **Superior Mana Oil** (+14 mp5, +heal) — healers.
 - **Adamantite Weightstone / Sharpening Stone** (+12 dmg, +14 crit rating) — physical, on a non-enchanted/non-poisoned weapon.
+- **Hunters are the exception — they have NO weapon-oil consumable.** Oils/stones go on the *melee* weapon
+  a hunter never fights with; a hunter's damage weapon is the *ranged* one, whose enhancer is a permanent
+  **Scope** (Stabilized Eternium Scope +28 ranged crit / Khorium Scope +12 dmg) — that's GEAR readiness
+  (a permanent enchant), not a per-raid consumable. So the dashboard scores hunters on the scope (via the
+  gear-readiness audit), N/A's their weapon-oil slot, and renormalizes their Prep.
+
+### 6e-bis. How consumables actually LOG (Anniversary 2.5) — recognition gotcha
+The 2.5 client renames many buff effects and logs some under bare/suffix names, so name-only matching
+misses them. Recognize by **buff-aura spell-ID** (verify live). Seen: Mageblood → "Greater Versatility",
+Adept's → "Spellpower Elixir", Major Agility → "Mighty Agility"; Flask of Supreme Power → bare "Supreme
+Power", Chromatic Wonder → "Chromatic Wonder"; **Marks-of-Illidari "Shattrath Flask of X"** applies a
+DIFFERENT buff "<Effect> of Shattrath" (e.g. "Pure Death of Shattrath"); the vanilla **Zanza** potions log
+as "<Effect> of Zanza"; scrolls log as bare stat names (Scroll of Spirit → "Versatility"). The code is the
+source of truth for the ID maps (`game_constants.FLASK_AURA_IDS`/`ELIXIR_AURA_IDS`/`SCROLL_AURA_IDS`).
 
 ### 6f. Combat / mid-fight items (the +bonus tier of the 0–10 score — needs the weekly combat log)
 - **Combat potions:** Haste Potion (+400 haste 15s), Destruction Potion (+120 spell dmg +crit), Insane Strength, Fel Mana Potion, **Super/Major Mana & Healing Potions** (the standard mid-fight pot).

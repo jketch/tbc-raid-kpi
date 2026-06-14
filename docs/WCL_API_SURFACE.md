@@ -103,6 +103,16 @@ Per raider we can read **every item**, its **enchant** (id + name, or absent), i
 **→ Feeds the Prep pillar** (today only consumables). "Fully enchanted + gemmed + geared" is exactly
 the preparation signal the tool was built to surface. **Highest-value find of the recon.**
 
+> **Two gear sources, two shapes (don't conflate):** the `DamageDone`/`Casts` entry gear above has a
+> **`slot` field** (used by the gear-readiness audit). The **`COMBATANT_INFO` event gear** (what
+> `fetch_gear_from_events` reads for weapon-oil + crit) is a **POSITIONAL array, index = slot, NO `slot`
+> field** — index 15 = main hand, 16 = off hand, **17 = ranged**, 18 = tabard.
+> **Weapon enhancer split:** an oil/sharpening-stone is a **`temporaryEnchant`** (melee/caster weapons
+> only); a hunter's **ranged scope is a `permanentEnchant` on index 17** (e.g. 2724 = Stabilized Eternium
+> Scope). So the weapon-oil *consumable* slot is N/A for hunters — their enhancer is the scope (gear
+> readiness). Confirmed live (2026-06-14): a scoped hunter with no melee oil had `temporaryEnchant=None`
+> everywhere but `permanentEnchant` on index 17.
+
 ---
 
 ## Confirmed negatives / dead ends
