@@ -672,7 +672,7 @@
     <!-- Avoidable damage taken (paired with Deaths) -->
     <div class="card">
       <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_shadow_shadowfury.jpg" alt=""> Avoidable Damage Taken</div>
-      <div class="hs-sub">Damage from mechanics you could've sidestepped.</div>
+      <div class="hs-sub">Damage from avoidable mechanics — boss abilities that can be dodged or out-positioned.</div>
       <div id="avoidShame"></div>
     </div>
 
@@ -711,14 +711,14 @@
     <!-- Healthstone compliance (paired with Debuff Coverage) -->
     <div class="card">
       <div class="card-title"><img src="https://wow.zamimg.com/images/wow/icons/large/inv_stone_04.jpg" alt="" style="width:15px;height:15px;border-radius:3px;vertical-align:-2px;margin-right:3px"> Panic Button — died without a stone</div>
-      <div class="hs-sub">Who died but never popped the free <b>healthstone</b> in their bag.</div>
+      <div class="hs-sub">Raiders who died with an unused <b>healthstone</b> available.</div>
       <div id="healthstoneCard"></div>
     </div>
 
     <!-- Mind Control (moved here) -->
     <div class="card hs-wide">
       <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_shadow_shadowworddominate.jpg" alt=""> Mind Control — saves &amp; liabilities</div>
-      <div class="hs-sub"><b style="color:var(--green)">Saves</b> = you CC'd them safely · <b style="color:var(--red)">Liabilities</b> = you AoE'd into them.</div>
+      <div class="hs-sub"><b style="color:var(--green)">Saves</b> = CC'd a charmed ally to safety · <b style="color:var(--red)">Liabilities</b> = AoE landed on a charmed ally.</div>
       <div class="grid-2" style="margin-top:8px">
         <div>
           <div style="font-weight:700;color:var(--green);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Saves</div>
@@ -2330,7 +2330,7 @@ function renderHealthstones(){
   const hs = WEEK_DATA.healthstoneStats || {};
   const dNo = (hs.delta_no_stone !== undefined) ? fmtDelta(hs.delta_no_stone, false) : "";
   const dUse = (hs.delta_used !== undefined) ? fmtDelta(hs.delta_used, true) : "";
-  el.innerHTML = `<div class="av-summary"><b>${noStone.length}</b>${dNo} of <b>${died.length}</b> who died never popped a healthstone · <b>${totalStones}</b>${dUse} used raid-wide</div>${rows}`;
+  el.innerHTML = `<div class="av-summary"><b>${noStone.length}</b>${dNo} of <b>${died.length}</b> who died had an unused healthstone · <b>${totalStones}</b>${dUse} used raid-wide</div>${rows}`;
 }
 
 function renderDeaths() {
