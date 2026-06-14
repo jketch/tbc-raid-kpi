@@ -2109,6 +2109,13 @@ function renderCompliance() {
   // and drops out of their compliance denominator; using one anyway still counts (bonus).
   const MANALESS = new Set(["Warrior", "Rogue"]);
   const isManaless = p => MANALESS.has((((WEEK_DATA.roster||{})[p.name])||{}).class);
+  // Weapon enhancer is class-shaped: a hunter's is the ranged SCOPE (permanent enchant on the bow),
+  // not a temp oil/stone — so the cell explains the right thing. (p.weapon already carries the
+  // class-correct value from week_map: scope for hunters, oil/stone for everyone else.)
+  const isHunter = p => (((WEEK_DATA.roster||{})[p.name])||{}).class === "Hunter";
+  const weaponCell = p => p.weapon
+    ? chk(isHunter(p) ? "ranged scope on the bow/gun (a hunter's weapon enhancer — not a melee oil)" : "weapon oil / sharpening stone at pull")
+    : noTip(isHunter(p) ? "no ranged scope on the bow/gun" : "no weapon oil / sharpening stone on the weapon");
   const altCell = p => p.alt_pot ? ok(p.alt_pot)
     : isManaless(p) ? '<span style="color:var(--muted)" title="no mana pool — runes/gems don\'t apply; Flame Cap / Nightmare Seed are niche, not expected">n/a</span>'
     : noTip("no mana gem / rune / Flame Cap / Nightmare Seed used");
@@ -2138,7 +2145,7 @@ function renderCompliance() {
     const body = "<tbody>" + rows.map(p => {
       const cells = [flaskCell(p),
           p.food ? chk("food buff (Well Fed) at pull") : noTip("no food buff (Well Fed) at the pull"),
-          p.weapon ? chk("weapon oil / sharpening stone at pull") : noTip("no weapon oil / sharpening stone on the weapon")]
+          weaponCell(p)]
         .concat(R.combat ? [potCell(p.combat_pots)] : [])
         .concat([altCell(p), scrollCell(p)]);
       // Annotation for hybrid players: tank who appears in DPS section, or partial-night healer

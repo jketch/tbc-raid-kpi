@@ -287,6 +287,9 @@ def map_to_week_data(wcl: dict) -> WeekData:
         elixirs = c.get("elixirs", [])
         food = bool(c.get("food"))
         p_info        = roster_idx.get(n, {})
+        # Weapon enhancer: a HUNTER's is the ranged SCOPE (permanent), not a temp oil/stone (which
+        # only goes on the melee weapon they don't fight with). Everyone else: the oil/stone.
+        weapon_ok = bool(c.get("ranged_scope")) if p_info.get("class") == "Hunter" else bool(c.get("weapon_oil"))
         role          = p_info.get("role", "")
         spec          = p_info.get("spec", "")
         fights_tanked = p_info.get("fights_tanked", 0)
@@ -300,7 +303,7 @@ def map_to_week_data(wcl: dict) -> WeekData:
             "role":  role,
             "class": p_info.get("class", p_info.get("type", "")),
             "flask": flask, "elixirs": elixirs, "food": food,
-            "scrolls": c.get("scrolls", []), "weapon_oil": bool(c.get("weapon_oil")),
+            "scrolls": c.get("scrolls", []), "weapon_oil": weapon_ok,
             "potion": u.get("potion", 0), "rune": u.get("rune", 0),
             "mana_gem": u.get("mana_gem", 0),         # mage Mana Emerald/Ruby on-use (Replenish Mana)
             "healthstone": u.get("healthstone", 0),

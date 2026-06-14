@@ -13,6 +13,7 @@
     ],
     "flask": "Flask of Pure Death",
     "food": true,
+    "ranged_scope": false,
     "scrolls": [],
     "weapon_oil": true
    },
@@ -66,6 +67,7 @@
       }
      ],
      "fight": "Al'ar",
+     "ranged_scope": false,
      "sourceID": 11,
      "weapon_oil": true
     },
@@ -113,6 +115,7 @@
       }
      ],
      "fight": "Void Reaver",
+     "ranged_scope": false,
      "sourceID": 11,
      "weapon_oil": true
     },
@@ -160,6 +163,7 @@
       }
      ],
      "fight": "High Astromancer Solarian",
+     "ranged_scope": false,
      "sourceID": 11,
      "weapon_oil": true
     },
@@ -207,6 +211,7 @@
       }
      ],
      "fight": "Hydross the Unstable",
+     "ranged_scope": false,
      "sourceID": 11,
      "weapon_oil": false
     },
@@ -254,6 +259,7 @@
       }
      ],
      "fight": "The Lurker Below",
+     "ranged_scope": false,
      "sourceID": 11,
      "weapon_oil": false
     },
@@ -296,6 +302,7 @@
       }
      ],
      "fight": "Morogrim Tidewalker",
+     "ranged_scope": false,
      "sourceID": 11,
      "weapon_oil": true
     },
@@ -338,6 +345,7 @@
       }
      ],
      "fight": "Fathom-Lord Karathress",
+     "ranged_scope": false,
      "sourceID": 11,
      "weapon_oil": true
     },
@@ -385,6 +393,7 @@
       }
      ],
      "fight": "Leotheras the Blind",
+     "ranged_scope": false,
      "sourceID": 11,
      "weapon_oil": true
     },
@@ -432,6 +441,7 @@
       }
      ],
      "fight": "Lady Vashj",
+     "ranged_scope": false,
      "sourceID": 11,
      "weapon_oil": true
     }
@@ -444,6 +454,7 @@
     ],
     "flask": "Flask of Relentless Assault",
     "food": true,
+    "ranged_scope": false,
     "scrolls": [
      "Scroll of Agility",
      "Scroll of Strength"
@@ -505,6 +516,7 @@
       }
      ],
      "fight": "Al'ar",
+     "ranged_scope": false,
      "sourceID": 6,
      "weapon_oil": true
     },
@@ -567,6 +579,7 @@
       }
      ],
      "fight": "Void Reaver",
+     "ranged_scope": false,
      "sourceID": 6,
      "weapon_oil": false
     },
@@ -629,6 +642,7 @@
       }
      ],
      "fight": "High Astromancer Solarian",
+     "ranged_scope": false,
      "sourceID": 6,
      "weapon_oil": true
     },
@@ -676,6 +690,7 @@
       }
      ],
      "fight": "Hydross the Unstable",
+     "ranged_scope": false,
      "sourceID": 6,
      "weapon_oil": false
     },
@@ -723,6 +738,7 @@
       }
      ],
      "fight": "The Lurker Below",
+     "ranged_scope": false,
      "sourceID": 6,
      "weapon_oil": true
     },
@@ -785,6 +801,7 @@
       }
      ],
      "fight": "Morogrim Tidewalker",
+     "ranged_scope": false,
      "sourceID": 6,
      "weapon_oil": true
     },
@@ -832,6 +849,7 @@
       }
      ],
      "fight": "Fathom-Lord Karathress",
+     "ranged_scope": false,
      "sourceID": 6,
      "weapon_oil": false
     },
@@ -879,6 +897,7 @@
       }
      ],
      "fight": "Leotheras the Blind",
+     "ranged_scope": false,
      "sourceID": 6,
      "weapon_oil": true
     },
@@ -931,6 +950,7 @@
       }
      ],
      "fight": "Lady Vashj",
+     "ranged_scope": false,
      "sourceID": 6,
      "weapon_oil": true
     }
@@ -941,6 +961,7 @@
     "elixirs": [],
     "flask": "Flask of Supreme Power",
     "food": true,
+    "ranged_scope": false,
     "scrolls": [],
     "weapon_oil": true
    },
@@ -974,6 +995,7 @@
       }
      ],
      "fight": "Al'ar",
+     "ranged_scope": false,
      "sourceID": 25,
      "weapon_oil": true
     },
@@ -1021,6 +1043,7 @@
       }
      ],
      "fight": "Void Reaver",
+     "ranged_scope": false,
      "sourceID": 25,
      "weapon_oil": true
     },
@@ -1068,6 +1091,7 @@
       }
      ],
      "fight": "High Astromancer Solarian",
+     "ranged_scope": false,
      "sourceID": 25,
      "weapon_oil": true
     },
@@ -1115,6 +1139,7 @@
       }
      ],
      "fight": "Hydross the Unstable",
+     "ranged_scope": false,
      "sourceID": 25,
      "weapon_oil": true
     },
@@ -1162,6 +1187,7 @@
       }
      ],
      "fight": "The Lurker Below",
+     "ranged_scope": false,
      "sourceID": 25,
      "weapon_oil": true
     },
@@ -1209,6 +1235,7 @@
       }
      ],
      "fight": "Morogrim Tidewalker",
+     "ranged_scope": false,
      "sourceID": 25,
      "weapon_oil": true
     },
@@ -1251,6 +1278,7 @@
       }
      ],
      "fight": "Fathom-Lord Karathress",
+     "ranged_scope": false,
      "sourceID": 25,
      "weapon_oil": true
     },
@@ -1293,6 +1321,7 @@
       }
      ],
      "fight": "Leotheras the Blind",
+     "ranged_scope": false,
      "sourceID": 25,
      "weapon_oil": true
     },
@@ -1345,6 +1374,7 @@
       }
      ],
      "fight": "Lady Vashj",
+     "ranged_scope": false,
      "sourceID": 25,
      "weapon_oil": true
     }
@@ -1358,6 +1388,7 @@
     ],
     "flask": "",
     "food": true,
+    "ranged_scope": false,
     "scrolls": [],
     "weapon_oil": true
    },
@@ -1406,6 +1437,7 @@
       }
      ],
      "fight": "Al'ar",
+     "ranged_scope": false,
      "sourceID": 4,
      "weapon_oil": true
     },
@@ -1448,6 +1480,7 @@
       }
      ],
      "fight": "Void Reaver",
+     "ranged_scope": false,
      "sourceID": 4,
      "weapon_oil": true
     },
@@ -1490,6 +1523,7 @@
       }
      ],
      "fight": "High Astromancer Solarian",
+     "ranged_scope": false,
      "sourceID": 4,
      "weapon_oil": true
     },
@@ -1527,6 +1561,7 @@
       }
      ],
      "fight": "Hydross the Unstable",
+     "ranged_scope": false,
      "sourceID": 4,
      "weapon_oil": true
     },
@@ -1564,6 +1599,7 @@
       }
      ],
      "fight": "The Lurker Below",
+     "ranged_scope": false,
      "sourceID": 4,
      "weapon_oil": true
     },
@@ -1601,6 +1637,7 @@
       }
      ],
      "fight": "Morogrim Tidewalker",
+     "ranged_scope": false,
      "sourceID": 4,
      "weapon_oil": true
     },
@@ -1643,6 +1680,7 @@
       }
      ],
      "fight": "Fathom-Lord Karathress",
+     "ranged_scope": false,
      "sourceID": 4,
      "weapon_oil": true
     },
@@ -1690,6 +1728,7 @@
       }
      ],
      "fight": "Leotheras the Blind",
+     "ranged_scope": false,
      "sourceID": 4,
      "weapon_oil": true
     },
@@ -1737,6 +1776,7 @@
       }
      ],
      "fight": "Lady Vashj",
+     "ranged_scope": false,
      "sourceID": 4,
      "weapon_oil": true
     }
@@ -1749,6 +1789,7 @@
     ],
     "flask": "",
     "food": true,
+    "ranged_scope": false,
     "scrolls": [
      "Scroll of Agility",
      "Scroll of Strength"
@@ -1815,6 +1856,7 @@
       }
      ],
      "fight": "Al'ar",
+     "ranged_scope": false,
      "sourceID": 33,
      "weapon_oil": false
     },
@@ -1872,6 +1914,7 @@
       }
      ],
      "fight": "Void Reaver",
+     "ranged_scope": false,
      "sourceID": 33,
      "weapon_oil": false
     },
@@ -1929,6 +1972,7 @@
       }
      ],
      "fight": "High Astromancer Solarian",
+     "ranged_scope": false,
      "sourceID": 33,
      "weapon_oil": false
     },
@@ -1986,6 +2030,7 @@
       }
      ],
      "fight": "Hydross the Unstable",
+     "ranged_scope": false,
      "sourceID": 33,
      "weapon_oil": false
     },
@@ -2043,6 +2088,7 @@
       }
      ],
      "fight": "The Lurker Below",
+     "ranged_scope": false,
      "sourceID": 33,
      "weapon_oil": false
     },
@@ -2075,6 +2121,7 @@
       }
      ],
      "fight": "Morogrim Tidewalker",
+     "ranged_scope": false,
      "sourceID": 33,
      "weapon_oil": false
     },
@@ -2107,6 +2154,7 @@
       }
      ],
      "fight": "Fathom-Lord Karathress",
+     "ranged_scope": false,
      "sourceID": 33,
      "weapon_oil": false
     },
@@ -2144,6 +2192,7 @@
       }
      ],
      "fight": "Leotheras the Blind",
+     "ranged_scope": false,
      "sourceID": 33,
      "weapon_oil": false
     },
@@ -2196,6 +2245,7 @@
       }
      ],
      "fight": "Lady Vashj",
+     "ranged_scope": false,
      "sourceID": 33,
      "weapon_oil": false
     }
@@ -2209,6 +2259,7 @@
     ],
     "flask": "",
     "food": true,
+    "ranged_scope": false,
     "scrolls": [],
     "weapon_oil": true
    },
@@ -2272,6 +2323,7 @@
       }
      ],
      "fight": "Al'ar",
+     "ranged_scope": false,
      "sourceID": 18,
      "weapon_oil": true
     },
@@ -2319,6 +2371,7 @@
       }
      ],
      "fight": "Void Reaver",
+     "ranged_scope": false,
      "sourceID": 18,
      "weapon_oil": true
     },
@@ -2376,6 +2429,7 @@
       }
      ],
      "fight": "High Astromancer Solarian",
+     "ranged_scope": false,
      "sourceID": 18,
      "weapon_oil": true
     },
@@ -2428,6 +2482,7 @@
       }
      ],
      "fight": "Hydross the Unstable",
+     "ranged_scope": false,
      "sourceID": 18,
      "weapon_oil": false
     },
@@ -2470,6 +2525,7 @@
       }
      ],
      "fight": "The Lurker Below",
+     "ranged_scope": false,
      "sourceID": 18,
      "weapon_oil": false
     },
@@ -2507,6 +2563,7 @@
       }
      ],
      "fight": "Morogrim Tidewalker",
+     "ranged_scope": false,
      "sourceID": 18,
      "weapon_oil": true
     },
@@ -2559,6 +2616,7 @@
       }
      ],
      "fight": "Fathom-Lord Karathress",
+     "ranged_scope": false,
      "sourceID": 18,
      "weapon_oil": true
     },
@@ -2616,6 +2674,7 @@
       }
      ],
      "fight": "Leotheras the Blind",
+     "ranged_scope": false,
      "sourceID": 18,
      "weapon_oil": true
     },
@@ -2673,6 +2732,7 @@
       }
      ],
      "fight": "Lady Vashj",
+     "ranged_scope": false,
      "sourceID": 18,
      "weapon_oil": true
     }
@@ -2686,6 +2746,7 @@
     ],
     "flask": "Flask of Blinding Light",
     "food": true,
+    "ranged_scope": false,
     "scrolls": [
      "Scroll of Spirit"
     ],
@@ -2751,6 +2812,7 @@
       }
      ],
      "fight": "Al'ar",
+     "ranged_scope": false,
      "sourceID": 13,
      "weapon_oil": true
     },
@@ -2798,6 +2860,7 @@
       }
      ],
      "fight": "Void Reaver",
+     "ranged_scope": false,
      "sourceID": 13,
      "weapon_oil": true
     },
@@ -2855,6 +2918,7 @@
       }
      ],
      "fight": "High Astromancer Solarian",
+     "ranged_scope": false,
      "sourceID": 13,
      "weapon_oil": true
     },
@@ -2907,6 +2971,7 @@
       }
      ],
      "fight": "Hydross the Unstable",
+     "ranged_scope": false,
      "sourceID": 13,
      "weapon_oil": true
     },
@@ -2954,6 +3019,7 @@
       }
      ],
      "fight": "The Lurker Below",
+     "ranged_scope": false,
      "sourceID": 13,
      "weapon_oil": true
     },
@@ -2996,6 +3062,7 @@
       }
      ],
      "fight": "Morogrim Tidewalker",
+     "ranged_scope": false,
      "sourceID": 13,
      "weapon_oil": true
     },
@@ -3048,6 +3115,7 @@
       }
      ],
      "fight": "Fathom-Lord Karathress",
+     "ranged_scope": false,
      "sourceID": 13,
      "weapon_oil": true
     },
@@ -3105,6 +3173,7 @@
       }
      ],
      "fight": "Leotheras the Blind",
+     "ranged_scope": false,
      "sourceID": 13,
      "weapon_oil": true
     },
@@ -3162,6 +3231,7 @@
       }
      ],
      "fight": "Lady Vashj",
+     "ranged_scope": false,
      "sourceID": 13,
      "weapon_oil": true
     }

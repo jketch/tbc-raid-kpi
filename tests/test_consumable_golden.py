@@ -25,6 +25,7 @@ def _best_of_night(pulls):
     for pull in pulls:
         c = classify_pull_auras(pull["auras"])
         c["weapon_oil"] = pull["weapon_oil"]
+        c["ranged_scope"] = pull.get("ranged_scope", False)
         per_pull.append(c)
     return merge_pull_consumables(per_pull)
 

@@ -261,6 +261,7 @@ def merge_pull_consumables(per_pull: list) -> dict:
         "elixirs":    max((c.get("elixirs") or [] for c in per_pull), key=len, default=[]),
         "scrolls":    sorted({s for c in per_pull for s in (c.get("scrolls") or [])}),
         "weapon_oil": any(c.get("weapon_oil") for c in per_pull),
+        "ranged_scope": any(c.get("ranged_scope") for c in per_pull),   # hunter weapon enhancer
     }
 
 
@@ -317,6 +318,11 @@ def fetch_gear_from_events(token: str, report_code: str, fights: list,
                 gear_items = ev.get("gear", []) or []
                 cons["weapon_oil"] = any((it.get("temporaryEnchant") or 0)
                                          for it in gear_items if isinstance(it, dict))
+                # A HUNTER's weapon enhancer is the ranged SCOPE (a PERMANENT enchant on the ranged
+                # weapon — gear index 17), NOT a temp oil/stone (those go only on the melee weapons a
+                # hunter never fights with). Captured for all; week_map uses it for hunters only.
+                rng = gear_items[17] if len(gear_items) > 17 and isinstance(gear_items[17], dict) else {}
+                cons["ranged_scope"] = bool(rng.get("permanentEnchant"))
                 ci_pulls.setdefault(name, []).append(cons)
                 provided = group_buffs_provided(auras, sid)
                 if provided:

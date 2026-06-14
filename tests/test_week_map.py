@@ -53,6 +53,9 @@ def _fixture():
             "Healz": {"flask": "", "food": False,
                       "elixirs": ["Adept's Elixir", "Elixir of Draenic Wisdom"],
                       "scrolls": [], "weapon_oil": False},
+            # hunter: NO temp oil (doesn't oil a bow) but HAS a ranged scope → counts as the weapon enhancer
+            "Huntz": {"flask": "", "food": True, "elixirs": [], "scrolls": [],
+                      "weapon_oil": False, "ranged_scope": True},
         },
         "consum_use": {"Wlock": {"healthstone": 2, "potion": 1}},
         "group_buffs": {"Wlock": {"Eye of the Night": "+34 spell power (party)"}},
@@ -289,6 +292,15 @@ class TestConsumables(unittest.TestCase):
             {"flask": "", "food": True, "elixirs": ["Greater Versatility", "Mighty Agility"], "scrolls": []},
         ])
         self.assertEqual(sorted(out2["elixirs"]), ["Greater Versatility", "Mighty Agility"])
+
+    def test_hunter_weapon_slot_uses_ranged_scope_not_oil(self):
+        # A hunter's weapon enhancer is the ranged SCOPE (permanent), not a temp oil/stone. Huntz has
+        # ranged_scope=True but weapon_oil(temp)=False → the Weapon slot should still read ✓.
+        wd = map_to_week_data(_fixture())
+        grid = {r["name"]: r for r in wd["consumables"]}
+        self.assertTrue(grid["Huntz"]["weapon"])        # scope counts
+        # a non-hunter (Wlock) still keys off the temp oil:
+        self.assertTrue(grid["Wlock"]["weapon"])        # weapon_oil=True in the fixture
 
     def test_group_buff_gear_surfaced_in_week_data(self):
         wd = map_to_week_data(_fixture())

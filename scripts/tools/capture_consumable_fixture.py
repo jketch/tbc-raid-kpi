@@ -46,6 +46,7 @@ for f in rep["fights"]:
             "fight": f["name"],
             "sourceID": e.get("sourceID"),
             "weapon_oil": any((it.get("temporaryEnchant") or 0) for it in gear if isinstance(it, dict)),
+            "ranged_scope": bool(gear[17].get("permanentEnchant")) if len(gear) > 17 and isinstance(gear[17], dict) else False,
             "auras": [{"ability": a.get("ability"), "name": a.get("name", ""), "source": a.get("source")}
                       for a in (e.get("auras") or []) if isinstance(a, dict)],
         })
@@ -56,6 +57,7 @@ for nm, p in players.items():
     for pull in p["pulls"]:
         c = classify_pull_auras(pull["auras"])
         c["weapon_oil"] = pull["weapon_oil"]
+        c["ranged_scope"] = pull.get("ranged_scope", False)
         per_pull.append(c)
     p["expected"] = merge_pull_consumables(per_pull)
 
