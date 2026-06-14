@@ -12,6 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 from week_map import map_to_week_data, build_consumable_compliance
+from wcl_fetchers import (classify_pull_auras, merge_pull_consumables, unrecognized_self_buffs,
+                          group_buffs_provided)
 
 
 def _player(name, role, spec, cls, **kw):
@@ -53,6 +55,7 @@ def _fixture():
                       "scrolls": [], "weapon_oil": False},
         },
         "consum_use": {"Wlock": {"healthstone": 2, "potion": 1}},
+        "group_buffs": {"Wlock": {"Eye of the Night": "+34 spell power (party)"}},
         "consum_label": {"Wlock": {"combat_pots": ["Haste Potion"]}},
         "healing_metrics": {
             "Healz": {"eff_heal": 3_000_000, "eff_hps": 4500, "overheal_pct": 22.0,
@@ -200,7 +203,136 @@ class TestConsumables(unittest.TestCase):
         rows = build_consumable_compliance([
             {"name": "X", "role": "Caster", "flask": "",
              "elixirs": ["Adept's Elixir"], "food": True}])
-        self.assertFalse(rows[0]["flask"])    # battle-only — no guardian → not flask-equivalent
+        self.assertFalse(rows[0]["flask"])    # battle-only — one slot → not flask-equivalent
+
+    # ── classify_pull_auras: ID-anchored consumable recognition (the recognition list) ──
+    def _aura(self, name, ability=None):
+        return {"name": name, "ability": ability}
+
+    def test_recognize_flask_by_bare_effect_name(self):
+        # Flask of Supreme Power logs as bare "Supreme Power" (no "Flask of" prefix) — caught by
+        # ID (17628) and by the effect-name net. Previously recognized as NOTHING.
+        by_id   = classify_pull_auras([self._aura("Supreme Power", 17628)])
+        by_name = classify_pull_auras([self._aura("Supreme Power", 999999)])  # unknown id, name net
+        self.assertEqual(by_id["flask"], "Flask of Supreme Power")
+        self.assertEqual(by_name["flask"], "Flask of Supreme Power")
+
+    def test_recognize_renamed_elixir_by_id(self):
+        # "Major Shadow Power" (28503) is a battle elixir that was unrecognized by name.
+        out = classify_pull_auras([self._aura("Major Shadow Power", 28503)])
+        self.assertEqual(out["elixirs"], ["Major Shadow Power"])
+
+    def test_recognize_chromatic_wonder_flask(self):
+        # The T5/T6 resist flask logs as bare "Chromatic Wonder" (id 42735).
+        self.assertEqual(classify_pull_auras([self._aura("Chromatic Wonder", 42735)])["flask"],
+                         "Flask of Chromatic Wonder")
+
+    def test_recognize_shattrath_flask_family(self):
+        # Marks-of-Illidari "Shattrath Flask of X" → buff "<Effect> of Shattrath", distinct id+name.
+        out = classify_pull_auras([self._aura("Pure Death of Shattrath", 46837)])
+        self.assertEqual(out["flask"], "Flask of Pure Death (Shattrath)")
+        # robust to an unknown id (the suffix-match carries it):
+        out2 = classify_pull_auras([self._aura("Relentless Assault of Shattrath", 123456)])
+        self.assertEqual(out2["flask"], "Flask of Relentless Assault (Shattrath)")
+
+    def test_recognize_scrolls_by_id(self):
+        # Scrolls log under a BARE stat name (no "Scroll of " prefix) — recognized by ID only.
+        # 33080 logs as "Versatility" on Anniversary but is Scroll of Spirit.
+        out = classify_pull_auras([
+            self._aura("Agility", 33077),
+            self._aura("Versatility", 33080),   # Anniversary-renamed Scroll of Spirit
+        ])
+        self.assertEqual(out["scrolls"], ["Scroll of Agility", "Scroll of Spirit"])
+        self.assertEqual(out["flask"], "")          # a scroll is not a flask/elixir
+        self.assertEqual(out["elixirs"], [])
+
+    def test_merge_best_of_night_credits_late_flask_and_food(self):
+        # Regression (Blunderdin): first pull caught him with just an elixir, no flask/food; he
+        # flasked + ate after. Best-of-night must credit the flask + food from the later pulls.
+        out = merge_pull_consumables([
+            {"flask": "", "food": False, "elixirs": ["Mighty Agility"], "scrolls": [], "weapon_oil": False},
+            {"flask": "Flask of Relentless Assault", "food": True, "elixirs": ["Mighty Agility"],
+             "scrolls": ["Scroll of Agility"], "weapon_oil": True},
+        ])
+        self.assertEqual(out["flask"], "Flask of Relentless Assault")
+        self.assertTrue(out["food"])
+        self.assertTrue(out["weapon_oil"])
+        self.assertEqual(out["scrolls"], ["Scroll of Agility"])
+
+    def test_merge_elixir_slot_uses_best_single_pull_not_union(self):
+        # Two DIFFERENT single battle elixirs across pulls must NOT union into a fake battle+guardian
+        # pair — the elixir slot takes the largest single-pull set (here still 1).
+        out = merge_pull_consumables([
+            {"flask": "", "food": True, "elixirs": ["Mighty Agility"], "scrolls": []},
+            {"flask": "", "food": True, "elixirs": ["Major Strength"], "scrolls": []},
+        ])
+        self.assertEqual(len(out["elixirs"]), 1)
+        # but a genuine 2-elixir pull is kept whole:
+        out2 = merge_pull_consumables([
+            {"flask": "", "food": True, "elixirs": ["Mighty Agility"], "scrolls": []},
+            {"flask": "", "food": True, "elixirs": ["Greater Versatility", "Mighty Agility"], "scrolls": []},
+        ])
+        self.assertEqual(sorted(out2["elixirs"]), ["Greater Versatility", "Mighty Agility"])
+
+    def test_group_buff_gear_surfaced_in_week_data(self):
+        wd = map_to_week_data(_fixture())
+        gbg = {r["name"]: r for r in wd["groupBuffGear"]}
+        self.assertIn("Wlock", gbg)
+        self.assertEqual(gbg["Wlock"]["buffs"], [{"item": "Eye of the Night", "label": "+34 spell power (party)"}])
+        self.assertEqual(gbg["Wlock"]["class"], "Warlock")
+
+    def test_group_buff_gear_credits_provider_not_recipients(self):
+        ME, OTHER = 7, 3
+        provider = [{"ability": 31033, "name": "Eye of the Night", "source": ME}]      # I clicked it
+        recipient = [{"ability": 31033, "name": "Eye of the Night", "source": OTHER}]  # cast on me
+        self.assertEqual(group_buffs_provided(provider, ME), {"Eye of the Night": "+34 spell power (party)"})
+        self.assertEqual(group_buffs_provided(recipient, ME), {})   # recipient gets no credit
+        # and the canary must NOT flag a recognized group-buff neck as a missed consumable:
+        self.assertEqual(unrecognized_self_buffs(provider, ME), [])
+
+    def test_canary_flags_self_applied_unknown_only(self):
+        ME = 7
+        auras = [
+            {"ability": 99999, "name": "Mystery Brew", "source": ME},          # self + unknown → FLAG
+            {"ability": 17628, "name": "Supreme Power", "source": ME},         # self but recognized → no
+            {"ability": 25898, "name": "Greater Blessing of Kings", "source": 3},  # other-sourced → no
+            {"ability": 2458,  "name": "Berserker Stance", "source": ME},      # self but known buff → no
+        ]
+        self.assertEqual(unrecognized_self_buffs(auras, ME), ["Mystery Brew"])
+
+    def test_scrolls_flow_into_compliance_grid(self):
+        # The compliance grid (Prep data source) must carry scrolls so the Raider Score can credit them.
+        rows = build_consumable_compliance([
+            {"name": "Rg", "role": "Physical", "flask": "Flask of Relentless Assault",
+             "elixirs": [], "food": True, "scrolls": ["Scroll of Agility"]}])
+        self.assertEqual(rows[0]["scrolls"], ["Scroll of Agility"])
+
+    def test_full_anniversary_loadout_and_noise_ignored(self):
+        # A realistic Moojerked-style pull: 2 renamed elixirs + food, plus raid buffs that must
+        # NOT be mistaken for consumables.
+        out = classify_pull_auras([
+            self._aura("Greater Versatility", 28509),   # Mageblood guardian (renamed)
+            self._aura("Spellpower Elixir", 33721),     # Adept's battle (renamed)
+            self._aura("Well Fed", 33263),
+            self._aura("Greater Blessing of Kings", 25898),
+            self._aura("Arcane Brilliance", 27127),
+            self._aura("Prayer of Shadow Protection", 39374),
+        ])
+        self.assertEqual(out["elixirs"], ["Greater Versatility", "Spellpower Elixir"])
+        self.assertTrue(out["food"])
+        self.assertEqual(out["flask"], "")            # no flask; the 2-elixir path is what passes
+
+    def test_anniversary_renamed_two_elixirs_pass(self):
+        # Regression (Moojerked et al.): on Anniversary the Mageblood guardian buff logs as
+        # "Greater Versatility" — not in the old guardian allowlist, so a real battle+guardian pair
+        # was wrongly failed. Two distinct elixir auras = both slots filled, by the TBC game rule.
+        rows = {r["name"]: r for r in build_consumable_compliance([
+            {"name": "Moojerked", "role": "Healer", "flask": "",
+             "elixirs": ["Greater Versatility", "Spellpower Elixir"], "food": True},
+            {"name": "Zyph", "role": "Physical", "flask": "",
+             "elixirs": ["Greater Versatility", "Mighty Agility"], "food": True}])}
+        self.assertTrue(rows["Moojerked"]["flask"])
+        self.assertTrue(rows["Zyph"]["flask"])
 
     def test_healthstone_stats(self):
         wd = map_to_week_data(_fixture())

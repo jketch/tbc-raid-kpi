@@ -17,7 +17,8 @@ from collections import defaultdict
 from wcl_client import gql
 from paths import ITEM_META_CACHE
 from game_constants import (FOOD_BUFF, ELIXIR_BUFFS, HEAL_MANA_COST, EXTERNAL_ABILITIES,
-                            MECHANIC_IDS)
+                            MECHANIC_IDS, FLASK_AURA_IDS, ELIXIR_AURA_IDS, FLASK_EFFECT_NAMES,
+                            SCROLL_AURA_IDS, SELF_BUFF_IGNORE, GROUP_BUFF_GEAR)
 from roles import _fight_role
 
 # Hard cap on paginated WCL event queries — guards against a runaway non-null nextPageTimestamp
@@ -177,6 +178,91 @@ def parse_damage_table(raw_table) -> dict[str, dict]:
     return result
 
 
+def _consumable_from_aura(name: str, ability) -> tuple:
+    """Recognize ONE pull aura → (kind, value): kind ∈ flask|elixir|food|scroll|None.
+
+    ID-ANCHORED first (the `ability` spell-ID via FLASK_AURA_IDS / ELIXIR_AURA_IDS / SCROLL_AURA_IDS),
+    then name fallbacks — the Anniversary client renames buff effects and several flasks/elixirs log
+    under a bare effect name with no "Flask of …"/"Elixir of …" prefix; the Marks-of-Illidari "Shattrath
+    Flask of X" line logs as "<Effect> of Shattrath" (distinct id+name) and is matched by suffix-strip.
+    Order matters: flask before elixir, etc. A flask returns the canonical "Flask of …" name; an elixir
+    returns the in-game (logged) name so the audit shows what the raider saw. Pure — unit-tested."""
+    bn, aid = name or "", ability
+    shat = bn[:-len(" of Shattrath")] if bn.endswith(" of Shattrath") else None
+    if aid in FLASK_AURA_IDS:                                  return "flask",  FLASK_AURA_IDS[aid]
+    if bn.startswith("Flask of"):                              return "flask",  bn
+    if bn in FLASK_EFFECT_NAMES:                               return "flask",  FLASK_EFFECT_NAMES[bn]
+    if shat in FLASK_EFFECT_NAMES:                             return "flask",  FLASK_EFFECT_NAMES[shat] + " (Shattrath)"
+    if aid in ELIXIR_AURA_IDS:                                 return "elixir", bn or ELIXIR_AURA_IDS[aid][0]
+    if bn == FOOD_BUFF:                                        return "food",   None
+    if bn.startswith("Elixir of") or bn in ELIXIR_BUFFS:       return "elixir", bn
+    if aid in SCROLL_AURA_IDS:                                 return "scroll", SCROLL_AURA_IDS[aid]
+    if bn.startswith("Scroll of"):                             return "scroll", bn
+    return None, None
+
+
+def classify_pull_auras(auras: list) -> dict:
+    """Classify a player's pull-time COMBATANT_INFO buff auras into {flask, food, elixirs, scrolls}.
+    Per-aura recognition lives in _consumable_from_aura. Pure — unit-tested in tests/test_week_map.py."""
+    flask_name, food = "", False
+    elx, scr = set(), set()
+    for a in auras:
+        if not isinstance(a, dict):
+            continue
+        kind, val = _consumable_from_aura(a.get("name", "") or "", a.get("ability"))
+        if   kind == "flask":  flask_name = val
+        elif kind == "elixir": elx.add(val)
+        elif kind == "food":   food = True
+        elif kind == "scroll": scr.add(val)
+    return {"flask": flask_name, "food": food, "elixirs": sorted(elx), "scrolls": sorted(scr)}
+
+
+def group_buffs_provided(auras: list, own_id) -> dict:
+    """Gear-provided GROUP buffs (Eye of the Night / Chain of the Twilight Owl) this player PROVIDED.
+    The provider carries the party aura self-sourced (source == own_id); recipients get it other-sourced
+    (so they're not credited). Returns {item: label}. Pure — unit-tested via the captured-data golden."""
+    out = {}
+    for a in auras:
+        if isinstance(a, dict) and a.get("source") == own_id and a.get("ability") in GROUP_BUFF_GEAR:
+            g = GROUP_BUFF_GEAR[a["ability"]]
+            out[g["item"]] = g["label"]
+    return out
+
+
+def unrecognized_self_buffs(auras: list, own_id) -> list:
+    """Canary: self-applied pull auras we DON'T recognize as a consumable / group-buff gear and that
+    aren't a known class self-buff — i.e. candidate MISSED consumables (a new flask/elixir/scroll, or an
+    Anniversary rename). Consumables are self-applied, so `source == own_id` filters out the raid-buff
+    noise (blessings, brilliance, totems — all OTHER-sourced); SELF_BUFF_IGNORE strips the stable set of
+    self-cast class buffs (forms/stances/armors/auras/aspects). Pure — unit-tested via the golden."""
+    out = []
+    for a in auras:
+        if not isinstance(a, dict) or a.get("source") != own_id:
+            continue
+        nm, aid = a.get("name", "") or "", a.get("ability")
+        if (nm and nm not in SELF_BUFF_IGNORE and aid not in GROUP_BUFF_GEAR
+                and _consumable_from_aura(nm, aid)[0] is None):
+            out.append(nm)
+    return out
+
+
+def merge_pull_consumables(per_pull: list) -> dict:
+    """Aggregate a player's per-pull consumable dicts (classify_pull_auras + weapon_oil) into a
+    best-of-night view. COMBATANT_INFO fires once per fight, and a raider often ISN'T fully buffed at
+    the first pull (food/flask applied after, or they joined late), so sampling one fight under-credits
+    prep. Booleans take ANY pull — had a flask/food/oil/scroll this raid ⇒ credit it (food & scrolls
+    are 30-min and lapse mid-night, so 'any pull' is the fair read). The elixir SLOT uses the single
+    BEST pull (max elixirs held at once) so two different-pull battle elixirs can't fake a
+    battle+guardian pair. Pure — unit-tested in tests/test_week_map.py."""
+    return {
+        "flask":      next((c["flask"] for c in per_pull if c.get("flask")), ""),
+        "food":       any(c.get("food") for c in per_pull),
+        "elixirs":    max((c.get("elixirs") or [] for c in per_pull), key=len, default=[]),
+        "scrolls":    sorted({s for c in per_pull for s in (c.get("scrolls") or [])}),
+        "weapon_oil": any(c.get("weapon_oil") for c in per_pull),
+    }
+
+
 def fetch_gear_from_events(token: str, report_code: str, fights: list,
                            actors: list | None = None) -> dict[str, list]:
     """
@@ -193,51 +279,59 @@ def fetch_gear_from_events(token: str, report_code: str, fights: list,
             if a.get("type") == "Player":
                 id_to_name[a["id"]] = a["name"]
 
-    first = fights[0]
     try:
-        data = gql(token, Q_COMBATANT_INFO, {
-            "code": report_code,
-            "startTime": float(first["startTime"]),
-            "endTime":   float(first["endTime"]),
-        })
-        events = _report(data, "events", "data", default=[])
-        print(f"  Found {len(events)} combatantinfo events")
-        if events:
-            print(f"  Sample combatantinfo keys: {list(events[0].keys())}")
-            print(f"  Sample gear field: {str(events[0].get('gear','MISSING'))[:200]}")
+        # COMBATANT_INFO fires at the START of each fight. Sample EVERY kill (not just fights[0]) —
+        # raiders aren't always fully buffed at the first pull (food/flask applied after, late joiners),
+        # so a single-fight sample under-credits prep. Gear/crit is stable ⇒ take the first event we see
+        # per player; consumables are aggregated best-of-night by merge_pull_consumables.
         gear_map = {}
-        ci_consumables = {}
-        for ev in events:
-            sid  = ev.get("sourceID", -1)
-            name = id_to_name.get(sid, str(sid))
-            gear_map[name] = [{
-                "_crit_melee":  ev.get("critMelee",  0),
-                "_crit_spell":  ev.get("critSpell",  0),
-                "_crit_ranged": ev.get("critRanged", 0),
-                "_agility":     ev.get("agility",   0),   # primary-stat crit (melee/ranged)
-                "_intellect":   ev.get("intellect", 0),   # primary-stat crit (spell)
-                "gear":         ev.get("gear", []),
-            }]
-            # Pull-time auras are the accurate consumable source — they include
-            # flasks/elixirs/food applied before the log started (no aura event).
-            # Captures the FULL raid-buff spread for the consumable audit, not just y/n.
-            flask_name, fd = "", False
-            elx, scr = set(), set()
-            for a in (ev.get("auras") or []):
-                bn = a.get("name", "") if isinstance(a, dict) else ""
-                if   bn.startswith("Flask of"):    flask_name = bn
-                elif bn == FOOD_BUFF:              fd = True
-                elif bn.startswith("Elixir of") or bn in ELIXIR_BUFFS: elx.add(bn)
-                elif bn.startswith("Scroll of"):   scr.add(bn)
-            # Weapon oil / sharpening stone = a TEMPORARY weapon enchant. Only weapons can
-            # carry one, so any item with temporaryEnchant means they oiled/stoned a weapon.
-            gear_items = ev.get("gear", []) or []
-            wpn_enchanted = any((it.get("temporaryEnchant") or 0)
-                                for it in gear_items if isinstance(it, dict))
-            ci_consumables[name] = {"flask": flask_name, "food": fd,
-                                    "elixirs": sorted(elx), "scrolls": sorted(scr),
-                                    "weapon_oil": wpn_enchanted}
-        gear_map["__consumables__"] = ci_consumables
+        ci_pulls = {}        # name -> [per-pull consumable dict (classify_pull_auras + weapon_oil)]
+        gbuffs   = {}        # name -> {item: label} group buffs PROVIDED (best-of-night union)
+        canary   = {}        # unrecognized self-buff name -> sample player (the consumable canary)
+        total_events = 0
+        for f in fights:
+            data = gql(token, Q_COMBATANT_INFO, {
+                "code": report_code,
+                "startTime": float(f["startTime"]),
+                "endTime":   float(f["endTime"]),
+            })
+            events = _report(data, "events", "data", default=[])
+            total_events += len(events)
+            for ev in events:
+                sid  = ev.get("sourceID", -1)
+                name = id_to_name.get(sid, str(sid))
+                auras = ev.get("auras") or []
+                if name not in gear_map:        # first appearance — gear/crit (stable across the night)
+                    gear_map[name] = [{
+                        "_crit_melee":  ev.get("critMelee",  0),
+                        "_crit_spell":  ev.get("critSpell",  0),
+                        "_crit_ranged": ev.get("critRanged", 0),
+                        "_agility":     ev.get("agility",   0),   # primary-stat crit (melee/ranged)
+                        "_intellect":   ev.get("intellect", 0),   # primary-stat crit (spell)
+                        "gear":         ev.get("gear", []),
+                    }]
+                cons = classify_pull_auras(auras)
+                # Weapon oil / sharpening stone = a TEMPORARY weapon enchant. Only weapons can
+                # carry one, so any item with temporaryEnchant means they oiled/stoned a weapon.
+                gear_items = ev.get("gear", []) or []
+                cons["weapon_oil"] = any((it.get("temporaryEnchant") or 0)
+                                         for it in gear_items if isinstance(it, dict))
+                ci_pulls.setdefault(name, []).append(cons)
+                provided = group_buffs_provided(auras, sid)
+                if provided:
+                    gbuffs.setdefault(name, {}).update(provided)
+                for nm in unrecognized_self_buffs(auras, sid):
+                    canary.setdefault(nm, name)
+        print(f"  Found {total_events} combatantinfo events across {len(fights)} kill(s)")
+        if canary:   # surface candidate MISSED consumables so a new tier/rename self-reports
+            shown = ", ".join(f"{n} ({p})" for n, p in sorted(canary.items())[:12])
+            more = "" if len(canary) <= 12 else f" (+{len(canary) - 12} more)"
+            print(f"  ⚠ consumable canary: {len(canary)} self-applied pull aura(s) not recognized as a "
+                  f"consumable/known self-buff — if any is a new flask/elixir/scroll, add its spell-ID to "
+                  f"game_constants (audit: scripts/tools/probe_consumable_ids.py): {shown}{more}")
+        gear_map["__consumables__"] = {name: merge_pull_consumables(pulls)
+                                       for name, pulls in ci_pulls.items()}
+        gear_map["__group_buffs__"] = gbuffs
         return gear_map
     except Exception as e:
         print(f"  Warning: combatantinfo fetch failed: {e}")

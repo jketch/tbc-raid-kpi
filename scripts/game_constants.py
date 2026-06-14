@@ -51,27 +51,164 @@ CC_ABILITIES = {
 }
 
 # ── Consumables ───────────────────────────────────────────────────────────────
-# Detected per player from buff-aura events in the combat log. Flask = the gold
-# standard (any "Flask of …"); two battle/guardian elixirs ≈ one flask; "Well Fed"
-# = a food buff. Elixir buff EFFECT names (as they appear in logs), curated from
-# real Buffs-table data — extend as new ones show up.
+# Detected per player from pull-time COMBATANT_INFO buff auras. Recognition is ID-ANCHORED
+# (FLASK_AURA_IDS / ELIXIR_AURA_IDS below, keyed on the aura's `ability` spell-ID) with the
+# name sets here as a fallback net. Why both: the Anniversary (2.5) client RENAMES buff effects
+# unpredictably (Mageblood logs as "Greater Versatility", Adept's as "Spellpower Elixir") AND
+# several flasks/elixirs log under a bare EFFECT name with NO "Flask of …"/"Elixir of …" prefix
+# (Flask of Supreme Power → "Supreme Power", Chromatic Wonder → "Chromatic Wonder", Major Shadow
+# Power, Major Firepower …) — so neither the prefix check NOR a name allowlist alone is sufficient.
+# The spell-ID is the only stable key. To extend for new content: run scripts/tools/
+# probe_consumable_ids.py against a kill report, then add any "—unrecognized—" consumable IDs here.
 FOOD_BUFF = "Well Fed"
 
+# Elixir buff names as they appear in logs (effect-renamed + canonical). Fallback net only —
+# the ID map (ELIXIR_AURA_IDS) is the primary recognition path.
 ELIXIR_BUFFS = {
+    # Anniversary effect-renamed forms (verified live):
     "Mighty Agility", "Spellpower Elixir", "Healing Power", "Greater Versatility",
+    "Major Shadow Power", "Major Firepower", "Major Strength", "Major Armor", "Gift of Arthas",
+    # canonical "Elixir of …" / classic names:
     "Elixir of Draenic Wisdom", "Onslaught Elixir", "Adept's Elixir", "Fel Strength Elixir",
     "Elixir of Major Strength", "Elixir of Major Agility", "Elixir of Major Firepower",
     "Elixir of Mastery", "Elixir of Major Defense", "Elixir of Major Fortitude",
     "Elixir of Major Mageblood", "Elixir of the Mongoose", "Elixir of Empowerment",
-    "Elixir of Ironskin",
+    "Elixir of Ironskin", "Greater Arcane Elixir",
 }
 
 # Guardian (defensive/utility) elixirs — everything else in ELIXIR_BUFFS is a battle elixir.
-# Used by the Raid-Prep score: flask = both slots (+4); else battle +2 / guardian +2.
+# REFERENCE ONLY: the compliance "both slots filled" test no longer keys off this allowlist (it
+# uses the game rule that any two distinct elixir auras = one battle + one guardian — see
+# week_map.build_consumable_compliance), because Anniversary RENAMES buffs and an incomplete list
+# silently failed real 2-elixir raiders. NB the Mageblood guardian aura logs as "Greater Versatility"
+# (spell 28509) on Anniversary, NOT "Elixir of Major Mageblood". Kept for documentation + the audit.
 GUARDIAN_ELIXIRS = {
     "Elixir of Draenic Wisdom", "Elixir of Major Defense", "Elixir of Major Fortitude",
-    "Elixir of Major Mageblood", "Elixir of Empowerment", "Elixir of Ironskin",
-    "Elixir of Mastery", "Earthen Elixir",
+    "Elixir of Major Mageblood", "Greater Versatility", "Major Armor", "Gift of Arthas",
+    "Elixir of Empowerment", "Elixir of Ironskin", "Elixir of Mastery", "Earthen Elixir",
+}
+
+# ── ID-anchored consumable recognition (PRIMARY path) ─────────────────────────────────────────
+# Buff-aura spell-IDs (the `ability` field of a COMBATANT_INFO aura) → canonical flask name. ID
+# keys are STABLE across renames/effect-name displays. ✅ = the ID was read off a live COMBATANT_INFO
+# aura in our own reports (certain); the rest are verified against a Wowhead spell= record — re-check
+# the exact ID the first time a not-yet-seen flask appears (the name net below also catches it).
+FLASK_AURA_IDS = {
+    17626: "Flask of the Titans",          # vanilla holdover (+HP)
+    17627: "Flask of Distilled Wisdom",    # vanilla holdover (+mana)
+    17628: "Flask of Supreme Power",       # ✅ live ("Supreme Power") — +70 spell dmg
+    28518: "Flask of Fortification",       # tank — +500 HP, +10 def
+    28519: "Flask of Mighty Restoration",  # healer — +25 mp5
+    28520: "Flask of Relentless Assault",  # ✅ live — +120 AP
+    28521: "Flask of Blinding Light",      # ✅ live — +80 holy/nature/arcane
+    28540: "Flask of Pure Death",          # ✅ live — +80 shadow/fire/frost
+    42735: "Flask of Chromatic Wonder",    # T5/T6 resist flask — +18 all stats, +35 all resist
+}
+
+# Buff-aura spell-ID → (canonical elixir name, slot). The compliance check uses the game-rule
+# "2 distinct elixirs = both slots" (not this slot), so `slot` is documentation + future use.
+ELIXIR_AURA_IDS = {
+    # ── battle (offense slot) ──
+    28490: ("Elixir of Major Strength",    "battle"),
+    28491: ("Elixir of Healing Power",     "battle"),   # ✅ live ("Healing Power")
+    28497: ("Elixir of Major Agility",     "battle"),   # ✅ live ("Mighty Agility")
+    28501: ("Elixir of Major Firepower",   "battle"),
+    28503: ("Elixir of Major Shadow Power", "battle"),  # ✅ live ("Major Shadow Power")
+    33721: ("Adept's Elixir",              "battle"),    # ✅ live ("Spellpower Elixir")
+    # ── guardian (defense slot) ──
+    11371: ("Gift of Arthas",              "guardian"),  # ✅ live
+    28502: ("Elixir of Major Defense",     "guardian"),  # logs as "Major Armor"
+    28509: ("Elixir of Major Mageblood",   "guardian"),  # ✅ live ("Greater Versatility")
+    39625: ("Elixir of Major Fortitude",   "guardian"),  # ✅ live
+    39627: ("Elixir of Draenic Wisdom",    "guardian"),  # ✅ live
+}
+
+# Flask EFFECT names (the bare buff name, no "Flask of …" prefix) → canonical flask display name.
+# Two jobs: (a) backstop the ID map for flasks that log under a bare effect name (Supreme Power,
+# Chromatic Wonder, …) or whose live Anniversary buff-ID differs from the encoded one; (b) — combined
+# with the " of Shattrath" suffix in the parser — recognize the Marks-of-Illidari "Shattrath Flask of
+# …" line, whose buff logs as "<Effect> of Shattrath" (e.g. "Pure Death of Shattrath", spell 46837)
+# and shares NO id/name with the crafted flask. Marks of Illidari drop in T6 raids → common there.
+# Keys cover EVERY flask effect (incl. the ones that normally show the "Flask of " prefix) so the
+# Shattrath suffix-match below resolves all of them.
+FLASK_EFFECT_NAMES = {
+    "Relentless Assault": "Flask of Relentless Assault",
+    "Blinding Light":     "Flask of Blinding Light",
+    "Pure Death":         "Flask of Pure Death",
+    "Mighty Restoration": "Flask of Mighty Restoration",
+    "Fortification":      "Flask of Fortification",
+    "Supreme Power":      "Flask of Supreme Power",       # ✅ live (logs as bare "Supreme Power")
+    "Distilled Wisdom":   "Flask of Distilled Wisdom",
+    "Chromatic Wonder":   "Flask of Chromatic Wonder",    # the T5/T6 resist flask
+}
+
+# Stat-scroll buff-aura spell-IDs → canonical "Scroll of …" display. Scrolls log under a BARE stat
+# name ("Agility", "Strength", "Armor", and "Versatility" — the Anniversary rename of Scroll of
+# Spirit, 33080) with NO "Scroll of …" prefix, and those names are too generic to match safely by
+# name — so scrolls are recognized by ID ONLY. The "V" rank (33077–33082) is the TBC raid scroll;
+# the IV rank (12174/12179) is the vanilla holdover. A scroll is a minor positive-only prep extra.
+SCROLL_AURA_IDS = {
+    12174: "Scroll of Agility",      # ✅ live (rank IV, +17 agi)
+    12179: "Scroll of Strength",     # ✅ live (rank IV, +17 str)
+    33077: "Scroll of Agility",      # ✅ live (rank V, +20 agi)
+    33078: "Scroll of Intellect",    # rank V (+20 int) — same Scroll-V block
+    33079: "Scroll of Protection",   # ✅ live (rank V, +300 armor; logs as "Armor")
+    33080: "Scroll of Spirit",       # ✅ live (rank V, +30 spi; logs as "Versatility" on Anniversary)
+    33081: "Scroll of Stamina",      # rank V (+20 sta) — same Scroll-V block
+    33082: "Scroll of Strength",     # ✅ live (rank V, +20 str)
+}
+
+# Known self-APPLIED non-consumable auras — suppressed by the consumable canary
+# (wcl_fetchers.unrecognized_self_buffs). The canary flags self-sourced pull auras it can't recognize
+# as a consumable (a candidate missed flask/elixir/scroll). Consumables are self-applied, so OTHER-
+# sourced raid buffs (the bulk — a blessing/brilliance/totem cast ON you) are auto-filtered; this set
+# strips what's LEFT that's self-sourced: class self-buffs (forms/stances/armors/aspects/imbues), a
+# paladin's OWN blessings/auras cast on himself, and passive gear-proc auras (trinkets/idols). Mostly
+# stable across tiers; gear procs are the one part that grows (the canary's job is to surface new ones
+# for a 30-sec triage: consumable → add to an ID map, else → add here). Names as the 2.5 client logs.
+SELF_BUFF_IGNORE = {
+    # warrior stances · shouts (self-sourced copy)
+    "Battle Stance", "Defensive Stance", "Berserker Stance", "Battle Shout", "Commanding Shout",
+    # druid forms · auras
+    "Bear Form", "Dire Bear Form", "Cat Form", "Moonkin Form", "Travel Form", "Aquatic Form",
+    "Flight Form", "Swift Flight Form", "Tree of Life", "Leader of the Pack", "Moonkin Aura",
+    # paladin auras + a paladin's OWN blessings (self-cast → self-sourced) · seals
+    "Devotion Aura", "Retribution Aura", "Concentration Aura", "Sanctity Aura", "Crusader Aura",
+    "Fire Resistance Aura", "Frost Resistance Aura", "Shadow Resistance Aura", "Righteous Fury",
+    "Blessing of Kings", "Blessing of Might", "Blessing of Wisdom", "Blessing of Salvation",
+    "Blessing of Sanctuary", "Blessing of Light", "Blessing of Freedom", "Blessing of Protection",
+    "Greater Blessing of Kings", "Greater Blessing of Might", "Greater Blessing of Wisdom",
+    "Greater Blessing of Salvation", "Greater Blessing of Sanctuary",
+    # mage / warlock / priest self-armor & forms
+    "Molten Armor", "Mage Armor", "Ice Armor", "Frost Armor", "Fel Armor", "Demon Armor",
+    "Demon Skin", "Soul Link", "Shadowform", "Inner Fire", "Vampiric Embrace",
+    # hunter aspects
+    "Aspect of the Hawk", "Aspect of the Pack", "Aspect of the Wild", "Aspect of the Monkey",
+    "Aspect of the Cheetah", "Aspect of the Viper", "Aspect of the Beast",
+    # shaman self imbues / states · self-shields
+    "Windfury Weapon", "Flametongue Weapon", "Frostbrand Weapon", "Rockbiter Weapon",
+    "Ghost Wolf", "Lightning Shield", "Water Shield",
+    # rogue
+    "Slice and Dice", "Stealth",
+    # raid buffs the provider also gets on himself (self-sourced for the CASTER): mage/priest/druid
+    "Arcane Intellect", "Arcane Brilliance",
+    "Power Word: Fortitude", "Prayer of Fortitude", "Divine Spirit", "Prayer of Spirit",
+    "Shadow Protection", "Prayer of Shadow Protection",
+    "Mark of the Wild", "Gift of the Wild", "Thorns",
+    # NB JC group-buff necks (Eye of the Night / Chain of the Twilight Owl) are NOT here — they're
+    # recognized as real raid utility via GROUP_BUFF_GEAR below (the canary skips them), and CREDITED
+    # in the Raider Score, not suppressed as noise.
+}
+
+# Gear-provided GROUP buffs — a "use" item that buffs the provider's whole PARTY. Keyed by the AURA
+# spell-ID that lands on party members. The PROVIDER (who clicked it) carries the aura SELF-sourced, so
+# detection reuses the self-source signal (wcl_fetchers.group_buffs_provided). This is genuine raid
+# utility (like a totem), so it's CREDITED positive-only in the Raider Score Utility pillar — not
+# suppressed. Extensible: drop a future group-buff item here (a +haste/+crit neck, a relic) and it
+# slots into detection + scoring automatically. JC = Jewelcrafting BoP caster necks (Wowhead verified).
+GROUP_BUFF_GEAR = {
+    31033: {"item": "Eye of the Night",          "label": "+34 spell power (party)"},   # JC neck (item 24116)
+    31035: {"item": "Chain of the Twilight Owl",  "label": "+2% spell crit (party)"},    # JC neck (item 24121)
 }
 
 # Combat potions log only their EFFECT buff, never a cast named "… Potion" — so the cast-name

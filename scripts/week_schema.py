@@ -50,6 +50,7 @@ SECTIONS = {
     "roster":              Section(WCL,  True,  desc="name → class/spec/role (sentinel: empty ⇒ nothing loaded)"),
     "consumables":         Section(WCL,  True,  desc="Raid Prep 0–10 (COMBATANT_INFO pull auras + log bonus)"),
     "consumableUsage":     Section(WCL,  True,  desc="per-player flask/food/elixir/oil/pot audit (pull auras)"),
+    "groupBuffGear":       Section(WCL,  False, desc="JC group-buff necks PROVIDED (Eye of the Night/Twilight Owl); empty if none run"),
     "drums":               Section(LOG,  desc="Drums of Battle buff counts"),
     "avoidableDmg":        Section(LOG,  desc="avoidable damage taken (combat-log spell-name whitelist)"),
     "avoidableMechanics":  Section(LOG,  desc="per-mechanic avoidable breakdown"),
@@ -182,6 +183,7 @@ class WeekData(TypedDict, total=False):
     roster: dict
     consumables: list
     consumableUsage: list
+    groupBuffGear: list
     drums: list
     avoidableDmg: list
     avoidableMechanics: dict

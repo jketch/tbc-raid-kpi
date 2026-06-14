@@ -17,7 +17,7 @@ from collections import defaultdict
 
 from roles import _effective_role
 from crit_model import expected_crit
-from game_constants import GUARDIAN_ELIXIRS, ICON_OVERRIDES, FF_MIN_DMG
+from game_constants import ICON_OVERRIDES, FF_MIN_DMG
 from wcl_fetchers import _toolkit_metric, _tank_survival_grade
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -70,9 +70,12 @@ def build_consumable_compliance(consumable_usage):
     out = []
     for e in consumable_usage:
         elixirs = e.get("elixirs") or []
-        has_guardian = any(x in GUARDIAN_ELIXIRS for x in elixirs)
-        has_battle   = any(x not in GUARDIAN_ELIXIRS for x in elixirs)
-        flask_ok = bool(e.get("flask")) or (has_battle and has_guardian)
+        # TBC allows exactly one Battle + one Guardian elixir at a time (a flask blocks both), so any
+        # TWO distinct elixir auras present at the pull ARE a full battle+guardian pair = both slots
+        # filled = flask-equivalent. This game-rule test is robust to Anniversary buff renames (e.g.
+        # the Mageblood guardian buff logs as "Greater Versatility"); the old hardcoded guardian-name
+        # allowlist silently FAILED real 2-elixir healers/hybrids whenever a rename wasn't in the list.
+        flask_ok = bool(e.get("flask")) or len(elixirs) >= 2
         # Alt-pot slot = the situational mana-sustain / utility consumable. Priority (show the item
         # name): Nightmare Seed > Flame Cap > Dark/Demonic Rune > Mana Gem. A mage's Mana Gem is its
         # SEPARATE-cooldown mana sustain (a mage can use a gem AND a potion), so it fills this slot
@@ -94,6 +97,7 @@ def build_consumable_compliance(consumable_usage):
             "weapon": bool(e.get("weapon_oil")),
             "combat_pots": e.get("combat_pots", []),   # all combat pots popped (may be empty)
             "alt_pot": alt_pot,
+            "scrolls": e.get("scrolls", []),           # stat scrolls (informational + small prep bonus)
             # fight-distribution context — used by JS to bucket hybrid players correctly
             "effective_role": e.get("effective_role", e.get("role", "")),
             "fights_tanked":  e.get("fights_tanked", 0),
@@ -322,6 +326,19 @@ def map_to_week_data(wcl: dict) -> WeekData:
                                      x["name"]))
     consum_list = build_consumable_compliance(consum_usage)
 
+    # Group-buff GEAR provided (JC necks: Eye of the Night +SP / Chain of the Twilight Owl +crit) —
+    # real raid utility, credited positive-only in the Raider Score Utility pillar. Sorted for
+    # deterministic output. buffs = [{item, label}] per provider.
+    group_buff_gear = []
+    for n, items in sorted((wcl.get("group_buffs") or {}).items()):
+        if not items:
+            continue
+        pinfo = roster_idx.get(n, {})
+        group_buff_gear.append({
+            "name": n, "role": pinfo.get("role", ""), "class": pinfo.get("class", pinfo.get("type", "")),
+            "buffs": [{"item": it, "label": lb} for it, lb in sorted(items.items())],
+        })
+
     # Healer scorecard — actual healers only (role=Healer), ranked by effective HPS.
     # Throughput + overheal% (efficiency) + activity% differentiate them; crit luck doesn't.
     heal_metrics = wcl.get("healing_metrics", {})
@@ -404,6 +421,7 @@ def map_to_week_data(wcl: dict) -> WeekData:
         "mcSaves":             mc_saves,
         "mcLiable":            mc_liable,
         "consumableUsage":     consum_usage,
+        "groupBuffGear":       group_buff_gear,
         # Healthstone accountability (trended): raid-wide stones used + how many of the
         # raiders who died never popped one. {total_used, died_total, died_no_stone}.
         "healthstoneStats":    (lambda hs, dd: {

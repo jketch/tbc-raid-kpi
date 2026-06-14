@@ -196,6 +196,7 @@ def build_week_data(report_code: str, token: str,
     # ── Gear from COMBATANT_INFO events (more reliable than playerDetails.combatantInfo) ──
     gear_by_name = fetch_gear_from_events(token, report_code, kills, actors)
     ci_consumables = gear_by_name.pop("__consumables__", {})   # pull-time flask/food/elixir
+    group_buffs = gear_by_name.pop("__group_buffs__", {})       # gear group buffs PROVIDED (JC necks)
     for p in players:
         if not p["gear"] and p["name"] in gear_by_name:
             p["gear"] = gear_by_name[p["name"]]
@@ -494,6 +495,8 @@ def build_week_data(report_code: str, token: str,
         "ability_icons": fetch_ability_icons(token, report_code, fight_ids, md),
         # accurate pull-time consumables (from combatantinfo auras)
         "ci_consumables": ci_consumables,
+        # gear-provided GROUP buffs PROVIDED per player (JC necks) → Utility credit
+        "group_buffs": group_buffs,
         # per-player healing throughput/efficiency + per-spell breakdown + mana
         "healing_metrics": healing_metrics,
         "healing_spells":  healing_spells,
