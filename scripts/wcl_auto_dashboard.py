@@ -87,12 +87,14 @@ from wcl_fetchers import (                                                      
     # tanks + class toolkit
     TANK_CD_IDS, CD_NAMES, HITTYPE_CRUSH, HITTYPE_CRIT, build_tank_scorecard_extended,
     _median, compute_death_hp_timelines, compute_reaction_times, TOOLKIT_ABILITIES,
-    _toolkit_metric, _buff_uptime_batch, build_class_toolkit, _tank_survival_grade,
+    _toolkit_metric, _buff_uptime_batch, build_class_toolkit, fetch_engineering_casts,
+    fetch_bloodlust_windows, _tank_survival_grade,
     # parse % (the dashboard's Performance metric — WCL rankPercent vs the FULL logged
     # population; see fetch_parse_percentiles) + utility + buffs/debuffs
     fetch_parse_percentiles, fetch_saves, fetch_interrupts, fetch_dispels,
     fetch_ability_icons, fetch_deaths_split, _build_death_timeline, DEBUFF_SLOTS,
-    _merge_bands, _totem_uptime, fetch_debuff_coverage, MANA_SOURCES, INNERVATE_ICON,
+    _merge_bands, _totem_uptime, fetch_debuff_coverage, fetch_debuff_ramp_speed,
+    MANA_SOURCES, INNERVATE_ICON,
     fetch_mana_returns, fetch_sunder_armor, fetch_expose_armor, fetch_mechanic_compliance,
 )
 
@@ -393,6 +395,8 @@ def build_week_data(report_code: str, token: str,
                                        for b, u in healer_uptime.get(p["name"], {}).items()]
     # Raid debuff coverage — pure WCL, per boss (CoE/Misery/Shadow Weaving/ISB + armor + judgements)
     debuff_coverage = fetch_debuff_coverage(token, report_code, kills)
+    # Debuff RAMP SPEED — time-to-establish each debuff per boss (stacking → time-to-max; pure WCL)
+    debuff_ramp = fetch_debuff_ramp_speed(token, report_code, kills, md)
     # Mechanic compliance — per-boss "who ate the mechanic" by verified ability-ID (pure WCL;
     # the durable headline behind avoidable damage when no combat log was transferred)
     mech_compliance = fetch_mechanic_compliance(token, report_code, kills, md)
@@ -404,6 +408,8 @@ def build_week_data(report_code: str, token: str,
     expose_armor  = fetch_expose_armor(token, report_code, kills, md)   # rogue armor-debuff (fills the Sunder slot)
     saves         = fetch_saves(token, report_code, kills, md)   # protective/external casts on allies
     interrupts_wcl = fetch_interrupts(token, report_code, kills, md)  # WCL-durable interrupt headline
+    engineering_wcl = fetch_engineering_casts(token, report_code, kills, md)  # WCL-durable eng headline (no log)
+    bloodlust_windows = fetch_bloodlust_windows(token, report_code, kills, md)  # per-lust-window DPS uplift + ≈HP
     dispels       = fetch_dispels(token, report_code, kills, md)  # who-dispelled-what (cleanses + purges)
     damage_by_sel = fetch_damage_by_selection(token, report_code)
     class_toolkit = build_class_toolkit(token, report_code, kills, md)
@@ -520,6 +526,8 @@ def build_week_data(report_code: str, token: str,
         "player_spells":   role_spells.get("players", {}),
         # per-boss uptime of key DPS-amplifying raid debuffs (pure WCL)
         "debuff_coverage": debuff_coverage,
+        # per-debuff ramp speed — time-to-establish (stacking → time-to-max) + uptime-at-full (pure WCL)
+        "debuff_ramp": debuff_ramp,
         # per-boss per-mechanic "who ate it" by verified ability-ID (pure WCL)
         "mech_compliance": mech_compliance,
         # gear readiness audit — item level / enchant / gem compliance (WCL gear + wowhead sockets)
@@ -536,6 +544,11 @@ def build_week_data(report_code: str, token: str,
         "saves":           saves,
         # WCL-durable interrupt headline (events) — name → {count, spells}; map prefers this, log fallback
         "interrupts_wcl":  interrupts_wcl,
+        # WCL-durable engineering headline (Casts events) — name → {ability_name: count}; log overlay
+        # (real sapper/bomb damage) stays primary when present, this backfills counts when no log
+        "engineering_wcl": engineering_wcl,
+        # per-lust-window raid-DPS uplift vs baseline + ≈boss-HP at cast (pull-burn vs execute-save)
+        "bloodlust_windows": bloodlust_windows,
         # who-dispelled-what — cleanses off allies + offensive purges on enemies (WCL Dispels events)
         "dispels":         dispels,
         # per-player damage + active time split All/Bosses/Trash (WCL-style DPS denominator)

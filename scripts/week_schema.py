@@ -31,6 +31,8 @@ META     = "meta"
 # Most sections are a list or dict where `bool(v)` ([]/{} falsy) is the right test. These few
 # are always-present containers whose meaningful emptiness lives one level down.
 def _has_players(v):    return isinstance(v, dict) and bool(v.get("players"))
+def _has_ramps(v):      return isinstance(v, dict) and bool(v.get("ramps"))
+def _has_bl_fights(v):  return isinstance(v, dict) and bool(v.get("fights"))
 def _has_batteries(v):  return isinstance(v, dict) and (
     bool(v.get("batteries")) or bool((v.get("innervate") or {}).get("casters")))
 def _hs_nonempty(v):    return isinstance(v, dict) and (
@@ -72,12 +74,14 @@ SECTIONS = {
     "tankCrit":            Section(WCL,  True,  desc="tank melee-crit (WCL-durable)"),
     "healerCrit":          Section(WCL,  False, desc="healer crit (gear-crit unavailable; from heal events — may be empty)"),
     "luckKPI":             Section(WCL,  True,  desc="actual − expected crit (historical baseline)"),
-    "engineering":         Section(LOG,  desc="sappers/bombs by ability (combat log)"),
+    "engineering":         Section(WCL,  False, desc="sappers/bombs by ability (WCL Casts headline; combat-log damage detail)"),
+    "bloodlustWindows":    Section(WCL,  False, predicate=_has_bl_fights, desc="per-lust-window raid-DPS uplift + ≈boss-HP at cast (empty if no lust)"),
     "interrupts":          Section(WCL,  False, desc="interrupt counts + enemy casts stopped (WCL events; combat-log fallback)"),
     "boss_times":          Section(WCL,  True,  desc="kill time per boss (seconds)"),
     "boss_meta":           Section(WCL,  True,  desc="boss tiles — portrait/delta/deaths/raid-DPS"),
     "healReaction":        Section(LOG,  desc="per-raider/boss reaction-time medians (HP%-timeline)"),
     "debuffCoverage":      Section(WCL,  False, desc="CoE/Misery/SW/ISB/FF/Sunder/Reck/Expose/judgements uptime (empty if none cast)"),
+    "debuffRampSpeed":     Section(WCL,  False, predicate=_has_ramps, desc="per-debuff time-to-establish (stacking → time-to-max) + uptime-at-full"),
     "mechanicCompliance":  Section(WCL,  False, predicate=lambda v: isinstance(v, dict) and bool(v.get("bosses")),
                                    desc="per-boss who-ate-the-mechanic by verified ability-ID (empty: clean week / unmapped bosses)"),
     "gearAudit":           Section(WCL,  False, predicate=_has_players,
@@ -153,6 +157,7 @@ class TankRow(TypedDict, total=False):
     avoid_pct: float
     biggest_hit: dict
     cooldowns: dict
+    cd_value: dict
     per_boss: list
     lowest_hp: dict
     survival: dict
@@ -205,11 +210,13 @@ class WeekData(TypedDict, total=False):
     healerCrit: list
     luckKPI: list
     engineering: list
+    bloodlustWindows: dict
     interrupts: list
     boss_times: dict
     boss_meta: dict
     healReaction: dict
     debuffCoverage: dict
+    debuffRampSpeed: dict
     mechanicCompliance: dict
     gearAudit: dict
     sunderArmor: dict

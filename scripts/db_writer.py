@@ -36,7 +36,7 @@ DB_PATH_TEST = Path(__file__).parent.parent / "cache" / "raid_history_test.db"
 
 # Bump when a schema/column change means a prior week's row must be rebuilt for trends to compute.
 # enrich_with_trends warns when the prior week's row predates this; `reprocess.py --all` re-stamps.
-SCHEMA_VERSION = 3   # v3: dps.war + tank_scorecard.war/survival (DPS & Tank threat WAR)
+SCHEMA_VERSION = 5   # v5: tank_scorecard.cd_value (per-CD coverage ratio: unmit faced ÷ baseline)
 
 
 # section → the table whose presence proves that section is in the DB for a report. Used by the
@@ -244,6 +244,7 @@ CREATE TABLE IF NOT EXISTS tank_scorecard (
     avoid_pct    REAL,      -- melee swings avoided (miss/dodge/parry/full block)
     biggest_hit  INTEGER,
     cooldowns    TEXT,      -- JSON dict {cd_name: count}
+    cd_value     TEXT,      -- JSON dict {cd_name: coverage ratio} (unmit faced ÷ baseline; LoH omitted)
     war          REAL,      -- threat WAR: tank DPS vs same-spec tank cohort (WCL ranks tanks by dps)
     survival     INTEGER,   -- absolute survivability grade 0-100 (uncrittable/uncrushable/deaths/CDs)
     PRIMARY KEY (report_code, player)
@@ -384,7 +385,7 @@ def write_week(week_data: dict, db_path: Path | None = None, *, allow_downgrade:
             con.execute("ALTER TABLE dps ADD COLUMN war REAL")
         except sqlite3.OperationalError:
             pass
-        for _col, _type in (("war", "REAL"), ("survival", "INTEGER")):
+        for _col, _type in (("war", "REAL"), ("survival", "INTEGER"), ("cd_value", "TEXT")):
             try:
                 con.execute(f"ALTER TABLE tank_scorecard ADD COLUMN {_col} {_type}")
             except sqlite3.OperationalError:
@@ -672,12 +673,14 @@ def write_week(week_data: dict, db_path: Path | None = None, *, allow_downgrade:
             con.execute("""
                 INSERT OR REPLACE INTO tank_scorecard
                   (report_code, player, dtps, taken, hps_recv, deaths, phys_pct, magic_pct,
-                   crush_count, crit_count, avoid_pct, biggest_hit, cooldowns, war, survival)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                   crush_count, crit_count, avoid_pct, biggest_hit, cooldowns, cd_value,
+                   war, survival)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (rc, t["name"], t.get("dtps"), t.get("taken"), t.get("hps_recv"),
                   t.get("deaths"), t.get("phys_pct"), t.get("magic_pct"),
                   t.get("crush_count"), t.get("crit_count"), t.get("avoid_pct"),
-                  bh.get("amount"), json.dumps(t.get("cooldowns") or {}), war, survival))
+                  bh.get("amount"), json.dumps(t.get("cooldowns") or {}),
+                  json.dumps(t.get("cd_value") or {}), war, survival))
             for pb in (t.get("per_boss") or []):
                 con.execute("""
                     INSERT OR REPLACE INTO tank_boss_dtps

@@ -218,6 +218,8 @@
   .tpb-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
     padding: 9px 11px; }
   .tpb-head { font-weight: 700; font-size: 12px; margin-bottom: 5px; }
+  .tpb-cds { font-size: 11px; color: var(--muted); margin-bottom: 6px;
+    padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,.05); }
   .spike-row { font-size: 10.5px; color: var(--muted); margin-bottom: 6px;
     padding-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,.05); }
   .spike-row b { color: var(--text); }
@@ -395,6 +397,11 @@
   .hs-grid .hs-wide { grid-column: 1 / -1; }
   @media (max-width: 900px){ .hs-grid { grid-template-columns: 1fr; } }
   .hs-sub { color: var(--dim); font-size: 12px; line-height: 1.5; margin: 2px 0 10px; }
+  /* collapsible card descriptions — long ones clamp to 2 lines with a "read more" toggle (initCardDescriptions) */
+  .hs-sub.hs-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 1px; }
+  .hs-more { display: inline-block; color: var(--accent); cursor: pointer; font-size: 11px; font-weight: 600;
+             margin: 0 0 10px; user-select: none; }
+  .hs-more:hover { text-decoration: underline; }
   .hs-sub b { color: var(--text); font-weight: 600; }
   @keyframes hs-rise { from { opacity:0; transform:translateY(8px);} to { opacity:1; transform:none; } }
   .hs-row { animation: hs-rise .45s cubic-bezier(.2,.7,.2,1) both; }
@@ -685,6 +692,13 @@
       <div id="debuffCoverage" class="scroll-x"></div>
     </div>
 
+    <!-- ═══════ DEBUFF RAMP SPEED — how fast each debuff was established ═══════ -->
+    <div class="card">
+      <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_borrowedtime.jpg" alt=""> Debuff Ramp Speed</div>
+      <div class="hs-sub">How fast the raid <b>established</b> each debuff after the pull (pure WCL). Stacking debuffs (<b>Shadow Weaving</b>, <b>Sunder</b>) show <b>time-to-max-stack</b>; single-application debuffs show <b>time-to-first-applied</b> (up at the pull, or late?). <b>Uptime@Full</b> = % of the fight held at full effect. Proc-based debuffs (<b>~</b>) ramp in bursts, so they're noisier. Hover a row for the per-boss breakdown.</div>
+      <div id="debuffRampSpeed" class="scroll-x"></div>
+    </div>
+
     <!-- ═══════ SUNDER ARMOR — per-warrior armor-debuff quality ═══════ -->
     <div class="card">
       <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/ability_warrior_sunder.jpg" alt=""> Sunder Armor — who built the stack</div>
@@ -770,6 +784,12 @@
     <div class="scroll-x scroll-y"><div id="uptimeHeatmap"></div></div>
   </div>
 
+  <div class="card physical" style="margin-top:22px">
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_nature_bloodlust.jpg" alt=""> Bloodlust Window Value</div>
+    <div class="hs-sub">For each Bloodlust/Heroism cast: the raid-DPS <b>uplift</b> over the fight's baseline (how much the 30s window over-performed) and the <b>≈boss HP</b> at cast — a <b>pull-burn</b> (high HP) vs <b>execute-save</b> (low HP) read. ≈HP is estimated from cumulative damage (a proxy on add/heal/phase fights), so it's "where in the kill", not exact boss HP. Pure WCL.</div>
+    <div class="scroll-x"><div id="bloodlustWindows"></div></div>
+  </div>
+
   <div class="card" style="margin-top:22px">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_dice_01.jpg" alt=""> Crit Luck — or a Gear Upgrade?</div>
     <div class="hs-sub">Big number = this week's crit vs <b>your own multi-week average</b> (controls for gear/spec/buffs). <b>Spike</b> 🎲 = hot dice · <b>sustained step</b> 🔼 = gear upgrade — the sparkline shows which.</div>
@@ -783,17 +803,19 @@
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_shield_06.jpg" alt=""> Tank Scorecard</div>
   <div class="card">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_shield_06.jpg" alt=""> Survivability &amp; Mitigation</div>
-    <div class="hs-sub">Scoped to <b>tank fights only</b> (prot/ret handled — see <b>Fights</b>). <b>DTPS</b> = damage taken/sec (lower = better) · <b>Phys%</b> = physical share of damage taken (grey) vs magic (purple) · <b>Mit</b> = crushing blows ✸ / crits taken (crit should be ~0 if defense-capped) · <b>Avoid</b> = melee swings dodged/parried/missed/blocked · <b>Cooldowns</b> (kill fights; zero-count shown — absence is signal): <b>SW</b> Shield Wall · <b>LS</b> Last Stand · <b>FR</b> Frenzied Regen · <b>BS</b> Barkskin · <b>LoH</b> Lay on Hands.</div>
+    <div class="hs-sub">Scoped to <b>tank fights only</b> (prot/ret handled — see <b>Fights</b>). <b>DTPS</b> = damage taken/sec (lower = better) · <b>Phys%</b> = physical share of damage taken (grey) vs magic (purple) · <b>Mit</b> = crushing blows ✸ / crits taken (crit should be ~0 if defense-capped) · <b>Avoid</b> = melee swings dodged/parried/missed/blocked. Defensive-cooldown usage moved to the <b>Tank Execution</b> card below.</div>
     <div class="scroll-x">
       <table class="mini-table" id="tankTable">
         <thead>
-          <tr><th>Tank</th><th class="num">Fights</th><th class="num" title="Threat parse % — tank DPS percentile vs ALL logged same-spec tank parses (WCL ranks tanks by DPS; survival is the Survive grade). 50 = typical, 75+ = strong. Color = WCL bracket. — = not ranked yet.">Threat</th><th class="num" title="Survivability grade 0-100 from absolute TBC checks: crit-immunity (a boss crit = not defense-capped), crushing blows, deaths, and defensive-CD use. Hover a cell for the specifics. Coarse v1 — class-tunable.">Survive</th><th class="num">DTPS</th><th>Phys%</th><th class="num">Mit</th><th class="num">Avoid</th><th class="num">Heal/s</th><th class="num">Deaths</th><th>Cooldowns</th></tr>
+          <tr><th>Tank</th><th class="num">Fights</th><th class="num" title="Threat parse % — tank DPS percentile vs ALL logged same-spec tank parses (WCL ranks tanks by DPS; survival is the Survive grade). 50 = typical, 75+ = strong. Color = WCL bracket. — = not ranked yet.">Threat</th><th class="num" title="Survivability grade 0-100 from absolute TBC checks: crit-immunity (a boss crit = not defense-capped), crushing blows, deaths, and defensive-CD use. Hover a cell for the specifics. Coarse v1 — class-tunable.">Survive</th><th class="num">DTPS</th><th>Phys%</th><th class="num">Mit</th><th class="num">Avoid</th><th class="num">Heal/s</th><th class="num">Deaths</th></tr>
         </thead>
         <tbody id="tankTbody"></tbody>
       </table>
     </div>
-    <div class="subsection-label" style="margin-top:18px">Per-Boss Damage Taken &amp; Spike Survivability</div>
-    <div class="hs-sub">Per card: <b>biggest single hit</b> taken, then each boss tanked — <b>DTPS</b> · total <b>taken</b> · <b>▼ lowest HP%</b> survived (combat log). DTPS shaded by severity (red = hardest).</div>
+  </div>
+  <div class="card">
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/ability_warrior_shieldwall.jpg" alt=""> Tank Execution — Cooldowns &amp; Spike Survivability</div>
+    <div class="hs-sub">Per tank: <b>defensive cooldowns used</b> (kill fights; zero-count shown — absence is signal) as <b>×casts</b> + a <b>coverage value</b> — the unmitigated damage faced during the CD's window vs the tank's baseline (<b style="color:var(--green)">&gt;1×</b> = popped on a spike / well-timed · <b>&lt;1×</b> = a lull). The "reverse-Bloodlust" read of <i>when</i> the CD fired, not a near-zero uptime%. (Lay on Hands is an instant heal and Divine Shield an immunity that drops threat — both count-only, no damage faced.) <b>SW</b> Shield Wall · <b>LS</b> Last Stand · <b>FR</b> Frenzied Regen · <b>BSk</b> Barkskin · <b>LoH</b> Lay on Hands · <b>DS/DP</b> Divine Shield/Protection — then the <b>biggest single hit</b> taken and each boss tanked (<b>DTPS</b> · total <b>taken</b> · <b>▼ lowest HP%</b> survived, combat log). DTPS shaded by severity (red = hardest).</div>
     <div id="tankPerBoss" class="tpb-wrap"></div>
   </div>
 
@@ -846,7 +868,7 @@
     <div style="display:flex;flex-direction:column;gap:24px">
       <div class="card physical">
         <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_gizmo_supersappercharge.jpg" alt=""> Sapper &amp; Bomb Usage &amp; Damage</div>
-        <div class="hs-sub">Sapper &amp; bomb (Fel Iron Bomb / Adamantite Grenade) damage dealt to bosses, with per-item use counts.</div>
+        <div class="hs-sub">Sapper &amp; bomb (Fel Iron Bomb / Adamantite Grenade) <b>use counts</b> from WCL casts — runs every week. <b>Total DMG</b> (to bosses) is added from the combat log when one is provided; <b>—</b> until then.</div>
         <div class="scroll-x">
           <table class="mini-table" id="engTable" style="table-layout:fixed;width:100%">
             <thead><tr id="engHead"></tr></thead>
@@ -870,7 +892,7 @@
   <div class="tsec" data-tab="utility">
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_sealofprotection.jpg" alt=""> Saving Others — Hands &amp; Battle-Res</div>
   <div class="card gold">
-    <div class="hs-sub">Protective &amp; external casts <b>on teammates</b> — the clutch single-target paladin Hands (Protection / Sacrifice / Salvation / Freedom — the Anniversary client's names for the old single-target Blessings), Lay on Hands on an ally, druid Rebirth &amp; Innervate-class help. <b>Maintained buffs and routine shields (PW:Shield, Earth Shield, Greater Blessings) are excluded</b> — this is clutch help, not upkeep. <b>Dispels &amp; purges have their own card below.</b> Hover a row for <b>who they helped</b>.</div>
+    <div class="hs-sub">Protective &amp; external casts <b>on teammates</b> — the clutch single-target paladin Hands (Protection / Sacrifice / Salvation / Freedom — the Anniversary client's names for the old single-target Blessings), Lay on Hands on an ally, druid Rebirth &amp; warlock Soulstone res. <b>Maintained buffs and routine shields (PW:Shield, Earth Shield, Greater Blessings) are excluded</b> — this is clutch help, not upkeep. <b>Innervate, dispels &amp; purges have their own cards.</b> Hover a row for <b>who they helped</b>.</div>
     <div class="scroll-x"><div id="savesCard"></div></div>
   </div>
   </div>
@@ -879,7 +901,7 @@
   <div class="tsec" data-tab="utility">
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/spell_holy_dispelmagic.jpg" alt=""> Dispels &amp; Purges — Who Stripped What</div>
   <div class="card">
-    <div class="hs-sub"><b>Cleanses</b> strip a harmful effect off a teammate (Cleanse, Abolish, Remove Curse, Felhunter Devour Magic); <b>purges</b> strip a buff off an <b>enemy</b> (shaman Purge, priest Dispel Magic, hunter Tranquilizing Shot enrage-strip, Devour Magic). From WCL <b>Dispels</b> events — actual successful removals, not just casts. Hover a row to see <b>what was stripped</b> and <b>who was cleansed</b>.</div>
+    <div class="hs-sub"><b>Cleanses</b> strip a harmful effect off a teammate (Cleanse, Abolish, Remove Curse, Felhunter Devour Magic); <b>purges</b> strip a buff off an <b>enemy</b> (shaman Purge, priest Dispel Magic, hunter Tranquilizing Shot enrage-strip, Devour Magic). From WCL <b>Dispels</b> events — actual successful removals, not just casts. <b>Reaction</b> = median seconds from a harmful debuff landing on a teammate to being cleansed (— when all were pre-applied); a Mind-Control break shows its fastest time in the banner. Hover a row to see <b>what was stripped</b> and <b>who was cleansed</b>.</div>
     <div class="scroll-x"><div id="dispelsCard"></div></div>
   </div>
   </div>
@@ -1061,7 +1083,7 @@ function renderTanks() {
   const tbody = document.getElementById("tankTbody");
   if (!tbody) return;
   if (!data.length) {
-    tbody.innerHTML = '<tr><td colspan="11" style="color:var(--muted);font-size:12px">No tank data this week.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="color:var(--muted);font-size:12px">No tank data this week.</td></tr>';
     const host = document.getElementById("tankPerBoss"); if (host) host.innerHTML = "";
     return;
   }
@@ -1083,12 +1105,7 @@ function renderTanks() {
       ? `<span style="color:var(--red)" title="crits taken — not crit-immune">⚠${critN}</span>`
       : `<span style="color:var(--muted)">0</span>`;
     const mit = `<span title="crushing blows taken${isDruid?" — bears can't block; crushing is expected":''}">${t.crush_count||0}✸</span> <span style="color:var(--dim)">/</span> ${critCell}`;
-    // cooldowns abbreviated by class; zero-counts stay (muted) — absence is signal
-    const cds = CD_BY_CLASS[cls] || Object.keys(t.cooldowns || {});
-    const cdStr = cds.map(cd => {
-      const n = (t.cooldowns || {})[cd] || 0;
-      return `<span style="color:${n>0?'var(--text)':'var(--muted)'}" title="${cd}${cd==='Barkskin'?' — usable in Bear Form in TBC (no form restriction)':''}">${CD_ABBR[cd]||cd}×${n}</span>`;
-    }).join(" ") || '<span style="color:var(--muted)">—</span>';
+    // (defensive-cooldown usage moved to the Tank Execution card — see renderTankPerBoss)
     // Performance pillar (two facets): threat WAR (cohort DPS) + absolute survivability grade.
     const warCell = parseCell(t.vs_replacement, t.delta_vs_replacement);
     const sv = t.survival || {}, svScore = sv.score;
@@ -1107,7 +1124,6 @@ function renderTanks() {
       <td class="num" title="melee swings avoided (miss/dodge/parry/block)">${(t.avoid_pct||0).toFixed(0)}%</td>
       <td class="num" style="color:var(--muted)" title="healing soaked per second">${(t.hps_recv||0).toLocaleString()}</td>
       <td class="num"><span class="chip ${deathChip}">${t.deaths}</span></td>
-      <td style="font-size:11px;color:var(--muted)">${cdStr}</td>
     </tr>`;
   }).join("");
   renderTankPerBoss(data);
@@ -1119,6 +1135,7 @@ const BOSS_ORDER = ["Hydross the Unstable","The Lurker Below","Morogrim Tidewalk
   "High Astromancer Solarian","Al'ar","Kael'thas Sunstrider"];
 function renderTankPerBoss(data){
   const host = document.getElementById("tankPerBoss"); if (!host) return;
+  const roster = WEEK_DATA.roster || {};
   const oi = b => { const i = BOSS_ORDER.indexOf(b); return i < 0 ? 99 : i; };
   let gmax = 0;
   data.forEach(t => (t.per_boss||[]).forEach(pb => { if (pb.dtps > gmax) gmax = pb.dtps; }));
@@ -1128,6 +1145,22 @@ function renderTankPerBoss(data){
     if (!pbs.length) return "";
     const low = t.lowest_hp || {};
     const bh = t.biggest_hit;
+    // defensive-cooldown usage (kill fights): cast count ×N + COVERAGE VALUE — the unmitigated damage
+    // the tank faced during the CD's window vs their baseline (>1× = covered a spike, <1× = a lull).
+    // "Reverse bloodlust": value from when the CD was popped, not a near-zero uptime%. LoH = count only.
+    const cls = (roster[t.name] || {}).class || "";
+    const cds = CD_BY_CLASS[cls] || Object.keys(t.cooldowns || {});
+    const cdVal = t.cd_value || {};
+    const cdStr = cds.map(cd => {
+      const n = (t.cooldowns || {})[cd] || 0;
+      const v = cdVal[cd];
+      const vCol = v>=1.3?'var(--green)':v>=0.7?'var(--dim)':'var(--muted)';
+      const vStr = (v != null) ? ` <span style="color:${vCol};font-size:9.5px">${v}×</span>` : "";
+      const note = cd === "Lay on Hands" ? " — instant heal (no mitigation window)"
+                 : cd === "Divine Shield" ? " — immunity / threat-drop (no damage faced — count only)" : "";
+      return `<span style="color:${n>0?'var(--text)':'var(--muted)'}" title="${cd}${cd==='Barkskin'?' — usable in Bear Form in TBC (no form restriction)':''}${note} — ×casts · coverage = unmitigated damage faced during the CD vs baseline (&gt;1× covered a spike, &lt;1× a lull)">${CD_ABBR[cd]||cd}×${n}${vStr}</span>`;
+    }).join(" · ") || '<span style="color:var(--muted)">—</span>';
+    const cdRow = `<div class="tpb-cds" title="defensive cooldowns used on kill fights — ×casts and coverage value (damage faced during the CD vs baseline)">${cdStr}</div>`;
     const spike = bh
       ? `<div class="spike-row" title="single biggest hit taken">Biggest hit: <b>${bh.amount.toLocaleString()}</b> · ${bh.ability} <span style="color:var(--dim)">(${bh.boss})</span></div>`
       : "";
@@ -1144,7 +1177,7 @@ function renderTankPerBoss(data){
     }).join("");
     return `<div class="tpb-card">
       <div class="tpb-head"><span class="cname" style="color:${cc}">${esc(t.name)}</span></div>
-      ${spike}${rows}
+      ${cdRow}${spike}${rows}
     </div>`;
   }).join("");
 }
@@ -1364,6 +1397,46 @@ function renderDebuffCoverage(){
     </thead>
     <tbody>${bossRows}${avgRow}</tbody>
   </table>`;
+}
+
+// ── Debuff Ramp Speed — how fast each debuff was established (stacking → time-to-max; pure WCL)
+function renderDebuffRampSpeed(){
+  const drs = WEEK_DATA.debuffRampSpeed || {};
+  const el = document.getElementById("debuffRampSpeed");
+  if (!el) return;
+  const ramps = drs.ramps || [];
+  if (!ramps.length){ const c = el.closest(".card"); if (c) c.style.display = "none"; return; }
+  const catColor = { Magic:"var(--caster)", Armor:"var(--physical)", Utility:"var(--accent)" };
+  const upColor = p => p>=70?'var(--green)':p>=40?'var(--yellow)':'var(--muted)';
+  const mono = "font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums";
+  const rows = ramps.map((r,ri) => {
+    const col = catColor[r.cat] || 'var(--muted)';
+    const badge = r.stacking
+      ? `<span style="color:var(--accent);font-size:10px" title="time to build the full ${r.max_stack}-stack">→${r.max_stack} stack</span>`
+      : `<span style="color:var(--muted);font-size:10px" title="time to first application">first up</span>`;
+    const ramp = r.med_ramp_sec!=null ? `${r.med_ramp_sec}s` : '<span style="color:var(--muted)">—</span>';
+    const up = r.avg_uptime_pct || 0;
+    const dim = r.soft ? 'opacity:.62;' : '';
+    const zebra = ri%2 ? 'background:rgba(255,255,255,.012);' : '';
+    const tip = (r.bosses||[]).map(b =>
+      `${(DEBUFF_BOSS_SHORT[b.boss]||b.boss)}: ${b.reached ? b.ramp_sec+'s' : 'not est.'} @ ${b.uptime_pct}%`)
+      .join(' · ').replace(/"/g,'&quot;');
+    return `<tr style="border-top:1px solid var(--surface2);${zebra}${dim}" title="${tip}">
+      <td style="padding:6px 12px 6px 4px;white-space:nowrap">${gicon(r.icon)} <span style="color:${col};font-size:12px;font-weight:600">${esc(r.label)}</span>${r.soft?'<span style="color:var(--muted);font-size:8px;vertical-align:super">~</span>':''}</td>
+      <td style="text-align:center;padding:6px 12px">${badge}</td>
+      <td style="text-align:right;padding:6px 12px;${mono};font-size:12px;font-weight:600">${ramp}</td>
+      <td style="text-align:right;padding:6px 12px;${mono};font-size:12px;font-weight:600;color:${upColor(up)}">${Math.round(up)}%</td>
+      <td style="text-align:center;padding:6px 12px;font-size:11px;color:var(--muted)">${r.reached_count}/${r.total_bosses}</td>
+    </tr>`;
+  }).join("");
+  el.innerHTML = `<table style="border-collapse:collapse;min-width:480px;margin:0 auto">
+    <thead><tr style="color:var(--muted);font-size:10px;letter-spacing:.04em;text-transform:uppercase">
+      <th style="text-align:left;padding:4px 12px 7px 4px">Debuff</th>
+      <th style="padding:4px 12px 7px">Establish</th>
+      <th style="text-align:right;padding:4px 12px 7px" title="median time from pull to established (max stack / first applied) — median ignores late re-applies on long multi-phase fights">Ramp</th>
+      <th style="text-align:right;padding:4px 12px 7px" title="avg % of the fight held at full effect">Uptime@Full</th>
+      <th style="padding:4px 12px 7px" title="bosses where it was established">Bosses</th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
 }
 
 // ── SUNDER ARMOR — per-warrior stack-building vs upkeep (pure WCL)
@@ -1948,7 +2021,7 @@ function renderAvoidableShame() {
   const el = document.getElementById("avoidShame");
   const data = [...(WEEK_DATA.avoidableDmg||[])].filter(p => p.dmg > 0).sort((a,b)=>b.dmg-a.dmg);
   if (!data.length) {
-    el.innerHTML = '<div style="color:var(--muted);font-size:12px">Avoidable damage comes from the combat log — run with --log to populate.</div>';
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px">No avoidable damage flagged this week.</div>';
     return;
   }
   AV_BOSS = avBuildByBoss(); AV_SEL = 0;
@@ -2466,9 +2539,12 @@ function renderDispels(){
   const breaks = {};
   data.forEach(p => (p.removed||[]).forEach(s => { if(CLUTCH.has(s.aura)) breaks[p.name] = (breaks[p.name]||0) + (s.n||0); }));
   const breakNames = Object.keys(breaks), breakTot = breakNames.reduce((t,n)=>t+breaks[n],0);
+  // fastest clutch break (reaction time) — how quickly the MC was stripped after it landed
+  let fastestMC = null;
+  data.forEach(p => (p.clutch||[]).forEach(c => { if(c.aura==="Mind Control" && (fastestMC===null || c.sec<fastestMC)) fastestMC = c.sec; }));
   const banner = breakTot
     ? `<div style="margin-bottom:11px;padding:7px 11px;border-left:3px solid var(--accent);background:rgba(200,155,60,.08);border-radius:4px;font-size:12px;line-height:1.5">
-         ${gicon("spell_shadow_shadowworddominate")} <b style="color:var(--accent)">${breakTot} Mind Control break${breakTot>1?"s":""}</b>
+         ${gicon("spell_shadow_shadowworddominate")} <b style="color:var(--accent)">${breakTot} Mind Control break${breakTot>1?"s":""}</b>${fastestMC!=null?` <span style="color:var(--muted)">· fastest</span> <b style="color:var(--accent)">${fastestMC}s</b>`:""}
          <span style="color:var(--muted)">— freed a charmed ally on Kael (Infinity Blade · Magic Disruption): </span>${breakNames.map(n=>`<span class="cname" style="color:${nameColor(n)}">${esc(n)}</span>${breaks[n]>1?` ×${breaks[n]}`:""}`).join(", ")}</div>`
     : "";
   const rows = data.map(p => {
@@ -2485,9 +2561,15 @@ function renderDispels(){
     // who they cleansed — ally → ×N (cleanse recipients; purges hit bosses, shown via auras above)
     const who = Object.entries(p.targets||{}).sort((a,b)=>b[1]-a[1]).map(([t,n]) =>
       `<span class="cname" style="color:${nameColor(t)}">${esc(t)}</span>${n>1?` ×${n}`:''}`).join(", ");
+    // reaction — median time from a harmful debuff LANDING on a teammate to it being cleansed.
+    // Descriptive (context varies: panic debuffs go ASAP, stacking poisons get batched), so neutral.
+    const react = (p.lat_median_sec!=null)
+      ? `<span style="color:var(--muted);font-variant-numeric:tabular-nums">${p.lat_median_sec}s</span>`
+      : `<span style="color:var(--dim)">—</span>`;
     return `<tr>
       <td><span class="cname" style="color:${nc}">${esc(p.name)}</span></td>
       <td class="num" title="Harmful effects stripped off teammates (Cleanse, Abolish, Remove Curse, Devour Magic). Delta = total dispels (cleanse+purge) vs last week.">${chip(p.cleanse,'ally','var(--healer)')}${fmtDelta(p.delta_total, true)}</td>
+      <td class="num" title="Median reaction — time from a harmful debuff landing on a teammate to being cleansed (${p.lat_count||0} timeable; — when all were pre-applied before the pull). Descriptive: panic debuffs go ASAP, stacking poisons are batched.">${react}</td>
       <td class="num" title="Buffs stripped off enemies — enrage/haste/shield removal (Purge, Dispel Magic, Tranq Shot, Devour Magic).">${chip(p.purge,'enemy','var(--orange)')}</td>
       <td style="min-width:160px"><span style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${stripped||'<span style="color:var(--muted)">—</span>'}</span></td>
       <td style="font-size:10.5px;color:var(--muted);line-height:1.5">${who||'—'}</td>
@@ -2496,6 +2578,7 @@ function renderDispels(){
   el.innerHTML = banner + `<table class="mini-table" style="width:100%">
     <thead><tr><th>Player</th>
       <th class="num" title="Cleanses — harmful effects removed from teammates.">Cleanses</th>
+      <th class="num" title="Median reaction time from a debuff landing to being cleansed (timeable cleanses only).">Reaction</th>
       <th class="num" title="Purges — buffs removed from enemies (Δ = total dispels vs last week).">Purges</th>
       <th>What they stripped</th>
       <th>Who they cleansed</th></tr></thead>
@@ -2612,6 +2695,39 @@ function luckTag(p){
   return { label:"cold dice", emoji:"🧊", col:"var(--red)" };
 }
 
+// ── Bloodlust Window Value — per-lust raid-DPS uplift vs baseline + ≈boss HP at cast (pure WCL)
+function renderBloodlustWindows(){
+  const bw = WEEK_DATA.bloodlustWindows || {};
+  const el = document.getElementById("bloodlustWindows");
+  if(!el) return;
+  const fights = bw.fights || [];
+  if(!fights.length){ const c = el.closest(".card"); if(c) c.style.display="none"; return; }
+  const fmtT = s => `${Math.floor(s/60)}:${String(Math.round(s%60)).padStart(2,"0")}`;
+  const k = v => v>=1000 ? (v/1000).toFixed(1)+"k" : ""+Math.round(v);
+  const phase = hp => hp>=75 ? ["pull","var(--muted)"] : hp>=30 ? ["mid-fight","var(--yellow)"] : ["execute","var(--green)"];
+  const upColor = u => u>=80?'var(--green)':u>=30?'var(--yellow)':'var(--muted)';
+  const rows = [];
+  fights.forEach(f => (f.windows||[]).forEach(w => {
+    const [ph, phc] = phase(w.hp_pct);
+    const cast = (w.casters||[]).map(n=>`<span class="cname" style="color:${nameColor(n,'Caster')}">${esc(n)}</span>`).join(", ");
+    rows.push(`<tr>
+      <td style="white-space:nowrap">${esc(f.boss)}</td>
+      <td class="num" style="color:var(--muted)">${fmtT(w.at_sec)}</td>
+      <td class="num" title="≈ boss HP at cast (estimated from cumulative damage)">${Math.round(w.hp_pct)}% <span style="color:${phc};font-size:10px">${ph}</span></td>
+      <td class="num" style="font-variant-numeric:tabular-nums"><b>${k(w.window_dps)}</b> <span style="color:var(--dim);font-size:10px">vs ${k(w.baseline_dps)}</span></td>
+      <td class="num" style="font-weight:700;color:${upColor(w.uplift_pct)}">+${Math.round(w.uplift_pct)}%</td>
+      <td style="font-size:10.5px;color:var(--muted)">${cast}</td>
+    </tr>`);
+  }));
+  el.innerHTML = `<table class="mini-table" style="width:100%">
+    <thead><tr><th>Boss</th><th class="num">Cast</th>
+      <th class="num" title="≈ boss HP at cast (cumulative-damage proxy; approximate on add/heal/phase fights)">≈HP</th>
+      <th class="num" title="raid DPS during the 30s window vs the fight's overall baseline raid DPS">Window DPS</th>
+      <th class="num" title="how much the lust window over-performed the fight baseline">Uplift</th>
+      <th>Cast by</th></tr></thead>
+    <tbody>${rows.join("")}</tbody></table>`;
+}
+
 function renderLuckGrid() {
   const el = document.getElementById("luckGrid");
   // Luck = this week's crit vs the player's OWN rolling baseline (weeks of history).
@@ -2717,9 +2833,31 @@ function renderInterruptBars() {
 }
 
 // ── TABS (sections default visible; this just filters)
+// Collapse long card descriptions to 2 lines + a "read more" toggle. Idempotent (skips already-done);
+// skips still-hidden cards (offsetParent null) so they measure correctly when their tab is first shown.
+function initCardDescriptions(){
+  document.querySelectorAll(".hs-sub:not([data-clamp])").forEach(el => {
+    if (el.offsetParent === null) return;                 // hidden tab/card — measure when it's shown
+    el.dataset.clamp = "1";                               // mark processed
+    el.classList.add("hs-clamp");
+    if (el.scrollHeight - el.clientHeight < 4){            // already fits in 2 lines — no toggle
+      el.classList.remove("hs-clamp"); return;
+    }
+    const btn = document.createElement("span");
+    btn.className = "hs-more";
+    btn.textContent = "read more";
+    btn.addEventListener("click", () => {
+      const clamped = el.classList.toggle("hs-clamp");
+      btn.textContent = clamped ? "read more" : "show less";
+    });
+    el.after(btn);
+  });
+}
+
 function showTab(name){
   document.querySelectorAll(".tsec").forEach(s => s.classList.toggle("hidden", s.dataset.tab !== name));
   document.querySelectorAll(".tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
+  initCardDescriptions();                                 // measure the now-visible tab's descriptions
   try { localStorage.setItem("activeTab", name); } catch(e){}   // persist across refresh (per-browser)
   try { history.replaceState(null, "", "#" + name); } catch(e){} // shareable deep-link, no history spam
   try { window.scrollTo({ top: 0 }); } catch(e){}
@@ -3252,6 +3390,7 @@ function renderAll(){
   renderAvoidableShame();
   try { const _v = localStorage.getItem("avView"); if (_v) avView(_v); } catch(e){}   // restore By Player/By Boss
   renderDebuffCoverage();
+  renderDebuffRampSpeed();
   renderSunderArmor();
   renderMC();
   renderDeaths();
@@ -3259,6 +3398,7 @@ function renderAll(){
   try { const _s = localStorage.getItem("dpsSel"); if (_s) _dpsSel = _s; } catch(e){}   // restore All/Bosses/Trash
   _setDpsSel(_dpsSel);   // sets seg buttons + renders once
   renderUptimeHeatmap();
+  renderBloodlustWindows();
   renderLuckGrid();
   renderHealing();
   renderReactionHeatmap();

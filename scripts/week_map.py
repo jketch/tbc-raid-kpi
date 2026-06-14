@@ -51,6 +51,24 @@ def _interrupt_row(p, intr_wcl, icons):
     return None
 
 
+def _engineering_rows(players, eng_wcl):
+    """Engineering KPI rows, WCL-durable. Prefers the combat-log overlay (ability counts + the
+    real sapper/bomb damage in eng_dmg) and falls back to the WCL Casts headline (counts only,
+    dmg=0) when no log was transferred — so the section never blanks just because the 180MB log
+    didn't get passed around. eng_wcl is {name: {ability_name: count}} from fetch_engineering_casts."""
+    eng_wcl = eng_wcl or {}
+    rows = []
+    for p in players:
+        eng = p.get("eng") or eng_wcl.get(p["name"], {})   # log overlay wins; WCL backfills
+        if not eng:
+            continue
+        rows.append({"name": p["name"], "role": p["role"], "eng": dict(eng),
+                     "dmg": p.get("eng_dmg", 0)})           # real damage only when the log was present
+    # -dmg primary (log weeks rank by damage); name secondary so WCL-only weeks (all dmg=0) stay
+    # byte-deterministic regardless of player iteration order.
+    return sorted(rows, key=lambda x: (-x["dmg"], x["name"]))
+
+
 def _ice_player_spells(player_spells, icons):
     """Attach a WCL icon slug to every ability in the per-player spell-usage map, so the
     'Spell Usage by Player' card can render the same icon pills as the interrupt list."""
@@ -399,6 +417,7 @@ def map_to_week_data(wcl: dict) -> WeekData:
           "avoid_pct": tm.get("avoid_pct", 0),
           "biggest_hit": tm.get("biggest_hit"),
           "cooldowns": tm.get("cooldowns", {}),
+          "cd_value": tm.get("cd_value", {}),   # per-CD coverage ratio (unmit faced ÷ baseline)
           # tank Execution inputs (log-only): active-mitigation cast-rate / Lacerate uptime per
           # boss-melee-taken time (the normalization validated in discovery).
           "mitig_casts":    tm.get("mitig_casts", 0),
@@ -494,12 +513,8 @@ def map_to_week_data(wcl: dict) -> WeekData:
         "tankCrit":     crit_list("Tank"),
         "healerCrit":   crit_list("Healer"),
         "luckKPI":      luck_tiles,
-        "engineering":  sorted(
-            [{"name": p["name"], "role": p["role"], "eng": p.get("eng", {}),
-              "dmg": p.get("eng_dmg", 0)}   # real sapper/bomb damage from the log
-             for p in players if p.get("eng")],
-            key=lambda x: -x["dmg"]
-        ),
+        "engineering":  _engineering_rows(players, wcl.get("engineering_wcl", {})),
+        "bloodlustWindows": wcl.get("bloodlust_windows", {}),
         # Interrupts — WCL headline (events) with the combat log as a silent fallback. WCL gives
         # the count AND which enemy casts were stopped (extraAbilityGameID); the log only fills in
         # when WCL has no row for a player (log present, WCL thin) — so a missing log thins, never
@@ -512,6 +527,7 @@ def map_to_week_data(wcl: dict) -> WeekData:
         "boss_meta":    wcl.get("boss_meta", {}),
         "healReaction": wcl.get("heal_reaction", {}),
         "debuffCoverage": wcl.get("debuff_coverage", {}),
+        "debuffRampSpeed": wcl.get("debuff_ramp", {}),
         "gearAudit":      gear_audit,
         "sunderArmor":    wcl.get("sunder_armor", {}),
         # per-rogue Expose Armor uptime — the rogue's share of the armor-debuff slot (Sunder's twin)
@@ -538,7 +554,10 @@ def map_to_week_data(wcl: dict) -> WeekData:
               "removed": sorted(({"aura": a, "n": n, "icon": _icons.get(a, "")}
                                  for a, n in (d.get("removed") or {}).items()),
                                 key=lambda x: -x["n"]),
-              "targets": d.get("targets", {})}
+              "targets": d.get("targets", {}),
+              # responsiveness: median reaction (s) to a debuff landing + clutch dangerous breaks
+              "lat_median_sec": d.get("lat_median_sec"), "lat_count": d.get("lat_count", 0),
+              "clutch": d.get("clutch", [])}
              for nm, d in dp.items() if d.get("total", 0) > 0),
             key=lambda x: (-x["total"], -x["cleanse"], x["name"])))(wcl.get("dispels", {}) or {}),
         "manaReturns":    wcl.get("mana_returns", {}),

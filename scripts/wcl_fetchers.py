@@ -11,6 +11,7 @@ move with it. wcl_auto_dashboard re-exports everything, so W.<name> resolves unc
 """
 from __future__ import annotations
 
+import bisect
 import json
 from collections import defaultdict
 
@@ -18,7 +19,7 @@ from wcl_client import gql
 from paths import ITEM_META_CACHE
 from game_constants import (FOOD_BUFF, ELIXIR_BUFFS, HEAL_MANA_COST, EXTERNAL_ABILITIES,
                             MECHANIC_IDS, FLASK_AURA_IDS, ELIXIR_AURA_IDS, FLASK_EFFECT_NAMES,
-                            SCROLL_AURA_IDS, SELF_BUFF_IGNORE, GROUP_BUFF_GEAR)
+                            SCROLL_AURA_IDS, SELF_BUFF_IGNORE, GROUP_BUFF_GEAR, ENG_SPELLS)
 from roles import _fight_role
 
 # Hard cap on paginated WCL event queries — guards against a runaway non-null nextPageTimestamp
@@ -1031,10 +1032,21 @@ def fetch_role_spell_usage(token, report_code, fight_ids, players):
 # Tank defensive cooldowns — WCL spell IDs → display name. Counted from Casts events
 # scoped to kill-fight windows. Frenzied Regen (26999) has no aura, so Casts is the only
 # source; Barkskin/Shield Wall/Last Stand/Lay on Hands likewise tracked by cast.
-TANK_CD_IDS = [871, 12975, 26999, 22812, 27154, 1020, 498, 5573]
+TANK_CD_IDS = [871, 12975, 26999, 22845, 22812, 27154, 1020, 498, 5573]
 CD_NAMES = {871: "Shield Wall", 12975: "Last Stand", 26999: "Frenzied Regeneration",
+            22845: "Frenzied Regeneration",   # lower-rank bear Frenzied Regen (live-verified in masterData)
             22812: "Barkskin", 27154: "Lay on Hands", 1020: "Divine Shield",
             498: "Divine Protection", 5573: "Divine Protection"}   # names match the combat log overlay
+
+# The CD cast IDs above double as their self-buff AURA IDs in TBC (verified live: Divine Shield 1020,
+# Barkskin 22812, Frenzied Regen 26999/22845 all report Buffs-table uptime when used) — so per-CD aura
+# UPTIME% is a durable, accurate metric with no guessed durations. EXCEPTION: Lay on Hands (27154) is an
+# instant full-heal with no mitigation aura, so it never produces uptime and stays a count-only CD.
+CD_NO_AURA = {27154}   # Lay on Hands — instant heal, no buff window
+# CDs with no meaningful damage-COVERAGE window: Lay on Hands (instant heal) + Divine Shield (1020,
+# an IMMUNITY that drops threat — the tank faces ~0 damage during it; it's a threat-drop / mechanic
+# dodge, not a tank-through mitigation, so a coverage ratio reads a misleading 0×). Both stay count-only.
+CD_NO_COVERAGE = CD_NO_AURA | {1020}
 
 # WCL melee hitType enum (LOCKED against live data — confirmed by probing tank logs directly).
 # Confirmed by probing this report's tanks: a crit-immune bear shows only {miss, hit,
@@ -1130,6 +1142,11 @@ def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
                         agg[x["name"]]["hrecv"] += x.get("total", 0)
 
     # ── 2) DamageTaken EVENTS — mitigation + biggest hit (one paginated, fight-scoped) ──
+    # Also retain the UNMITIGATED damage timeline per tank (ts, unmitigatedAmount) — the raw incoming
+    # the tank FACED — which powers the defensive-CD coverage value (_tank_cd_value): a well-timed CD
+    # covers a window of heavy unmitigated incoming. unmitigatedAmount is live-verified on 2.5 events.
+    dmg_ev      = defaultdict(list)          # name → [(ts, unmitigated)] (chronological)
+    unmit_total = defaultdict(int)           # name → total unmitigated taken (baseline numerator)
     QE = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
         events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: DamageTaken,
                hostilityType: Friendlies, limit: 10000){ data nextPageTimestamp }}}}"""
@@ -1150,6 +1167,12 @@ def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
                 continue   # only fights this player actually tanked
             a = agg[nm]
             amt = d.get("amount", 0) or 0
+            um = d.get("unmitigatedAmount")
+            um = um if um is not None else amt        # fall back to taken when WCL omits unmitigated
+            _ts = d.get("timestamp")
+            if _ts is not None:
+                dmg_ev[nm].append((_ts, um))
+            unmit_total[nm] += um
             if amt > a["biggest"]["amount"]:
                 a["biggest"] = {"amount": amt,
                                 "ability": abil_name.get(d.get("abilityGameID")) or "Melee",
@@ -1211,6 +1234,11 @@ def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
             if tot:
                 boss_raid_dps[fid_boss[f["id"]]] = round(tot / dur)
 
+    # ── 5) defensive-CD COVERAGE VALUE — 'reverse bloodlust': unmitigated damage faced during each
+    #       CD's aura window vs the tank's baseline incoming (well-timed CD → >1×; lull → low) ──
+    cd_val = _tank_cd_value(token, report_code, fids, win_s, win_e, agg, dmg_ev, unmit_total,
+                            tank_ids, id2name)
+
     # ── assemble ──
     out = {}
     for nm, a in agg.items():
@@ -1229,9 +1257,86 @@ def build_tank_scorecard_extended(token: str, report_code: str, kills: list,
             "avoid_pct":     round(a["avoid"] / a["melee"] * 100, 1) if a["melee"] else 0,
             "biggest_hit":   a["biggest"] if a["biggest"]["amount"] > 0 else None,
             "cooldowns":     a["cooldowns"],
+            "cd_value":      cd_val.get(nm, {}),   # per-CD coverage ratio (unmit faced ÷ baseline)
             "per_boss":      a["per_boss"],   # pull order; HTML sorts to encounter order
         }
     return out, boss_raid_dps
+
+
+def _cd_cover(wins, ev_list, base_dps):
+    """Pure: coverage ratio for one CD's aura windows. Sum the UNMITIGATED damage the tank faced inside
+    the windows ÷ window-seconds = the window's incoming rate; ÷ baseline = the ratio (>1 ⇒ the CD
+    covered heavier-than-average incoming = well-timed; <1 ⇒ a lull). wins=[(start,end)] ms, ev_list =
+    [(ts, unmit)] sorted ascending by ts, base_dps = baseline unmitigated DTPS. None if not computable."""
+    if not wins or base_dps <= 0:
+        return None
+    tot_unmit, tot_sec = 0, 0.0
+    for ws, we in wins:
+        if we <= ws:
+            continue
+        tot_sec += (we - ws) / 1000
+        i = bisect.bisect_left(ev_list, (ws, float("-inf")))   # first event with ts ≥ window start
+        while i < len(ev_list) and ev_list[i][0] <= we:
+            tot_unmit += ev_list[i][1]
+            i += 1
+    if tot_sec <= 0:
+        return None
+    return round((tot_unmit / tot_sec) / base_dps, 2)
+
+
+def _tank_cd_value(token, report_code, fids, win_s, win_e, agg, dmg_ev, unmit_total, tank_ids, id2name):
+    """Per-tank defensive-CD COVERAGE VALUE — the 'reverse bloodlust'. For each CD's aura WINDOWS (Buffs
+    events applybuff→removebuff = the exact span, NO guessed durations), the UNMITIGATED damage the tank
+    FACED during the window ÷ window-seconds, over their baseline unmitigated DTPS. >1× = the CD covered
+    heavier-than-average incoming (well-timed on a spike); <1× = popped in a lull. Lay on Hands
+    (CD_NO_AURA) has no mitigation window → absent (count-only). Pure WCL, no combat log. One Buffs-events
+    query per CD aura. Returns {name: {cd_name: cover_ratio}}."""
+    windows, opened = defaultdict(list), {}     # (name, cd_name) → [(start,end)] ; open band start
+    QB = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!,$a:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Buffs, abilityID:$a,
+               limit: 10000){ data nextPageTimestamp }}}}"""
+    try:
+        for aid in TANK_CD_IDS:
+            if aid in CD_NO_COVERAGE:
+                continue
+            cd_name = CD_NAMES[aid]
+            cur = win_s
+            for _pg in range(MAX_EVENT_PAGES):
+                ev = _report(gql(token, QB, {"c": report_code, "ids": fids, "st": cur, "en": win_e,
+                                             "a": float(aid)}), "events", default={})
+                for d in ev.get("data", []):
+                    sid = d.get("sourceID")
+                    if sid not in tank_ids:        # self-buff: tank is the source (and target)
+                        continue
+                    nm = id2name.get(sid)
+                    if not nm:
+                        continue
+                    t, ts = d.get("type"), d.get("timestamp")
+                    key = (nm, cd_name)
+                    if t == "applybuff":
+                        opened[key] = ts
+                    elif t == "removebuff":
+                        s0 = opened.pop(key, None)
+                        if s0 is not None and ts is not None:
+                            windows[key].append((s0, ts))
+                nx = ev.get("nextPageTimestamp")
+                if not nx:
+                    break
+                cur = nx
+    except Exception as ex:
+        print(f"  Warning: tank CD-value buffs failed: {ex}")
+        return {}
+    for key, s0 in opened.items():                 # CD still up at the logged window end
+        if s0 is not None:
+            windows[key].append((s0, win_e))
+    res = defaultdict(dict)
+    for (nm, cd_name), wins in sorted(windows.items()):   # sorted → deterministic
+        dur = agg.get(nm, {}).get("dur", 0)
+        base_dps = (unmit_total.get(nm, 0) / dur) if dur > 0 else 0
+        cover = _cd_cover(sorted(wins), dmg_ev.get(nm) or [], base_dps)
+        if cover is not None:
+            res[nm][cd_name] = cover
+    return {nm: dict(d) for nm, d in sorted(res.items())}
 
 
 def _median(xs):
@@ -1614,6 +1719,151 @@ def build_class_toolkit(token, report_code, kills, md: dict | None = None):
     return {nm: dict(d) for nm, d in counts.items()}
 
 
+def fetch_engineering_casts(token, report_code, kills, md: dict | None = None):
+    """WCL-durable engineering headline — per-player count of engineering item casts (sappers,
+    grenades, bombs) from Casts EVENTS over the kill windows, server-filtered by the curated
+    ENG_SPELLS ability IDs. Pure WCL, runs every week with NO combat log; the log overlay
+    (merge_log_into_wcl / _engineering_rows) stays primary when present and adds the real
+    sapper/bomb damage. Returns {name: {ability_name: count}}.
+
+    Clones build_class_toolkit's abilityID-filtered Casts-events pass (the Arcane Explosion
+    loop) — server filtering by a known small ID set keeps it ~1 page per ability."""
+    if not kills:
+        return {}
+    if md is None:
+        # one masterData fetch per run — pass build_week_data's shared `md` (never re-fetch).
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
+    fids = [f["id"] for f in kills]
+    st   = min(f["startTime"] for f in kills)
+    en   = max(f["endTime"]   for f in kills)
+    id2name = md["id2name"]
+    QE = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!,$a:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts, abilityID:$a,
+               limit: 10000){ data nextPageTimestamp }}}}"""
+    counts = defaultdict(lambda: defaultdict(int))   # [name][ability_name] = casts
+    try:
+        for aid, aname in sorted(ENG_SPELLS.items()):   # sorted → deterministic dict insertion order
+            cur = st
+            for _pg in range(MAX_EVENT_PAGES):
+                ev = _report(gql(token, QE, {"c": report_code, "ids": fids, "st": cur,
+                                             "en": en, "a": float(aid)}), "events", default={})
+                for d in ev.get("data", []):
+                    if d.get("type") == "cast":
+                        nm = id2name.get(d.get("sourceID"))
+                        if nm:
+                            counts[nm][aname] += 1
+                nx = ev.get("nextPageTimestamp")
+                if not nx:
+                    break
+                cur = nx
+    except Exception as ex:
+        print(f"  Warning: engineering casts fetch failed: {ex}")
+        return {}
+    return {nm: dict(d) for nm, d in sorted(counts.items())}
+
+
+def _dedup_lust_windows(casts, gap_ms=30000):
+    """Collapse lust CASTS into 30s WINDOWS — simultaneous casts (two shamans lusting together) are one
+    window; a separate later cast (split lust, pull + execute) is its own. `casts` = [(ts, caster)] for
+    one fight. Returns [[window_start_ts, [casters]]] in time order. Pure (testable)."""
+    windows = []
+    for ts, nm in sorted(casts):
+        if windows and ts - windows[-1][0] < gap_ms:
+            if nm not in windows[-1][1]:
+                windows[-1][1].append(nm)
+        else:
+            windows.append([ts, [nm]])
+    return windows
+
+
+def fetch_bloodlust_windows(token, report_code, kills, md: dict | None = None):
+    """Bloodlust/Heroism WINDOW VALUE — for each 30s lust window: the raid-DPS uplift over the fight
+    baseline (was it a well-timed burn?) and the ≈boss-HP at cast (pull-burn vs execute-save). Pure WCL:
+    a cheap abilityID-filtered Casts query for the lust casts + DamageDone TABLE windows (one aliased
+    query per lust-fight — bounded, no event paging). The HP figure is DAMAGE-progress based (cumulative
+    raid damage ÷ total) — ≈ boss HP on single-target fights, a proxy on add/heal/phase fights — the
+    honest 'where in the kill' signal, NOT exact boss HP. Returns
+      {fights:[{boss, encounter_id, windows:[{at_sec, casters, window_dps, baseline_dps, uplift_pct,
+      hp_pct}]}]} — {} when no lust was cast."""
+    if not kills:
+        return {}
+    if md is None:
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
+    id2name = md["id2name"]
+    bl_ids = sorted({a.get("gameID") for a in (md.get("abilities") or [])
+                     if (a.get("name") or "") in ("Bloodlust", "Heroism")})
+    if not bl_ids:
+        print("  ✓ bloodlust windows: no Bloodlust/Heroism cast in report")
+        return {}
+    fids = [f["id"] for f in kills]
+    st = min(f["startTime"] for f in kills)
+    en = max(f["endTime"]   for f in kills)
+    casts = defaultdict(list)            # fid → [(ts, caster)]
+    QC = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!,$a:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts, abilityID:$a,
+               limit: 5000){ data nextPageTimestamp }}}}"""
+    try:
+        for aid in bl_ids:
+            cur = st
+            for _pg in range(MAX_EVENT_PAGES):
+                ev = _report(gql(token, QC, {"c": report_code, "ids": fids, "st": cur, "en": en,
+                                             "a": float(aid)}), "events", default={})
+                for d in ev.get("data", []):
+                    if d.get("type") == "cast":
+                        fid, ts, nm = d.get("fight"), d.get("timestamp"), id2name.get(d.get("sourceID"))
+                        if fid is not None and ts is not None and nm:
+                            casts[fid].append((ts, nm))
+                nx = ev.get("nextPageTimestamp")
+                if not nx:
+                    break
+                cur = nx
+    except Exception as ex:
+        print(f"  Warning: bloodlust casts fetch failed: {ex}")
+        return {}
+
+    fid_meta = {f["id"]: (f["name"], f.get("encounterID"), f["startTime"], f["endTime"]) for f in kills}
+    fights_out = []
+    for f in kills:
+        fid = f["id"]
+        windows = _dedup_lust_windows(casts.get(fid, []))
+        if not windows:
+            continue
+        boss, enc, f_s, f_e = fid_meta[fid]
+        dur_s = (f_e - f_s) / 1000 or 1
+        clauses = [f'base: table(dataType: DamageDone, fightIDs:[{int(fid)}])']
+        for wi, (T, _c) in enumerate(windows):
+            wend = min(T + 30000, f_e)
+            clauses.append(f'w{wi}: table(dataType: DamageDone, fightIDs:[{int(fid)}], startTime:{int(T)}, endTime:{int(wend)})')
+            clauses.append(f'c{wi}: table(dataType: DamageDone, fightIDs:[{int(fid)}], startTime:{int(f_s)}, endTime:{int(T)})')
+        Q = "query($c:String!){reportData{report(code:$c){" + " ".join(clauses) + "}}}"
+        try:
+            rep = _report(gql(token, Q, {"c": report_code}), default={})
+        except Exception as ex:
+            print(f"  Warning: bloodlust window table failed on {boss}: {ex}")
+            continue
+
+        def _tot(alias):
+            t = _loads_alias(rep.get(alias))
+            return sum(e.get("total", 0) for e in (t or {}).get("data", {}).get("entries", []))
+
+        total_dmg = _tot("base")
+        baseline_dps = round(total_dmg / dur_s) if dur_s else 0
+        wout = []
+        for wi, (T, casters) in enumerate(windows):
+            wend = min(T + 30000, f_e)
+            wsec = (wend - T) / 1000 or 1
+            wdps = round(_tot(f"w{wi}") / wsec)
+            progress = (_tot(f"c{wi}") / total_dmg * 100) if total_dmg else 0
+            wout.append({"at_sec": round((T - f_s) / 1000, 1), "casters": sorted(casters),
+                         "window_dps": wdps, "baseline_dps": baseline_dps,
+                         "uplift_pct": round((wdps / baseline_dps - 1) * 100, 1) if baseline_dps else 0,
+                         "hp_pct": round(max(0.0, 100 - progress), 1)})   # ≈ boss HP at cast (damage proxy)
+        fights_out.append({"boss": boss, "encounter_id": enc, "windows": wout})
+    nwin = sum(len(f["windows"]) for f in fights_out)
+    print(f"  ✓ bloodlust windows: {nwin} window(s) across {len(fights_out)} fight(s)")
+    return {"fights": fights_out}
+
+
 def _tank_survival_grade(tm: dict, deaths: int, cls: str = "") -> dict:
     """Absolute tank survivability grade (0–100) from WCL-durable mitigation signals — NOT a
     cohort percentile (WCL exposes no damage-taken ranking, and tank DTPS is MT/OT-confounded;
@@ -1841,6 +2091,12 @@ def fetch_interrupts(token: str, report_code: str, kills: list, md: dict | None 
     return {nm: {"count": r["count"], "spells": dict(r["spells"])} for nm, r in out.items()}
 
 
+# Harmful debuffs where reaction time is genuinely clutch (cleansed ASAP, not batched like stacking
+# poisons) — surfaced with their cleanse latency. Mind Control is the verified anchor (the Kael break,
+# already highlighted). By NAME (rank-stable); extend as more SSC/TK panic-dispels are name-verified live.
+DANGEROUS_DISPELS = {"Mind Control"}
+
+
 def fetch_dispels(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
     """Who-dispelled-what — a NEW WCL-durable Utility signal from events(dataType: Dispels) (table()
     is null on 2.5; events works — recon 2026-06-11). Each event: {sourceID, targetID, abilityGameID
@@ -1850,9 +2106,13 @@ def fetch_dispels(token: str, report_code: str, kills: list, md: dict | None = N
       • purge   — buff stripped off an ENEMY (shaman Purge, priest Dispel Magic, hunter Tranquilizing
         Shot enrage-strip, Felhunter Devour Magic). The offensive half — has no home elsewhere.
     Pet dispels credit the owning raider via petOwner. hostilityType defaults to Friendlies (source
-    side), so only raider-cast dispels are returned. Returns
-      {name: {cleanse, purge, total, removed:{auraName:n}, targets:{allyName:n}}}  (targets = cleanse
-    recipients; purge targets are bosses/adds, surfaced via the removed-aura names instead)."""
+    side), so only raider-cast dispels are returned. RESPONSIVENESS: each cleanse is matched to the
+    debuff's land time (companion Debuffs-events query, see _dispel_latency) → per-dispeller median
+    reaction + the clutch (DANGEROUS_DISPELS) breaks. Returns
+      {name: {cleanse, purge, total, removed:{auraName:n}, targets:{allyName:n},
+              lat_median_sec, lat_count, clutch:[{aura,sec}]}}  (targets = cleanse recipients; purge
+    targets are bosses/adds, surfaced via the removed-aura names instead; lat_* None when nothing was
+    timeable — e.g. all debuffs pre-applied before the logged window)."""
     if not kills:
         return {}
     if md is None:
@@ -1875,6 +2135,7 @@ def fetch_dispels(token: str, report_code: str, kills: list, md: dict | None = N
             data nextPageTimestamp }}}}"""
     out = defaultdict(lambda: {"cleanse": 0, "purge": 0, "total": 0,
                                "removed": defaultdict(int), "targets": defaultdict(int)})
+    cleanse_events = []          # (dispeller, ally_targetID, removed_aura_guid, dispel_ts) — for latency
     st = win_s
     for _pg in range(MAX_EVENT_PAGES):
         try:
@@ -1903,13 +2164,81 @@ def fetch_dispels(token: str, report_code: str, kills: list, md: dict | None = N
                 tgt = id2name.get(tid, "")
                 if tgt:
                     r["targets"][tgt] += 1
+                cleanse_events.append((nm, tid, d.get("extraAbilityGameID"), d.get("timestamp")))
         nx = ev.get("nextPageTimestamp")
         if not nx:
             break
         st = nx
-    return {nm: {"cleanse": r["cleanse"], "purge": r["purge"], "total": r["total"],
-                 "removed": dict(r["removed"]), "targets": dict(r["targets"])}
-            for nm, r in out.items()}
+
+    # ── Dispel RESPONSIVENESS — latency from a harmful debuff LANDING on an ally to being cleansed.
+    # Needs the apply side (the Dispels stream only has the removal), so one companion Debuffs-events
+    # query per cleansed aura (Friendlies) gives the applydebuff timestamps; match each cleanse to the
+    # most-recent prior apply on the same (aura, target). Pure WCL — degrades silently to no latency.
+    lat, clutch = _dispel_latency(token, report_code, fids, win_s, win_e, cleanse_events, gid2name)
+
+    res = {}
+    for nm, r in out.items():
+        lats = lat.get(nm, [])
+        res[nm] = {"cleanse": r["cleanse"], "purge": r["purge"], "total": r["total"],
+                   "removed": dict(r["removed"]), "targets": dict(r["targets"]),
+                   "lat_median_sec": round(_median(lats) / 1000, 1) if lats else None,
+                   "lat_count": len(lats),
+                   "clutch": sorted(clutch.get(nm, []), key=lambda x: x["sec"])}
+    return res
+
+
+def _dispel_latency(token, report_code, fids, win_s, win_e, cleanse_events, gid2name):
+    """Match each cleanse to the harmful debuff's LAND time → per-dispeller cleanse latencies (ms) +
+    the clutch (DANGEROUS_DISPELS) breaks with their seconds. One Debuffs-events query per cleansed
+    aura (Friendlies, applydebuff = the land). Returns (lat:{name:[ms]}, clutch:{name:[{aura,sec}]})."""
+    cleansed_guids = sorted({g for (_n, _t, g, _ts) in cleanse_events if g})
+    if not cleansed_guids:
+        return {}, {}
+    applies = defaultdict(list)        # (guid, targetID) → [applydebuff timestamps]
+    QA = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!,$a:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Debuffs, hostilityType: Friendlies,
+               abilityID:$a, limit: 10000){ data nextPageTimestamp }}}}"""
+    try:
+        for g in cleansed_guids:
+            cur = win_s
+            for _pg in range(MAX_EVENT_PAGES):
+                ev = _report(gql(token, QA, {"c": report_code, "ids": fids, "st": cur, "en": win_e,
+                                             "a": float(g)}), "events", default={})
+                for d in ev.get("data", []):
+                    if d.get("type") == "applydebuff" and d.get("targetID") is not None \
+                            and d.get("timestamp") is not None:
+                        applies[(g, d["targetID"])].append(d["timestamp"])
+                nx = ev.get("nextPageTimestamp")
+                if not nx:
+                    break
+                cur = nx
+    except Exception as ex:
+        print(f"  Warning: dispel-latency apply events failed: {ex}")
+        return {}, {}
+    return _latency_match(cleanse_events, applies, gid2name)
+
+
+def _latency_match(cleanse_events, applies, gid2name):
+    """Pure matcher: each cleanse → the harmful debuff's most-recent prior LAND on that (aura, target),
+    so latency = dispel − land. `applies` is {(guid, targetID): [applydebuff timestamps]}. A cleanse
+    with no recorded apply (the debuff was pre-applied before the logged window) is skipped — it can't
+    be timed. Returns (lat:{name:[latency_ms]}, clutch:{name:[{aura,sec}]} for DANGEROUS_DISPELS)."""
+    lat, clutch = defaultdict(list), defaultdict(list)
+    for (name, tid, g, dts) in cleanse_events:
+        if g is None or dts is None:
+            continue
+        arr = applies.get((g, tid))
+        if not arr:
+            continue                   # debuff was pre-applied before the logged window — can't time it
+        ats = max((a for a in arr if a is not None and a <= dts), default=None)
+        if ats is None:
+            continue
+        ms = dts - ats
+        lat[name].append(ms)
+        aura = gid2name.get(g, "")
+        if aura in DANGEROUS_DISPELS:
+            clutch[name].append({"aura": aura, "sec": round(ms / 1000, 1)})
+    return lat, clutch
 
 
 def fetch_ability_icons(token: str, report_code: str, fight_ids: list, md: dict | None = None) -> dict:
@@ -2078,6 +2407,12 @@ DEBUFF_SLOTS = [
     {"key": "jow",    "label": "Judge: Wisdom",      "cat": "Utility", "guids": [27164],        "icon": "spell_holy_righteousnessaura"},
     {"key": "jotc",   "label": "Judge: Crusader",    "cat": "Utility", "guids": [27159],        "icon": "spell_holy_holysmite", "soft": True},
 ]
+
+# Max stack for the genuinely STACKING raid debuffs — these are the ones whose "ramp" is a real story
+# (how fast the raid built the full debuff). Everything else is single-application: "ramp" degrades to
+# time-to-first-applied (was it up at the pull or late?). ISB is proc-based/noisy, so it's left single
+# on purpose (a declared "never hit N" would be RNG noise). Live-verified: Shadow Weaving stacks to 5.
+DEBUFF_STACK_MAX = {"sweav": 5, "sunder": 5}
 
 def fetch_debuff_coverage(token: str, report_code: str, kills: list) -> dict:
     """WCL-durable raid debuff coverage — runs EVERY week, no combat log needed. For each
@@ -2401,6 +2736,136 @@ def fetch_expose_armor(token: str, report_code: str, kills: list, md: dict | Non
     players.sort(key=lambda x: (-x["uptime"], -x["applications"], x["name"]))
     print(f"  ✓ expose armor: {len(players)} rogue(s) maintaining the armor slot")
     return {"players": players}
+
+
+def _stack_ramp(evs, f_start, f_end, declared_max):
+    """Reconstruct one (debuff, enemy-target) stack timeline → (peak, ramp_ts, uptime_at_threshold_ms).
+    `evs` is [(ts, type, stack)] for a single debuff GUID on a single target within one fight. The
+    THRESHOLD that counts as "established" is declared_max only when the debuff actually stacked
+    (peak ≥ 2) — otherwise 1, so a single-application debuff (or a stacker that flatlined at 1) is
+    measured as time-to-first-up. applydebuffstack carries the NEW stack count (live-verified)."""
+    evs = sorted(evs, key=lambda e: (e[0] if e[0] is not None else 0))   # stable: WCL is chronological
+    stack = peak = 0
+    for ts, typ, stk in evs:
+        if typ == "applydebuff":        stack = max(stack, 1)
+        elif typ == "applydebuffstack": stack = stk or (stack + 1)
+        elif typ == "removedebuff":     stack = 0
+        peak = max(peak, stack)
+    threshold = declared_max if (declared_max > 1 and peak >= 2) else 1
+    stack, enter, ramp_ts, up_ms = 0, None, None, 0
+    for ts, typ, stk in evs:
+        if typ == "applydebuff":        stack = max(stack, 1)
+        elif typ == "applydebuffstack": stack = stk or (stack + 1)
+        elif typ == "removedebuff":     stack = 0
+        # refreshdebuff leaves the stack unchanged
+        if stack >= threshold and enter is None:
+            enter = ts
+            if ramp_ts is None:
+                ramp_ts = ts
+        elif stack < threshold and enter is not None:
+            up_ms += (ts - enter); enter = None
+    if enter is not None:                # still up at fight end
+        up_ms += (f_end - enter)
+    return peak, ramp_ts, up_ms
+
+
+def fetch_debuff_ramp_speed(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
+    """Generalized debuff RAMP SPEED — how fast the raid ESTABLISHED each tracked debuff after the
+    pull, per boss. For STACKING debuffs (Shadow Weaving / Sunder, DEBUFF_STACK_MAX) ramp = time to
+    MAX stack; single-application debuffs degrade to time-to-first-applied (up at the pull, or late?).
+    Plus the % of the fight the debuff was held AT full effect. Pure WCL Debuffs EVENTS (per-target
+    stack timeline), runs every week with no combat log — the durable twin of debuff *coverage*.
+
+    Per slot the representative target is the enemy that reached the highest stack (the boss, where the
+    raid stacks the debuff — trash adds rarely build it). Returns
+      {ramps:[{key,label,cat,icon,soft,stacking,max_stack,
+               bosses:[{boss,encounter_id,ramp_sec,uptime_pct,reached,peak}],
+               med_ramp_sec, avg_uptime_pct, reached_count, total_bosses}]}  (stacking + high-signal
+    first) — {} when there are no kills. NB the TBC debuff-cap caveat: a debuff bumped past the cap can
+    read low uptime despite being cast; a ramp time beside near-zero uptime is a probable cap victim."""
+    if not kills:
+        return {}
+    if md is None:
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
+    fids = [f["id"] for f in kills]
+    st   = min(f["startTime"] for f in kills)
+    en   = max(f["endTime"]   for f in kills)
+    fid_boss = {f["id"]: f["name"] for f in kills}
+    fid_enc  = {f["id"]: f.get("encounterID") for f in kills}
+    fid_s    = {f["id"]: f["startTime"] for f in kills}
+    fid_e    = {f["id"]: f["endTime"]   for f in kills}
+    md_gids  = {a.get("gameID") for a in (md.get("abilities") or [])}
+    guid_slot = {g: s["key"] for s in DEBUFF_SLOTS for g in s["guids"]}
+    present   = [g for g in guid_slot if g in md_gids]    # prune to debuffs that actually appeared
+
+    raw = defaultdict(list)               # (slot_key, fid, guid, targetID) → [(ts, type, stack)]
+    QD = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!,$a:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Debuffs, hostilityType: Enemies,
+               abilityID:$a, limit: 10000){ data nextPageTimestamp }}}}"""
+    try:
+        for g in sorted(present):
+            skey = guid_slot[g]
+            cur = st
+            for _pg in range(MAX_EVENT_PAGES):
+                ev = _report(gql(token, QD, {"c": report_code, "ids": fids, "st": cur, "en": en,
+                                             "a": float(g)}), "events", default={})
+                for d in ev.get("data", []):
+                    fid, tid = d.get("fight"), d.get("targetID")
+                    if fid in fid_s and tid is not None:
+                        raw[(skey, fid, g, tid)].append((d.get("timestamp"), d.get("type"), d.get("stack")))
+                nx = ev.get("nextPageTimestamp")
+                if not nx:
+                    break
+                cur = nx
+    except Exception as ex:
+        print(f"  Warning: debuff ramp-speed events failed: {ex}")
+        return {}
+
+    ramps_out = []
+    for s in DEBUFF_SLOTS:                # DEBUFF_SLOTS order; re-sorted high-signal-first below
+        skey = s["key"]
+        declared = DEBUFF_STACK_MAX.get(skey, 1)
+        bosses = []
+        for f in kills:
+            fid = f["id"]
+            f_start, f_end = fid_s[fid], fid_e[fid]
+            dur_ms = (f_end - f_start) or 1
+            cands = [_stack_ramp(evs, f_start, f_end, declared)
+                     for (sk, ff, g, tid), evs in raw.items() if sk == skey and ff == fid]
+            cands = [c for c in cands if c[0] > 0]      # peak > 0 — debuff actually present on this boss
+            if not cands:
+                continue
+            peak, ramp_ts, up_ms = max(cands, key=lambda c: (c[0], -(c[1] or 1e18), c[2]))   # boss = highest peak, earliest
+            threshold = declared if (declared > 1 and peak >= 2) else 1
+            reached = ramp_ts is not None and peak >= threshold
+            bosses.append({"boss": fid_boss[fid], "encounter_id": fid_enc[fid],
+                           "ramp_sec": round((ramp_ts - f_start) / 1000, 1) if reached else None,
+                           "uptime_pct": round(up_ms / dur_ms * 100, 1),
+                           "reached": reached, "peak": peak})
+        if not bosses:
+            continue
+        got = [b["ramp_sec"] for b in bosses if b["reached"] and b["ramp_sec"] is not None]
+        # present stacking by OBSERVED behavior: a "stacking" slot actually held by single-application
+        # Expose (peak 1 everywhere) reads as single — "time-to-max" would be a lie there.
+        observed_peak = max((b["peak"] for b in bosses), default=0)
+        really_stacking = declared > 1 and observed_peak >= 2
+        ramps_out.append({
+            "key": skey, "label": s["label"], "cat": s["cat"], "icon": s["icon"],
+            "soft": s.get("soft", False), "stacking": really_stacking,
+            "max_stack": declared if really_stacking else 1,
+            "bosses": bosses,
+            # MEDIAN, not mean — a single late re-application on a long multi-phase fight (Kael/Vashj
+            # execute) skews the mean badly (e.g. Curse of Recklessness reads ~30s when it was pulled
+            # at +1s on every normal fight). The median reflects the typical-fight ramp.
+            "med_ramp_sec": round(_median(got), 1) if got else None,
+            "avg_uptime_pct": round(sum(b["uptime_pct"] for b in bosses) / len(bosses), 1),
+            "reached_count": sum(1 for b in bosses if b["reached"]),
+            "total_bosses": len(bosses),
+        })
+    # stacking + non-soft first (the real ramp stories); proc-based/soft debuffs last; slot order within
+    ramps_out.sort(key=lambda r: (0 if r["stacking"] else 1, 1 if r["soft"] else 0))
+    print(f"  ✓ debuff ramp speed: {len(ramps_out)} debuff(s) with ramp data")
+    return {"ramps": ramps_out}
 
 
 def fetch_mechanic_compliance(token: str, report_code: str, kills: list, md: dict | None = None) -> dict:
