@@ -2109,6 +2109,13 @@ function renderCompliance() {
   const altCell = p => p.alt_pot ? ok(p.alt_pot)
     : isManaless(p) ? '<span style="color:var(--muted)" title="no mana pool — runes/gems don\'t apply; Flame Cap / Nightmare Seed are niche, not expected">n/a</span>'
     : no;
+  // Scroll = an OPTIONAL bonus (a minor +stat), not a required slot — shown positive-only (✓ or a
+  // muted dash, never a red ✗) and excluded from the compliance denominator. Credited as a small
+  // Prep bonus (PERF_TUNING.PREP_SCROLL) so the extra effort counts toward the Raider Score.
+  const scrollCell = p => (p.scrolls||[]).length
+    ? ok("✓ " + (p.scrolls.length > 1 ? p.scrolls.length + " scrolls" : p.scrolls[0].replace("Scroll of ", "")),
+         p.scrolls.join(", ") + " — optional bonus prep")
+    : '<span style="color:var(--dim)" title="optional — a stat scroll is bonus prep, not required for compliance">·</span>';
   const filled = (p, combat) => (p.flask?1:0)+(p.food?1:0)+(p.weapon?1:0)+(p.alt_pot?1:0)+(combat&&(p.combat_pots||[]).length?1:0);
   // Compliant = most consumables covered, not every slot: all but one slot, with the alt-pot
   // slot excluded from the denominator for mana-less classes (it doesn't exist for them).
@@ -2123,12 +2130,12 @@ function renderCompliance() {
     rows.sort((a, b) => filled(b, R.combat) - filled(a, R.combat) || a.name.localeCompare(b.name));
     const nComp = rows.filter(p => filled(p, R.combat) >= need(p, R.combat)).length;
     const cc = nComp === rows.length ? "var(--green)" : nComp > rows.length / 2 ? "var(--accent)" : "var(--red)";
-    const cols = ["Flask/Elix", "Food", "Weapon"].concat(R.combat ? ["Combat Pot"] : []).concat(["Alt Pot"]);
+    const cols = ["Flask/Elix", "Food", "Weapon"].concat(R.combat ? ["Combat Pot"] : []).concat(["Alt Pot", "Scroll"]);
     const head = `<thead><tr><th style="text-align:left">Player</th>${cols.map(c => `<th class="num">${c}</th>`).join("")}</tr></thead>`;
     const body = "<tbody>" + rows.map(p => {
       const cells = [flaskCell(p), p.food ? chk("food buff at pull") : no, p.weapon ? chk("weapon oil at pull") : no]
         .concat(R.combat ? [potCell(p.combat_pots)] : [])
-        .concat([altCell(p)]);
+        .concat([altCell(p), scrollCell(p)]);
       // Annotation for hybrid players: tank who appears in DPS section, or partial-night healer
       const effectiveRole = p.effective_role || p.role;
       const ft = p.fights_total || 0;
@@ -2148,7 +2155,7 @@ function renderCompliance() {
     </div>`;
   }).join("") + `
     <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);line-height:1.6">
-      <b style="color:var(--dim)">How this is measured</b> — <b>Flask · Elixirs · Food · Weapon oil</b> are read from the <b>pull-time COMBATANT_INFO snapshot</b> (catches buffs applied before the pull); <b>combat pots</b> (incl. Haste · Free Action · resist/protection) and <b>runes</b> from <b>combat-log buff events</b>. Flask/Elix passes on a flask <i>or</i> both elixir slots (battle + guardian). Ambiguous-named pots (Haste, Free Action) are matched by spell ID so trinket procs don't inflate them. <b>Compliant</b> = all-but-one consumable slot covered (4 of 4 → 3 for tanks·healers; 5 → 4 for DPS who also carry a combat pot). The <b>Alt Pot</b> slot (mana gem / rune / Flame Cap / Nightmare Seed) needs a mana pool, so it reads <i>n/a</i> and drops out of the denominator for mana-less classes (Warrior · Rogue). Players who tank fewer than half their fights are evaluated against the DPS threshold and appear in their DPS section (⚔ N/T annotation). Partial-night healers show their healed fight count. Hover any ✓ or item for the exact source.
+      <b style="color:var(--dim)">How this is measured</b> — <b>Flask · Elixirs · Food · Weapon oil</b> are read from the <b>pull-time COMBATANT_INFO snapshot</b> (catches buffs applied before the pull); <b>combat pots</b> (incl. Haste · Free Action · resist/protection) and <b>runes</b> from <b>combat-log buff events</b>. Flask/Elix passes on a flask <i>or</i> both elixir slots (battle + guardian). Ambiguous-named pots (Haste, Free Action) are matched by spell ID so trinket procs don't inflate them. <b>Compliant</b> = all-but-one consumable slot covered (4 of 4 → 3 for tanks·healers; 5 → 4 for DPS who also carry a combat pot). The <b>Alt Pot</b> slot (mana gem / rune / Flame Cap / Nightmare Seed) needs a mana pool, so it reads <i>n/a</i> and drops out of the denominator for mana-less classes (Warrior · Rogue). <b>Scroll</b> is an <i>optional</i> stat-scroll (recognized by spell ID — they log under a bare stat name) — shown positive-only and <i>excluded</i> from the compliant count, but it earns a small Raider-Score Prep bonus. Players who tank fewer than half their fights are evaluated against the DPS threshold and appear in their DPS section (⚔ N/T annotation). Partial-night healers show their healed fight count. Hover any ✓ or item for the exact source.
     </div>`;
 }
 
@@ -2760,6 +2767,9 @@ const PERF_TUNING = {
   // an in-fight pot is the active/tryhard signal; situational (Flame Cap / rune / Nightmare Seed) a
   // small bonus. flask+food+oil = 85 ("prepared"); +in-fight pot +situational → 100.
   PREP_FLASK: 40, PREP_ELIXIR1: 20, PREP_FOOD: 25, PREP_OIL: 20, PREP_POT: 10, PREP_ALT: 5,
+  // Stat scroll = a minor extra prep effort (the core slots already sum to 100). Positive-only
+  // bonus, clamped — never lowers a score; rewards the extra effort where a raider has headroom.
+  PREP_SCROLL: 5,
   // Gear readiness folded into Prep: consumables are the base, gear gaps are deductions (a raider
   // raiding with an un-enchanted slot or an empty socket isn't fully prepped). Tunable; no penalty
   // when there's no gear data for that raider.
@@ -2811,6 +2821,7 @@ const PERF_FACET_TARGET = {
   twist: 5,            // ret Seal of Command casts/min — ~5/min = actively twisting (vs ~0.3 set-and-forget). v1.
   expose: 80,          // rogue Expose Armor uptime % — held the armor slot most of the night (positive-only). v1.
   mana: 100000,                                                             // raw mana returned to the raid
+  gbuff: 1,            // group-buff GEAR provided (JC necks): bringing ONE = full positive-only credit. v1.
 };
 // POSITIVE-ONLY facets — discretionary/assigned utility (dispels, clutch battle-res/externals) that's
 // usually ONE person's job. Credited when you do it, but if you didn't it DROPS OUT (null), never a
@@ -2985,6 +2996,7 @@ function _perfRows(){
         dispels=byName(wd.dispels), intr=byName(wd.interrupts),
         sunder=byName(((wd.sunderArmor||{}).players)||[]),
         expose=byName(((wd.exposeArmor||{}).players)||[]),
+        gbuff=byName(wd.groupBuffGear),   // JC group-buff necks PROVIDED → positive-only Utility credit
         gear=byName(((wd.gearAudit||{}).players)||[]);
   const mcLiable=new Set((wd.mcLiable||[]).map(x=>x.name));
   const mcKill=new Set((wd.mcLiable||[]).filter(x=>(x.kills||0)>0).map(x=>x.name));  // KILLED a charmed teammate
@@ -3045,6 +3057,7 @@ function _perfRows(){
       pts += c.weapon ? T.PREP_OIL : 0;
       pts += (c.combat_pots||[]).length ? T.PREP_POT : 0;
       pts += c.alt_pot ? T.PREP_ALT : 0;
+      pts += (c.scrolls||[]).length ? T.PREP_SCROLL : 0;   // minor positive-only extra (clamped below)
       // Gear readiness folded in: deduct for un-enchanted slots + empty sockets (no data ⇒ no penalty).
       const gr=gear[name];
       if(gr){ pts -= (gr.missing_enchants||[]).length * T.PREP_ENCH_PENALTY;
@@ -3098,6 +3111,10 @@ function _perfRows(){
     myFacets.forEach(f=>{ const bv=bestF[f]||0; if(bv<=0) return;
       const val=facetVal(name,f), s=Math.min(100,val/(PERF_FACET_TARGET[f]||bv||1)*100);
       if(PERF_POSITIVE_ONLY.has(f)){ if(val>0) bonus.push(s); } else prim.push(s); });
+    // Group-buff GEAR (JC necks) — universal positive-only bonus, ANY provider (it's gear, not a class
+    // kit), so it's handled here rather than via utilFacetsFor. Lifts, never drags (non-providers = 0).
+    const gbN=((gbuff[name]||{}).buffs||[]).length;
+    if(gbN>0) bonus.push(Math.min(100, gbN/PERF_FACET_TARGET.gbuff*100));
     const _avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
     let util=null;
     if(prim.length) util=Math.round(bonus.length?Math.max(_avg(prim),_avg(prim.concat(bonus))):_avg(prim));
@@ -3112,6 +3129,7 @@ function _perfRows(){
     if(c){ const p=[]; if(c.flask)p.push(`flask +${T.PREP_FLASK}`); else if((c.elixirs||[]).length)p.push(`elixir +${T.PREP_ELIXIR1}`); else p.push("no flask/elixir");
       if(c.food)p.push(`food +${T.PREP_FOOD}`); if(c.weapon)p.push(`oil +${T.PREP_OIL}`);
       if((c.combat_pots||[]).length)p.push(`in-fight pot +${T.PREP_POT}`); if(c.alt_pot)p.push(`situational +${T.PREP_ALT}`);
+      if((c.scrolls||[]).length)p.push(`scroll +${T.PREP_SCROLL} (${c.scrolls.join(", ")})`);
       const gr=gear[name];
       if(gr&&(gr.missing_enchants||[]).length)p.push(`−${gr.missing_enchants.length*T.PREP_ENCH_PENALTY} no enchant (${gr.missing_enchants.join(", ")})`);
       if(gr&&gr.empty_sockets)p.push(`−${gr.empty_sockets*T.PREP_SOCKET_PENALTY} ${gr.empty_sockets} empty socket${gr.empty_sockets>1?"s":""}`);
@@ -3146,6 +3164,7 @@ function _perfRows(){
       if(PERF_POSITIVE_ONLY.has(f) && mv<=0) return null;         // dropped out (positive-only) — don't show a 0 that can't drag
       const mvs=(typeof mv==='number'&&mv%1)?mv.toFixed(1):mv, tag=PERF_POSITIVE_ONLY.has(f)?" (bonus — only lifts)":"";
       return `${FACET_LABEL[f]||f} ${mvs} vs ${tgt} target → ${Math.round(Math.min(100,mv/tgt*100))}%${tag}`; }).filter(Boolean);
+    if(gbN>0) uw.push(`group buff: ${((gbuff[name]||{}).buffs||[]).map(b=>b.item).join(", ")} (bonus — only lifts)`);
     why.util=uw.length?uw.join(" · "):"no measured utility this week";
     return { name, role, class:r.class, spec:r.spec, arch, w, ...pil, present, composite: den>0?num/den:null, why };
   });

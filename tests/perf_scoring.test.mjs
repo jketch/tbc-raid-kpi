@@ -124,6 +124,22 @@ test('MC kill floors execution to 0', () => {
   assert.match(r.why.exec, /killed a Mind-Controlled teammate/);
 });
 
+// ── 6b. Group-buff GEAR (JC neck) lifts utility positive-only — any provider, never drags ─────
+test('group-buff gear lifts the provider, never drags a non-provider', () => {
+  const wd = {
+    roster: {
+      Mg:  { class: 'Mage', spec: 'Fire', role: 'Caster' },
+      Mg2: { class: 'Mage', spec: 'Fire', role: 'Caster' },
+    },
+    interrupts: [{ name: 'Mg', count: 2 }, { name: 'Mg2', count: 2 }],   // both: intr 2 vs target 4 → 50
+    groupBuffGear: [{ name: 'Mg', buffs: [{ item: 'Eye of the Night', label: '+34 spell power (party)' }] }],
+  };
+  const a = rowByName(wd, 'Mg'), b = rowByName(wd, 'Mg2');
+  assert.equal(b.util, 50, 'non-provider sits at its primary (interrupts) — not dragged');
+  assert.equal(a.util, 75, 'provider lifted by the neck: max(avg[50], avg[50,100]) = 75');
+  assert.match(a.why.util, /group buff: Eye of the Night/);
+});
+
 // ── 6. A facet nobody did this week drops out (null) — never a damaging 0 ─────────────────────
 test('empty-cohort facet yields null utility, not a 0', () => {
   const wd = {
