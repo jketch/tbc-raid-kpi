@@ -17,10 +17,10 @@ via `events()`) · Grey = genuinely unavailable on the 2.5 client · Gold = the 
 ```mermaid
 graph LR
   API["WCL v2 GraphQL"] --> R["reportData.report(code)"]
-  R --> F["fights<br/>kill · phases · bossPercentage"]
+  R --> F["fights<br/>kill · phases · bossPercentage END-only"]
   R --> T["table(dataType, fightIDs)"]
   R --> E["events(dataType)"]
-  R --> G["graph(dataType)<br/>time series — Bloodlust timing"]
+  R --> G["graph(dataType)<br/>time series — LIVE on 2.5 (DamageTaken series)"]
   R --> RK["rankings<br/>→ parse % (Performance)"]
   R --> MD["masterData<br/>actors · abilities"]
   R --> PD["playerDetails<br/>→ roles"]
@@ -67,7 +67,7 @@ graph LR
 | **Buffs** | auras[] (uptime/bands) | ✓ (toolkit uptimes) | — |
 | **Casts** | entries[] incl. **gear, talents**, abilities, targets | ✓ (toolkit) | gear/talents ride along |
 | **DamageDone** | entries[] incl. **gear[], talents[]**, abilities, targets | ✓ (DPS) | **GEAR = enchant/gem/ilvl audit (see below)** |
-| **DamageTaken** | entries[] incl. sources, overheal, abilities | ✓ (tanks) | per-source breakdown for non-tanks |
+| **DamageTaken** | entries[] incl. sources, overheal, abilities | ✓ (tanks) | per-source breakdown for non-tanks. ⚠ DamageTaken **events** also carry **`unmitigatedAmount`** (raw pre-mitigation incoming) + **`mitigated`** (live-verified 2026-06-14) — powers the tank **CD coverage value** (unmitigated faced during a defensive aura window ÷ baseline unmit DTPS). Events carry **no `hitPoints`** (null) — can't read tank HP-at-a-timestamp from them |
 | **Deaths** | entries[] incl. **overkill, killingBlow, deathWindow, events** | ✓ (recap) | overkill / killingBlow depth for Survival. ⚠ recap `events[]` embed an **`ability` OBJECT** (`{name, guid, abilityIcon}`), NOT the flat `abilityGameID`/`type` that DamageDone/DamageTaken events carry — read `ev.ability.name` (see note below) |
 | **Debuffs** | auras[] (uptime/bands) | ✓ (debuff coverage) | — |
 | **Healing** | entries[] incl. overheal, abilities, targets | ✓ (healers) | enemy-healing (proved MS value) |
@@ -137,6 +137,17 @@ the preparation signal the tool was built to surface. **Highest-value find of th
   Net: Interrupts + Dispels are real WCL-durable wins via `events()`; Threat/Survivability are genuinely
   out for TBC.
 
+### Confirmed positives — live-verified 2026-06-14 (tank-CD / ramp / Bloodlust session)
+- **`graph(dataType: DamageTaken, …)` RETURNS on 2.5** (untried before) — gives `{series, startTime, endTime}`.
+- **DamageTaken `events()` carry `unmitigatedAmount` (raw pre-mitigation) + `mitigated`.** This is the
+  durable source for the tank **CD coverage value** ("reverse Bloodlust": unmitigated damage FACED during a
+  defensive-cooldown aura window ÷ the tank's baseline unmitigated DTPS). DamageTaken events carry **no
+  `hitPoints`** (null) — you cannot read a tank's HP at an arbitrary timestamp from them.
+- **`fights.bossPercentage` / `fights.fightPercentage` are END-only** — they report the boss/raid HP at the
+  *end* of the fight window (≈0.01 on a kill), so they are **USELESS for "HP at a timestamp"**. To place a
+  cast "where in the kill" (e.g. Bloodlust HP%, debuff-ramp progress), reconstruct it from **cumulative
+  DamageDone** (a CUMULATIVE-DAMAGE proxy), not from a per-event HP field — events carry no HP.
+
 ## Gotchas (cost real debugging)
 - **Deaths recap event shape (2026-06-13).** A Deaths-table entry's `events[]` are NOT shaped like
   DamageDone/DamageTaken events. Each carries the ability as an **embedded object** —
@@ -146,6 +157,15 @@ the preparation signal the tool was built to surface. **Highest-value find of th
   said otherwise. Read `ev.ability.name` first; keep the masterData `gid2name[ev.ability.guid]` map as a
   fallback. (`killingBlow` is the same object shape — `{name, guid, abilityIcon}`.) Fixed in
   `_build_death_timeline`.
+
+- **Kill-scoped Buffs/Debuffs `events()` drop a `removebuff` that expired in a TRASH GAP between bosses
+  (2026-06-14).** When you query aura events scoped to a kill's fight IDs, a buff/debuff that was *applied*
+  during one boss but *removed* during the trash between bosses loses its `removebuff` event — it fell
+  outside every kill window. A naive `applybuff → removebuff` pairing then spans two bosses and yields a
+  **phantom multi-minute window**. This corrupts ANY aura-window reconstruction on kill events (the tank
+  defensive-CD window, debuff-ramp uptime, dispel latency). **Fix: pair `apply`/`remove` only WITHIN the
+  same fight AND cap the window length** (the `_cd_windows` reconstruction does both — an unclosed window
+  ends at the fight boundary, never carries into the next boss).
 
 ## Depth upgrades (cheap, additive)
 - **Deaths**: `overkill` (how hard the killing blow over-killed) + `killingBlow` (what ability) →
