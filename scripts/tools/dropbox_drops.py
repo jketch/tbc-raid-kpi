@@ -160,7 +160,29 @@ def archive(_post=None) -> int:
     return 0
 
 
+def _load_dotenv():
+    """Populate os.environ from the project-root .env, for STANDALONE local CLI runs. In CI the
+    secrets arrive as real env vars and no .env is checked out, so this no-ops. Called ONLY from
+    main() — the fetch()/archive() library entry points stay env-only, so the unit tests keep full
+    control of os.environ (and a clear-env 'unconfigured' test isn't re-seeded by the real .env).
+    Mirrors wcl_client's loader (.env wins) without importing it (keeps the unconfigured path clear
+    of the requests bootstrap)."""
+    env = ROOT / ".env"
+    if not env.exists():
+        return
+    for line in env.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#") and "=" in line:
+            k, v = line.split("=", 1)
+            os.environ[k.strip()] = v.strip()
+
+
 def main():
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")   # Windows cp1252 console chokes on ✓/⚠ glyphs
+    except Exception:
+        pass
+    _load_dotenv()                                  # so a standalone local run sees .env, not just CI env
     mode = sys.argv[1] if len(sys.argv) > 1 else ""
     if mode == "fetch":
         sys.exit(fetch())

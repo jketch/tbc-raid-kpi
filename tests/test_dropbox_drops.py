@@ -140,5 +140,27 @@ class TestArchive(_Base):
         self.assertEqual(dd.archive(_post=post), 0)
 
 
+class TestLoadDotenv(unittest.TestCase):
+    """main() loads the project-root .env for STANDALONE local CLI runs (the fetch()/_cfg() order
+    can't see .env itself). The library entry points stay env-only, so the tests above — including
+    the clear-env 'unconfigured' cases — are unaffected."""
+
+    def test_loads_keys_skipping_comments_and_blanks(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / ".env").write_text(
+                "# a comment\n\nDROPBOX_TEST_MARKER=xyz123\nPADDED = spaced \n", encoding="utf-8")
+            with mock.patch.object(dd, "ROOT", Path(d)), \
+                 mock.patch.dict(os.environ, {}, clear=False):
+                os.environ.pop("DROPBOX_TEST_MARKER", None)
+                dd._load_dotenv()
+                self.assertEqual(os.environ.get("DROPBOX_TEST_MARKER"), "xyz123")
+                self.assertEqual(os.environ.get("PADDED"), "spaced")   # key + value both stripped
+
+    def test_noop_when_no_env_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            with mock.patch.object(dd, "ROOT", Path(d)):
+                dd._load_dotenv()   # no .env present → must not raise
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
