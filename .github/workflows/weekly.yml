@@ -51,6 +51,10 @@ jobs:
       # Pin the runner to the raid timezone so a cloud run behaves exactly like a local one —
       # fixes combat-log window-matching, the loot raid-date, and the displayed raid date together.
       TZ: America/Denver
+      # Dashboard title — instance-specific branding (render_html reads DASHBOARD_TITLE, else
+      # DEFAULT_TITLE). Mirrors local .env so a cloud deploy carries the same name. Per-group config
+      # when multi-group lands; a clone in another group sets its own here.
+      DASHBOARD_TITLE: "Raid 5 - car with flames - TBC Anniversary"
       WCL_CLIENT_ID:        ${{ secrets.WCL_CLIENT_ID }}
       WCL_CLIENT_SECRET:    ${{ secrets.WCL_CLIENT_SECRET }}
       NETLIFY_AUTH_TOKEN:   ${{ secrets.NETLIFY_AUTH_TOKEN }}

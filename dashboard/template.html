@@ -3425,7 +3425,12 @@ function renderAll(){
   })();
   // title reflects the ACTIVE week (date-first so browser tabs stay distinguishable when truncated)
   const _date = (WEEK_DATA.meta || {}).date;
-  if (_date) document.title = _date.replace(/\s+\d{1,2}:\d{2}$/, "") + " — Raid KPI";
+  // browser tab = "<date> — <short name>", where the short name is the first " - " segment of the
+  // dashboard title (e.g. "Raid 5" from "Raid 5 - car with flames - TBC Anniversary") — instance-derived.
+  if (_date) {
+    const _short = ((document.querySelector(".header-title") || {}).textContent || "").split(" - ")[0].trim() || "Raid KPI";
+    document.title = _date.replace(/\s+\d{1,2}:\d{2}$/, "") + " — " + _short;
+  }
   applyHighlight(false);   // re-apply find-me highlight to the freshly rendered week
 }
 
