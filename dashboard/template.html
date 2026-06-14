@@ -2091,15 +2091,18 @@ function renderCompliance() {
     { key: "Physical", label: "DPS (Physical)", combat: true  },
     { key: "Caster",   label: "DPS (Caster)",   combat: true  },
   ];
-  const no  = '<span style="color:var(--red);font-weight:700">✗</span>';
-  // show-our-work cells: a green ✓/name with the SPECIFIC detected item on hover, so the
-  // grid is auditable rather than a black box.
+  // show-our-work cells: a green ✓/name (or a red ✗) with the SPECIFIC reason on hover, so the
+  // grid is auditable rather than a black box — a miss explains WHAT they had vs what's needed.
   const ok  = (label, tip) => `<span style="color:var(--green);font-size:10px;white-space:nowrap" title="${tip||''}">${label}</span>`;
   const chk = tip => `<span style="color:var(--green);font-weight:700" title="${tip||''}">✓</span>`;
-  const flaskCell = p => !p.flask ? no
-    : ok(p.flask_name || ((p.elixirs||[]).length>=2 ? "2 Elixirs" : "✓"),
-         p.flask_name || (p.elixirs||[]).join(" + "));
-  const potCell = arr => (arr && arr.length) ? arr.map(x => ok(x, "combat-log buff event")).join("<br>") : no;
+  const noTip = tip => `<span style="color:var(--red);font-weight:700;cursor:help" title="${tip||''}">✗</span>`;
+  const flaskCell = p => p.flask
+    ? ok(p.flask_name || ((p.elixirs||[]).length>=2 ? "2 Elixirs" : "✓"),
+         p.flask_name || (p.elixirs||[]).join(" + "))
+    : noTip((p.elixirs||[]).length
+        ? `${p.elixirs.length} elixir${p.elixirs.length>1?"s":""}: ${p.elixirs.join(", ")} — needs a flask, or both elixir slots (battle + guardian)`
+        : "no flask or elixirs at the pull");
+  const potCell = arr => (arr && arr.length) ? arr.map(x => ok(x, "combat-log buff event")).join("<br>") : noTip("no in-fight potion (combat / mana / healing) used");
   // Mana-less classes have NO real alt-pot slot in TBC — Dark/Demonic Runes and mana gems
   // need a mana pool, and Flame Cap / Nightmare Seed are niche, not standard prep
   // (TBC_RAID_MECHANICS.md §6f: runes are "casters/healers"). The slot reads n/a for them
@@ -2108,7 +2111,7 @@ function renderCompliance() {
   const isManaless = p => MANALESS.has((((WEEK_DATA.roster||{})[p.name])||{}).class);
   const altCell = p => p.alt_pot ? ok(p.alt_pot)
     : isManaless(p) ? '<span style="color:var(--muted)" title="no mana pool — runes/gems don\'t apply; Flame Cap / Nightmare Seed are niche, not expected">n/a</span>'
-    : no;
+    : noTip("no mana gem / rune / Flame Cap / Nightmare Seed used");
   // Scroll = an OPTIONAL bonus (a minor +stat), not a required slot — shown positive-only (✓ or a
   // muted dash, never a red ✗) and excluded from the compliance denominator. Credited as a small
   // Prep bonus (PERF_TUNING.PREP_SCROLL) so the extra effort counts toward the Raider Score.
@@ -2133,7 +2136,9 @@ function renderCompliance() {
     const cols = ["Flask/Elix", "Food", "Weapon"].concat(R.combat ? ["Combat Pot"] : []).concat(["Alt Pot", "Scroll"]);
     const head = `<thead><tr><th style="text-align:left">Player</th>${cols.map(c => `<th class="num">${c}</th>`).join("")}</tr></thead>`;
     const body = "<tbody>" + rows.map(p => {
-      const cells = [flaskCell(p), p.food ? chk("food buff at pull") : no, p.weapon ? chk("weapon oil at pull") : no]
+      const cells = [flaskCell(p),
+          p.food ? chk("food buff (Well Fed) at pull") : noTip("no food buff (Well Fed) at the pull"),
+          p.weapon ? chk("weapon oil / sharpening stone at pull") : noTip("no weapon oil / sharpening stone on the weapon")]
         .concat(R.combat ? [potCell(p.combat_pots)] : [])
         .concat([altCell(p), scrollCell(p)]);
       // Annotation for hybrid players: tank who appears in DPS section, or partial-night healer
