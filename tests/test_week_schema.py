@@ -97,6 +97,47 @@ class TestValidate(unittest.TestCase):
             ws.validate(junk)   # must not raise
 
 
+class TestValidateTieringWording(unittest.TestCase):
+    """The narrow slice the 'Still uncovered' backlog named: has_log/has_loot only SHARPEN the INFO
+    wording — they never upgrade INFO→WARN — and None (the reprocess/snapshot path) stays quiet.
+    (The required-WCL→WARN / LOG→INFO / loot→INFO / zero-kill cases are in TestValidate above.)"""
+
+    def _info_for(self, rep, key):
+        return next((i for i in rep["info"] if i.startswith(f"{key}:")), None)
+
+    def test_has_log_false_sharpens_log_wording_but_stays_info(self):
+        wk = rich_week(); wk["drums"] = []
+        rep = ws.validate(wk, has_log=False)
+        self.assertFalse(any("drums" in w for w in rep["warn"]))     # never upgraded to WARN
+        self.assertIn("no combat log", self._info_for(rep, "drums"))
+
+    def test_has_log_none_or_true_uses_neutral_log_wording(self):
+        wk = rich_week(); wk["drums"] = []
+        for hl in (None, True):
+            rep = ws.validate(wk, has_log=hl)
+            self.assertIn("clean week or no log", self._info_for(rep, "drums"))
+            self.assertEqual(rep["warn"], [])
+
+    def test_has_loot_false_sharpens_loot_wording_but_stays_info(self):
+        wk = rich_week(); wk["loot"] = {}
+        rep = ws.validate(wk, has_loot=False)
+        self.assertFalse(any("loot" in w for w in rep["warn"]))
+        self.assertIn("no awards / no CSV", self._info_for(rep, "loot"))
+
+    def test_has_loot_none_or_true_uses_neutral_loot_wording(self):
+        wk = rich_week(); wk["loot"] = {}
+        for hl in (None, True):
+            rep = ws.validate(wk, has_loot=hl)
+            self.assertIn("dry night or no CSV", self._info_for(rep, "loot"))
+
+    def test_reprocess_path_none_sources_stays_quiet(self):
+        # reprocess works from a snapshot and can't know the original sources → passes None for both;
+        # a week with empty LOG + EXTERNAL sections must produce NO warnings under None/None.
+        wk = rich_week()
+        wk["drums"] = []; wk["engineering"] = []; wk["loot"] = {}
+        self.assertEqual(ws.validate(wk, has_log=None, has_loot=None)["warn"], [])
+
+
 class TestRegression(unittest.TestCase):
     def test_detects_dropped_section(self):
         old = rich_week()
