@@ -293,14 +293,25 @@ class TestConsumables(unittest.TestCase):
         ])
         self.assertEqual(sorted(out2["elixirs"]), ["Greater Versatility", "Mighty Agility"])
 
-    def test_hunter_weapon_slot_uses_ranged_scope_not_oil(self):
-        # A hunter's weapon enhancer is the ranged SCOPE (permanent), not a temp oil/stone. Huntz has
-        # ranged_scope=True but weapon_oil(temp)=False → the Weapon slot should still read ✓.
-        wd = map_to_week_data(_fixture())
-        grid = {r["name"]: r for r in wd["consumables"]}
-        self.assertTrue(grid["Huntz"]["weapon"])        # scope counts
-        # a non-hunter (Wlock) still keys off the temp oil:
-        self.assertTrue(grid["Wlock"]["weapon"])        # weapon_oil=True in the fixture
+    def test_hunter_scope_folds_into_gear_readiness(self):
+        # A hunter's weapon enhancer is the ranged SCOPE (gear), not a weapon-oil consumable. The oil
+        # slot is N/A for hunters (template), and the scope is folded into Gear Readiness: a scoped
+        # hunter drops the melee 'Main Hand' flag and gets NO scope miss; a scope-less one gets one.
+        fx = _fixture()
+        fx["gear_audit"] = {"players": [
+            {"name": "Huntz", "missing_enchants": ["Head", "Main Hand"], "ench_total": 9, "ench_ok": 7},
+            {"name": "Wlock", "missing_enchants": ["Head"], "ench_total": 9, "ench_ok": 8},
+        ]}
+        ga = {p["name"]: p for p in map_to_week_data(fx)["gearAudit"]["players"]}
+        self.assertEqual(ga["Huntz"]["missing_enchants"], ["Head"])   # scoped: Main Hand dropped, no scope miss
+        self.assertEqual(ga["Huntz"]["ench_ok"], 8)
+        self.assertEqual(ga["Wlock"]["missing_enchants"], ["Head"])   # non-hunter untouched
+        # scope-less hunter → a 'Ranged (scope)' gear-readiness miss appears
+        fx2 = _fixture()
+        fx2["ci_consumables"]["Huntz"]["ranged_scope"] = False
+        fx2["gear_audit"] = {"players": [{"name": "Huntz", "missing_enchants": ["Main Hand"], "ench_total": 9, "ench_ok": 8}]}
+        ga2 = {p["name"]: p for p in map_to_week_data(fx2)["gearAudit"]["players"]}
+        self.assertEqual(ga2["Huntz"]["missing_enchants"], ["Ranged (scope)"])
 
     def test_group_buff_gear_surfaced_in_week_data(self):
         wd = map_to_week_data(_fixture())

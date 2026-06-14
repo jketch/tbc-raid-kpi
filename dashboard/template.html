@@ -2109,13 +2109,14 @@ function renderCompliance() {
   // and drops out of their compliance denominator; using one anyway still counts (bonus).
   const MANALESS = new Set(["Warrior", "Rogue"]);
   const isManaless = p => MANALESS.has((((WEEK_DATA.roster||{})[p.name])||{}).class);
-  // Weapon enhancer is class-shaped: a hunter's is the ranged SCOPE (permanent enchant on the bow),
-  // not a temp oil/stone — so the cell explains the right thing. (p.weapon already carries the
-  // class-correct value from week_map: scope for hunters, oil/stone for everyone else.)
+  // Weapon OIL is a per-raid consumable that only goes on a MELEE/caster weapon. A hunter fights with
+  // a ranged weapon, whose enhancer is a permanent SCOPE (gear, not a consumable) — so the oil slot is
+  // N/A for hunters and drops out of their compliance denominator; scope readiness lives in Gear Readiness.
   const isHunter = p => (((WEEK_DATA.roster||{})[p.name])||{}).class === "Hunter";
-  const weaponCell = p => p.weapon
-    ? chk(isHunter(p) ? "ranged scope on the bow/gun (a hunter's weapon enhancer — not a melee oil)" : "weapon oil / sharpening stone at pull")
-    : noTip(isHunter(p) ? "no ranged scope on the bow/gun" : "no weapon oil / sharpening stone on the weapon");
+  const weaponCell = p => isHunter(p)
+    ? '<span style="color:var(--muted)" title="hunters use a permanent ranged SCOPE, not a weapon-oil consumable — scope readiness is checked in Gear Readiness, not here">n/a</span>'
+    : p.weapon ? chk("weapon oil / sharpening stone at pull")
+               : noTip("no weapon oil / sharpening stone on the weapon");
   const altCell = p => p.alt_pot ? ok(p.alt_pot)
     : isManaless(p) ? '<span style="color:var(--muted)" title="no mana pool — runes/gems don\'t apply; Flame Cap / Nightmare Seed are niche, not expected">n/a</span>'
     : noTip("no mana gem / rune / Flame Cap / Nightmare Seed used");
@@ -2126,10 +2127,10 @@ function renderCompliance() {
     ? ok("✓ " + (p.scrolls.length > 1 ? p.scrolls.length + " scrolls" : p.scrolls[0].replace("Scroll of ", "")),
          p.scrolls.join(", ") + " — optional bonus prep")
     : '<span style="color:var(--dim)" title="optional — a stat scroll is bonus prep, not required for compliance">·</span>';
-  const filled = (p, combat) => (p.flask?1:0)+(p.food?1:0)+(p.weapon?1:0)+(p.alt_pot?1:0)+(combat&&(p.combat_pots||[]).length?1:0);
-  // Compliant = most consumables covered, not every slot: all but one slot, with the alt-pot
-  // slot excluded from the denominator for mana-less classes (it doesn't exist for them).
-  const total = (p, combat) => (combat ? 5 : 4) - (isManaless(p) ? 1 : 0);
+  const filled = (p, combat) => (p.flask?1:0)+(p.food?1:0)+(isHunter(p)?0:(p.weapon?1:0))+(p.alt_pot?1:0)+(combat&&(p.combat_pots||[]).length?1:0);
+  // Compliant = most consumables covered, not every slot: all but one slot. Slots that don't apply to
+  // a class drop out of its denominator — alt-pot for mana-less (Warrior/Rogue), weapon oil for hunters.
+  const total = (p, combat) => (combat ? 5 : 4) - (isManaless(p) ? 1 : 0) - (isHunter(p) ? 1 : 0);
   const need  = (p, combat) => total(p, combat) - 1;
 
   el.innerHTML = ROLES.map(R => {
@@ -3064,17 +3065,22 @@ function _perfRows(){
     const c=cons[name];
     let prep=null;
     if(c){ const T=PERF_TUNING;
-      let pts = c.flask ? T.PREP_FLASK : ((c.elixirs||[]).length ? T.PREP_ELIXIR1 : 0);
-      pts += c.food ? T.PREP_FOOD : 0;
-      pts += c.weapon ? T.PREP_OIL : 0;
-      pts += (c.combat_pots||[]).length ? T.PREP_POT : 0;
-      pts += c.alt_pot ? T.PREP_ALT : 0;
+      // Weapon OIL is N/A for hunters (they use a ranged SCOPE — gear, not a consumable), so it drops
+      // out of their core denominator and the rest RENORMALIZES to 100 (an n/a slot must not cap them).
+      const oilNA = r.class==="Hunter";
+      let core = c.flask ? T.PREP_FLASK : ((c.elixirs||[]).length ? T.PREP_ELIXIR1 : 0);
+      core += c.food ? T.PREP_FOOD : 0;
+      core += (!oilNA && c.weapon) ? T.PREP_OIL : 0;
+      core += (c.combat_pots||[]).length ? T.PREP_POT : 0;
+      core += c.alt_pot ? T.PREP_ALT : 0;
+      let pts = core * 100 / (100 - (oilNA ? T.PREP_OIL : 0));   // renormalize over applicable core slots
       pts += (c.scrolls||[]).length ? T.PREP_SCROLL : 0;   // minor positive-only extra (clamped below)
       // Gear readiness folded in: deduct for un-enchanted slots + empty sockets (no data ⇒ no penalty).
+      // For hunters this is where the ranged SCOPE lives (week_map adds a 'Ranged (scope)' miss if absent).
       const gr=gear[name];
       if(gr){ pts -= (gr.missing_enchants||[]).length * T.PREP_ENCH_PENALTY;
               pts -= (gr.empty_sockets||0) * T.PREP_SOCKET_PENALTY; }
-      prep = clamp(pts, 0, 100); }
+      prep = Math.round(clamp(pts, 0, 100)); }   // round (renormalization can make it fractional)
     // PERFORMANCE (role-appropriate parse %)
     let perf=null;
     if(role==="Healer") perf=heal[name]?heal[name].vs_replacement:null;
@@ -3139,7 +3145,8 @@ function _perfRows(){
     // ── DRILLDOWN breakdowns — the exact inputs behind each pillar score (defensible) ──
     const T=PERF_TUNING, why={};
     if(c){ const p=[]; if(c.flask)p.push(`flask +${T.PREP_FLASK}`); else if((c.elixirs||[]).length)p.push(`elixir +${T.PREP_ELIXIR1}`); else p.push("no flask/elixir");
-      if(c.food)p.push(`food +${T.PREP_FOOD}`); if(c.weapon)p.push(`oil +${T.PREP_OIL}`);
+      if(c.food)p.push(`food +${T.PREP_FOOD}`);
+      if(r.class==="Hunter")p.push("weapon oil n/a (scope → Gear Readiness)"); else if(c.weapon)p.push(`oil +${T.PREP_OIL}`);
       if((c.combat_pots||[]).length)p.push(`in-fight pot +${T.PREP_POT}`); if(c.alt_pot)p.push(`situational +${T.PREP_ALT}`);
       if((c.scrolls||[]).length)p.push(`scroll +${T.PREP_SCROLL} (${c.scrolls.join(", ")})`);
       const gr=gear[name];

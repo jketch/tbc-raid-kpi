@@ -287,9 +287,6 @@ def map_to_week_data(wcl: dict) -> WeekData:
         elixirs = c.get("elixirs", [])
         food = bool(c.get("food"))
         p_info        = roster_idx.get(n, {})
-        # Weapon enhancer: a HUNTER's is the ranged SCOPE (permanent), not a temp oil/stone (which
-        # only goes on the melee weapon they don't fight with). Everyone else: the oil/stone.
-        weapon_ok = bool(c.get("ranged_scope")) if p_info.get("class") == "Hunter" else bool(c.get("weapon_oil"))
         role          = p_info.get("role", "")
         spec          = p_info.get("spec", "")
         fights_tanked = p_info.get("fights_tanked", 0)
@@ -303,7 +300,7 @@ def map_to_week_data(wcl: dict) -> WeekData:
             "role":  role,
             "class": p_info.get("class", p_info.get("type", "")),
             "flask": flask, "elixirs": elixirs, "food": food,
-            "scrolls": c.get("scrolls", []), "weapon_oil": weapon_ok,
+            "scrolls": c.get("scrolls", []), "weapon_oil": bool(c.get("weapon_oil")),
             "potion": u.get("potion", 0), "rune": u.get("rune", 0),
             "mana_gem": u.get("mana_gem", 0),         # mage Mana Emerald/Ruby on-use (Replenish Mana)
             "healthstone": u.get("healthstone", 0),
@@ -328,6 +325,26 @@ def map_to_week_data(wcl: dict) -> WeekData:
     consum_usage.sort(key=lambda x: (x["prepared"], bool(x["flask"] or x["elixirs"]), x["food"],
                                      x["name"]))
     consum_list = build_consumable_compliance(consum_usage)
+
+    # A HUNTER's weapon enhancer is the ranged SCOPE (a permanent enchant) — GEAR readiness, not a
+    # weapon-oil consumable (oils only go on the melee weapon a hunter never fights with). So the oil
+    # slot is N/A for hunters in the compliance grid (template), and the scope is folded into Gear
+    # Readiness here: a scope-less hunter gets a 'Ranged' missing-enchant, and the melee 'Main Hand'
+    # flag is dropped (their melee weapon isn't load-bearing). Uses the COMBATANT_INFO ranged_scope.
+    gear_audit = wcl.get("gear_audit", {})
+    if gear_audit.get("players"):
+        new_players = []
+        for ga in gear_audit["players"]:
+            if roster_idx.get(ga.get("name"), {}).get("class") == "Hunter":
+                ga = dict(ga)   # copy — non-mutating / idempotent
+                miss = [s for s in (ga.get("missing_enchants") or []) if s != "Main Hand"]
+                if not ci_use.get(ga.get("name"), {}).get("ranged_scope"):
+                    miss.append("Ranged (scope)")
+                ga["missing_enchants"] = sorted(miss)
+                if ga.get("ench_total") is not None:
+                    ga["ench_ok"] = ga["ench_total"] - len(miss)
+            new_players.append(ga)
+        gear_audit = {**gear_audit, "players": new_players}
 
     # Group-buff GEAR provided (JC necks: Eye of the Night +SP / Chain of the Twilight Owl +crit) —
     # real raid utility, credited positive-only in the Raider Score Utility pillar. Sorted for
@@ -495,7 +512,7 @@ def map_to_week_data(wcl: dict) -> WeekData:
         "boss_meta":    wcl.get("boss_meta", {}),
         "healReaction": wcl.get("heal_reaction", {}),
         "debuffCoverage": wcl.get("debuff_coverage", {}),
-        "gearAudit":      wcl.get("gear_audit", {}),
+        "gearAudit":      gear_audit,
         "sunderArmor":    wcl.get("sunder_armor", {}),
         # per-rogue Expose Armor uptime — the rogue's share of the armor-debuff slot (Sunder's twin)
         "exposeArmor":    wcl.get("expose_armor", {}),

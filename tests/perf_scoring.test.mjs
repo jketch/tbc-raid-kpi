@@ -140,6 +140,21 @@ test('group-buff gear lifts the provider, never drags a non-provider', () => {
   assert.match(a.why.util, /group buff: Eye of the Night/);
 });
 
+// ── 6c. Hunter weapon-oil slot is N/A → Prep renormalizes so the n/a doesn't cap them ─────────
+test('hunter n/a weapon-oil slot renormalizes Prep (not a 20-point cap)', () => {
+  const wd = {
+    roster: { H: { class: 'Hunter', spec: 'Marksmanship', role: 'Physical' },
+              M: { class: 'Mage',   spec: 'Fire',          role: 'Caster'   } },
+    consumables: [ { name: 'H', flask: true, food: true },     // hunter: flask+food, oil N/A
+                   { name: 'M', flask: true, food: true } ],    // mage: same, oil just unfilled
+  };
+  const h = rowByName(wd, 'H'), m = rowByName(wd, 'M');
+  assert.equal(h.prep, Math.round(65 * 100 / 80), 'hunter core 65 renormalized over 80 → 81');
+  assert.equal(m.prep, 65, 'non-hunter core 65 over 100 → 65 (oil is a real unfilled slot)');
+  assert.ok(h.prep > m.prep, 'hunter not capped for a slot that does not apply to them');
+  assert.match(h.why.prep, /weapon oil n\/a/);
+});
+
 // ── 6. A facet nobody did this week drops out (null) — never a damaging 0 ─────────────────────
 test('empty-cohort facet yields null utility, not a 0', () => {
   const wd = {
