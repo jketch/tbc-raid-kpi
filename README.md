@@ -150,6 +150,10 @@ run's Summary page. No machine setup at all. (Flow diagrams + failure modes:
 
 - **One-time:** add four repo secrets (*Settings → Secrets and variables → Actions*):
   `WCL_CLIENT_ID`, `WCL_CLIENT_SECRET`, `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`.
+- **One-time — set your raid timezone:** `weekly.yml` pins `TZ: America/Denver` so the UTC runner
+  matches the (raider-local) combat-log timestamps and dates the week correctly. **If your raid
+  isn't on US Mountain time, change it to your IANA zone** (e.g. `America/New_York`, `Europe/London`)
+  — otherwise a dropped log window-matches hours off the report and the run silently goes log-less.
 - **Full-fat cloud weeks via the Dropbox drop folder (optional):** drag the **zipped** combat
   log (right-click → *Send to → Compressed folder*; ~180 MB → ~18 MB) and the ThatsBIS loot CSV
   into the Dropbox app folder (`Apps/<app name>/`), then dispatch. The run downloads them,

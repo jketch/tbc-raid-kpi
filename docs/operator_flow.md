@@ -90,6 +90,9 @@ sequenceDiagram
   `Dropbox/Apps/<app name>/`. The same window-matching applies, so a stale drop is ignored.
   Consumed drops are *moved* to `processed/`, never deleted. Empty folder ⇒ the run is
   log-less: every KPI keeps its WCL headline, the Loot tab hides.
+- **Timezone**: `weekly.yml` pins the runner to the raid timezone (`TZ: America/Denver`) — the
+  pipeline is raider-local throughout, so a UTC runner would window-match the dropped log ~hours
+  off the report (silent log-less) and misdate the week. A clone elsewhere must set its own `TZ`.
 - The copy-paste raid blurb + live URL land on the **run's Summary page** — no digging
   through raw logs.
 - A failed run pushes **nothing** — the data branch always holds the last good state.
@@ -156,6 +159,7 @@ leaves the live site exactly as it was.
 | Loot CSV | Loot tab hides | Drop the CSV in `loot/` (or the Dropbox folder) and re-run; loot is date-filtered so a late CSV is safe |
 | Netlify secrets/token | Deploy skipped with a notice; HTML still built locally | Configure per README; re-run `publish.py` |
 | Dropbox secrets | Cloud run proceeds log-less (fetch no-ops) | Optional feature — configure per README when wanted |
+| Runner TZ ≠ raid TZ (a clone left `weekly.yml`'s `TZ` unchanged) | Cloud run goes log-less despite a stocked drop, and the raid date/loot are off by the offset | Set `TZ: <your IANA zone>` in the `weekly.yml` job env |
 | The whole local machine | Cloud run covers the week end-to-end | `sync_state.py pull` when back (the bat enforces it) |
 
 One operational note: **the combat log only exists where someone ran `/combatlog`.** If the

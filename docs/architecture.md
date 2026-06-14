@@ -307,6 +307,11 @@ pipeline → publish → push state back → sweep consumed drops to `/processed
   the same window-matcher applies; stale drops score ~0), the CSV lands in `loot/` (newest
   auto-pick + raid-date filter). Nothing dropped ⇒ the run degrades to log-less (every KPI
   keeps its WCL headline) and the Loot tab hides.
+- **Timezone**: the runner is UTC, but the pipeline is raider-local end-to-end (combat-log
+  timestamps are naive local wall-clock, loot uses the local raid date, the dashboard shows local
+  time). `weekly.yml` pins `TZ: America/Denver` so a cloud run behaves like a local one; without it
+  a dropped log window-matches ~hours off the report and the run **silently goes log-less** (and
+  mislabels the raid date + loot). **A clone in another timezone must set its own `TZ`.**
 - **Sync**: local and cloud share state via `tools/sync_state.py pull|push` (temp git
   worktree; same allowlist as the workflow). pull/push record the synced `origin/data` commit
   in `cache/.data_branch_sync`; `sync_state.py check` exits 1 when the branch has moved past
