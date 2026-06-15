@@ -707,10 +707,22 @@ def main():
         log_path = log_discovery.discover_log(rep0["startTime"], rep0["endTime"],
                                               os.getenv("WOW_LOG_DIR"))
     if log_path is None:
-        _log_files = sorted(LOGS_DIR.glob("WoWCombatLog*.txt"), key=lambda p: p.stat().st_mtime, reverse=True)
-        if _log_files:
-            log_path = str(_log_files[0])
-            print(f"  [LOG] using newest in logs/: {_log_files[0].name}")
+        # Window-match the logs/ fallback too — never blind-newest. A leftover log from another raid
+        # night must not be picked just because it's the most recent .txt (the Jun-1-log-on-May-weeks
+        # contamination). Defense-in-depth: week_build.from_wcl ALSO rejects a non-covering log; this
+        # stops the wrong file being SELECTED in the first place.
+        _S = log_discovery.to_log_scale(rep0["startTime"]); _E = log_discovery.to_log_scale(rep0["endTime"])
+        _win = max(_E - _S, 1.0)
+        _cands = sorted(LOGS_DIR.glob("WoWCombatLog*.txt"), key=lambda p: p.stat().st_mtime, reverse=True)
+        for _p in _cands:
+            _rng = log_discovery.sniff_log_range(_p)
+            if _rng and (max(0.0, min(_E, _rng[1]) - max(_S, _rng[0])) / _win) >= log_discovery.MATCH_FLOOR:
+                log_path = str(_p)
+                print(f"  [LOG] using window-matched in logs/: {_p.name}")
+                break
+        else:
+            if _cands:
+                print(f"  [LOG] {len(_cands)} log(s) in logs/ but none cover the report window — building WCL-only")
 
     # Per-player crit baseline from history (gold-standard 'luck' = this week vs your own
     # multi-week average). Read from the SAME db the run will write to, excluding this report.

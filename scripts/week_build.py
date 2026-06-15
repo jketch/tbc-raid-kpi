@@ -67,6 +67,36 @@ def from_snapshot(path) -> dict:
     return json.loads(text)
 
 
+# ── Identity guard: a combat log must temporally COVER the report it overlays ────────────
+# TBC bosses repeat every raid night, so parse_combat_log's boss-NAME scope alone cannot reject a
+# same-boss log from a DIFFERENT week. A leftover log handed to the wrong report (main()'s logs/
+# fallback or backfill --log) would then overlay its log-only KPIs — MC, friendly fire, drums,
+# avoidable, death recaps — onto that week (the Jun-1-log-on-May-weeks contamination, 2026-06-14).
+# The TIME window catches what the name can't. Reuses log_discovery's date-anchored scale (the
+# discover_log path already proves the math). Fails CLOSED — a log we can't time-place must not merge.
+def _log_covers_report(log_path, report) -> bool:
+    """True iff the combat log at log_path covers ≥ MATCH_FLOOR of the report's time window.
+    A non-covering (wrong-week) or unsniffable log is REJECTED so the caller degrades to WCL-only
+    instead of silently merging fabricated log data."""
+    import log_discovery as ld
+    try:
+        S, E = ld.to_log_scale(report["startTime"]), ld.to_log_scale(report["endTime"])
+    except (KeyError, TypeError):
+        return True   # report carries no window (shouldn't happen via Q_REPORT) — don't block
+    window = max(E - S, 1.0)
+    name = Path(log_path).name
+    rng = ld.sniff_log_range(Path(log_path))
+    if not rng:
+        print(f"  [LOG] REJECTED {name}: unreadable timestamps — building WCL-only")
+        return False
+    overlap = max(0.0, min(E, rng[1]) - max(S, rng[0])) / window
+    if overlap < ld.MATCH_FLOOR:
+        print(f"  [LOG] REJECTED {name}: covers {overlap:.0%} of the report window "
+              f"(< {ld.MATCH_FLOOR:.0%}) — not this week's log; building WCL-only")
+        return False
+    return True
+
+
 # ── 2. The WCL producer (shared by main + backfill) ─────────────────────────────────────
 def from_wcl(report_code, token, *, log_path=None, report=None, history=None):
     """Build a mapped WEEK_DATA from WCL (+ optional combat log). Returns (mapped, raw, log_data).
@@ -77,7 +107,7 @@ def from_wcl(report_code, token, *, log_path=None, report=None, history=None):
     if report is None:
         report = W.gql(token, W.Q_REPORT, {"code": report_code})["reportData"]["report"]
     log_data = None
-    if log_path:
+    if log_path and _log_covers_report(log_path, report):
         allowed = {f["name"] for f in report["fights"] if f.get("kill")}
         log_data = W.parse_combat_log(log_path, allowed_bosses=allowed)
     raw = W.build_week_data(report_code, token,
