@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/webp" href="https://cdn.discordapp.com/icons/1307888102211059783/8c08590b680a233d639a5982a9f38b07.webp?size=1024">
 <title>{{DASHBOARD_TITLE}}</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -517,6 +516,78 @@
   .find-me button { background:none; border:none; color:var(--muted); cursor:pointer; font-size:15px; line-height:1; padding:0 3px; }
   .find-me button:hover { color:var(--text); }
   .cname.hl { background:rgba(200,155,60,.20); outline:1px solid var(--accent); border-radius:3px; padding:0 2px; font-weight:700; }
+
+  /* ════════ MOBILE / RESPONSIVE — additive; the desktop layout above is untouched ════════ */
+  /* Touch tooltip sheet: hover title= tooltips are unreachable on touch — tap any [title] to reveal it here
+     (handler near </script>). Gated to touch (hover:none), so desktop is unaffected. */
+  #mTooltip { position:fixed; left:12px; right:12px; bottom:-240px; z-index:300; background:var(--surface2);
+    border:1px solid var(--accent); color:var(--text); border-radius:10px; padding:12px 14px; font-size:13px;
+    line-height:1.45; box-shadow:0 8px 30px rgba(0,0,0,.6); opacity:0; max-height:52vh; overflow:auto;
+    transition:bottom .24s ease, opacity .24s ease; }
+  #mTooltip.show { bottom:14px; opacity:1; }
+  @media (hover:none){
+    [title]{ -webkit-tap-highlight-color:rgba(200,155,60,.22); }
+    .mini-table th[title] { text-decoration:underline dotted var(--muted); text-underline-offset:2px; }
+  }
+
+  @media (max-width:640px){
+    .main { padding:14px 12px 22px; }
+    .scroll-x, .scroll-y { -webkit-overflow-scrolling:touch; }
+    .scroll-y { max-height:none; }                 /* don't trap touch scroll / hide rows behind a nested scrollbar */
+    .card { padding:13px 12px; }
+    .section-label { font-size:13px; letter-spacing:.5px; margin:14px 0 9px; }
+
+    /* header → stacked; delta pills wrap full-width, left-aligned */
+    .header { flex-wrap:wrap; gap:12px; padding:14px 16px; }
+    .header-pills { margin-left:0; width:100%; justify-content:flex-start; }
+    .header-pills .pill { font-size:10.5px; padding:4px 10px; }
+
+    /* 7-tab nav → one sticky horizontal-scroll row (was wrapping to 3-4 rows, eating the short viewport) */
+    .tab-nav { flex-wrap:nowrap; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; gap:0; scrollbar-width:none; }
+    .tab-nav::-webkit-scrollbar { display:none; }
+    .tab-btn { flex:0 0 auto; white-space:nowrap; padding:11px 14px; }     /* ~40px tap target */
+    .find-me { margin-left:0; flex:0 0 auto; }
+    .find-me input { width:104px; }
+    .find-me button { font-size:18px; padding:4px 8px; }
+
+    /* tap-target floor on the small controls */
+    .pill, .pill.week-select { font-size:13px; min-height:40px; }
+    .pill.week-select { padding:9px 30px 9px 12px; background-position:calc(100% - 14px) 16px, calc(100% - 9px) 16px; }
+    .seg { max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .seg-btn { padding:9px 13px; font-size:11px; white-space:nowrap; }
+
+    /* grids collapse */
+    .grid-3, .grid-4 { grid-template-columns:1fr 1fr; }
+    .boss-grid { grid-template-columns:1fr 1fr; }
+    .boss-chips { padding-left:11px; }
+
+    /* wide tables: legibility bump + a sticky first (name/label) column so a right-scroll keeps context */
+    .mini-table { font-size:12.5px; }
+    .mini-table th { font-size:10.5px; }
+    .scroll-x .mini-table td:first-child, .scroll-x .mini-table th:first-child,
+    #debuffCoverage table td:first-child, #debuffCoverage table th:first-child,
+    #debuffRampSpeed table td:first-child, #debuffRampSpeed table th:first-child {
+      position:sticky; left:0; background:var(--surface); z-index:1; border-right:1px solid var(--border); }
+    .scroll-x .mini-table thead th, #debuffCoverage table thead th, #debuffRampSpeed table thead th { z-index:2; }
+    .scroll-x .mini-table thead th:first-child,
+    #debuffCoverage table thead th:first-child, #debuffRampSpeed table thead th:first-child { z-index:3; }
+    .scroll-x .mini-table tr:hover td:first-child { background:var(--surface2); }
+    /* DPS: hide the wide decorative bar column (col 2) so DPS / Uptime / Parse % surface without scrolling */
+    #dpsTable th:nth-child(2), #dpsTable td:nth-child(2) { display:none; }
+    /* Performance officer table: engage horizontal scroll instead of crushing the columns */
+    #perfTable { min-width:560px; }
+  }
+
+  @media (max-width:430px){
+    .grid-2, .grid-3, .grid-4 { grid-template-columns:1fr; }
+    .boss-grid { grid-template-columns:1fr; }
+    .boss-chips { padding-left:9px; }
+    .stat-row { display:grid; grid-template-columns:1fr 1fr; }
+    .stat-tile { min-width:0; }
+    .stat-tile .val { font-size:19px; }
+    .drill-overlay { padding:10px; }
+    .drill-x { font-size:24px; padding:4px 8px; margin:-4px -8px; }
+  }
 </style>
 <!-- Wowhead tooltips + auto-icons for loot items (item links → icon + quality color + hover card) -->
 <script>const whTooltips={colorLinks:true,iconizeLinks:true,renameLinks:false,iconSize:"small"};</script>
@@ -748,7 +819,7 @@
   <div class="card">
     <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_gem_diamond_06.jpg" alt=""> Enchants · Gems · Item Level</div>
     <div class="hs-sub">Every equipped slot's enchant and filled gems (socket counts from Wowhead). Surfaces anyone raiding with an un-enchanted slot or an empty socket. <span id="gearAuditHead"></span></div>
-    <div id="gearAudit" class="scroll-y"></div>
+    <div id="gearAudit" class="scroll-x scroll-y"></div>
   </div>
 
   <!-- ═══════════════ CRIT KPI + LUCK ═══════════════ -->
@@ -1392,7 +1463,7 @@ function renderDebuffCoverage(){
   const avgCells = slots.map((s,i) => cell(avg[s.key], s.soft, i, avgBg)).join("");
   const avgRow = `<tr style="border-top:2px solid var(--accent)"><td style="padding:7px 14px 7px 4px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);background:${avgBg}">Raid Avg</td>${avgCells}</tr>`;
 
-  el.innerHTML = `<table style="border-collapse:collapse;min-width:560px;margin:0 auto">
+  el.innerHTML = `<table style="border-collapse:collapse;min-width:560px">
     <thead>
       <tr><th></th>${catRow}</tr>
       <tr><th style="text-align:left;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:4px 14px 6px 4px">Boss</th>${iconRow}</tr>
@@ -1431,7 +1502,7 @@ function renderDebuffRampSpeed(){
       <td style="text-align:center;padding:6px 12px;font-size:11px;color:var(--muted)">${r.reached_count}/${r.total_bosses}</td>
     </tr>`;
   }).join("");
-  el.innerHTML = `<table style="border-collapse:collapse;min-width:480px;margin:0 auto">
+  el.innerHTML = `<table style="border-collapse:collapse;min-width:480px">
     <thead><tr style="color:var(--muted);font-size:10px;letter-spacing:.04em;text-transform:uppercase">
       <th style="text-align:left;padding:4px 12px 7px 4px">Debuff</th>
       <th style="padding:4px 12px 7px">Establish</th>
@@ -2142,7 +2213,7 @@ function renderGearAudit() {
       <td class="num">${p.ilvl}</td><td class="num">${ench}</td><td class="num">${gems}</td>
       <td style="font-size:11.5px">${status}</td></tr>`;
   };
-  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px">
+  el.innerHTML = `<table style="min-width:440px;width:100%;border-collapse:collapse;font-size:12px">
     <thead><tr style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;text-align:left">
       <th style="padding:4px 6px">Player</th><th class="num" style="padding:4px 6px">iLvl</th>
       <th class="num" style="padding:4px 6px">Enchants</th><th class="num" style="padding:4px 6px">Gems</th>
@@ -3513,6 +3584,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const _wk = new URLSearchParams(location.search).get("week");
   if (_wk && _wk !== _curWeek && (WEEKS_INDEX || []).some(w => w.report === _wk)) loadWeek(_wk);
 });
+
+// Touch: hover title= tooltips are invisible on a phone — tap a [title] element to reveal it in a bottom sheet.
+// Only fires on touch devices (hover:none) and skips interactive elements (so their own click still acts).
+(function(){
+  function showToast(msg){
+    let t = document.getElementById("mTooltip");
+    if (!t){ t = document.createElement("div"); t.id = "mTooltip"; document.body.appendChild(t); }
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => t.classList.remove("show"), 4500);
+  }
+  document.addEventListener("click", e => {
+    if (!matchMedia("(hover:none)").matches) return;
+    const el = e.target.closest("[title]");
+    if (!el || el.closest("[onclick],button,a,select,input,textarea,label")) return;  // let interactive elements act
+    const msg = (el.getAttribute("title") || "").trim();
+    if (msg) showToast(msg);
+  });
+})();
 </script>
 </body>
 </html>
