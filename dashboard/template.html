@@ -395,6 +395,8 @@
   /* ════════ HALL OF SHAME ════════ */
   .hs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
   .hs-grid .hs-wide { grid-column: 1 / -1; }
+  /* MC saves|liabilities: side-by-side when the card is wide enough, auto-stack when narrow (half-width / mobile) */
+  .mc-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
   @media (max-width: 900px){ .hs-grid { grid-template-columns: 1fr; } }
   .hs-sub { color: var(--dim); font-size: 12px; line-height: 1.5; margin: 2px 0 10px; }
   /* collapsible card descriptions — long ones clamp to 2 lines with a "read more" toggle (initCardDescriptions) */
@@ -699,27 +701,18 @@
       <div id="debuffRampSpeed" class="scroll-x"></div>
     </div>
 
-    <!-- ═══════ SUNDER ARMOR — per-warrior armor-debuff quality ═══════ -->
-    <div class="card">
-      <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/ability_warrior_sunder.jpg" alt=""> Sunder Armor — who built the stack</div>
-      <div class="hs-sub">Per-warrior Sunder Armor applications on bosses &amp; adds (WCL).
-        <b style="color:var(--physical)">Effective</b> = built a stack (1&rarr;5) ·
-        <b style="color:var(--accent)">Refreshed</b> = upkeep on an existing stack. Devastate counts too.</div>
-      <div id="sunderArmor" class="scroll-x"></div>
-    </div>
-
-    <!-- Healthstone compliance (paired with Debuff Coverage) -->
+    <!-- Healthstone compliance (now paired with Mind Control) -->
     <div class="card">
       <div class="card-title"><img src="https://wow.zamimg.com/images/wow/icons/large/inv_stone_04.jpg" alt="" style="width:15px;height:15px;border-radius:3px;vertical-align:-2px;margin-right:3px"> Panic Button — died without a stone</div>
       <div class="hs-sub">Raiders who died with an unused <b>healthstone</b> available.</div>
       <div id="healthstoneCard"></div>
     </div>
 
-    <!-- Mind Control (moved here) -->
-    <div class="card hs-wide">
+    <!-- Mind Control (half-width, paired with Panic Button; inner Saves/Liabilities auto-fit → stack when narrow) -->
+    <div class="card">
       <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_shadow_shadowworddominate.jpg" alt=""> Mind Control — saves &amp; liabilities</div>
       <div class="hs-sub"><b style="color:var(--green)">Saves</b> = CC'd a charmed ally to safety · <b style="color:var(--red)">Liabilities</b> = AoE landed on a charmed ally.</div>
-      <div class="grid-2" style="margin-top:8px">
+      <div class="mc-split" style="margin-top:8px">
         <div>
           <div style="font-weight:700;color:var(--green);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Saves</div>
           <div id="mcSaves"></div>
@@ -729,6 +722,15 @@
           <div id="mcLiable"></div>
         </div>
       </div>
+    </div>
+
+    <!-- ═══════ SUNDER ARMOR — full-width (the wide per-warrior table benefits from the room) ═══════ -->
+    <div class="card hs-wide">
+      <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/ability_warrior_sunder.jpg" alt=""> Sunder Armor — who built the stack</div>
+      <div class="hs-sub">Per-warrior Sunder Armor applications on bosses &amp; adds (WCL).
+        <b style="color:var(--physical)">Effective</b> = built a stack (1&rarr;5) ·
+        <b style="color:var(--accent)">Refreshed</b> = upkeep on an existing stack. Devastate counts too.</div>
+      <div id="sunderArmor" class="scroll-x"></div>
     </div>
 
   </div>
