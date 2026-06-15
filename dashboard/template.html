@@ -172,7 +172,7 @@
 
   /* ── BOSS SUMMARY TILES ── */
   .boss-zones { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  @media (max-width: 720px){ .boss-zones { grid-template-columns: 1fr; } }
+  @media (max-width: 1024px){ .boss-zones { grid-template-columns: 1fr; } }  /* stack the two zones below desktop so 3-col tiles never clip in the tablet band */
   .boss-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .boss-tile {
     background: var(--surface2);
@@ -530,10 +530,38 @@
     .mini-table th[title] { text-decoration:underline dotted var(--muted); text-underline-offset:2px; }
   }
 
+  /* ── Tablet & below (≤1024): touch ergonomics + collapses that also help tablets (phones inherit) ── */
+  @media (max-width:1024px){
+    .scroll-x, .scroll-y { -webkit-overflow-scrolling:touch; }
+    .scroll-y { max-height:none; }                 /* relax the nested vertical clamp — tablets are touch too */
+
+    /* 7-tab nav → one scrolling row instead of wrapping to 2 rows on a tablet */
+    .tab-nav { flex-wrap:nowrap; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; gap:2px; scrollbar-width:none; }
+    .tab-nav::-webkit-scrollbar { display:none; }
+    .tab-btn { flex:0 0 auto; white-space:nowrap; padding:10px 14px; }     /* ~38px tap target */
+    .find-me { margin-left:0; flex:0 0 auto; }
+    .seg-btn { padding:8px 12px; }
+    .pill.week-select { min-height:38px; padding:7px 28px 7px 12px; background-position:calc(100% - 13px) 15px, calc(100% - 8px) 15px; }
+
+    /* cohort scorecards: 4-up is too tight below desktop */
+    .grid-4 { grid-template-columns:1fr 1fr; }
+
+    /* wide tables: legibility + a sticky first (name/label) column so a right-scroll keeps context */
+    .mini-table { font-size:12.5px; }
+    .scroll-x .mini-table td:first-child, .scroll-x .mini-table th:first-child,
+    #debuffCoverage table td:first-child, #debuffCoverage table th:first-child,
+    #debuffRampSpeed table td:first-child, #debuffRampSpeed table th:first-child {
+      position:sticky; left:0; background:var(--surface); z-index:1; border-right:1px solid var(--border); }
+    .scroll-x .mini-table thead th, #debuffCoverage table thead th, #debuffRampSpeed table thead th { z-index:2; }
+    .scroll-x .mini-table thead th:first-child,
+    #debuffCoverage table thead th:first-child, #debuffRampSpeed table thead th:first-child { z-index:3; }
+    .scroll-x .mini-table tr:hover td:first-child { background:var(--surface2); }
+    #perfTable { min-width:560px; }
+  }
+
+  /* ── Phone (≤640): the squeeze — stack header, single-col cards, hide decorative columns ── */
   @media (max-width:640px){
     .main { padding:14px 12px 22px; }
-    .scroll-x, .scroll-y { -webkit-overflow-scrolling:touch; }
-    .scroll-y { max-height:none; }                 /* don't trap touch scroll / hide rows behind a nested scrollbar */
     .card { padding:13px 12px; }
     .section-label { font-size:13px; letter-spacing:.5px; margin:14px 0 9px; }
 
@@ -542,11 +570,7 @@
     .header-pills { margin-left:0; width:100%; justify-content:flex-start; }
     .header-pills .pill { font-size:10.5px; padding:4px 10px; }
 
-    /* 7-tab nav → one sticky horizontal-scroll row (was wrapping to 3-4 rows, eating the short viewport) */
-    .tab-nav { flex-wrap:nowrap; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; gap:0; scrollbar-width:none; }
-    .tab-nav::-webkit-scrollbar { display:none; }
-    .tab-btn { flex:0 0 auto; white-space:nowrap; padding:11px 14px; }     /* ~40px tap target */
-    .find-me { margin-left:0; flex:0 0 auto; }
+    .tab-btn { padding:11px 14px; }                /* a touch taller on a phone */
     .find-me input { width:104px; }
     .find-me button { font-size:18px; padding:4px 8px; }
 
@@ -556,28 +580,17 @@
     .seg { max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
     .seg-btn { padding:9px 13px; font-size:11px; white-space:nowrap; }
 
-    /* grids collapse */
-    .grid-3, .grid-4 { grid-template-columns:1fr 1fr; }
+    /* grids + boss tiles collapse further */
+    .grid-3 { grid-template-columns:1fr 1fr; }
     .boss-grid { grid-template-columns:1fr 1fr; }
     .boss-chips { padding-left:11px; }
 
-    /* wide tables: legibility bump + a sticky first (name/label) column so a right-scroll keeps context */
-    .mini-table { font-size:12.5px; }
     .mini-table th { font-size:10.5px; }
-    .scroll-x .mini-table td:first-child, .scroll-x .mini-table th:first-child,
-    #debuffCoverage table td:first-child, #debuffCoverage table th:first-child,
-    #debuffRampSpeed table td:first-child, #debuffRampSpeed table th:first-child {
-      position:sticky; left:0; background:var(--surface); z-index:1; border-right:1px solid var(--border); }
-    .scroll-x .mini-table thead th, #debuffCoverage table thead th, #debuffRampSpeed table thead th { z-index:2; }
-    .scroll-x .mini-table thead th:first-child,
-    #debuffCoverage table thead th:first-child, #debuffRampSpeed table thead th:first-child { z-index:3; }
-    .scroll-x .mini-table tr:hover td:first-child { background:var(--surface2); }
-    /* DPS: hide the wide decorative bar column (col 2) so DPS / Uptime / Parse % surface without scrolling */
+    /* DPS: hide the wide decorative bar column (col 2) so DPS / Uptime / Parse % surface (phone only) */
     #dpsTable th:nth-child(2), #dpsTable td:nth-child(2) { display:none; }
-    /* Performance officer table: engage horizontal scroll instead of crushing the columns */
-    #perfTable { min-width:560px; }
   }
 
+  /* ── Small phone (≤430): single-column everything ── */
   @media (max-width:430px){
     .grid-2, .grid-3, .grid-4 { grid-template-columns:1fr; }
     .boss-grid { grid-template-columns:1fr; }
