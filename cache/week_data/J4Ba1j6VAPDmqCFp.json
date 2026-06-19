@@ -8,35 +8,20 @@
     "log_missing": []
   },
   "roster": {
-    "Dmbp": {
-      "class": "Paladin",
-      "spec": "Justicar",
-      "role": "Tank"
-    },
     "Faeriefireqt": {
       "class": "Druid",
       "spec": "Warden",
+      "role": "Tank"
+    },
+    "Dmbp": {
+      "class": "Paladin",
+      "spec": "Justicar",
       "role": "Tank"
     },
     "Blunderdin": {
       "class": "Paladin",
       "spec": "Justicar",
       "role": "Tank"
-    },
-    "Pewpslurper": {
-      "class": "Druid",
-      "spec": "Restoration",
-      "role": "Healer"
-    },
-    "Shieldwagon": {
-      "class": "Priest",
-      "spec": "Holy",
-      "role": "Healer"
-    },
-    "Sweetheart": {
-      "class": "Priest",
-      "spec": "Holy",
-      "role": "Healer"
     },
     "Ohshiz": {
       "class": "Shaman",
@@ -48,34 +33,29 @@
       "spec": "Restoration",
       "role": "Healer"
     },
+    "Sweetheart": {
+      "class": "Priest",
+      "spec": "Holy",
+      "role": "Healer"
+    },
+    "Pewpslurper": {
+      "class": "Druid",
+      "spec": "Restoration",
+      "role": "Healer"
+    },
+    "Shieldwagon": {
+      "class": "Priest",
+      "spec": "Holy",
+      "role": "Healer"
+    },
     "Mmtoast": {
       "class": "Warrior",
       "spec": "Arms",
       "role": "Physical"
     },
-    "Alldorin": {
-      "class": "Warlock",
-      "spec": "Affliction",
-      "role": "Caster"
-    },
-    "Shovelpriest": {
-      "class": "Priest",
-      "spec": "Shadow",
-      "role": "Caster"
-    },
-    "Bahguul": {
-      "class": "Druid",
-      "spec": "Balance",
-      "role": "Caster"
-    },
-    "Feelsbaldman": {
+    "Boogiez": {
       "class": "Shaman",
-      "spec": "Elemental",
-      "role": "Caster"
-    },
-    "Mucoid": {
-      "class": "Hunter",
-      "spec": "BeastMastery",
+      "spec": "Enhancement",
       "role": "Physical"
     },
     "Zetla": {
@@ -83,7 +63,52 @@
       "spec": "Arcane",
       "role": "Caster"
     },
+    "Feelsbaldman": {
+      "class": "Shaman",
+      "spec": "Elemental",
+      "role": "Caster"
+    },
+    "Bahguul": {
+      "class": "Druid",
+      "spec": "Balance",
+      "role": "Caster"
+    },
+    "Jadyx": {
+      "class": "Hunter",
+      "spec": "BeastMastery",
+      "role": "Physical"
+    },
+    "Shovelpriest": {
+      "class": "Priest",
+      "spec": "Shadow",
+      "role": "Caster"
+    },
+    "Alldorin": {
+      "class": "Warlock",
+      "spec": "Affliction",
+      "role": "Caster"
+    },
+    "Marvels": {
+      "class": "Warlock",
+      "spec": "Destruction",
+      "role": "Caster"
+    },
+    "Juricc": {
+      "class": "Shaman",
+      "spec": "Enhancement",
+      "role": "Physical"
+    },
     "Skeptxo": {
+      "class": "Rogue",
+      "spec": "Combat",
+      "role": "Physical"
+    },
+    "Philliam": {
+      "class": "Paladin",
+      "spec": "Retribution",
+      "role": "Physical"
+    },
+    "Cindybrooke": {
       "class": "Rogue",
       "spec": "Combat",
       "role": "Physical"
@@ -93,14 +118,9 @@
       "spec": "Fury",
       "role": "Physical"
     },
-    "Cindybrooke": {
-      "class": "Rogue",
-      "spec": "Combat",
-      "role": "Physical"
-    },
-    "Juricc": {
-      "class": "Shaman",
-      "spec": "Enhancement",
+    "Mucoid": {
+      "class": "Hunter",
+      "spec": "BeastMastery",
       "role": "Physical"
     },
     "Zyph": {
@@ -108,30 +128,10 @@
       "spec": "BeastMastery",
       "role": "Physical"
     },
-    "Boogiez": {
-      "class": "Shaman",
-      "spec": "Enhancement",
-      "role": "Physical"
-    },
     "Cheesecurds": {
       "class": "Hunter",
       "spec": "Survival",
       "role": "Physical"
-    },
-    "Jadyx": {
-      "class": "Hunter",
-      "spec": "BeastMastery",
-      "role": "Physical"
-    },
-    "Philliam": {
-      "class": "Paladin",
-      "spec": "Retribution",
-      "role": "Physical"
-    },
-    "Marvels": {
-      "class": "Warlock",
-      "spec": "Destruction",
-      "role": "Caster"
     }
   },
   "consumables": [
@@ -10471,7 +10471,7 @@
       "fights_healed": 10,
       "fights_total": 10,
       "mana_eff": 5.8,
-      "vs_replacement": 82,
+      "vs_replacement": 81,
       "spells": [
         {
           "spell": "Circle of Healing",
@@ -10552,7 +10552,7 @@
       "fights_healed": 10,
       "fights_total": 10,
       "mana_eff": 5.5,
-      "vs_replacement": 50,
+      "vs_replacement": 49,
       "spells": [
         {
           "spell": "Flash Heal",
@@ -10633,7 +10633,7 @@
       "fights_healed": 10,
       "fights_total": 10,
       "mana_eff": 5.2,
-      "vs_replacement": 80,
+      "vs_replacement": 78,
       "spells": [
         {
           "spell": "Chain Heal",
@@ -10698,7 +10698,7 @@
       "fights_healed": 2,
       "fights_total": 10,
       "mana_eff": 3.9,
-      "vs_replacement": 32,
+      "vs_replacement": 31,
       "spells": [
         {
           "spell": "Healing Wave",
@@ -10901,7 +10901,7 @@
         "Leotheras the Blind": 40,
         "Lady Vashj": 25
       },
-      "vs_replacement": 66,
+      "vs_replacement": 65,
       "survival": {
         "score": 30,
         "flags": [
@@ -10964,7 +10964,7 @@
         "Leotheras the Blind": 33,
         "Lady Vashj": 7
       },
-      "vs_replacement": 81,
+      "vs_replacement": 80,
       "survival": {
         "score": 96,
         "flags": [
@@ -11044,7 +11044,7 @@
         "Leotheras the Blind": 6,
         "Lady Vashj": 6
       },
-      "vs_replacement": 65,
+      "vs_replacement": 64,
       "survival": {
         "score": 66,
         "flags": [
@@ -11055,6 +11055,130 @@
     }
   ],
   "roleSpells": {
+    "Tank": [
+      {
+        "ability": "Melee",
+        "casts": 2068,
+        "players": 3
+      },
+      {
+        "ability": "Lacerate",
+        "casts": 388,
+        "players": 1
+      },
+      {
+        "ability": "Maul",
+        "casts": 287,
+        "players": 1
+      },
+      {
+        "ability": "Judgment",
+        "casts": 280,
+        "players": 2
+      },
+      {
+        "ability": "Seal of Command",
+        "casts": 207,
+        "players": 1
+      },
+      {
+        "ability": "Mangle (Bear)",
+        "casts": 205,
+        "players": 1
+      },
+      {
+        "ability": "Seal of the Martyr",
+        "casts": 205,
+        "players": 1
+      },
+      {
+        "ability": "Crusader Strike",
+        "casts": 193,
+        "players": 1
+      },
+      {
+        "ability": "Seal of Righteousness",
+        "casts": 187,
+        "players": 1
+      },
+      {
+        "ability": "Consecration",
+        "casts": 117,
+        "players": 1
+      },
+      {
+        "ability": "Seals of Command",
+        "casts": 114,
+        "players": 1
+      },
+      {
+        "ability": "Swipe (Bear)",
+        "casts": 69,
+        "players": 1
+      }
+    ],
+    "Physical": [
+      {
+        "ability": "Melee",
+        "casts": 9924,
+        "players": 11
+      },
+      {
+        "ability": "Auto Shot",
+        "casts": 3320,
+        "players": 4
+      },
+      {
+        "ability": "Steady Shot",
+        "casts": 2438,
+        "players": 4
+      },
+      {
+        "ability": "Kill Command",
+        "casts": 948,
+        "players": 4
+      },
+      {
+        "ability": "Stormstrike",
+        "casts": 622,
+        "players": 2
+      },
+      {
+        "ability": "Arcane Shot",
+        "casts": 572,
+        "players": 4
+      },
+      {
+        "ability": "Sinister Strike",
+        "casts": 443,
+        "players": 2
+      },
+      {
+        "ability": "Heroic Strike",
+        "casts": 375,
+        "players": 1
+      },
+      {
+        "ability": "Multi-Shot",
+        "casts": 365,
+        "players": 4
+      },
+      {
+        "ability": "Stormstrike Off-Hand",
+        "casts": 300,
+        "players": 2
+      },
+      {
+        "ability": "Earth Shock",
+        "casts": 299,
+        "players": 2
+      },
+      {
+        "ability": "Slam",
+        "casts": 286,
+        "players": 1
+      }
+    ],
     "Healer": [
       {
         "ability": "Flash Heal",
@@ -11178,133 +11302,521 @@
         "casts": 101,
         "players": 1
       }
-    ],
+    ]
+  },
+  "playerSpells": {
     "Tank": [
       {
-        "ability": "Melee",
-        "casts": 2068,
-        "players": 3
+        "name": "Blunderdin",
+        "role": "Tank",
+        "total": 1520,
+        "abilities": [
+          {
+            "ability": "Melee",
+            "casts": 677,
+            "icon": "ability_meleedamage"
+          },
+          {
+            "ability": "Seal of Command",
+            "casts": 207,
+            "icon": "ability_warrior_innerrage"
+          },
+          {
+            "ability": "Seal of the Martyr",
+            "casts": 205,
+            "icon": "spell_holy_sealofblood"
+          },
+          {
+            "ability": "Crusader Strike",
+            "casts": 193,
+            "icon": "spell_holy_crusaderstrike"
+          },
+          {
+            "ability": "Judgment",
+            "casts": 124,
+            "icon": "spell_holy_righteousfury"
+          },
+          {
+            "ability": "Seals of Command",
+            "casts": 114,
+            "icon": "ability_warrior_innerrage"
+          }
+        ]
       },
       {
-        "ability": "Lacerate",
-        "casts": 388,
-        "players": 1
+        "name": "Dmbp",
+        "role": "Tank",
+        "total": 1478,
+        "abilities": [
+          {
+            "ability": "Melee",
+            "casts": 934,
+            "icon": "ability_meleedamage"
+          },
+          {
+            "ability": "Seal of Righteousness",
+            "casts": 187,
+            "icon": "ability_thunderbolt"
+          },
+          {
+            "ability": "Judgment",
+            "casts": 156,
+            "icon": "spell_holy_righteousfury"
+          },
+          {
+            "ability": "Consecration",
+            "casts": 117,
+            "icon": "spell_holy_innerfire"
+          },
+          {
+            "ability": "Holy Shield",
+            "casts": 66,
+            "icon": "classic_spell_holy_blessingofprotection"
+          },
+          {
+            "ability": "Hammer of Wrath",
+            "casts": 18,
+            "icon": "ability_thunderclap"
+          }
+        ]
       },
       {
-        "ability": "Maul",
-        "casts": 287,
-        "players": 1
-      },
-      {
-        "ability": "Judgment",
-        "casts": 280,
-        "players": 2
-      },
-      {
-        "ability": "Seal of Command",
-        "casts": 207,
-        "players": 1
-      },
-      {
-        "ability": "Seal of the Martyr",
-        "casts": 205,
-        "players": 1
-      },
-      {
-        "ability": "Mangle (Bear)",
-        "casts": 205,
-        "players": 1
-      },
-      {
-        "ability": "Crusader Strike",
-        "casts": 193,
-        "players": 1
-      },
-      {
-        "ability": "Seal of Righteousness",
-        "casts": 187,
-        "players": 1
-      },
-      {
-        "ability": "Consecration",
-        "casts": 117,
-        "players": 1
-      },
-      {
-        "ability": "Seals of Command",
-        "casts": 114,
-        "players": 1
-      },
-      {
-        "ability": "Swipe (Bear)",
-        "casts": 69,
-        "players": 1
+        "name": "Faeriefireqt",
+        "role": "Tank",
+        "total": 1465,
+        "abilities": [
+          {
+            "ability": "Melee",
+            "casts": 457,
+            "icon": "ability_meleedamage"
+          },
+          {
+            "ability": "Lacerate",
+            "casts": 388,
+            "icon": "ability_druid_lacerate"
+          },
+          {
+            "ability": "Maul",
+            "casts": 287,
+            "icon": "ability_druid_maul"
+          },
+          {
+            "ability": "Mangle (Bear)",
+            "casts": 205,
+            "icon": "ability_druid_mangle2"
+          },
+          {
+            "ability": "Swipe (Bear)",
+            "casts": 69,
+            "icon": "inv_misc_monsterclaw_03"
+          },
+          {
+            "ability": "Shred",
+            "casts": 59,
+            "icon": "spell_shadow_vampiricaura"
+          }
+        ]
       }
     ],
     "Physical": [
       {
-        "ability": "Melee",
-        "casts": 9924,
-        "players": 11
+        "name": "Cindybrooke",
+        "role": "Physical",
+        "total": 2949,
+        "abilities": [
+          {
+            "ability": "Melee",
+            "casts": 2343,
+            "icon": "ability_meleedamage"
+          },
+          {
+            "ability": "Sinister Strike",
+            "casts": 384,
+            "icon": "spell_shadow_ritualofsacrifice"
+          },
+          {
+            "ability": "Slice and Dice",
+            "casts": 105,
+            "icon": "ability_rogue_slicedice"
+          },
+          {
+            "ability": "Eviscerate",
+            "casts": 51,
+            "icon": "ability_rogue_eviscerate"
+          },
+          {
+            "ability": "Rupture",
+            "casts": 49,
+            "icon": "ability_rogue_rupture"
+          },
+          {
+            "ability": "Lust for Battle",
+            "casts": 17,
+            "icon": "spell_shadow_deathpact"
+          }
+        ]
       },
       {
-        "ability": "Auto Shot",
-        "casts": 3320,
-        "players": 4
+        "name": "Boogiez",
+        "role": "Physical",
+        "total": 2441,
+        "abilities": [
+          {
+            "ability": "Melee",
+            "casts": 1640,
+            "icon": "ability_meleedamage"
+          },
+          {
+            "ability": "Stormstrike",
+            "casts": 331,
+            "icon": "ability_shaman_stormstrike"
+          },
+          {
+            "ability": "Earth Shock",
+            "casts": 167,
+            "icon": "spell_nature_earthshock"
+          },
+          {
+            "ability": "Stormstrike Off-Hand",
+            "casts": 159,
+            "icon": "ability_shaman_stormstrike"
+          },
+          {
+            "ability": "Windfury Totem",
+            "casts": 144,
+            "icon": "spell_nature_windfury"
+          }
+        ]
       },
       {
-        "ability": "Steady Shot",
-        "casts": 2438,
-        "players": 4
+        "name": "Skeptxo",
+        "role": "Physical",
+        "total": 2331,
+        "abilities": [
+          {
+            "ability": "Melee",
+            "casts": 2102,
+            "icon": "ability_meleedamage"
+          },
+          {
+            "ability": "Slice and Dice",
+            "casts": 75,
+            "icon": "ability_rogue_slicedice"
+          },
+          {
+            "ability": "Sinister Strike",
+            "casts": 59,
+            "icon": "spell_shadow_ritualofsacrifice"
+          },
+          {
+            "ability": "Expose Armor",
+            "casts": 52,
+            "icon": "ability_warrior_riposte"
+          },
+          {
+            "ability": "Eviscerate",
+            "casts": 33,
+            "icon": "ability_rogue_eviscerate"
+          },
+          {
+            "ability": "Adrenaline Rush",
+            "casts": 10,
+            "icon": "spell_shadow_shadowworddominate"
+          }
+        ]
       },
       {
-        "ability": "Kill Command",
-        "casts": 948,
-        "players": 4
+        "name": "Juricc",
+        "role": "Physical",
+        "total": 2322,
+        "abilities": [
+          {
+            "ability": "Melee",
+            "casts": 1625,
+            "icon": "ability_meleedamage"
+          },
+          {
+            "ability": "Stormstrike",
+            "casts": 291,
+            "icon": "ability_shaman_stormstrike"
+          },
+          {
+            "ability": "Stormstrike Off-Hand",
+            "casts": 141,
+            "icon": "ability_shaman_stormstrike"
+          },
+          {
+            "ability": "Windfury Totem",
+            "casts": 133,
+            "icon": "spell_nature_windfury"
+          },
+          {
+            "ability": "Earth Shock",
+            "casts": 132,
+            "icon": "spell_nature_earthshock"
+          }
+        ]
       },
       {
-        "ability": "Stormstrike",
-        "casts": 622,
-        "players": 2
+        "name": "Cheesecurds",
+        "role": "Physical",
+        "total": 2071,
+        "abilities": [
+          {
+            "ability": "Auto Shot",
+            "casts": 865,
+            "icon": "ability_whirlwind"
+          },
+          {
+            "ability": "Steady Shot",
+            "casts": 535,
+            "icon": "ability_hunter_steadyshot"
+          },
+          {
+            "ability": "Kill Command",
+            "casts": 296,
+            "icon": "ability_hunter_killcommand"
+          },
+          {
+            "ability": "Arcane Shot",
+            "casts": 227,
+            "icon": "ability_impalingbolt"
+          },
+          {
+            "ability": "Multi-Shot",
+            "casts": 135,
+            "icon": "ability_upgrademoonglaive"
+          },
+          {
+            "ability": "Melee",
+            "casts": 13,
+            "icon": "ability_meleedamage"
+          }
+        ]
       },
       {
-        "ability": "Arcane Shot",
-        "casts": 572,
-        "players": 4
+        "name": "Jadyx",
+        "role": "Physical",
+        "total": 2016,
+        "abilities": [
+          {
+            "ability": "Steady Shot",
+            "casts": 889,
+            "icon": "ability_hunter_steadyshot"
+          },
+          {
+            "ability": "Auto Shot",
+            "casts": 769,
+            "icon": "ability_whirlwind"
+          },
+          {
+            "ability": "Kill Command",
+            "casts": 225,
+            "icon": "ability_hunter_killcommand"
+          },
+          {
+            "ability": "Arcane Shot",
+            "casts": 98,
+            "icon": "ability_impalingbolt"
+          },
+          {
+            "ability": "Multi-Shot",
+            "casts": 27,
+            "icon": "ability_upgrademoonglaive"
+          },
+          {
+            "ability": "Melee",
+            "casts": 8,
+            "icon": "ability_meleedamage"
+          }
+        ]
       },
       {
-        "ability": "Sinister Strike",
-        "casts": 443,
-        "players": 2
+        "name": "Areso",
+        "role": "Physical",
+        "total": 1931,
+        "abilities": [
+          {
+            "ability": "Melee",
+            "casts": 1082,
+            "icon": "ability_meleedamage"
+          },
+          {
+            "ability": "Heroic Strike",
+            "casts": 375,
+            "icon": "ability_rogue_ambush"
+          },
+          {
+            "ability": "Bloodthirst",
+            "casts": 190,
+            "icon": "spell_nature_bloodlust"
+          },
+          {
+            "ability": "Whirlwind",
+            "casts": 120,
+            "icon": "ability_gouge"
+          },
+          {
+            "ability": "Hamstring",
+            "casts": 111,
+            "icon": "ability_shockwave"
+          },
+          {
+            "ability": "Cleave",
+            "casts": 53,
+            "icon": "ability_warrior_cleave"
+          }
+        ]
       },
       {
-        "ability": "Heroic Strike",
-        "casts": 375,
-        "players": 1
+        "name": "Zyph",
+        "role": "Physical",
+        "total": 1894,
+        "abilities": [
+          {
+            "ability": "Auto Shot",
+            "casts": 927,
+            "icon": "ability_whirlwind"
+          },
+          {
+            "ability": "Steady Shot",
+            "casts": 489,
+            "icon": "ability_hunter_steadyshot"
+          },
+          {
+            "ability": "Kill Command",
+            "casts": 241,
+            "icon": "ability_hunter_killcommand"
+          },
+          {
+            "ability": "Arcane Shot",
+            "casts": 137,
+            "icon": "ability_impalingbolt"
+          },
+          {
+            "ability": "Multi-Shot",
+            "casts": 88,
+            "icon": "ability_upgrademoonglaive"
+          },
+          {
+            "ability": "Melee",
+            "casts": 12,
+            "icon": "ability_meleedamage"
+          }
+        ]
       },
       {
-        "ability": "Multi-Shot",
-        "casts": 365,
-        "players": 4
+        "name": "Mucoid",
+        "role": "Physical",
+        "total": 1696,
+        "abilities": [
+          {
+            "ability": "Auto Shot",
+            "casts": 759,
+            "icon": "ability_whirlwind"
+          },
+          {
+            "ability": "Steady Shot",
+            "casts": 525,
+            "icon": "ability_hunter_steadyshot"
+          },
+          {
+            "ability": "Kill Command",
+            "casts": 186,
+            "icon": "ability_hunter_killcommand"
+          },
+          {
+            "ability": "Multi-Shot",
+            "casts": 115,
+            "icon": "ability_upgrademoonglaive"
+          },
+          {
+            "ability": "Arcane Shot",
+            "casts": 110,
+            "icon": "ability_impalingbolt"
+          },
+          {
+            "ability": "Melee",
+            "casts": 1,
+            "icon": "ability_meleedamage"
+          }
+        ]
       },
       {
-        "ability": "Stormstrike Off-Hand",
-        "casts": 300,
-        "players": 2
+        "name": "Philliam",
+        "role": "Physical",
+        "total": 1340,
+        "abilities": [
+          {
+            "ability": "Melee",
+            "casts": 539,
+            "icon": "ability_meleedamage"
+          },
+          {
+            "ability": "Seal of Command",
+            "casts": 183,
+            "icon": "ability_warrior_innerrage"
+          },
+          {
+            "ability": "Judgment",
+            "casts": 181,
+            "icon": "spell_holy_righteousfury"
+          },
+          {
+            "ability": "Crusader Strike",
+            "casts": 164,
+            "icon": "spell_holy_crusaderstrike"
+          },
+          {
+            "ability": "Seal of the Martyr",
+            "casts": 160,
+            "icon": "spell_holy_sealofblood"
+          },
+          {
+            "ability": "Seals of Command",
+            "casts": 113,
+            "icon": "ability_warrior_innerrage"
+          }
+        ]
       },
       {
-        "ability": "Earth Shock",
-        "casts": 299,
-        "players": 2
-      },
-      {
-        "ability": "Slam",
-        "casts": 286,
-        "players": 1
+        "name": "Mmtoast",
+        "role": "Physical",
+        "total": 1211,
+        "abilities": [
+          {
+            "ability": "Melee",
+            "casts": 559,
+            "icon": "ability_meleedamage"
+          },
+          {
+            "ability": "Slam",
+            "casts": 286,
+            "icon": "ability_warrior_decisivestrike"
+          },
+          {
+            "ability": "Mortal Strike",
+            "casts": 190,
+            "icon": "ability_warrior_savageblow"
+          },
+          {
+            "ability": "Whirlwind",
+            "casts": 100,
+            "icon": "ability_gouge"
+          },
+          {
+            "ability": "Demoralizing Shout",
+            "casts": 50,
+            "icon": "ability_warrior_warcry"
+          },
+          {
+            "ability": "Bloodrage",
+            "casts": 26,
+            "icon": "ability_racial_bloodrage"
+          }
+        ]
       }
-    ]
-  },
-  "playerSpells": {
+    ],
     "Healer": [
       {
         "name": "Sweetheart",
@@ -11657,518 +12169,6 @@
             "ability": "Blessing of the Silver Crescent",
             "casts": 13,
             "icon": "inv_trinket_naxxramas06"
-          }
-        ]
-      }
-    ],
-    "Tank": [
-      {
-        "name": "Blunderdin",
-        "role": "Tank",
-        "total": 1520,
-        "abilities": [
-          {
-            "ability": "Melee",
-            "casts": 677,
-            "icon": "ability_meleedamage"
-          },
-          {
-            "ability": "Seal of Command",
-            "casts": 207,
-            "icon": "ability_warrior_innerrage"
-          },
-          {
-            "ability": "Seal of the Martyr",
-            "casts": 205,
-            "icon": "spell_holy_sealofblood"
-          },
-          {
-            "ability": "Crusader Strike",
-            "casts": 193,
-            "icon": "spell_holy_crusaderstrike"
-          },
-          {
-            "ability": "Judgment",
-            "casts": 124,
-            "icon": "spell_holy_righteousfury"
-          },
-          {
-            "ability": "Seals of Command",
-            "casts": 114,
-            "icon": "ability_warrior_innerrage"
-          }
-        ]
-      },
-      {
-        "name": "Dmbp",
-        "role": "Tank",
-        "total": 1478,
-        "abilities": [
-          {
-            "ability": "Melee",
-            "casts": 934,
-            "icon": "ability_meleedamage"
-          },
-          {
-            "ability": "Seal of Righteousness",
-            "casts": 187,
-            "icon": "ability_thunderbolt"
-          },
-          {
-            "ability": "Judgment",
-            "casts": 156,
-            "icon": "spell_holy_righteousfury"
-          },
-          {
-            "ability": "Consecration",
-            "casts": 117,
-            "icon": "spell_holy_innerfire"
-          },
-          {
-            "ability": "Holy Shield",
-            "casts": 66,
-            "icon": "classic_spell_holy_blessingofprotection"
-          },
-          {
-            "ability": "Righteous Defense",
-            "casts": 18,
-            "icon": "inv_shoulder_37"
-          }
-        ]
-      },
-      {
-        "name": "Faeriefireqt",
-        "role": "Tank",
-        "total": 1465,
-        "abilities": [
-          {
-            "ability": "Melee",
-            "casts": 457,
-            "icon": "ability_meleedamage"
-          },
-          {
-            "ability": "Lacerate",
-            "casts": 388,
-            "icon": "ability_druid_lacerate"
-          },
-          {
-            "ability": "Maul",
-            "casts": 287,
-            "icon": "ability_druid_maul"
-          },
-          {
-            "ability": "Mangle (Bear)",
-            "casts": 205,
-            "icon": "ability_druid_mangle2"
-          },
-          {
-            "ability": "Swipe (Bear)",
-            "casts": 69,
-            "icon": "inv_misc_monsterclaw_03"
-          },
-          {
-            "ability": "Shred",
-            "casts": 59,
-            "icon": "spell_shadow_vampiricaura"
-          }
-        ]
-      }
-    ],
-    "Physical": [
-      {
-        "name": "Cindybrooke",
-        "role": "Physical",
-        "total": 2949,
-        "abilities": [
-          {
-            "ability": "Melee",
-            "casts": 2343,
-            "icon": "ability_meleedamage"
-          },
-          {
-            "ability": "Sinister Strike",
-            "casts": 384,
-            "icon": "spell_shadow_ritualofsacrifice"
-          },
-          {
-            "ability": "Slice and Dice",
-            "casts": 105,
-            "icon": "ability_rogue_slicedice"
-          },
-          {
-            "ability": "Eviscerate",
-            "casts": 51,
-            "icon": "ability_rogue_eviscerate"
-          },
-          {
-            "ability": "Rupture",
-            "casts": 49,
-            "icon": "ability_rogue_rupture"
-          },
-          {
-            "ability": "Lust for Battle",
-            "casts": 17,
-            "icon": "spell_shadow_deathpact"
-          }
-        ]
-      },
-      {
-        "name": "Boogiez",
-        "role": "Physical",
-        "total": 2441,
-        "abilities": [
-          {
-            "ability": "Melee",
-            "casts": 1640,
-            "icon": "ability_meleedamage"
-          },
-          {
-            "ability": "Stormstrike",
-            "casts": 331,
-            "icon": "ability_shaman_stormstrike"
-          },
-          {
-            "ability": "Earth Shock",
-            "casts": 167,
-            "icon": "spell_nature_earthshock"
-          },
-          {
-            "ability": "Stormstrike Off-Hand",
-            "casts": 159,
-            "icon": "ability_shaman_stormstrike"
-          },
-          {
-            "ability": "Grace of Air Totem",
-            "casts": 144,
-            "icon": "spell_nature_invisibilitytotem"
-          }
-        ]
-      },
-      {
-        "name": "Skeptxo",
-        "role": "Physical",
-        "total": 2331,
-        "abilities": [
-          {
-            "ability": "Melee",
-            "casts": 2102,
-            "icon": "ability_meleedamage"
-          },
-          {
-            "ability": "Slice and Dice",
-            "casts": 75,
-            "icon": "ability_rogue_slicedice"
-          },
-          {
-            "ability": "Sinister Strike",
-            "casts": 59,
-            "icon": "spell_shadow_ritualofsacrifice"
-          },
-          {
-            "ability": "Expose Armor",
-            "casts": 52,
-            "icon": "ability_warrior_riposte"
-          },
-          {
-            "ability": "Eviscerate",
-            "casts": 33,
-            "icon": "ability_rogue_eviscerate"
-          },
-          {
-            "ability": "Adrenaline Rush",
-            "casts": 10,
-            "icon": "spell_shadow_shadowworddominate"
-          }
-        ]
-      },
-      {
-        "name": "Juricc",
-        "role": "Physical",
-        "total": 2322,
-        "abilities": [
-          {
-            "ability": "Melee",
-            "casts": 1625,
-            "icon": "ability_meleedamage"
-          },
-          {
-            "ability": "Stormstrike",
-            "casts": 291,
-            "icon": "ability_shaman_stormstrike"
-          },
-          {
-            "ability": "Stormstrike Off-Hand",
-            "casts": 141,
-            "icon": "ability_shaman_stormstrike"
-          },
-          {
-            "ability": "Windfury Totem",
-            "casts": 133,
-            "icon": "spell_nature_windfury"
-          },
-          {
-            "ability": "Earth Shock",
-            "casts": 132,
-            "icon": "spell_nature_earthshock"
-          }
-        ]
-      },
-      {
-        "name": "Cheesecurds",
-        "role": "Physical",
-        "total": 2071,
-        "abilities": [
-          {
-            "ability": "Auto Shot",
-            "casts": 865,
-            "icon": "ability_whirlwind"
-          },
-          {
-            "ability": "Steady Shot",
-            "casts": 535,
-            "icon": "ability_hunter_steadyshot"
-          },
-          {
-            "ability": "Kill Command",
-            "casts": 296,
-            "icon": "ability_hunter_killcommand"
-          },
-          {
-            "ability": "Arcane Shot",
-            "casts": 227,
-            "icon": "ability_impalingbolt"
-          },
-          {
-            "ability": "Multi-Shot",
-            "casts": 135,
-            "icon": "ability_upgrademoonglaive"
-          },
-          {
-            "ability": "Melee",
-            "casts": 13,
-            "icon": "ability_meleedamage"
-          }
-        ]
-      },
-      {
-        "name": "Jadyx",
-        "role": "Physical",
-        "total": 2016,
-        "abilities": [
-          {
-            "ability": "Steady Shot",
-            "casts": 889,
-            "icon": "ability_hunter_steadyshot"
-          },
-          {
-            "ability": "Auto Shot",
-            "casts": 769,
-            "icon": "ability_whirlwind"
-          },
-          {
-            "ability": "Kill Command",
-            "casts": 225,
-            "icon": "ability_hunter_killcommand"
-          },
-          {
-            "ability": "Arcane Shot",
-            "casts": 98,
-            "icon": "ability_impalingbolt"
-          },
-          {
-            "ability": "Multi-Shot",
-            "casts": 27,
-            "icon": "ability_upgrademoonglaive"
-          },
-          {
-            "ability": "Melee",
-            "casts": 8,
-            "icon": "ability_meleedamage"
-          }
-        ]
-      },
-      {
-        "name": "Areso",
-        "role": "Physical",
-        "total": 1931,
-        "abilities": [
-          {
-            "ability": "Melee",
-            "casts": 1082,
-            "icon": "ability_meleedamage"
-          },
-          {
-            "ability": "Heroic Strike",
-            "casts": 375,
-            "icon": "ability_rogue_ambush"
-          },
-          {
-            "ability": "Bloodthirst",
-            "casts": 190,
-            "icon": "spell_nature_bloodlust"
-          },
-          {
-            "ability": "Whirlwind",
-            "casts": 120,
-            "icon": "ability_gouge"
-          },
-          {
-            "ability": "Hamstring",
-            "casts": 111,
-            "icon": "ability_shockwave"
-          },
-          {
-            "ability": "Cleave",
-            "casts": 53,
-            "icon": "ability_warrior_cleave"
-          }
-        ]
-      },
-      {
-        "name": "Zyph",
-        "role": "Physical",
-        "total": 1894,
-        "abilities": [
-          {
-            "ability": "Auto Shot",
-            "casts": 927,
-            "icon": "ability_whirlwind"
-          },
-          {
-            "ability": "Steady Shot",
-            "casts": 489,
-            "icon": "ability_hunter_steadyshot"
-          },
-          {
-            "ability": "Kill Command",
-            "casts": 241,
-            "icon": "ability_hunter_killcommand"
-          },
-          {
-            "ability": "Arcane Shot",
-            "casts": 137,
-            "icon": "ability_impalingbolt"
-          },
-          {
-            "ability": "Multi-Shot",
-            "casts": 88,
-            "icon": "ability_upgrademoonglaive"
-          },
-          {
-            "ability": "Melee",
-            "casts": 12,
-            "icon": "ability_meleedamage"
-          }
-        ]
-      },
-      {
-        "name": "Mucoid",
-        "role": "Physical",
-        "total": 1696,
-        "abilities": [
-          {
-            "ability": "Auto Shot",
-            "casts": 759,
-            "icon": "ability_whirlwind"
-          },
-          {
-            "ability": "Steady Shot",
-            "casts": 525,
-            "icon": "ability_hunter_steadyshot"
-          },
-          {
-            "ability": "Kill Command",
-            "casts": 186,
-            "icon": "ability_hunter_killcommand"
-          },
-          {
-            "ability": "Multi-Shot",
-            "casts": 115,
-            "icon": "ability_upgrademoonglaive"
-          },
-          {
-            "ability": "Arcane Shot",
-            "casts": 110,
-            "icon": "ability_impalingbolt"
-          },
-          {
-            "ability": "Melee",
-            "casts": 1,
-            "icon": "ability_meleedamage"
-          }
-        ]
-      },
-      {
-        "name": "Philliam",
-        "role": "Physical",
-        "total": 1340,
-        "abilities": [
-          {
-            "ability": "Melee",
-            "casts": 539,
-            "icon": "ability_meleedamage"
-          },
-          {
-            "ability": "Seal of Command",
-            "casts": 183,
-            "icon": "ability_warrior_innerrage"
-          },
-          {
-            "ability": "Judgment",
-            "casts": 181,
-            "icon": "spell_holy_righteousfury"
-          },
-          {
-            "ability": "Crusader Strike",
-            "casts": 164,
-            "icon": "spell_holy_crusaderstrike"
-          },
-          {
-            "ability": "Seal of the Martyr",
-            "casts": 160,
-            "icon": "spell_holy_sealofblood"
-          },
-          {
-            "ability": "Seals of Command",
-            "casts": 113,
-            "icon": "ability_warrior_innerrage"
-          }
-        ]
-      },
-      {
-        "name": "Mmtoast",
-        "role": "Physical",
-        "total": 1211,
-        "abilities": [
-          {
-            "ability": "Melee",
-            "casts": 559,
-            "icon": "ability_meleedamage"
-          },
-          {
-            "ability": "Slam",
-            "casts": 286,
-            "icon": "ability_warrior_decisivestrike"
-          },
-          {
-            "ability": "Mortal Strike",
-            "casts": 190,
-            "icon": "ability_warrior_savageblow"
-          },
-          {
-            "ability": "Whirlwind",
-            "casts": 100,
-            "icon": "ability_gouge"
-          },
-          {
-            "ability": "Demoralizing Shout",
-            "casts": 50,
-            "icon": "ability_warrior_warcry"
-          },
-          {
-            "ability": "Bloodrage",
-            "casts": 26,
-            "icon": "ability_racial_bloodrage"
           }
         ]
       }
@@ -12574,11 +12574,11 @@
       "total_dmg": 2642128,
       "active_pct": 80.2,
       "toolkit": {
-        "label": "Windfury",
-        "value": "144",
-        "title": "Windfury Totem drops · 144 Grace of Air · 279 WF↔GoA swaps (twisting) · 1 Bloodlust",
+        "label": "WF uptime",
+        "value": "~100%",
+        "title": "Windfury Totem uptime — modeled from recast cadence (144 drops; totem buffs aren't logged as auras in 2.5) · 144 Grace of Air · 279 WF↔GoA swaps (twisting → WF intentionally down for GoA) · 1 Bloodlust",
         "icon": "spell_nature_windfury",
-        "num": 144,
+        "num": 100.0,
         "tag": "🌀 twist"
       },
       "uptime_by_fight": [
@@ -12683,11 +12683,11 @@
       "total_dmg": 2551479,
       "active_pct": 75.6,
       "toolkit": {
-        "label": "Windfury",
-        "value": "133",
-        "title": "Windfury Totem drops · 118 Grace of Air · 234 WF↔GoA swaps (twisting) · 1 Bloodlust",
+        "label": "WF uptime",
+        "value": "~100%",
+        "title": "Windfury Totem uptime — modeled from recast cadence (133 drops; totem buffs aren't logged as auras in 2.5) · 118 Grace of Air · 234 WF↔GoA swaps (twisting → WF intentionally down for GoA) · 1 Bloodlust",
         "icon": "spell_nature_windfury",
-        "num": 133,
+        "num": 100.0,
         "tag": "🌀 twist"
       },
       "uptime_by_fight": [
@@ -16507,6 +16507,320 @@
       ]
     },
     {
+      "name": "Juricc",
+      "role": "Physical",
+      "total": 6,
+      "trash": 5,
+      "recap": [
+        {
+          "boss": "Trash",
+          "killer": "Saw Blade",
+          "amount": 501,
+          "overkill": 1578,
+          "window_dmg": 12047,
+          "window_heal": 0,
+          "window_s": 2.3,
+          "timeline": [
+            {
+              "t": -1.3,
+              "type": "dmg",
+              "amt": 3219,
+              "over": 0,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic"
+            },
+            {
+              "t": -0.4,
+              "type": "dmg",
+              "amt": 3763,
+              "over": 0,
+              "ability": "Shell Shock",
+              "src": "Tempest-Smith"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 501,
+              "over": 1578,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Saw Blade",
+          "amount": 122,
+          "overkill": 229,
+          "window_dmg": 10698,
+          "window_heal": 0,
+          "window_s": 5.3,
+          "timeline": [
+            {
+              "t": -0.1,
+              "type": "dmg",
+              "amt": 3987,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Crystalcore Devastator"
+            },
+            {
+              "t": -0.0,
+              "type": "dmg",
+              "amt": 1102,
+              "over": 0,
+              "ability": "Countercharge",
+              "src": "Crystalcore Devastator"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 122,
+              "over": 229,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 4829,
+          "overkill": 424,
+          "window_dmg": 18887,
+          "window_heal": 7994,
+          "window_s": 8.4,
+          "timeline": [
+            {
+              "t": -2.3,
+              "type": "dmg",
+              "amt": 4427,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Crimson Hand Centurion"
+            },
+            {
+              "t": -0.3,
+              "type": "dmg",
+              "amt": 169,
+              "over": 0,
+              "ability": "Blizzard",
+              "src": "Crimson Hand Battle Mage"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 4829,
+              "over": 424,
+              "ability": "Melee",
+              "src": "Crimson Hand Centurion",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Whirlwind",
+          "amount": 6334,
+          "overkill": 215,
+          "window_dmg": 12926,
+          "window_heal": 2242,
+          "window_s": 1.0,
+          "timeline": [
+            {
+              "t": -1.0,
+              "type": "dmg",
+              "amt": 6377,
+              "over": 0,
+              "ability": "Whirlwind",
+              "src": "Bloodwarder Marshal"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 6334,
+              "over": 215,
+              "ability": "Whirlwind",
+              "src": "Bloodwarder Marshal",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Water Bolt Volley",
+          "amount": 833,
+          "overkill": 1811,
+          "window_dmg": 13118,
+          "window_heal": 838,
+          "window_s": 29.6,
+          "timeline": [
+            {
+              "t": -4.3,
+              "type": "dmg",
+              "amt": 2730,
+              "over": 0,
+              "ability": "Arcane Volley",
+              "src": "Greyheart Nether-Mage"
+            },
+            {
+              "t": -3.4,
+              "type": "dmg",
+              "amt": 2448,
+              "over": 0,
+              "ability": "Frost Nova",
+              "src": "Serpentshrine Tidecaller"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 833,
+              "over": 1811,
+              "ability": "Water Bolt Volley",
+              "src": "Serpentshrine Tidecaller",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Lady Vashj",
+          "killer": "Shoot",
+          "amount": 8494,
+          "overkill": 578,
+          "window_dmg": 22244,
+          "window_heal": 11197,
+          "window_s": 8.4,
+          "timeline": [
+            {
+              "t": -2.4,
+              "type": "dmg",
+              "amt": 1881,
+              "over": 0,
+              "ability": "Static Charge",
+              "src": "Juricc"
+            },
+            {
+              "t": -0.4,
+              "type": "dmg",
+              "amt": 1711,
+              "over": 0,
+              "ability": "Static Charge",
+              "src": "Juricc"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 8494,
+              "over": 578,
+              "ability": "Shoot",
+              "src": "Lady Vashj",
+              "killing": true
+            }
+          ],
+          "hp_timeline": [
+            {
+              "t": -11.9,
+              "hp": 69,
+              "kind": "heal"
+            },
+            {
+              "t": -10.5,
+              "hp": 52,
+              "kind": "dmg"
+            },
+            {
+              "t": -10.4,
+              "hp": 90,
+              "kind": "heal"
+            },
+            {
+              "t": -9.4,
+              "hp": 100,
+              "kind": "heal"
+            },
+            {
+              "t": -8.5,
+              "hp": 84,
+              "kind": "dmg"
+            },
+            {
+              "t": -7.4,
+              "hp": 91,
+              "kind": "hot"
+            },
+            {
+              "t": -6.5,
+              "hp": 74,
+              "kind": "dmg"
+            },
+            {
+              "t": -4.7,
+              "hp": 32,
+              "kind": "dmg"
+            },
+            {
+              "t": -4.5,
+              "hp": 15,
+              "kind": "dmg"
+            },
+            {
+              "t": -4.4,
+              "hp": 22,
+              "kind": "hot"
+            },
+            {
+              "t": -3.0,
+              "hp": 36,
+              "kind": "heal"
+            },
+            {
+              "t": -2.6,
+              "hp": 62,
+              "kind": "heal"
+            },
+            {
+              "t": -2.5,
+              "hp": 44,
+              "kind": "dmg"
+            },
+            {
+              "t": -2.4,
+              "hp": 67,
+              "kind": "heal"
+            },
+            {
+              "t": -1.4,
+              "hp": 74,
+              "kind": "hot"
+            },
+            {
+              "t": -1.0,
+              "hp": 84,
+              "kind": "heal"
+            },
+            {
+              "t": -1.0,
+              "hp": 97,
+              "kind": "heal"
+            },
+            {
+              "t": -0.5,
+              "hp": 81,
+              "kind": "dmg"
+            },
+            {
+              "t": -0.0,
+              "hp": 0,
+              "kind": "dmg",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Areso",
       "role": "Physical",
       "total": 6,
@@ -16997,622 +17311,6 @@
       ]
     },
     {
-      "name": "Juricc",
-      "role": "Physical",
-      "total": 6,
-      "trash": 5,
-      "recap": [
-        {
-          "boss": "Trash",
-          "killer": "Saw Blade",
-          "amount": 501,
-          "overkill": 1578,
-          "window_dmg": 12047,
-          "window_heal": 0,
-          "window_s": 2.3,
-          "timeline": [
-            {
-              "t": -1.3,
-              "type": "dmg",
-              "amt": 3219,
-              "over": 0,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic"
-            },
-            {
-              "t": -0.4,
-              "type": "dmg",
-              "amt": 3763,
-              "over": 0,
-              "ability": "Shell Shock",
-              "src": "Tempest-Smith"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 501,
-              "over": 1578,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Saw Blade",
-          "amount": 122,
-          "overkill": 229,
-          "window_dmg": 10698,
-          "window_heal": 0,
-          "window_s": 5.3,
-          "timeline": [
-            {
-              "t": -0.1,
-              "type": "dmg",
-              "amt": 3987,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Crystalcore Devastator"
-            },
-            {
-              "t": -0.0,
-              "type": "dmg",
-              "amt": 1102,
-              "over": 0,
-              "ability": "Countercharge",
-              "src": "Crystalcore Devastator"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 122,
-              "over": 229,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 4829,
-          "overkill": 424,
-          "window_dmg": 18887,
-          "window_heal": 7994,
-          "window_s": 8.4,
-          "timeline": [
-            {
-              "t": -2.3,
-              "type": "dmg",
-              "amt": 4427,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Crimson Hand Centurion"
-            },
-            {
-              "t": -0.3,
-              "type": "dmg",
-              "amt": 169,
-              "over": 0,
-              "ability": "Blizzard",
-              "src": "Crimson Hand Battle Mage"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 4829,
-              "over": 424,
-              "ability": "Melee",
-              "src": "Crimson Hand Centurion",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Whirlwind",
-          "amount": 6334,
-          "overkill": 215,
-          "window_dmg": 12926,
-          "window_heal": 2242,
-          "window_s": 1.0,
-          "timeline": [
-            {
-              "t": -1.0,
-              "type": "dmg",
-              "amt": 6377,
-              "over": 0,
-              "ability": "Whirlwind",
-              "src": "Bloodwarder Marshal"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 6334,
-              "over": 215,
-              "ability": "Whirlwind",
-              "src": "Bloodwarder Marshal",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Water Bolt Volley",
-          "amount": 833,
-          "overkill": 1811,
-          "window_dmg": 13118,
-          "window_heal": 838,
-          "window_s": 29.6,
-          "timeline": [
-            {
-              "t": -4.3,
-              "type": "dmg",
-              "amt": 2730,
-              "over": 0,
-              "ability": "Arcane Volley",
-              "src": "Greyheart Nether-Mage"
-            },
-            {
-              "t": -3.4,
-              "type": "dmg",
-              "amt": 2448,
-              "over": 0,
-              "ability": "Frost Nova",
-              "src": "Serpentshrine Tidecaller"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 833,
-              "over": 1811,
-              "ability": "Water Bolt Volley",
-              "src": "Serpentshrine Tidecaller",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Lady Vashj",
-          "killer": "Shoot",
-          "amount": 8494,
-          "overkill": 578,
-          "window_dmg": 22244,
-          "window_heal": 11197,
-          "window_s": 8.4,
-          "timeline": [
-            {
-              "t": -2.4,
-              "type": "dmg",
-              "amt": 1881,
-              "over": 0,
-              "ability": "Static Charge",
-              "src": "Juricc"
-            },
-            {
-              "t": -0.4,
-              "type": "dmg",
-              "amt": 1711,
-              "over": 0,
-              "ability": "Static Charge",
-              "src": "Juricc"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 8494,
-              "over": 578,
-              "ability": "Shoot",
-              "src": "Lady Vashj",
-              "killing": true
-            }
-          ],
-          "hp_timeline": [
-            {
-              "t": -11.9,
-              "hp": 69,
-              "kind": "heal"
-            },
-            {
-              "t": -10.5,
-              "hp": 52,
-              "kind": "dmg"
-            },
-            {
-              "t": -10.4,
-              "hp": 90,
-              "kind": "heal"
-            },
-            {
-              "t": -9.4,
-              "hp": 100,
-              "kind": "heal"
-            },
-            {
-              "t": -8.5,
-              "hp": 84,
-              "kind": "dmg"
-            },
-            {
-              "t": -7.4,
-              "hp": 91,
-              "kind": "hot"
-            },
-            {
-              "t": -6.5,
-              "hp": 74,
-              "kind": "dmg"
-            },
-            {
-              "t": -4.7,
-              "hp": 32,
-              "kind": "dmg"
-            },
-            {
-              "t": -4.5,
-              "hp": 15,
-              "kind": "dmg"
-            },
-            {
-              "t": -4.4,
-              "hp": 22,
-              "kind": "hot"
-            },
-            {
-              "t": -3.0,
-              "hp": 36,
-              "kind": "heal"
-            },
-            {
-              "t": -2.6,
-              "hp": 62,
-              "kind": "heal"
-            },
-            {
-              "t": -2.5,
-              "hp": 44,
-              "kind": "dmg"
-            },
-            {
-              "t": -2.4,
-              "hp": 67,
-              "kind": "heal"
-            },
-            {
-              "t": -1.4,
-              "hp": 74,
-              "kind": "hot"
-            },
-            {
-              "t": -1.0,
-              "hp": 84,
-              "kind": "heal"
-            },
-            {
-              "t": -1.0,
-              "hp": 97,
-              "kind": "heal"
-            },
-            {
-              "t": -0.5,
-              "hp": 81,
-              "kind": "dmg"
-            },
-            {
-              "t": -0.0,
-              "hp": 0,
-              "kind": "dmg",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Pewpslurper",
-      "role": "Healer",
-      "total": 5,
-      "trash": 4,
-      "recap": [
-        {
-          "boss": "Trash",
-          "killer": "Hammer of Wrath",
-          "amount": 1573,
-          "overkill": 2504,
-          "window_dmg": 12439,
-          "window_heal": 1291,
-          "window_s": 7.5,
-          "timeline": [
-            {
-              "t": -5.1,
-              "type": "dmg",
-              "amt": 2779,
-              "over": 0,
-              "ability": "Fireball Volley",
-              "src": "Astromancer"
-            },
-            {
-              "t": -3.5,
-              "type": "dmg",
-              "amt": 2579,
-              "over": 0,
-              "ability": "Fireball Volley",
-              "src": "Astromancer"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 1573,
-              "over": 2504,
-              "ability": "Hammer of Wrath",
-              "src": "Bloodwarder Vindicator",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Al'ar",
-          "killer": "Flame Patch",
-          "amount": 2265,
-          "overkill": 666,
-          "window_dmg": 8190,
-          "window_heal": 0,
-          "window_s": 2.0,
-          "timeline": [
-            {
-              "t": -2.0,
-              "type": "dmg",
-              "amt": 2297,
-              "over": 0,
-              "ability": "Flame Patch",
-              "src": "—"
-            },
-            {
-              "t": -1.0,
-              "type": "dmg",
-              "amt": 2962,
-              "over": 0,
-              "ability": "Flame Patch",
-              "src": "—"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 2265,
-              "over": 666,
-              "ability": "Flame Patch",
-              "src": "—",
-              "killing": true
-            }
-          ],
-          "hp_timeline": [
-            {
-              "t": -2.0,
-              "hp": 69,
-              "kind": "dmg"
-            },
-            {
-              "t": -1.0,
-              "hp": 30,
-              "kind": "dmg"
-            },
-            {
-              "t": -0.0,
-              "hp": 0,
-              "kind": "dmg",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Saw Blade",
-          "amount": 2532,
-          "overkill": 984,
-          "window_dmg": 13283,
-          "window_heal": 3655,
-          "window_s": 6.1,
-          "timeline": [
-            {
-              "t": -0.6,
-              "type": "dmg",
-              "amt": 2395,
-              "over": 0,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic"
-            },
-            {
-              "t": -0.0,
-              "type": "dmg",
-              "amt": 1825,
-              "over": 0,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 2532,
-              "over": 984,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 730,
-          "overkill": 17997,
-          "window_dmg": 18727,
-          "window_heal": 0,
-          "window_s": 0.0,
-          "timeline": [
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 730,
-              "over": 17997,
-              "ability": "Melee",
-              "src": "Crystalcore Devastator",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Water Bolt Volley",
-          "amount": 632,
-          "overkill": 1794,
-          "window_dmg": 14530,
-          "window_heal": 4092,
-          "window_s": 21.3,
-          "timeline": [
-            {
-              "t": -6.2,
-              "type": "dmg",
-              "amt": 5311,
-              "over": 0,
-              "ability": "Frostbolt",
-              "src": "Greyheart Nether-Mage"
-            },
-            {
-              "t": -2.7,
-              "type": "dmg",
-              "amt": 3336,
-              "over": 0,
-              "ability": "Arcane Lightning",
-              "src": "Greyheart Nether-Mage"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 632,
-              "over": 1794,
-              "ability": "Water Bolt Volley",
-              "src": "Serpentshrine Tidecaller",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Sweetheart",
-      "role": "Healer",
-      "total": 5,
-      "trash": 3,
-      "recap": [
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 6879,
-          "overkill": 223,
-          "window_dmg": 9100,
-          "window_heal": 206,
-          "window_s": 1.6,
-          "timeline": [
-            {
-              "t": -1.6,
-              "type": "dmg",
-              "amt": 1998,
-              "over": 0,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 6879,
-              "over": 223,
-              "ability": "Melee",
-              "src": "Crystalcore Devastator",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "?",
-          "amount": 0,
-          "overkill": 0,
-          "window_dmg": 0,
-          "window_heal": 0,
-          "window_s": 0.0,
-          "timeline": []
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "killer": "Melee",
-          "amount": 8941,
-          "overkill": 4808,
-          "window_dmg": 13749,
-          "window_heal": 0,
-          "window_s": 0.0,
-          "timeline": [
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 8941,
-              "over": 4808,
-              "ability": "Melee",
-              "src": "Thaladred the Darkener",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "killer": "?",
-          "amount": 0,
-          "overkill": 0,
-          "window_dmg": 0,
-          "window_heal": 0,
-          "window_s": 0.0,
-          "timeline": []
-        },
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 4756,
-          "overkill": 593,
-          "window_dmg": 12077,
-          "window_heal": 2813,
-          "window_s": 18.6,
-          "timeline": [
-            {
-              "t": -18.6,
-              "type": "dmg",
-              "amt": 3282,
-              "over": 0,
-              "ability": "Shadow Nova",
-              "src": "Coilfang Fathom-Witch"
-            },
-            {
-              "t": -0.1,
-              "type": "dmg",
-              "amt": 3446,
-              "over": 0,
-              "ability": "Arcane Lightning",
-              "src": "Greyheart Nether-Mage"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 4756,
-              "over": 593,
-              "ability": "Melee",
-              "src": "Coilfang Serpentguard",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
       "name": "Ohshiz",
       "role": "Healer",
       "total": 5,
@@ -17818,43 +17516,209 @@
       ]
     },
     {
-      "name": "Alldorin",
-      "role": "Caster",
+      "name": "Sweetheart",
+      "role": "Healer",
       "total": 5,
-      "trash": 5,
+      "trash": 3,
       "recap": [
         {
           "boss": "Trash",
           "killer": "Melee",
-          "amount": 2575,
-          "overkill": 1959,
-          "window_dmg": 12249,
-          "window_heal": 0,
-          "window_s": 6.4,
+          "amount": 6879,
+          "overkill": 223,
+          "window_dmg": 9100,
+          "window_heal": 206,
+          "window_s": 1.6,
           "timeline": [
             {
-              "t": -2.9,
+              "t": -1.6,
               "type": "dmg",
-              "amt": 2017,
+              "amt": 1998,
               "over": 0,
-              "ability": "Melee",
-              "src": "Bloodwarder Legionnaire"
-            },
-            {
-              "t": -1.3,
-              "type": "dmg",
-              "amt": 2942,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Bloodwarder Legionnaire"
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic"
             },
             {
               "t": 0.0,
               "type": "dmg",
-              "amt": 2575,
-              "over": 1959,
+              "amt": 6879,
+              "over": 223,
               "ability": "Melee",
-              "src": "Bloodwarder Legionnaire",
+              "src": "Crystalcore Devastator",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "?",
+          "amount": 0,
+          "overkill": 0,
+          "window_dmg": 0,
+          "window_heal": 0,
+          "window_s": 0.0,
+          "timeline": []
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "killer": "Melee",
+          "amount": 8941,
+          "overkill": 4808,
+          "window_dmg": 13749,
+          "window_heal": 0,
+          "window_s": 0.0,
+          "timeline": [
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 8941,
+              "over": 4808,
+              "ability": "Melee",
+              "src": "Thaladred the Darkener",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "killer": "?",
+          "amount": 0,
+          "overkill": 0,
+          "window_dmg": 0,
+          "window_heal": 0,
+          "window_s": 0.0,
+          "timeline": []
+        },
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 4756,
+          "overkill": 593,
+          "window_dmg": 12077,
+          "window_heal": 2813,
+          "window_s": 18.6,
+          "timeline": [
+            {
+              "t": -18.6,
+              "type": "dmg",
+              "amt": 3282,
+              "over": 0,
+              "ability": "Shadow Nova",
+              "src": "Coilfang Fathom-Witch"
+            },
+            {
+              "t": -0.1,
+              "type": "dmg",
+              "amt": 3446,
+              "over": 0,
+              "ability": "Arcane Lightning",
+              "src": "Greyheart Nether-Mage"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 4756,
+              "over": 593,
+              "ability": "Melee",
+              "src": "Coilfang Serpentguard",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Pewpslurper",
+      "role": "Healer",
+      "total": 5,
+      "trash": 4,
+      "recap": [
+        {
+          "boss": "Trash",
+          "killer": "Hammer of Wrath",
+          "amount": 1573,
+          "overkill": 2504,
+          "window_dmg": 12439,
+          "window_heal": 1291,
+          "window_s": 7.5,
+          "timeline": [
+            {
+              "t": -5.1,
+              "type": "dmg",
+              "amt": 2779,
+              "over": 0,
+              "ability": "Fireball Volley",
+              "src": "Astromancer"
+            },
+            {
+              "t": -3.5,
+              "type": "dmg",
+              "amt": 2579,
+              "over": 0,
+              "ability": "Fireball Volley",
+              "src": "Astromancer"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 1573,
+              "over": 2504,
+              "ability": "Hammer of Wrath",
+              "src": "Bloodwarder Vindicator",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Al'ar",
+          "killer": "Flame Patch",
+          "amount": 2265,
+          "overkill": 666,
+          "window_dmg": 8190,
+          "window_heal": 0,
+          "window_s": 2.0,
+          "timeline": [
+            {
+              "t": -2.0,
+              "type": "dmg",
+              "amt": 2297,
+              "over": 0,
+              "ability": "Flame Patch",
+              "src": "—"
+            },
+            {
+              "t": -1.0,
+              "type": "dmg",
+              "amt": 2962,
+              "over": 0,
+              "ability": "Flame Patch",
+              "src": "—"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 2265,
+              "over": 666,
+              "ability": "Flame Patch",
+              "src": "—",
+              "killing": true
+            }
+          ],
+          "hp_timeline": [
+            {
+              "t": -2.0,
+              "hp": 69,
+              "kind": "dmg"
+            },
+            {
+              "t": -1.0,
+              "hp": 30,
+              "kind": "dmg"
+            },
+            {
+              "t": -0.0,
+              "hp": 0,
+              "kind": "dmg",
               "killing": true
             }
           ]
@@ -17862,24 +17726,24 @@
         {
           "boss": "Trash",
           "killer": "Saw Blade",
-          "amount": 1645,
-          "overkill": 449,
-          "window_dmg": 17293,
-          "window_heal": 6814,
-          "window_s": 9.4,
+          "amount": 2532,
+          "overkill": 984,
+          "window_dmg": 13283,
+          "window_heal": 3655,
+          "window_s": 6.1,
           "timeline": [
             {
-              "t": -1.7,
+              "t": -0.6,
               "type": "dmg",
-              "amt": 2625,
+              "amt": 2395,
               "over": 0,
               "ability": "Saw Blade",
               "src": "Crystalcore Mechanic"
             },
             {
-              "t": -1.4,
+              "t": -0.0,
               "type": "dmg",
-              "amt": 682,
+              "amt": 1825,
               "over": 0,
               "ability": "Saw Blade",
               "src": "Crystalcore Mechanic"
@@ -17887,8 +17751,8 @@
             {
               "t": 0.0,
               "type": "dmg",
-              "amt": 1645,
-              "over": 449,
+              "amt": 2532,
+              "over": 984,
               "ability": "Saw Blade",
               "src": "Crystalcore Mechanic",
               "killing": true
@@ -17897,35 +17761,191 @@
         },
         {
           "boss": "Trash",
-          "killer": "Knock Away",
-          "amount": 1007,
-          "overkill": 2439,
-          "window_dmg": 16425,
-          "window_heal": 3696,
-          "window_s": 30.2,
+          "killer": "Melee",
+          "amount": 730,
+          "overkill": 17997,
+          "window_dmg": 18727,
+          "window_heal": 0,
+          "window_s": 0.0,
           "timeline": [
             {
-              "t": -1.8,
+              "t": 0.0,
               "type": "dmg",
-              "amt": 705,
+              "amt": 730,
+              "over": 17997,
+              "ability": "Melee",
+              "src": "Crystalcore Devastator",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Water Bolt Volley",
+          "amount": 632,
+          "overkill": 1794,
+          "window_dmg": 14530,
+          "window_heal": 4092,
+          "window_s": 21.3,
+          "timeline": [
+            {
+              "t": -6.2,
+              "type": "dmg",
+              "amt": 5311,
+              "over": 0,
+              "ability": "Frostbolt",
+              "src": "Greyheart Nether-Mage"
+            },
+            {
+              "t": -2.7,
+              "type": "dmg",
+              "amt": 3336,
+              "over": 0,
+              "ability": "Arcane Lightning",
+              "src": "Greyheart Nether-Mage"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 632,
+              "over": 1794,
+              "ability": "Water Bolt Volley",
+              "src": "Serpentshrine Tidecaller",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Feelsbaldman",
+      "role": "Caster",
+      "total": 5,
+      "trash": 5,
+      "recap": [
+        {
+          "boss": "Trash",
+          "killer": "Hammer of Wrath",
+          "amount": 1479,
+          "overkill": 687,
+          "window_dmg": 13882,
+          "window_heal": 3396,
+          "window_s": 6.6,
+          "timeline": [
+            {
+              "t": -4.0,
+              "type": "dmg",
+              "amt": 2483,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Star Scryer"
+            },
+            {
+              "t": -2.0,
+              "type": "dmg",
+              "amt": 2337,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Star Scryer"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 1479,
+              "over": 687,
+              "ability": "Hammer of Wrath",
+              "src": "Bloodwarder Vindicator",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 795,
+          "overkill": 3597,
+          "window_dmg": 14409,
+          "window_heal": 1013,
+          "window_s": 6.2,
+          "timeline": [
+            {
+              "t": -0.4,
+              "type": "dmg",
+              "amt": 1984,
+              "over": 0,
+              "ability": "Wing Buffet",
+              "src": "Phoenix-Hawk"
+            },
+            {
+              "t": -0.3,
+              "type": "dmg",
+              "amt": 2065,
+              "over": 0,
+              "ability": "Wing Buffet",
+              "src": "Phoenix-Hawk"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 795,
+              "over": 3597,
+              "ability": "Melee",
+              "src": "Phoenix-Hawk",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Saw Blade",
+          "amount": 3007,
+          "overkill": 22,
+          "window_dmg": 13439,
+          "window_heal": 3618,
+          "window_s": 8.4,
+          "timeline": [
+            {
+              "t": -1.4,
+              "type": "dmg",
+              "amt": 443,
               "over": 0,
               "ability": "Saw Blade",
               "src": "Crystalcore Mechanic"
             },
             {
-              "t": -0.3,
+              "t": -0.7,
               "type": "dmg",
-              "amt": 1514,
+              "amt": 1789,
               "over": 0,
-              "ability": "Countercharge",
-              "src": "Crystalcore Devastator"
+              "ability": "Fragmentation Bomb",
+              "src": "Tempest-Smith"
             },
             {
               "t": 0.0,
               "type": "dmg",
-              "amt": 1007,
-              "over": 2439,
-              "ability": "Knock Away",
+              "amt": 3007,
+              "over": 22,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 1384,
+          "overkill": 8743,
+          "window_dmg": 10127,
+          "window_heal": 0,
+          "window_s": 0.0,
+          "timeline": [
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 1384,
+              "over": 8743,
+              "ability": "Melee",
               "src": "Crystalcore Devastator",
               "killing": true
             }
@@ -17934,71 +17954,35 @@
         {
           "boss": "Trash",
           "killer": "Melee",
-          "amount": 7194,
-          "overkill": 0,
-          "window_dmg": 26821,
-          "window_heal": 5397,
-          "window_s": 6.0,
+          "amount": 210,
+          "overkill": 1989,
+          "window_dmg": 13358,
+          "window_heal": 2340,
+          "window_s": 10.2,
           "timeline": [
             {
-              "t": -0.4,
+              "t": -0.1,
               "type": "dmg",
-              "amt": 2399,
+              "amt": 3069,
               "over": 0,
-              "ability": "Water Bolt Volley",
-              "src": "Serpentshrine Tidecaller"
+              "ability": "Frostbolt",
+              "src": "Greyheart Nether-Mage"
+            },
+            {
+              "t": -0.0,
+              "type": "dmg",
+              "amt": 3600,
+              "over": 0,
+              "ability": "Virulent Poison",
+              "src": "Greyheart Tidecaller"
             },
             {
               "t": 0.0,
               "type": "dmg",
-              "amt": 7194,
-              "over": 0,
+              "amt": 210,
+              "over": 1989,
               "ability": "Melee",
-              "src": "Coilfang Serpentguard"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 3084,
-              "over": 4970,
-              "ability": "Melee",
-              "src": "Coilfang Serpentguard",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 3282,
-          "overkill": 470,
-          "window_dmg": 11601,
-          "window_heal": 1101,
-          "window_s": 1.0,
-          "timeline": [
-            {
-              "t": -1.0,
-              "type": "dmg",
-              "amt": 4396,
-              "over": 0,
-              "ability": "Bloodthirst",
-              "src": "Tidewalker Warrior"
-            },
-            {
-              "t": -1.0,
-              "type": "dmg",
-              "amt": 3453,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Tidewalker Warrior"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 3282,
-              "over": 470,
-              "ability": "Melee",
-              "src": "Tidewalker Warrior",
+              "src": "Serpentshrine Tidecaller",
               "killing": true
             }
           ]
@@ -18301,79 +18285,43 @@
       ]
     },
     {
-      "name": "Feelsbaldman",
+      "name": "Alldorin",
       "role": "Caster",
       "total": 5,
       "trash": 5,
       "recap": [
         {
           "boss": "Trash",
-          "killer": "Hammer of Wrath",
-          "amount": 1479,
-          "overkill": 687,
-          "window_dmg": 13882,
-          "window_heal": 3396,
-          "window_s": 6.6,
-          "timeline": [
-            {
-              "t": -4.0,
-              "type": "dmg",
-              "amt": 2483,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Star Scryer"
-            },
-            {
-              "t": -2.0,
-              "type": "dmg",
-              "amt": 2337,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Star Scryer"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 1479,
-              "over": 687,
-              "ability": "Hammer of Wrath",
-              "src": "Bloodwarder Vindicator",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
           "killer": "Melee",
-          "amount": 795,
-          "overkill": 3597,
-          "window_dmg": 14409,
-          "window_heal": 1013,
-          "window_s": 6.2,
+          "amount": 2575,
+          "overkill": 1959,
+          "window_dmg": 12249,
+          "window_heal": 0,
+          "window_s": 6.4,
           "timeline": [
             {
-              "t": -0.4,
+              "t": -2.9,
               "type": "dmg",
-              "amt": 1984,
+              "amt": 2017,
               "over": 0,
-              "ability": "Wing Buffet",
-              "src": "Phoenix-Hawk"
+              "ability": "Melee",
+              "src": "Bloodwarder Legionnaire"
             },
             {
-              "t": -0.3,
+              "t": -1.3,
               "type": "dmg",
-              "amt": 2065,
+              "amt": 2942,
               "over": 0,
-              "ability": "Wing Buffet",
-              "src": "Phoenix-Hawk"
+              "ability": "Melee",
+              "src": "Bloodwarder Legionnaire"
             },
             {
               "t": 0.0,
               "type": "dmg",
-              "amt": 795,
-              "over": 3597,
+              "amt": 2575,
+              "over": 1959,
               "ability": "Melee",
-              "src": "Phoenix-Hawk",
+              "src": "Bloodwarder Legionnaire",
               "killing": true
             }
           ]
@@ -18381,33 +18329,33 @@
         {
           "boss": "Trash",
           "killer": "Saw Blade",
-          "amount": 3007,
-          "overkill": 22,
-          "window_dmg": 13439,
-          "window_heal": 3618,
-          "window_s": 8.4,
+          "amount": 1645,
+          "overkill": 449,
+          "window_dmg": 17293,
+          "window_heal": 6814,
+          "window_s": 9.4,
           "timeline": [
             {
-              "t": -1.4,
+              "t": -1.7,
               "type": "dmg",
-              "amt": 443,
+              "amt": 2625,
               "over": 0,
               "ability": "Saw Blade",
               "src": "Crystalcore Mechanic"
             },
             {
-              "t": -0.7,
+              "t": -1.4,
               "type": "dmg",
-              "amt": 1789,
+              "amt": 682,
               "over": 0,
-              "ability": "Fragmentation Bomb",
-              "src": "Tempest-Smith"
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic"
             },
             {
               "t": 0.0,
               "type": "dmg",
-              "amt": 3007,
-              "over": 22,
+              "amt": 1645,
+              "over": 449,
               "ability": "Saw Blade",
               "src": "Crystalcore Mechanic",
               "killing": true
@@ -18416,18 +18364,150 @@
         },
         {
           "boss": "Trash",
-          "killer": "Melee",
-          "amount": 1384,
-          "overkill": 8743,
-          "window_dmg": 10127,
-          "window_heal": 0,
-          "window_s": 0.0,
+          "killer": "Knock Away",
+          "amount": 1007,
+          "overkill": 2439,
+          "window_dmg": 16425,
+          "window_heal": 3696,
+          "window_s": 30.2,
           "timeline": [
+            {
+              "t": -1.8,
+              "type": "dmg",
+              "amt": 705,
+              "over": 0,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic"
+            },
+            {
+              "t": -0.3,
+              "type": "dmg",
+              "amt": 1514,
+              "over": 0,
+              "ability": "Countercharge",
+              "src": "Crystalcore Devastator"
+            },
             {
               "t": 0.0,
               "type": "dmg",
-              "amt": 1384,
-              "over": 8743,
+              "amt": 1007,
+              "over": 2439,
+              "ability": "Knock Away",
+              "src": "Crystalcore Devastator",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 7194,
+          "overkill": 0,
+          "window_dmg": 26821,
+          "window_heal": 5397,
+          "window_s": 6.0,
+          "timeline": [
+            {
+              "t": -0.4,
+              "type": "dmg",
+              "amt": 2399,
+              "over": 0,
+              "ability": "Water Bolt Volley",
+              "src": "Serpentshrine Tidecaller"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 7194,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Coilfang Serpentguard"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 3084,
+              "over": 4970,
+              "ability": "Melee",
+              "src": "Coilfang Serpentguard",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 3282,
+          "overkill": 470,
+          "window_dmg": 11601,
+          "window_heal": 1101,
+          "window_s": 1.0,
+          "timeline": [
+            {
+              "t": -1.0,
+              "type": "dmg",
+              "amt": 4396,
+              "over": 0,
+              "ability": "Bloodthirst",
+              "src": "Tidewalker Warrior"
+            },
+            {
+              "t": -1.0,
+              "type": "dmg",
+              "amt": 3453,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Tidewalker Warrior"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 3282,
+              "over": 470,
+              "ability": "Melee",
+              "src": "Tidewalker Warrior",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Marvels",
+      "role": "Caster",
+      "total": 5,
+      "trash": 5,
+      "recap": [
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 3084,
+          "overkill": 5560,
+          "window_dmg": 36679,
+          "window_heal": 20500,
+          "window_s": 27.1,
+          "timeline": [
+            {
+              "t": -2.2,
+              "type": "dmg",
+              "amt": 2003,
+              "over": 0,
+              "ability": "Fragmentation Bomb",
+              "src": "Tempest-Smith"
+            },
+            {
+              "t": -0.8,
+              "type": "dmg",
+              "amt": 877,
+              "over": 0,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 3084,
+              "over": 5560,
               "ability": "Melee",
               "src": "Crystalcore Devastator",
               "killing": true
@@ -18437,34 +18517,126 @@
         {
           "boss": "Trash",
           "killer": "Melee",
-          "amount": 210,
-          "overkill": 1989,
-          "window_dmg": 13358,
-          "window_heal": 2340,
-          "window_s": 10.2,
+          "amount": 634,
+          "overkill": 18382,
+          "window_dmg": 19016,
+          "window_heal": 0,
+          "window_s": 0.0,
           "timeline": [
             {
-              "t": -0.1,
+              "t": 0.0,
               "type": "dmg",
-              "amt": 3069,
+              "amt": 634,
+              "over": 18382,
+              "ability": "Melee",
+              "src": "Crystalcore Devastator",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Frostbolt Volley",
+          "amount": 2262,
+          "overkill": 304,
+          "window_dmg": 19463,
+          "window_heal": 8540,
+          "window_s": 6.2,
+          "timeline": [
+            {
+              "t": -2.2,
+              "type": "dmg",
+              "amt": 5722,
               "over": 0,
-              "ability": "Frostbolt",
-              "src": "Greyheart Nether-Mage"
+              "ability": "Melee",
+              "src": "Crimson Hand Centurion"
             },
             {
-              "t": -0.0,
+              "t": -0.2,
               "type": "dmg",
-              "amt": 3600,
+              "amt": 6013,
               "over": 0,
-              "ability": "Virulent Poison",
-              "src": "Greyheart Tidecaller"
+              "ability": "Melee",
+              "src": "Crimson Hand Centurion"
             },
             {
               "t": 0.0,
               "type": "dmg",
-              "amt": 210,
-              "over": 1989,
+              "amt": 2262,
+              "over": 304,
+              "ability": "Frostbolt Volley",
+              "src": "Crimson Hand Battle Mage",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 2678,
+          "overkill": 0,
+          "window_dmg": 18251,
+          "window_heal": 2281,
+          "window_s": 2.0,
+          "timeline": [
+            {
+              "t": -2.0,
+              "type": "dmg",
+              "amt": 3615,
+              "over": 0,
               "ability": "Melee",
+              "src": "Coilfang Priestess"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 2678,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Coilfang Priestess"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 3022,
+              "over": 2250,
+              "ability": "Melee",
+              "src": "Coilfang Shatterer",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Water Bolt Volley",
+          "amount": 2275,
+          "overkill": 202,
+          "window_dmg": 12332,
+          "window_heal": 2448,
+          "window_s": 8.5,
+          "timeline": [
+            {
+              "t": -5.9,
+              "type": "dmg",
+              "amt": 2635,
+              "over": 0,
+              "ability": "Water Bolt Volley",
+              "src": "Serpentshrine Tidecaller"
+            },
+            {
+              "t": -4.3,
+              "type": "dmg",
+              "amt": 4040,
+              "over": 0,
+              "ability": "Arcane Volley",
+              "src": "Greyheart Nether-Mage"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 2275,
+              "over": 202,
+              "ability": "Water Bolt Volley",
               "src": "Serpentshrine Tidecaller",
               "killing": true
             }
@@ -18930,178 +19102,6 @@
       ]
     },
     {
-      "name": "Marvels",
-      "role": "Caster",
-      "total": 5,
-      "trash": 5,
-      "recap": [
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 3084,
-          "overkill": 5560,
-          "window_dmg": 36679,
-          "window_heal": 20500,
-          "window_s": 27.1,
-          "timeline": [
-            {
-              "t": -2.2,
-              "type": "dmg",
-              "amt": 2003,
-              "over": 0,
-              "ability": "Fragmentation Bomb",
-              "src": "Tempest-Smith"
-            },
-            {
-              "t": -0.8,
-              "type": "dmg",
-              "amt": 877,
-              "over": 0,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 3084,
-              "over": 5560,
-              "ability": "Melee",
-              "src": "Crystalcore Devastator",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 634,
-          "overkill": 18382,
-          "window_dmg": 19016,
-          "window_heal": 0,
-          "window_s": 0.0,
-          "timeline": [
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 634,
-              "over": 18382,
-              "ability": "Melee",
-              "src": "Crystalcore Devastator",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Frostbolt Volley",
-          "amount": 2262,
-          "overkill": 304,
-          "window_dmg": 19463,
-          "window_heal": 8540,
-          "window_s": 6.2,
-          "timeline": [
-            {
-              "t": -2.2,
-              "type": "dmg",
-              "amt": 5722,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Crimson Hand Centurion"
-            },
-            {
-              "t": -0.2,
-              "type": "dmg",
-              "amt": 6013,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Crimson Hand Centurion"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 2262,
-              "over": 304,
-              "ability": "Frostbolt Volley",
-              "src": "Crimson Hand Battle Mage",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 2678,
-          "overkill": 0,
-          "window_dmg": 18251,
-          "window_heal": 2281,
-          "window_s": 2.0,
-          "timeline": [
-            {
-              "t": -2.0,
-              "type": "dmg",
-              "amt": 3615,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Coilfang Priestess"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 2678,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Coilfang Priestess"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 3022,
-              "over": 2250,
-              "ability": "Melee",
-              "src": "Coilfang Shatterer",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Water Bolt Volley",
-          "amount": 2275,
-          "overkill": 202,
-          "window_dmg": 12332,
-          "window_heal": 2448,
-          "window_s": 8.5,
-          "timeline": [
-            {
-              "t": -5.9,
-              "type": "dmg",
-              "amt": 2635,
-              "over": 0,
-              "ability": "Water Bolt Volley",
-              "src": "Serpentshrine Tidecaller"
-            },
-            {
-              "t": -4.3,
-              "type": "dmg",
-              "amt": 4040,
-              "over": 0,
-              "ability": "Arcane Volley",
-              "src": "Greyheart Nether-Mage"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 2275,
-              "over": 202,
-              "ability": "Water Bolt Volley",
-              "src": "Serpentshrine Tidecaller",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
       "name": "Blunderdin",
       "role": "Tank",
       "total": 4,
@@ -19380,6 +19380,142 @@
       ]
     },
     {
+      "name": "Zetla",
+      "role": "Caster",
+      "total": 4,
+      "trash": 3,
+      "recap": [
+        {
+          "boss": "Trash",
+          "killer": "Shell Shock",
+          "amount": 3737,
+          "overkill": 255,
+          "window_dmg": 10111,
+          "window_heal": 753,
+          "window_s": 6.8,
+          "timeline": [
+            {
+              "t": -1.2,
+              "type": "dmg",
+              "amt": 1711,
+              "over": 0,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic"
+            },
+            {
+              "t": -0.8,
+              "type": "dmg",
+              "amt": 649,
+              "over": 0,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 3737,
+              "over": 255,
+              "ability": "Shell Shock",
+              "src": "Tempest-Smith",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 6297,
+          "overkill": 1837,
+          "window_dmg": 12613,
+          "window_heal": 2203,
+          "window_s": 20.7,
+          "timeline": [
+            {
+              "t": -14.7,
+              "type": "dmg",
+              "amt": 663,
+              "over": 0,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic"
+            },
+            {
+              "t": -12.7,
+              "type": "dmg",
+              "amt": 663,
+              "over": 0,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 6297,
+              "over": 1837,
+              "ability": "Melee",
+              "src": "Crystalcore Devastator",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 2802,
+          "overkill": 2546,
+          "window_dmg": 11649,
+          "window_heal": 0,
+          "window_s": 1.2,
+          "timeline": [
+            {
+              "t": -1.2,
+              "type": "dmg",
+              "amt": 3905,
+              "over": 0,
+              "ability": "Arcane Volley",
+              "src": "Greyheart Nether-Mage"
+            },
+            {
+              "t": -0.1,
+              "type": "dmg",
+              "amt": 2396,
+              "over": 0,
+              "ability": "Frost Nova",
+              "src": "Serpentshrine Tidecaller"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 2802,
+              "over": 2546,
+              "ability": "Melee",
+              "src": "Greyheart Tidecaller",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Lady Vashj",
+          "killer": "Melee",
+          "amount": 9103,
+          "overkill": 5545,
+          "window_dmg": 14648,
+          "window_heal": 0,
+          "window_s": 0.0,
+          "timeline": [
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 9103,
+              "over": 5545,
+              "ability": "Melee",
+              "src": "Lady Vashj",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Bahguul",
       "role": "Caster",
       "total": 4,
@@ -19524,142 +19660,6 @@
       ]
     },
     {
-      "name": "Zetla",
-      "role": "Caster",
-      "total": 4,
-      "trash": 3,
-      "recap": [
-        {
-          "boss": "Trash",
-          "killer": "Shell Shock",
-          "amount": 3737,
-          "overkill": 255,
-          "window_dmg": 10111,
-          "window_heal": 753,
-          "window_s": 6.8,
-          "timeline": [
-            {
-              "t": -1.2,
-              "type": "dmg",
-              "amt": 1711,
-              "over": 0,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic"
-            },
-            {
-              "t": -0.8,
-              "type": "dmg",
-              "amt": 649,
-              "over": 0,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 3737,
-              "over": 255,
-              "ability": "Shell Shock",
-              "src": "Tempest-Smith",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 6297,
-          "overkill": 1837,
-          "window_dmg": 12613,
-          "window_heal": 2203,
-          "window_s": 20.7,
-          "timeline": [
-            {
-              "t": -14.7,
-              "type": "dmg",
-              "amt": 663,
-              "over": 0,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic"
-            },
-            {
-              "t": -12.7,
-              "type": "dmg",
-              "amt": 663,
-              "over": 0,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 6297,
-              "over": 1837,
-              "ability": "Melee",
-              "src": "Crystalcore Devastator",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 2802,
-          "overkill": 2546,
-          "window_dmg": 11649,
-          "window_heal": 0,
-          "window_s": 1.2,
-          "timeline": [
-            {
-              "t": -1.2,
-              "type": "dmg",
-              "amt": 3905,
-              "over": 0,
-              "ability": "Arcane Volley",
-              "src": "Greyheart Nether-Mage"
-            },
-            {
-              "t": -0.1,
-              "type": "dmg",
-              "amt": 2396,
-              "over": 0,
-              "ability": "Frost Nova",
-              "src": "Serpentshrine Tidecaller"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 2802,
-              "over": 2546,
-              "ability": "Melee",
-              "src": "Greyheart Tidecaller",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Lady Vashj",
-          "killer": "Melee",
-          "amount": 9103,
-          "overkill": 5545,
-          "window_dmg": 14648,
-          "window_heal": 0,
-          "window_s": 0.0,
-          "timeline": [
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 9103,
-              "over": 5545,
-              "ability": "Melee",
-              "src": "Lady Vashj",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
       "name": "Cindybrooke",
       "role": "Physical",
       "total": 4,
@@ -19789,6 +19789,122 @@
               "over": 1651,
               "ability": "Water Bolt Volley",
               "src": "Serpentshrine Tidecaller",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Philliam",
+      "role": "Physical",
+      "total": 3,
+      "trash": 3,
+      "recap": [
+        {
+          "boss": "Trash",
+          "killer": "Saw Blade",
+          "amount": 918,
+          "overkill": 1913,
+          "window_dmg": 11960,
+          "window_heal": 0,
+          "window_s": 7.4,
+          "timeline": [
+            {
+              "t": -1.0,
+              "type": "dmg",
+              "amt": 2828,
+              "over": 0,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic"
+            },
+            {
+              "t": -0.0,
+              "type": "dmg",
+              "amt": 2376,
+              "over": 0,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 918,
+              "over": 1913,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 3371,
+          "overkill": 2607,
+          "window_dmg": 13532,
+          "window_heal": 878,
+          "window_s": 7.2,
+          "timeline": [
+            {
+              "t": -2.0,
+              "type": "dmg",
+              "amt": 510,
+              "over": 0,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic"
+            },
+            {
+              "t": -0.8,
+              "type": "dmg",
+              "amt": 1258,
+              "over": 0,
+              "ability": "Saw Blade",
+              "src": "Crystalcore Mechanic"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 3371,
+              "over": 2607,
+              "ability": "Melee",
+              "src": "Crystalcore Devastator",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Chain Lightning",
+          "amount": 1082,
+          "overkill": 374,
+          "window_dmg": 10421,
+          "window_heal": 0,
+          "window_s": 2.2,
+          "timeline": [
+            {
+              "t": -0.6,
+              "type": "dmg",
+              "amt": 2358,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Tidewalker Warrior"
+            },
+            {
+              "t": -0.5,
+              "type": "dmg",
+              "amt": 125,
+              "over": 0,
+              "ability": "Seal of the Martyr",
+              "src": "Philliam"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 1082,
+              "over": 374,
+              "ability": "Chain Lightning",
+              "src": "Tidewalker Shaman",
               "killing": true
             }
           ]
@@ -19928,122 +20044,6 @@
               "t": -0.0,
               "hp": 0,
               "kind": "dmg",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Philliam",
-      "role": "Physical",
-      "total": 3,
-      "trash": 3,
-      "recap": [
-        {
-          "boss": "Trash",
-          "killer": "Saw Blade",
-          "amount": 918,
-          "overkill": 1913,
-          "window_dmg": 11960,
-          "window_heal": 0,
-          "window_s": 7.4,
-          "timeline": [
-            {
-              "t": -1.0,
-              "type": "dmg",
-              "amt": 2828,
-              "over": 0,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic"
-            },
-            {
-              "t": -0.0,
-              "type": "dmg",
-              "amt": 2376,
-              "over": 0,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 918,
-              "over": 1913,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 3371,
-          "overkill": 2607,
-          "window_dmg": 13532,
-          "window_heal": 878,
-          "window_s": 7.2,
-          "timeline": [
-            {
-              "t": -2.0,
-              "type": "dmg",
-              "amt": 510,
-              "over": 0,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic"
-            },
-            {
-              "t": -0.8,
-              "type": "dmg",
-              "amt": 1258,
-              "over": 0,
-              "ability": "Saw Blade",
-              "src": "Crystalcore Mechanic"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 3371,
-              "over": 2607,
-              "ability": "Melee",
-              "src": "Crystalcore Devastator",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Chain Lightning",
-          "amount": 1082,
-          "overkill": 374,
-          "window_dmg": 10421,
-          "window_heal": 0,
-          "window_s": 2.2,
-          "timeline": [
-            {
-              "t": -0.6,
-              "type": "dmg",
-              "amt": 2358,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Tidewalker Warrior"
-            },
-            {
-              "t": -0.5,
-              "type": "dmg",
-              "amt": 125,
-              "over": 0,
-              "ability": "Seal of the Martyr",
-              "src": "Philliam"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 1082,
-              "over": 374,
-              "ability": "Chain Lightning",
-              "src": "Tidewalker Shaman",
               "killing": true
             }
           ]
@@ -20580,21 +20580,6 @@
       "luck": -1.9
     },
     {
-      "name": "Pewpslurper",
-      "role": "Healer",
-      "actual": 37.5,
-      "expected": 14.37,
-      "baseline": 9.1,
-      "weeks": 1,
-      "std": 0.0,
-      "series": [
-        9.1,
-        37.5
-      ],
-      "prev": 9.1,
-      "luck": null
-    },
-    {
       "name": "Sweetheart",
       "role": "Healer",
       "actual": 40.0,
@@ -20606,6 +20591,21 @@
         14.3,
         9.1,
         40.0
+      ],
+      "prev": 9.1,
+      "luck": null
+    },
+    {
+      "name": "Pewpslurper",
+      "role": "Healer",
+      "actual": 37.5,
+      "expected": 14.37,
+      "baseline": 9.1,
+      "weeks": 1,
+      "std": 0.0,
+      "series": [
+        9.1,
+        37.5
       ],
       "prev": 9.1,
       "luck": null
@@ -20626,6 +20626,21 @@
       "luck": null
     },
     {
+      "name": "Marvels",
+      "role": "Caster",
+      "actual": 34.0,
+      "expected": 27.01,
+      "baseline": 31.4,
+      "weeks": 1,
+      "std": 0.0,
+      "series": [
+        31.4,
+        34.0
+      ],
+      "prev": 31.4,
+      "luck": null
+    },
+    {
       "name": "Cheesecurds",
       "role": "Physical",
       "actual": 37.1,
@@ -20639,21 +20654,6 @@
         37.1
       ],
       "prev": 36.9,
-      "luck": null
-    },
-    {
-      "name": "Marvels",
-      "role": "Caster",
-      "actual": 34.0,
-      "expected": 27.01,
-      "baseline": 31.4,
-      "weeks": 1,
-      "std": 0.0,
-      "series": [
-        31.4,
-        34.0
-      ],
-      "prev": 31.4,
       "luck": null
     }
   ],
@@ -20925,18 +20925,6 @@
       ]
     },
     {
-      "name": "Areso",
-      "role": "Physical",
-      "count": 1,
-      "spells": [
-        {
-          "spell": "Great Heal",
-          "n": 1,
-          "icon": "spell_holy_heal"
-        }
-      ]
-    },
-    {
       "name": "Cindybrooke",
       "role": "Physical",
       "count": 1,
@@ -20945,6 +20933,18 @@
           "spell": "Fireball",
           "n": 1,
           "icon": "spell_fire_flamebolt"
+        }
+      ]
+    },
+    {
+      "name": "Areso",
+      "role": "Physical",
+      "count": 1,
+      "spells": [
+        {
+          "spell": "Great Heal",
+          "n": 1,
+          "icon": "spell_holy_heal"
         }
       ]
     }
@@ -23362,104 +23362,13 @@
   "gearAudit": {
     "players": [
       {
-        "name": "Shieldwagon",
-        "ilvl": 121,
+        "name": "Faeriefireqt",
+        "ilvl": 126,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
-        "gems_filled": 13,
-        "sockets_total": 13,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Dmbp",
-        "ilvl": 123,
-        "ench_ok": 8,
-        "ench_total": 9,
-        "missing_enchants": [
-          "Legs"
-        ],
-        "gems_filled": 10,
-        "sockets_total": 10,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Alldorin",
-        "ilvl": 116,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 16,
-        "sockets_total": 16,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Shovelpriest",
-        "ilvl": 114,
-        "ench_ok": 7,
-        "ench_total": 9,
-        "missing_enchants": [
-          "Back",
-          "Feet"
-        ],
-        "gems_filled": 17,
-        "sockets_total": 17,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Bahguul",
-        "ilvl": 120,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 7,
-        "sockets_total": 7,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Mucoid",
-        "ilvl": 121,
-        "ench_ok": 7,
-        "ench_total": 9,
-        "missing_enchants": [
-          "Chest",
-          "Feet"
-        ],
-        "gems_filled": 14,
-        "sockets_total": 14,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Zetla",
-        "ilvl": 125,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 10,
-        "sockets_total": 10,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Areso",
-        "ilvl": 122,
-        "ench_ok": 7,
-        "ench_total": 9,
-        "missing_enchants": [
-          "Back",
-          "Feet"
-        ],
-        "gems_filled": 18,
-        "sockets_total": 18,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Blunderdin",
-        "ilvl": 119,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 13,
-        "sockets_total": 13,
+        "gems_filled": 9,
+        "sockets_total": 9,
         "empty_sockets": 0
       },
       {
@@ -23483,13 +23392,26 @@
         "empty_sockets": 0
       },
       {
-        "name": "Philliam",
-        "ilvl": 118,
+        "name": "Sweetheart",
+        "ilvl": 125,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
-        "gems_filled": 13,
-        "sockets_total": 13,
+        "gems_filled": 16,
+        "sockets_total": 16,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Shovelpriest",
+        "ilvl": 114,
+        "ench_ok": 7,
+        "ench_total": 9,
+        "missing_enchants": [
+          "Back",
+          "Feet"
+        ],
+        "gems_filled": 17,
+        "sockets_total": 17,
         "empty_sockets": 0
       },
       {
@@ -23503,55 +23425,13 @@
         "empty_sockets": 0
       },
       {
-        "name": "Moojerked",
-        "ilvl": 118,
-        "ench_ok": 8,
-        "ench_total": 9,
-        "missing_enchants": [
-          "Back"
-        ],
-        "gems_filled": 16,
-        "sockets_total": 16,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Mmtoast",
-        "ilvl": 118,
+        "name": "Shieldwagon",
+        "ilvl": 121,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
-        "gems_filled": 16,
-        "sockets_total": 16,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Faeriefireqt",
-        "ilvl": 126,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 9,
-        "sockets_total": 9,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Sweetheart",
-        "ilvl": 125,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 16,
-        "sockets_total": 16,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Feelsbaldman",
-        "ilvl": 117,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 17,
-        "sockets_total": 17,
+        "gems_filled": 13,
+        "sockets_total": 13,
         "empty_sockets": 0
       },
       {
@@ -23575,13 +23455,28 @@
         "empty_sockets": 0
       },
       {
-        "name": "Juricc",
+        "name": "Dmbp",
         "ilvl": 123,
-        "ench_ok": 9,
+        "ench_ok": 8,
         "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 8,
-        "sockets_total": 8,
+        "missing_enchants": [
+          "Legs"
+        ],
+        "gems_filled": 10,
+        "sockets_total": 10,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Mucoid",
+        "ilvl": 121,
+        "ench_ok": 7,
+        "ench_total": 9,
+        "missing_enchants": [
+          "Chest",
+          "Feet"
+        ],
+        "gems_filled": 14,
+        "sockets_total": 14,
         "empty_sockets": 0
       },
       {
@@ -23593,6 +23488,111 @@
         "gems_filled": 15,
         "sockets_total": 18,
         "empty_sockets": 3
+      },
+      {
+        "name": "Mmtoast",
+        "ilvl": 118,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 16,
+        "sockets_total": 16,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Zetla",
+        "ilvl": 125,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 10,
+        "sockets_total": 10,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Feelsbaldman",
+        "ilvl": 117,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 17,
+        "sockets_total": 17,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Bahguul",
+        "ilvl": 120,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 7,
+        "sockets_total": 7,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Alldorin",
+        "ilvl": 116,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 16,
+        "sockets_total": 16,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Juricc",
+        "ilvl": 123,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 8,
+        "sockets_total": 8,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Philliam",
+        "ilvl": 118,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 13,
+        "sockets_total": 13,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Areso",
+        "ilvl": 122,
+        "ench_ok": 7,
+        "ench_total": 9,
+        "missing_enchants": [
+          "Back",
+          "Feet"
+        ],
+        "gems_filled": 18,
+        "sockets_total": 18,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Moojerked",
+        "ilvl": 118,
+        "ench_ok": 8,
+        "ench_total": 9,
+        "missing_enchants": [
+          "Back"
+        ],
+        "gems_filled": 16,
+        "sockets_total": 16,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Blunderdin",
+        "ilvl": 119,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 13,
+        "sockets_total": 13,
+        "empty_sockets": 0
       },
       {
         "name": "Cheesecurds",
@@ -23618,6 +23618,52 @@
         "applications": 51
       }
     ]
+  },
+  "maintainUptime": {
+    "Alldorin": {
+      "Corruption": 82.2,
+      "Curse of the Elements": 96.2,
+      "Immolate": 22.3,
+      "Siphon Life": 9.8
+    },
+    "Bahguul": {
+      "Faerie Fire": 80.9,
+      "Insect Swarm": 46.2,
+      "Moonfire": 75.3
+    },
+    "Boogiez": {
+      "Flame Shock": 39.8
+    },
+    "Cindybrooke": {
+      "Rupture": 33.7,
+      "Slice and Dice": 70.5
+    },
+    "Juricc": {
+      "Flame Shock": 40.9
+    },
+    "Marvels": {
+      "Corruption": 4.5,
+      "Immolate": 7.0
+    },
+    "Moojerked": {
+      "Flame Shock": 5.3
+    },
+    "Pewpslurper": {
+      "Moonfire": 0.5
+    },
+    "Shieldwagon": {
+      "Shadow Word: Pain": 4.8
+    },
+    "Shovelpriest": {
+      "Shadow Word: Pain": 73.0,
+      "Vampiric Touch": 68.6
+    },
+    "Skeptxo": {
+      "Slice and Dice": 68.9
+    },
+    "Sweetheart": {
+      "Shadow Word: Pain": 3.2
+    }
   },
   "saves": [
     {
@@ -24435,7 +24481,7 @@
           "num": 5.5,
           "off": "8/10"
         },
-        "vs_replacement": 81,
+        "vs_replacement": 80,
         "all": {
           "total": 5443954,
           "active": 3592685
@@ -24461,7 +24507,7 @@
           "num": 86.9,
           "off": "8/10"
         },
-        "vs_replacement": 56,
+        "vs_replacement": 55,
         "all": {
           "total": 3515641,
           "active": 3011127
@@ -24486,7 +24532,7 @@
           "icon": "ability_warrior_battleshout",
           "num": 86.2
         },
-        "vs_replacement": 68,
+        "vs_replacement": 66,
         "all": {
           "total": 4814224,
           "active": 3630144
@@ -24501,128 +24547,29 @@
         }
       },
       {
-        "name": "Alldorin",
-        "role": "Caster",
-        "effective_role": "Caster",
-        "toolkit": {
-          "label": "Top SB crit",
-          "value": "7,528",
-          "title": "Biggest single Shadow Bolt critical hit",
-          "icon": "spell_shadow_shadowbolt",
-          "num": 7528
-        },
-        "vs_replacement": 61,
-        "all": {
-          "total": 5029880,
-          "active": 3224786
-        },
-        "boss": {
-          "total": 2311236,
-          "active": 1779060
-        },
-        "trash": {
-          "total": 2718644,
-          "active": 1445726
-        }
-      },
-      {
-        "name": "Shovelpriest",
-        "role": "Caster",
-        "effective_role": "Caster",
-        "toolkit": {
-          "label": "Mana battery",
-          "value": "429k",
-          "title": "429,366 mana returned to the raid via Vampiric Touch",
-          "icon": "spell_holy_stoicism",
-          "num": 429
-        },
-        "vs_replacement": 39,
-        "all": {
-          "total": 3258416,
-          "active": 3217244
-        },
-        "boss": {
-          "total": 1731685,
-          "active": 1591850
-        },
-        "trash": {
-          "total": 1526731,
-          "active": 1625394
-        }
-      },
-      {
-        "name": "Bahguul",
-        "role": "Caster",
-        "effective_role": "Caster",
-        "toolkit": {
-          "label": "Innervates",
-          "value": "5",
-          "title": "Innervates given · 3 Rez",
-          "icon": "spell_nature_lightning",
-          "num": 5
-        },
-        "vs_replacement": 63,
-        "all": {
-          "total": 3937989,
-          "active": 3599517
-        },
-        "boss": {
-          "total": 1959170,
-          "active": 1843702
-        },
-        "trash": {
-          "total": 1978819,
-          "active": 1755815
-        }
-      },
-      {
-        "name": "Feelsbaldman",
-        "role": "Caster",
-        "effective_role": "Caster",
-        "toolkit": {
-          "label": "ToW uptime",
-          "value": "~98.6%",
-          "title": "Totem of Wrath uptime — modeled from recast cadence (totem buffs aren't logged as auras in 2.5) · 9 Bloodlust",
-          "icon": "spell_fire_totemofwrath",
-          "num": 98.6
-        },
-        "vs_replacement": 71,
-        "all": {
-          "total": 4596809,
-          "active": 3125642
-        },
-        "boss": {
-          "total": 2193114,
-          "active": 1558907
-        },
-        "trash": {
-          "total": 2403695,
-          "active": 1566735
-        }
-      },
-      {
-        "name": "Mucoid",
+        "name": "Boogiez",
         "role": "Physical",
         "effective_role": "Physical",
         "toolkit": {
-          "label": "MD · Tranq",
-          "value": "4 · 0",
-          "title": "4 Misdirections · 0 Tranquilizing Shots",
-          "icon": "ability_hunter_misdirection",
-          "num": 4
+          "label": "WF uptime",
+          "value": "~100%",
+          "title": "Windfury Totem uptime — modeled from recast cadence (144 drops; totem buffs aren't logged as auras in 2.5) · 144 Grace of Air · 279 WF↔GoA swaps (twisting → WF intentionally down for GoA) · 1 Bloodlust",
+          "icon": "spell_nature_windfury",
+          "num": 100.0,
+          "tag": "🌀 twist"
         },
-        "vs_replacement": 70,
+        "vs_replacement": 81,
         "all": {
-          "total": 5150387,
-          "active": 3486921
+          "total": 5613628,
+          "active": 3904626
         },
         "boss": {
-          "total": 2644454,
-          "active": 1538194
+          "total": 2642128,
+          "active": 1802093
         },
         "trash": {
-          "total": 2505933,
-          "active": 1948727
+          "total": 2971500,
+          "active": 2102533
         }
       },
       {
@@ -24636,7 +24583,7 @@
           "icon": "spell_nature_wispsplode",
           "num": 431
         },
-        "vs_replacement": 90,
+        "vs_replacement": 89,
         "all": {
           "total": 7739528,
           "active": 3605203
@@ -24651,78 +24598,153 @@
         }
       },
       {
-        "name": "Skeptxo",
+        "name": "Feelsbaldman",
+        "role": "Caster",
+        "effective_role": "Caster",
+        "toolkit": {
+          "label": "ToW uptime",
+          "value": "~98.6%",
+          "title": "Totem of Wrath uptime — modeled from recast cadence (totem buffs aren't logged as auras in 2.5) · 9 Bloodlust",
+          "icon": "spell_fire_totemofwrath",
+          "num": 98.6
+        },
+        "vs_replacement": 69,
+        "all": {
+          "total": 4596809,
+          "active": 3125642
+        },
+        "boss": {
+          "total": 2193114,
+          "active": 1558907
+        },
+        "trash": {
+          "total": 2403695,
+          "active": 1566735
+        }
+      },
+      {
+        "name": "Bahguul",
+        "role": "Caster",
+        "effective_role": "Caster",
+        "toolkit": {
+          "label": "Innervates",
+          "value": "5",
+          "title": "Innervates given · 3 Rez",
+          "icon": "spell_nature_lightning",
+          "num": 5
+        },
+        "vs_replacement": 61,
+        "all": {
+          "total": 3937989,
+          "active": 3599517
+        },
+        "boss": {
+          "total": 1959170,
+          "active": 1843702
+        },
+        "trash": {
+          "total": 1978819,
+          "active": 1755815
+        }
+      },
+      {
+        "name": "Jadyx",
         "role": "Physical",
         "effective_role": "Physical",
         "toolkit": {
-          "label": "Slice & Dice",
-          "value": "68.9%",
-          "title": "Slice and Dice uptime (75 casts)",
-          "icon": "ability_rogue_slicedice",
-          "num": 68.9
+          "label": "MD · Tranq",
+          "value": "6 · 0",
+          "title": "6 Misdirections · 0 Tranquilizing Shots",
+          "icon": "ability_hunter_misdirection",
+          "num": 6
+        },
+        "vs_replacement": 75,
+        "all": {
+          "total": 4903842,
+          "active": 3671277
+        },
+        "boss": {
+          "total": 2916109,
+          "active": 1836086
+        },
+        "trash": {
+          "total": 1987733,
+          "active": 1835191
+        }
+      },
+      {
+        "name": "Shovelpriest",
+        "role": "Caster",
+        "effective_role": "Caster",
+        "toolkit": {
+          "label": "Mana battery",
+          "value": "429k",
+          "title": "429,366 mana returned to the raid via Vampiric Touch",
+          "icon": "spell_holy_stoicism",
+          "num": 429
+        },
+        "vs_replacement": 38,
+        "all": {
+          "total": 3258416,
+          "active": 3217244
+        },
+        "boss": {
+          "total": 1731685,
+          "active": 1591850
+        },
+        "trash": {
+          "total": 1526731,
+          "active": 1625394
+        }
+      },
+      {
+        "name": "Alldorin",
+        "role": "Caster",
+        "effective_role": "Caster",
+        "toolkit": {
+          "label": "Top SB crit",
+          "value": "7,528",
+          "title": "Biggest single Shadow Bolt critical hit",
+          "icon": "spell_shadow_shadowbolt",
+          "num": 7528
         },
         "vs_replacement": 59,
         "all": {
-          "total": 4273444,
-          "active": 3328046
+          "total": 5029880,
+          "active": 3224786
         },
         "boss": {
-          "total": 2142373,
-          "active": 1535175
+          "total": 2311236,
+          "active": 1779060
         },
         "trash": {
-          "total": 2131071,
-          "active": 1792871
+          "total": 2718644,
+          "active": 1445726
         }
       },
       {
-        "name": "Areso",
-        "role": "Physical",
-        "effective_role": "Physical",
+        "name": "Marvels",
+        "role": "Caster",
+        "effective_role": "Caster",
         "toolkit": {
-          "label": "Battle Shout",
-          "value": "89%",
-          "title": "Battle Shout uptime on self (26 casts)",
-          "icon": "ability_warrior_battleshout",
-          "num": 89.0
+          "label": "Top SB crit",
+          "value": "11,571",
+          "title": "Biggest single Shadow Bolt critical hit",
+          "icon": "spell_shadow_shadowbolt",
+          "num": 11571
         },
-        "vs_replacement": 67,
+        "vs_replacement": 70,
         "all": {
-          "total": 5032103,
-          "active": 3291815
+          "total": 6511469,
+          "active": 3429252
         },
         "boss": {
-          "total": 2609006,
-          "active": 1673640
+          "total": 2833160,
+          "active": 1605604
         },
         "trash": {
-          "total": 2423097,
-          "active": 1618175
-        }
-      },
-      {
-        "name": "Cindybrooke",
-        "role": "Physical",
-        "effective_role": "Physical",
-        "toolkit": {
-          "label": "Slice & Dice",
-          "value": "70.5%",
-          "title": "Slice and Dice uptime (105 casts)",
-          "icon": "ability_rogue_slicedice",
-          "num": 70.5
-        },
-        "vs_replacement": 84,
-        "all": {
-          "total": 4639537,
-          "active": 3448043
-        },
-        "boss": {
-          "total": 2710537,
-          "active": 1709122
-        },
-        "trash": {
-          "total": 1929000,
-          "active": 1738921
+          "total": 3678309,
+          "active": 1823648
         }
       },
       {
@@ -24730,14 +24752,14 @@
         "role": "Physical",
         "effective_role": "Physical",
         "toolkit": {
-          "label": "Windfury",
-          "value": "133",
-          "title": "Windfury Totem drops · 118 Grace of Air · 234 WF↔GoA swaps (twisting) · 1 Bloodlust",
+          "label": "WF uptime",
+          "value": "~100%",
+          "title": "Windfury Totem uptime — modeled from recast cadence (133 drops; totem buffs aren't logged as auras in 2.5) · 118 Grace of Air · 234 WF↔GoA swaps (twisting → WF intentionally down for GoA) · 1 Bloodlust",
           "icon": "spell_nature_windfury",
-          "num": 133,
+          "num": 100.0,
           "tag": "🌀 twist"
         },
-        "vs_replacement": 76,
+        "vs_replacement": 74,
         "all": {
           "total": 5104508,
           "active": 3613543
@@ -24752,7 +24774,107 @@
         }
       },
       {
-        "name": "Zyph",
+        "name": "Skeptxo",
+        "role": "Physical",
+        "effective_role": "Physical",
+        "toolkit": {
+          "label": "Slice & Dice",
+          "value": "68.9%",
+          "title": "Slice and Dice uptime (75 casts)",
+          "icon": "ability_rogue_slicedice",
+          "num": 68.9
+        },
+        "vs_replacement": 58,
+        "all": {
+          "total": 4273444,
+          "active": 3328046
+        },
+        "boss": {
+          "total": 2142373,
+          "active": 1535175
+        },
+        "trash": {
+          "total": 2131071,
+          "active": 1792871
+        }
+      },
+      {
+        "name": "Philliam",
+        "role": "Physical",
+        "effective_role": "Physical",
+        "toolkit": {
+          "label": "Seal twists",
+          "value": "5/min",
+          "title": "183 Seal of Command casts — twist cadence",
+          "icon": "ability_warrior_innerrage",
+          "num": 4.9
+        },
+        "vs_replacement": 45,
+        "all": {
+          "total": 3803294,
+          "active": 3178026
+        },
+        "boss": {
+          "total": 2117863,
+          "active": 1492289
+        },
+        "trash": {
+          "total": 1685431,
+          "active": 1685737
+        }
+      },
+      {
+        "name": "Cindybrooke",
+        "role": "Physical",
+        "effective_role": "Physical",
+        "toolkit": {
+          "label": "Slice & Dice",
+          "value": "70.5%",
+          "title": "Slice and Dice uptime (105 casts)",
+          "icon": "ability_rogue_slicedice",
+          "num": 70.5
+        },
+        "vs_replacement": 83,
+        "all": {
+          "total": 4639537,
+          "active": 3448043
+        },
+        "boss": {
+          "total": 2710537,
+          "active": 1709122
+        },
+        "trash": {
+          "total": 1929000,
+          "active": 1738921
+        }
+      },
+      {
+        "name": "Areso",
+        "role": "Physical",
+        "effective_role": "Physical",
+        "toolkit": {
+          "label": "Battle Shout",
+          "value": "89%",
+          "title": "Battle Shout uptime on self (26 casts)",
+          "icon": "ability_warrior_battleshout",
+          "num": 89.0
+        },
+        "vs_replacement": 66,
+        "all": {
+          "total": 5032103,
+          "active": 3291815
+        },
+        "boss": {
+          "total": 2609006,
+          "active": 1673640
+        },
+        "trash": {
+          "total": 2423097,
+          "active": 1618175
+        }
+      },
+      {
+        "name": "Mucoid",
         "role": "Physical",
         "effective_role": "Physical",
         "toolkit": {
@@ -24764,6 +24886,31 @@
         },
         "vs_replacement": 69,
         "all": {
+          "total": 5150387,
+          "active": 3486921
+        },
+        "boss": {
+          "total": 2644454,
+          "active": 1538194
+        },
+        "trash": {
+          "total": 2505933,
+          "active": 1948727
+        }
+      },
+      {
+        "name": "Zyph",
+        "role": "Physical",
+        "effective_role": "Physical",
+        "toolkit": {
+          "label": "MD · Tranq",
+          "value": "4 · 0",
+          "title": "4 Misdirections · 0 Tranquilizing Shots",
+          "icon": "ability_hunter_misdirection",
+          "num": 4
+        },
+        "vs_replacement": 68,
+        "all": {
           "total": 4960575,
           "active": 3616025
         },
@@ -24774,32 +24921,6 @@
         "trash": {
           "total": 2216400,
           "active": 1787847
-        }
-      },
-      {
-        "name": "Boogiez",
-        "role": "Physical",
-        "effective_role": "Physical",
-        "toolkit": {
-          "label": "Windfury",
-          "value": "144",
-          "title": "Windfury Totem drops · 144 Grace of Air · 279 WF↔GoA swaps (twisting) · 1 Bloodlust",
-          "icon": "spell_nature_windfury",
-          "num": 144,
-          "tag": "🌀 twist"
-        },
-        "vs_replacement": 83,
-        "all": {
-          "total": 5613628,
-          "active": 3904626
-        },
-        "boss": {
-          "total": 2642128,
-          "active": 1802093
-        },
-        "trash": {
-          "total": 2971500,
-          "active": 2102533
         }
       },
       {
@@ -24825,81 +24946,6 @@
         "trash": {
           "total": 2704090,
           "active": 2141744
-        }
-      },
-      {
-        "name": "Jadyx",
-        "role": "Physical",
-        "effective_role": "Physical",
-        "toolkit": {
-          "label": "MD · Tranq",
-          "value": "6 · 0",
-          "title": "6 Misdirections · 0 Tranquilizing Shots",
-          "icon": "ability_hunter_misdirection",
-          "num": 6
-        },
-        "vs_replacement": 77,
-        "all": {
-          "total": 4903842,
-          "active": 3671277
-        },
-        "boss": {
-          "total": 2916109,
-          "active": 1836086
-        },
-        "trash": {
-          "total": 1987733,
-          "active": 1835191
-        }
-      },
-      {
-        "name": "Philliam",
-        "role": "Physical",
-        "effective_role": "Physical",
-        "toolkit": {
-          "label": "Seal twists",
-          "value": "5/min",
-          "title": "183 Seal of Command casts — twist cadence",
-          "icon": "ability_warrior_innerrage",
-          "num": 4.9
-        },
-        "vs_replacement": 46,
-        "all": {
-          "total": 3803294,
-          "active": 3178026
-        },
-        "boss": {
-          "total": 2117863,
-          "active": 1492289
-        },
-        "trash": {
-          "total": 1685431,
-          "active": 1685737
-        }
-      },
-      {
-        "name": "Marvels",
-        "role": "Caster",
-        "effective_role": "Caster",
-        "toolkit": {
-          "label": "Top SB crit",
-          "value": "11,571",
-          "title": "Biggest single Shadow Bolt critical hit",
-          "icon": "spell_shadow_shadowbolt",
-          "num": 11571
-        },
-        "vs_replacement": 72,
-        "all": {
-          "total": 6511469,
-          "active": 3429252
-        },
-        "boss": {
-          "total": 2833160,
-          "active": 1605604
-        },
-        "trash": {
-          "total": 3678309,
-          "active": 1823648
         }
       }
     ]
