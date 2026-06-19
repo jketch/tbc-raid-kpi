@@ -3128,12 +3128,22 @@ const PERF_PRIMARY = {   // spec -> {ability, targetShare 0..1, denom:[abilities
   Destruction:  {ability:"Shadow Bolt",   targetShare:0.75, denom:["Shadow Bolt","Incinerate","Soul Fire","Conflagrate"]}, // Affliction omitted — Shadow Bolt is genuine filler for it
   Marksmanship: {ability:"Steady Shot",   targetShare:0.80, denom:["Steady Shot","Arcane Shot","Multi-Shot"]},             // Auto Shot EXCLUDED by construction
   BeastMastery: {ability:"Steady Shot",   targetShare:0.80, denom:["Steady Shot","Arcane Shot","Multi-Shot"]},
-  // NB: only abilities in a player's TOP-6 casts survive in WEEK_DATA.playerSpells (fetch_role_spell_usage
-  // truncates) — fine for the nuke-spam mains above (they ARE the top casts), but it KILLS warrior Execute
-  // (lower-frequency → absent → reads 0% for everyone). So Execute is NOT here; warriors' rotation is
-  // already covered by their BT/WW (Fury) / MS/WW (Arms) on-CD cadence, which IS in the top-6. (Heroic
-  // Strike / Cleave were never candidates — off-GCD rage dumps; rage skill rides in the BT/WW cadence.)
+  // Execute is ALWAYS scored (no drop-out): on a boss KILL the sub-20% phase always happens, so a 0 share
+  // is a real miss. LOW target — Execute's share of whole-fight casts is naturally small + fight-length
+  // dependent (the softest of these, v1, calibrate live). Counts come from WEEK_DATA.rotationCasts (the
+  // UNTRUNCATED Casts-events tally), since the Casts TABLE that feeds playerSpells drops Execute. Heroic
+  // Strike / Cleave still excluded — off-GCD rage dumps; rage skill rides in BT/WW cadence.
+  // Execute is a big share of warrior SPECIAL casts in practice (live: Fury ~30%, Arms ~14% — Arms' Slam
+  // dilutes the denom). Targets reflect that; v1, calibrate live. A warrior who under-executes scores below.
+  Fury:         {ability:"Execute", targetShare:0.25, denom:["Execute","Bloodthirst","Whirlwind","Slam"]},
+  Arms:         {ability:"Execute", targetShare:0.15, denom:["Execute","Mortal Strike","Whirlwind","Slam"]},
 };
+// Totem-twisting (enh shaman) scored in PERFORMANCE — the SME call: "totem twisting like ret pal should be
+// in performance." Like ret seal-twist (a casts/min cadence), score the WF↔GoA swap rate vs a target. A
+// good twister (high swaps/min) scores well — a parker (0 swaps) low. Reads swaps_min off the toolkit cell
+// (build_class_toolkit). The over-twist→OOM ceiling isn't penalized (capped at the target) — surfaced as
+// context via the "Party WF · twists" cell (WF% + GoA% + swaps/min) so officers can judge over-twisting. v1.
+const PERF_TWIST = { Enhancement: { target: 5.0 } };   // WF↔GoA swaps/min that scores 100
 // Melee-MANDATORY avoidable mechanics — damage you take by being in melee (a spinning boss hits
 // all melee; low-mobility warriors/rets can't escape it, only high-mobility rogues clip it). EXCLUDED
 // from Execution scoring so it doesn't punish melee for unavoidable damage (same principle as tanks).
@@ -3503,10 +3513,16 @@ function _perfRows(){
               if(am>0) oncd.forEach(o=>{ const cpm=((playerAbil[name]||{})[o.ability]||0)/am; _parts.push({ab:o.ability, kind:"cpm", cpm, s:clamp(cpm/o.target,0,1)*100}); });
               maint.forEach(m=>{ const up=muOf(name,m.ability); if(m.gate && up<PERF_MAINTAIN_GATE*m.target) return; _parts.push({ab:m.ability, kind:"up", up, s:Math.min(100,up/m.target*100)}); });
               // ROTATION SHARE: main ability ÷ a curated rotational cast set (excludes Auto Shot/procs).
+              // Counts from rotationCasts (UNTRUNCATED Casts-events — has Execute) when present, else the
+              // truncated playerSpells as a fallback.
               const prim=PERF_PRIMARY[r.spec];
-              if(prim){ const pa=playerAbil[name]||{}, denom=prim.denom.reduce((s,ab)=>s+(pa[ab]||0),0);
+              if(prim){ const pa=(wd.rotationCasts||{})[name]||playerAbil[name]||{}, denom=prim.denom.reduce((s,ab)=>s+(pa[ab]||0),0);
                 if(denom>0){ const share=(pa[prim.ability]||0)/denom;
                   _parts.push({ab:prim.ability, kind:"share", share, s:Math.min(100, share/prim.targetShare*100)}); } }
+              // TOTEM-TWISTING (enh) → Performance: WF↔GoA swaps/min vs target (like ret seal-twist). A good
+              // twister scores well; a parker (0 swaps) low. Reads swaps_min off the toolkit cell.
+              const twist=PERF_TWIST[r.spec], swMin=(dr.toolkit||{}).swaps_min;
+              if(twist && swMin!=null) _parts.push({ab:"WF↔GoA twists", kind:"twist", sw:swMin, s:Math.min(100, swMin/twist.target*100)});
               if(_parts.length){ _coreParts=_parts; _coreScore=Math.round(_parts.reduce((a,p)=>a+p.s,0)/_parts.length); }
               const base=_coreScore==null?_dpsAct:(PERF_TUNING.PERF_ACT_W*_dpsAct+PERF_TUNING.PERF_CORE_W*_coreScore);
               perf=_dpsAct==null?null:clamp(base+_engBon,0,100); } }
@@ -3583,7 +3599,7 @@ function _perfRows(){
     else { const dr=dps[name];
       if(dr){ const aA=_dpsAct==null?"—":Math.round(_dpsAct), aB=_dpsActB==null?"—":Math.round(_dpsActB);
         const ps=[`${aA}% activity — boss + trash (boss ${aB}%) [${Math.round(PERF_TUNING.PERF_ACT_W*100)}% wt]`];
-        if(_coreParts) ps.push(`${_coreParts.map(p=>p.kind==="up"?`${p.ab} ${Math.round(p.up)}% up`:p.kind==="share"?`${p.ab} ${Math.round(p.share*100)}% of rotation`:`${p.ab} ${p.cpm.toFixed(1)}/min`).join(", ")} → overlay ${_coreScore} [${Math.round(PERF_TUNING.PERF_CORE_W*100)}% wt]`);
+        if(_coreParts) ps.push(`${_coreParts.map(p=>p.kind==="up"?`${p.ab} ${Math.round(p.up)}% up`:p.kind==="share"?`${p.ab} ${Math.round(p.share*100)}% of rotation`:p.kind==="twist"?`${p.ab} ${p.sw}/min`:`${p.ab} ${p.cpm.toFixed(1)}/min`).join(", ")} → overlay ${_coreScore} [${Math.round(PERF_TUNING.PERF_CORE_W*100)}% wt]`);
         if(r.class==="Hunter"){ const pa=playerAbil[name]||{}, au=pa["Auto Shot"]||0, st=pa["Steady Shot"]||0; if(au>0) ps.push(`shot ratio ${(st/au).toFixed(2)} Steady:Auto (diagnostic, not scored)`); }
         if(_engN>0) ps.push(`+${Math.round(_engBon)} engineering (${_engN} sapper/bomb)`);
         ps.push(`parse ${dr.vs_replacement??"—"} (context, not scored)`);

@@ -200,8 +200,8 @@ test('DPS perf = 0.7·activity + 0.3·core cadence (parse is context); engineeri
     damageBySelection: { durations: { all: 100, boss: 80 },
       players: [ { name: 'A', vs_replacement: 95, all: { total: 1, active: 70000 }, boss: { active: 60000 } },
                  { name: 'B', vs_replacement: 40, all: { total: 1, active: 70000 }, boss: { active: 60000 } } ] },
-    playerSpells: { Physical: [ { name: 'A', abilities: [{ ability: 'Bloodthirst', casts: 4 }, { ability: 'Whirlwind', casts: 3 }] },
-                                { name: 'B', abilities: [{ ability: 'Bloodthirst', casts: 4 }, { ability: 'Whirlwind', casts: 3 }] } ] },  // BT+WW both ≥ target → on-CD 100 (Fury has no rotation-share entry)
+    playerSpells: { Physical: [ { name: 'A', abilities: [{ ability: 'Bloodthirst', casts: 4 }, { ability: 'Whirlwind', casts: 3 }, { ability: 'Execute', casts: 3 }] },
+                                { name: 'B', abilities: [{ ability: 'Bloodthirst', casts: 4 }, { ability: 'Whirlwind', casts: 3 }, { ability: 'Execute', casts: 3 }] } ] },  // BT+WW on-CD 100; Execute 3/10=0.30 ≥ 0.25 → share 100 → overlay 100
     engineering: [{ name: 'A', eng: { 'Super Sapper Charge': 6 } }],   // A actively uses engineering
   };
   const a = rowByName(wd, 'A'), b = rowByName(wd, 'B');
@@ -303,6 +303,34 @@ test('hunter Steady Shot share excludes Auto Shot from the denominator', () => {
   };
   const r = rowByName(wd, 'Hunter');
   assert.match(r.why.perf, /Steady Shot 80% of rotation/, 'share = 80/100 (Auto excluded), not 80/380 = 21%');
+});
+
+// ── 7h. Warrior Execute rotation-share scores from rotationCasts (untruncated Casts-events) ────
+test('warrior Execute rotation-share reads rotationCasts (not the truncated playerSpells)', () => {
+  const wd = {
+    roster: { War: { class: 'Warrior', spec: 'Fury', role: 'Physical' } },
+    damageBySelection: { durations: { all: 60 }, players: [{ name: 'War', all: { total: 1, active: 60000 } }] },
+    playerSpells: { Physical: [{ name: 'War', abilities: [{ ability: 'Bloodthirst', casts: 5 }, { ability: 'Whirlwind', casts: 3 }] }] }, // truncated — NO Execute
+    rotationCasts: { War: { 'Execute': 5, 'Bloodthirst': 5, 'Whirlwind': 3, 'Slam': 2 } },   // untruncated: Execute present
+  };
+  const r = rowByName(wd, 'War');
+  // Execute 5/(5+5+3+2)=0.33 ≥ target 0.25 → 100; BT/WW on-CD 100 → overlay 100 → perf 100
+  assert.equal(r.perf, 100);
+  assert.match(r.why.perf, /Execute 33% of rotation/, 'Execute scored from rotationCasts, not the truncated playerSpells');
+});
+
+// ── 7i. Totem-twisting (enh) is scored in Performance as swaps/min (the "like ret pal" call) ───
+test('Enhancement totem-twisting scores in Performance (WF↔GoA swaps/min)', () => {
+  const mk = sm => ({
+    roster: { Enh: { class: 'Shaman', spec: 'Enhancement', role: 'Physical' } },
+    damageBySelection: { durations: { all: 60 }, players: [{ name: 'Enh', toolkit: { swaps_min: sm }, all: { total: 1, active: 60000 } }] },
+    playerSpells: { Physical: [{ name: 'Enh', abilities: [{ ability: 'Stormstrike', casts: 5 }] }] },   // on-CD Stormstrike 5/min → 100
+  });
+  const twister = rowByName(mk(6), 'Enh');   // 6/min ≥ target 5 → 100 → overlay 100
+  const parker  = rowByName(mk(0), 'Enh');   // 0 swaps → twist part 0 → overlay (100+0)/2 = 50
+  assert.ok(twister.perf > parker.perf, 'an active twister scores higher than a parker (rewarded, not cratered)');
+  assert.match(twister.why.perf, /twists 6\/min/);
+  assert.equal(twister.util, null, 'enh has no utility facet — twisting is Performance now');
 });
 
 // ── 6. A facet nobody did this week drops out (null) — never a damaging 0 ─────────────────────

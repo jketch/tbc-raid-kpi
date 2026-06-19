@@ -155,6 +155,9 @@ def map_to_week_data(wcl: dict) -> WeekData:
             cell["num"] = m["num"]          # raw numeric, for week-over-week trending
         if m.get("tag"):
             cell["tag"] = m["tag"]
+        for k in ("swaps_min", "wf_up", "goa_up"):   # enh totem-twist signals → Performance score
+            if m.get(k) is not None:
+                cell[k] = m[k]
         # hybrid tag: this metric belongs to someone whose roster role isn't what they played
         if _eff(p) != p.get("role") and p.get("fights_dps", 0) > 0:
             cell["off"] = f"{p.get('fights_dps', 0)}/{p.get('fights_total', 0)}"
@@ -535,6 +538,9 @@ def map_to_week_data(wcl: dict) -> WeekData:
         # per-player MAINTAIN uptime% (DoTs/self-buffs) + spec-baseline utility debuffs — pass through
         # ({name:{ability:pct}}); the perf-scoring core (template.html) reads it by ability name
         "maintainUptime": wcl.get("maintain_uptime", {}),
+        # per-player UNTRUNCATED rotation-ability cast counts ({name:{ability:count}}) — for rotation-share
+        # (incl. Execute, which the truncated playerSpells drops). From class_toolkit's "_rot" sub-dicts.
+        "rotationCasts": {nm: tk["_rot"] for nm, tk in (_toolkit_counts or {}).items() if tk.get("_rot")},
         # "saving others" — protective/external casts on allies, ranked by saves then total.
         # Dispels are filtered off here (they own the dispels card below); this is protective
         # saves + reactive utility only. Positive call-out surface; empty list ⇒ a quiet week.
