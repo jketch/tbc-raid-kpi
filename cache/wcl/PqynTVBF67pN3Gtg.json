@@ -22085,33 +22085,57 @@
     "total": 23
   },
   "class_toolkit": {
-    "Faeriefireqt": {
-      "mangle": 260,
-      "innervate": 8,
-      "rebirth": 3
+    "Alldorin": {
+      "_rot": {
+        "Shadow Bolt": 430
+      },
+      "sb_crit": 9725
     },
-    "Philliam": {
-      "soc": 194
+    "Areso": {
+      "bshout": 32,
+      "bshout_up": 95.5,
+      "_rot": {
+        "Bloodthirst": 224,
+        "Execute": 170,
+        "Whirlwind": 141
+      }
     },
-    "Moojerked": {
-      "bloodlust": 2,
-      "goa_totem": 24,
-      "tow_totem": 20,
-      "tow_up": 85.3
+    "Bahguul": {
+      "innervate": 6,
+      "rebirth": 1
     },
-    "Skeptxo": {
-      "snd": 91,
-      "snd_up": 78.5
+    "Blunderdin": {
+      "soc": 218
+    },
+    "Boogiez": {
+      "wf_totem": 92,
+      "goa_totem": 65,
+      "wf_swaps": 127,
+      "wf_up": 61.1,
+      "goa_up": 51.3
     },
     "Cindybrooke": {
       "snd": 119,
       "snd_up": 75.4
+    },
+    "Faeriefireqt": {
+      "mangle": 260,
+      "innervate": 8,
+      "rebirth": 3
     },
     "Feelsbaldman": {
       "bloodlust": 9,
       "woa_totem": 21,
       "tow_totem": 24,
       "tow_up": 92.0
+    },
+    "Jadyx": {
+      "misdirect": 12,
+      "_rot": {
+        "Arcane Shot": 64,
+        "Multi-Shot": 15,
+        "Steady Shot": 778
+      }
     },
     "Juricc": {
       "goa_totem": 119,
@@ -22121,52 +22145,71 @@
       "wf_up": 45.5,
       "goa_up": 80.6
     },
-    "Boogiez": {
-      "wf_totem": 92,
-      "goa_totem": 65,
-      "wf_swaps": 127,
-      "wf_up": 61.1,
-      "goa_up": 51.3
-    },
-    "Areso": {
-      "bshout": 32,
-      "bshout_up": 95.5
+    "Marvels": {
+      "_rot": {
+        "Conflagrate": 1,
+        "Shadow Bolt": 549
+      },
+      "sb_crit": 11796
     },
     "Mmtoast": {
       "bshout": 27,
-      "bshout_up": 88.9
+      "bshout_up": 88.9,
+      "_rot": {
+        "Execute": 102,
+        "Mortal Strike": 194,
+        "Slam": 274,
+        "Whirlwind": 112
+      }
+    },
+    "Moojerked": {
+      "bloodlust": 2,
+      "goa_totem": 24,
+      "tow_totem": 20,
+      "tow_up": 85.3
+    },
+    "Mucoid": {
+      "_rot": {
+        "Arcane Shot": 164,
+        "Multi-Shot": 125,
+        "Steady Shot": 607
+      }
+    },
+    "Ohshiz": {
+      "woa_totem": 11
     },
     "Pewpslurper": {
       "innervate": 9,
       "rebirth": 3
     },
-    "Ohshiz": {
-      "woa_totem": 11
-    },
-    "Bahguul": {
-      "innervate": 6,
-      "rebirth": 1
-    },
-    "Blunderdin": {
-      "soc": 218
-    },
-    "Jadyx": {
-      "misdirect": 12
-    },
-    "Zyph": {
-      "misdirect": 4
-    },
-    "Zetla": {
-      "ae": 240
+    "Philliam": {
+      "soc": 194
     },
     "Seedemup": {
+      "_rot": {
+        "Shadow Bolt": 560
+      },
       "sb_crit": 10881
     },
-    "Marvels": {
-      "sb_crit": 11796
+    "Skeptxo": {
+      "snd": 91,
+      "snd_up": 78.5
     },
-    "Alldorin": {
-      "sb_crit": 9725
+    "Zetla": {
+      "ae": 240,
+      "_rot": {
+        "Arcane Blast": 1032,
+        "Fire Blast": 41,
+        "Frostbolt": 16
+      }
+    },
+    "Zyph": {
+      "misdirect": 4,
+      "_rot": {
+        "Arcane Shot": 121,
+        "Multi-Shot": 96,
+        "Steady Shot": 499
+      }
     },
     "Shovelpriest": {
       "vt_mana": 427376
