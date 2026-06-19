@@ -532,6 +532,9 @@ def map_to_week_data(wcl: dict) -> WeekData:
         "sunderArmor":    wcl.get("sunder_armor", {}),
         # per-rogue Expose Armor uptime — the rogue's share of the armor-debuff slot (Sunder's twin)
         "exposeArmor":    wcl.get("expose_armor", {}),
+        # per-player MAINTAIN uptime% (DoTs/self-buffs) + spec-baseline utility debuffs — pass through
+        # ({name:{ability:pct}}); the perf-scoring core (template.html) reads it by ability name
+        "maintainUptime": wcl.get("maintain_uptime", {}),
         # "saving others" — protective/external casts on allies, ranked by saves then total.
         # Dispels are filtered off here (they own the dispels card below); this is protective
         # saves + reactive utility only. Positive call-out surface; empty list ⇒ a quiet week.

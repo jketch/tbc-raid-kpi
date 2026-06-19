@@ -90,6 +90,8 @@ SECTIONS = {
                                    desc="per-warrior Sunder quality (empty: no warriors / no sunders)"),
     "exposeArmor":         Section(WCL,  False, predicate=_has_players,
                                    desc="per-rogue Expose Armor uptime — fills the Sunder armor slot (empty: no rogue Expose)"),
+    "maintainUptime":      Section(WCL,  False, predicate=lambda v: isinstance(v, dict) and bool(v),
+                                   desc="per-player DoT/self-buff uptime% + spec-baseline utility debuffs (perf v2; empty: no DoT specs)"),
     "manaReturns":         Section(WCL,  False, predicate=_has_batteries,
                                    desc="mana returned to raid by source (empty if comp returns none)"),
     "saves":               Section(WCL,  False,
@@ -221,6 +223,7 @@ class WeekData(TypedDict, total=False):
     gearAudit: dict
     sunderArmor: dict
     exposeArmor: dict
+    maintainUptime: dict
     manaReturns: dict
     saves: list
     dispels: dict

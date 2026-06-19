@@ -48,27 +48,35 @@ const facetsOf = (c, s, r) => JSON.parse(JSON.stringify(
 test('perfArchetype resolves role/spec to the right weighting bucket', () => {
   assert.equal(archOf('Warrior', 'Protection', 'Tank'), 'tank');     // role wins (spec-swap aware)
   assert.equal(archOf('Priest', 'Holy', 'Healer'), 'healer');
-  assert.equal(archOf('Paladin', 'Retribution', 'Physical'), 'dps2'); // Ret — utility-first
-  assert.equal(archOf('Priest', 'Shadow', 'Caster'), 'dps2');         // Shadow — utility-first
+  // ★ cost-of-utility re-derivation (§C): Ret/Shadow have ROTATIONAL (no-cost) utility → judged on
+  // Performance now → tier 1; only the boomkin buff-bot stays utility-FIRST (tier 2).
+  assert.equal(archOf('Paladin', 'Retribution', 'Physical'), 'dps1'); // Ret — rotational utility (seal-twist)
+  assert.equal(archOf('Priest', 'Shadow', 'Caster'), 'dps1');         // Shadow — rotational utility (VT/Misery)
+  assert.equal(archOf('Druid', 'Balance', 'Caster'), 'dps2');         // boomkin — utility-FIRST (the aura is the point)
+  assert.equal(archOf('Warlock', 'Affliction', 'Caster'), 'dps1');    // affli — CoE-credited utility-flavored
   assert.equal(archOf('Shaman', 'Elemental', 'Caster'), 'dps1');      // ToW buff — utility-flavored
   assert.equal(archOf('Warlock', 'Destruction', 'Caster'), 'dps0');   // pure parse
   assert.equal(archOf('Rogue', '', 'Physical'), 'dps0');              // blank spec → pure-DPS fallback
 });
 
-// ── 1. Ret seal-twist: the dps2 weighting + the twist facet actively lift the score ──────────
-test('Ret seal-twist scores via the twist facet, weighted dps2 (util x2)', () => {
+// ── 1. Ret seal-twist: the twist facet lifts utility; Ret is now dps1 (rotational utility) ────
+test('Ret seal-twist scores via the twist facet, weighted dps1 (util x1.25)', () => {
   const wd = {
     roster: { Ret: { class: 'Paladin', spec: 'Retribution', role: 'Physical' } },
-    damageBySelection: { players: [{ name: 'Ret', vs_replacement: 55, toolkit: { num: 5 }, all: { total: 100 } }] },
+    // perf is now ACTIVITY backbone + core cadence: 100% active (100s/100s) + full Crusader Strike cadence → 100
+    damageBySelection: { durations: { all: 100, boss: 100 },
+      players: [{ name: 'Ret', vs_replacement: 55, toolkit: { num: 5 }, all: { total: 100, active: 100000 }, boss: { active: 100000 } }] },
+    playerSpells: { Physical: [{ name: 'Ret', abilities: [{ ability: 'Crusader Strike', casts: 5 }, { ability: 'Judgment', casts: 5 }] }] },   // both on-CD ≥ target → 100
     // no consumables (prep null), no log (exec null) — isolates perf/surv/util
   };
   const r = rowByName(wd, 'Ret');
-  assert.equal(r.arch, 'dps2');
-  assert.equal(r.w[4], 2, 'util pillar weighted x2 for a utility-first DPS');
+  assert.equal(r.arch, 'dps1');
+  assert.equal(r.w[4], 1.25, 'util pillar weighted x1.25 for a utility-flavored DPS');
+  assert.equal(r.perf, 100, 'activity 100 (x0.7) + core cadence 100 (x0.3) = 100');
   assert.equal(r.util, 100, 'twist num 5 vs target 5 → 100');
   assert.match(r.why.util, /Seal twists/);   // FACET_LABEL.twist
-  // composite renormalizes over the 3 present pillars: perf 55 (x1) + surv 100 (x1) + util 100 (x2)
-  assert.ok(Math.abs(r.composite - (55 + 100 + 200) / 4) < 1e-9, `composite ${r.composite} != 88.75`);
+  // composite renormalizes over the 3 present pillars: perf 100 (x1.75) + surv 100 (x1) + util 100 (x1.25)
+  assert.ok(Math.abs(r.composite - (175 + 100 + 125) / 4) < 1e-9, `composite ${r.composite} != 100`);
 });
 
 // ── 2. Paladin utility split is by ROLE: Ret=twist, Prot/Holy=pala (JoW+blessings) ───────────
@@ -76,6 +84,19 @@ test('paladin utility facets split by role (twist vs pala)', () => {
   assert.deepEqual(facetsOf('Paladin', 'Retribution', 'Physical'), ['twist', 'disp']);
   assert.deepEqual(facetsOf('Paladin', 'Protection', 'Tank'), ['pala', 'disp']);
   assert.deepEqual(facetsOf('Paladin', 'Holy', 'Healer'), ['pala', 'disp']);
+});
+
+// ── 2b. Enhancement Windfury is scored as UPTIME% (toolkit num) vs the 90% target, not a drop count ─
+test('Enhancement Windfury utility = Totem uptime% vs the 90 target', () => {
+  assert.deepEqual(facetsOf('Shaman', 'Enhancement', 'Physical'), ['wf'], 'enh signature facet is Windfury');
+  const wd = {
+    roster: { Enh: { class: 'Shaman', spec: 'Enhancement', role: 'Physical' } },
+    // toolkit.num now carries modeled WF Totem UPTIME% (was a drop count). 90% vs target 90 → 100.
+    damageBySelection: { durations: { all: 100 }, players: [{ name: 'Enh', toolkit: { num: 90 }, all: { total: 1, active: 0 } }] },
+  };
+  const r = rowByName(wd, 'Enh');
+  assert.equal(r.util, 100, 'WF uptime 90 vs target 90 → 100');
+  assert.match(r.why.util, /Windfury % 90 vs 90 target/);
 });
 
 // ── 3. Rogue Expose is positive-only: it LIFTS the assigned rogue, never drags a pure-DPS one ─
@@ -99,7 +120,7 @@ test('composite renormalizes over present pillars when one is null', () => {
   const wd = {
     roster: { D: { class: 'Mage', spec: 'Fire', role: 'Caster' } },
     consumables: [{ name: 'D', flask: true, food: true, weapon: true }],   // prep 40+25+20 = 85
-    damageBySelection: { players: [{ name: 'D', vs_replacement: 80, all: { total: 100 } }] },  // perf 80
+    damageBySelection: { durations: { all: 100 }, players: [{ name: 'D', vs_replacement: 80, all: { total: 100, active: 80000 } }] },  // activity 80 → perf 80
     // no log → exec null; Mage's only facet is intr, nobody interrupted → util null
   };
   const r = rowByName(wd, 'D');
@@ -153,6 +174,90 @@ test('hunter n/a weapon-oil slot renormalizes Prep (not a 20-point cap)', () => 
   assert.equal(m.prep, 65, 'non-hunter core 65 over 100 → 65 (oil is a real unfilled slot)');
   assert.ok(h.prep > m.prep, 'hunter not capped for a slot that does not apply to them');
   assert.match(h.why.prep, /weapon oil n\/a/);
+});
+
+// ── 7. DPS perf = activity backbone + core cadence (NOT parse); engineering lifts it positive-only ─
+test('DPS perf = 0.7·activity + 0.3·core cadence (parse is context); engineering is positive-only', () => {
+  const wd = {
+    roster: { A: { class: 'Warrior', spec: 'Fury', role: 'Physical' },
+              B: { class: 'Warrior', spec: 'Fury', role: 'Physical' } },
+    damageBySelection: { durations: { all: 100, boss: 80 },
+      players: [ { name: 'A', vs_replacement: 95, all: { total: 1, active: 70000 }, boss: { active: 60000 } },
+                 { name: 'B', vs_replacement: 40, all: { total: 1, active: 70000 }, boss: { active: 60000 } } ] },
+    playerSpells: { Physical: [ { name: 'A', abilities: [{ ability: 'Bloodthirst', casts: 4 }, { ability: 'Whirlwind', casts: 3 }] },
+                                { name: 'B', abilities: [{ ability: 'Bloodthirst', casts: 4 }, { ability: 'Whirlwind', casts: 3 }] } ] },  // BT+WW both ≥ target → on-CD 100
+    engineering: [{ name: 'A', eng: { 'Super Sapper Charge': 6 } }],   // A actively uses engineering
+  };
+  const a = rowByName(wd, 'A'), b = rowByName(wd, 'B');
+  // 70% activity (x0.7) + full core cadence 100 (x0.3) = 79; parse (95 vs 40) is NOT in the score
+  assert.equal(b.perf, 79, 'perf = 0.7·activity + 0.3·core — independent of parse (B parses 40 but scores 79)');
+  assert.equal(a.perf, 85, 'engineering +6 lifts A from 79 → 85, positive-only');
+  assert.ok(a.perf > b.perf, 'identical activity + cadence, but the engineer is lifted');
+  assert.match(a.why.perf, /activity/);
+  assert.match(a.why.perf, /parse 95 \(context/);   // parse demoted to context in the brief
+});
+
+// ── 7b. On-CD cadence moves the score (minority, can't invert); uses an on-CD spec ────────────
+test('on-CD cadence blends in: same activity, but pressing your cooldown matters', () => {
+  const wd = {
+    roster: { Good: { class: 'Shaman', spec: 'Enhancement', role: 'Physical' },
+              Lazy: { class: 'Shaman', spec: 'Enhancement', role: 'Physical' } },
+    damageBySelection: { durations: { all: 60, boss: 60 },
+      players: [ { name: 'Good', all: { total: 1, active: 60000 }, boss: { active: 60000 } },
+                 { name: 'Lazy', all: { total: 1, active: 60000 }, boss: { active: 60000 } } ] },   // both 100% active
+    playerSpells: { Physical: [ { name: 'Good', abilities: [{ ability: 'Stormstrike', casts: 5 }] },   // 5/min vs target 5 → on-CD 100
+                                { name: 'Lazy', abilities: [{ ability: 'Stormstrike', casts: 1 }] } ] }, // 1/min → ~20
+  };
+  const g = rowByName(wd, 'Good'), l = rowByName(wd, 'Lazy');
+  assert.equal(g.perf, 100, 'full activity + on-CD cadence at target → 100');
+  assert.ok(l.perf < g.perf, 'identical activity, but a missed cooldown scores lower (minority drag)');
+  assert.match(l.why.perf, /Stormstrike/);
+});
+
+// ── 7c. Fillers are NOT scored; WITHOUT maintainUptime, a maintain-heavy spec is activity-only ─
+test('no maintainUptime → Affliction falls back to activity-only (v1.5 behavior preserved)', () => {
+  const wd = {
+    roster: { Lock: { class: 'Warlock', spec: 'Affliction', role: 'Caster' } },
+    damageBySelection: { durations: { all: 60 }, players: [{ name: 'Lock', all: { total: 1, active: 48000 } }] }, // 80% activity
+    playerSpells: { Caster: [{ name: 'Lock', abilities: [{ ability: 'Shadow Bolt', casts: 99 }] }] },  // filler — must NOT be scored
+    // NO maintainUptime section (old snapshot) → the ungated Corruption maintain must NOT read 0 and tank them
+  };
+  const r = rowByName(wd, 'Lock');
+  assert.equal(r.perf, 80, 'no maintain data → Shadow Bolt filler ignored, 80% activity → perf 80 (not dragged to 56)');
+});
+
+// ── 7d. MAINTAIN uptime overlay (v2): DoT uptime folds into the overlay, blended under activity ─
+test('maintain uptime blends into the overlay (Affliction Corruption + gated Immolate)', () => {
+  const wd = {
+    roster: { Lock: { class: 'Warlock', spec: 'Affliction', role: 'Caster' } },
+    damageBySelection: { durations: { all: 100 }, players: [{ name: 'Lock', all: { total: 1, active: 100000 } }] }, // 100% activity
+    playerSpells: { Caster: [{ name: 'Lock', abilities: [{ ability: 'Shadow Bolt', casts: 99 }] }] },
+    // Corruption ungated (target 85) → 85/85=100; Immolate gated (target 50) at 10% < 1/3·50≈16.7 → DROPS;
+    // Siphon Life gated (target 40) at 38 ≥ 13.3 → 38/40=95; UA absent (0 < gate) → drops.
+    maintainUptime: { Lock: { 'Corruption': 85, 'Immolate': 10, 'Siphon Life': 38 } },
+  };
+  const r = rowByName(wd, 'Lock');
+  // overlay = avg(Corruption 100, Siphon Life 95) = 97.5 → round 98; perf = 0.7·100 + 0.3·98 = 99.4 → 99
+  assert.equal(r.perf, 99, 'overlay = avg(Corruption 100, Siphon Life 95); Immolate gated out');
+  assert.match(r.why.perf, /Corruption 85% up/);
+  assert.doesNotMatch(r.why.perf, /Immolate/, 'a gated maintain below threshold drops out of the brief');
+});
+
+// ── 7e. §C spec-baseline utility credit: Affliction is credited Curse of the Elements UPTIME ────
+test('Affliction is credited CoE uptime as a primary Utility facet (§C)', () => {
+  assert.deepEqual(facetsOf('Warlock', 'Affliction', 'Caster'), ['stones', 'coe']);
+  assert.deepEqual(facetsOf('Warlock', 'Destruction', 'Caster'), ['stones'], 'destro is stones-only (curse is assigned)');
+  assert.deepEqual(facetsOf('Druid', 'Balance', 'Caster'), ['innervate', 'save', 'iff'], 'boomkin gets Faerie Fire');
+  assert.deepEqual(facetsOf('Hunter', 'Survival', 'Physical'), ['md', 'exposew'], 'survival gets Expose Weakness');
+  assert.deepEqual(facetsOf('Hunter', 'Marksmanship', 'Physical'), ['md'], 'MM is md-only');
+  const wd = {
+    roster: { Lock: { class: 'Warlock', spec: 'Affliction', role: 'Caster' } },
+    consumableUsage: [{ name: 'Lock', stones_made: 50 }],   // stones primary at target 50 → 100
+    maintainUptime: { Lock: { 'Curse of the Elements': 90 } },  // coe 90 vs target 90 → 100
+  };
+  const r = rowByName(wd, 'Lock');
+  assert.equal(r.util, 100, 'stones 100 + CoE 100 (both primary) → 100');
+  assert.match(r.why.util, /Curse of Elements % 90 vs 90 target/);
 });
 
 // ── 6. A facet nobody did this week drops out (null) — never a damaging 0 ─────────────────────

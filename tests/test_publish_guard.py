@@ -75,6 +75,31 @@ class TestSectionLossGuard(unittest.TestCase):
         self.assertEqual(publish._section_loss_guard(None, complete_week("W4")), [])
 
 
+class TestFreshnessGuard(unittest.TestCase):
+    """The freshness guard: refuse to deploy a latest week OLDER than the canonical current latest
+    (origin/data + last deploy). Pure helper — no git, no network."""
+
+    def test_older_latest_blocks(self):
+        # the exact incident: staging Jun 08 (smaller start_ms) over a live/canonical Jun 15
+        r = publish._stale_latest_reason(1780965731359, 1781570000000)
+        self.assertIsNotNone(r)
+        self.assertIn("OLDER", r)
+        self.assertIn("sync_state.py pull", r)
+
+    def test_same_latest_is_allowed(self):
+        # re-deploying a BETTER version of the same week (equal start_ms) must NOT block
+        self.assertIsNone(publish._stale_latest_reason(1780965731359, 1780965731359))
+
+    def test_newer_latest_is_allowed(self):
+        # the normal weekly advance (and the cloud run itself) — newer week, never blocked
+        self.assertIsNone(publish._stale_latest_reason(1781570000000, 1780965731359))
+
+    def test_unknown_baseline_skips(self):
+        # offline dev / first-ever deploy: no canonical baseline → check skipped (fail-open)
+        self.assertIsNone(publish._stale_latest_reason(1780965731359, None))
+        self.assertIsNone(publish._stale_latest_reason(None, 1780965731359))
+
+
 class TestNetlifyConfig(unittest.TestCase):
     """_netlify_config resolution: .env > env var; site id from NETLIFY_SITE_ID > state.json.
     load_env is monkeypatched so the developer's real .env never leaks into the tests."""

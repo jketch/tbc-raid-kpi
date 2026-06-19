@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Raider Score — Officer Reference</title>
+<style>
+  @page { size: letter; margin: 0.42in; }
+  * { box-sizing: border-box; }
+  html,body { margin:0; padding:0; }
+  body{ font-family: -apple-system, "Segoe UI", system-ui, sans-serif; color:#1f1d18; background:#fff;
+        font-size:10.3px; line-height:1.36; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .page{ max-width:7.5in; margin:0 auto; padding:2px; }
+  h1{ font-size:17px; margin:0; color:#8a6a16; letter-spacing:.2px; }
+  .toprow{ display:flex; justify-content:space-between; align-items:baseline; border-bottom:2px solid #c89b3c; padding-bottom:5px; margin-bottom:7px; }
+  .meta{ font-size:9.5px; color:#7a766c; font-weight:600; letter-spacing:.04em; }
+  .lede{ font-size:10.5px; color:#4a463d; margin:0 0 9px; }
+  .lede em{ color:#1f1d18; font-style:italic; }
+  .band{ border:1px solid #e2ddcf; background:#faf7ee; border-radius:7px; padding:8px 11px; margin-bottom:9px; }
+  .lbl{ font-size:9px; letter-spacing:.07em; text-transform:uppercase; color:#8a6a16; font-weight:800; margin-bottom:6px; }
+  .formula b{ color:#8a6a16; }
+  .formula span{ color:#7a766c; }
+  table{ border-collapse:collapse; width:100%; }
+  .arch th,.arch td{ padding:3px 7px; text-align:center; border-bottom:1px solid #ece7da; font-size:9.8px; }
+  .arch th{ font-size:8.6px; letter-spacing:.03em; text-transform:uppercase; color:#7a766c; font-weight:700; }
+  .arch td:first-child,.arch th:first-child{ text-align:left; font-weight:600; }
+  .arch .hi{ color:#8a6a16; font-weight:800; }
+  .arch .lo{ color:#a39e92; }
+  .note{ font-size:9.3px; color:#7a766c; margin-top:5px; }
+  .note em{ font-style:italic; color:#4a463d; }
+  .mtx th{ font-size:8.6px; letter-spacing:.04em; text-transform:uppercase; color:#7a766c; font-weight:700; text-align:left; padding:0 8px 5px; border-bottom:1.5px solid #c89b3c; }
+  .mtx td{ vertical-align:top; padding:7px 8px; border-bottom:1px solid #ece7da; }
+  .pn{ font-weight:800; font-size:11px; color:#1f1d18; }
+  .pw{ font-size:9px; color:#7a766c; margin-top:1px; }
+  .mtx td.body{ font-size:9.7px; color:#33302a; }
+  .mtx b{ color:#8a6a16; }
+  .tag{ display:inline-block; font-size:8px; letter-spacing:.03em; text-transform:uppercase; font-weight:800; padding:1.5px 5px; border-radius:4px; white-space:nowrap; }
+  .t-inp{ background:#e7f0fe; color:#2f64c0; border:1px solid #b9d2f7; }
+  .t-abs{ background:#eef1f4; color:#5a6b80; border:1px solid #ccd6e0; }
+  .t-rel{ background:#fdf0d8; color:#a9760c; border:1px solid #f0d399; }
+  .t-cls{ background:#f2e8fc; color:#8a40c8; border:1px solid #ddc4f4; }
+  .src{ font-family:"Consolas",ui-monospace,monospace; font-size:8.5px; color:#8a857a; }
+  .legend{ font-size:8.8px; color:#7a766c; margin:6px 2px 9px; display:flex; gap:13px; flex-wrap:wrap; }
+  .grd ul{ margin:0; padding:0; list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:4px 20px; }
+  .grd li{ font-size:9.5px; color:#33302a; padding-left:13px; position:relative; }
+  .grd li::before{ content:""; position:absolute; left:0; top:5px; width:5px; height:5px; border-radius:50%; background:#c89b3c; }
+  .grd li b{ color:#1f1d18; }
+  .foot{ margin-top:9px; font-size:8.6px; color:#9a958a; text-align:center; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="toprow">
+    <h1>Raider Score — How the Number Is Built</h1>
+    <div class="meta">Officer reference · v2 · Jun 2026</div>
+  </div>
+  <p class="lede">A single 0–100 per raider, blended from five pillars. Built so nobody is forced to the bottom and every spec is judged by what it is <em>invited for</em>. <em>Performance is now input-based — what the player controls, not buff/tempo-inflated parse.</em></p>
+
+  <div class="band">
+    <div class="lbl">The composite</div>
+    <div class="formula">Score = weighted blend of <b>Prep · Performance · Execution · Survival · Utility</b>, renormalized over the pillars that apply to that raider <span>(a pillar that doesn't apply drops out — never a damaging zero).</span></div>
+  </div>
+
+  <div class="band">
+    <div class="lbl">Weights are set per spec — not one-size-fits-all (the archetype)</div>
+    <table class="arch">
+      <thead><tr><th>Archetype (by spec / role)</th><th>Prep</th><th>Perf</th><th>Exec</th><th>Surv</th><th>Util</th></tr></thead>
+      <tbody>
+        <tr><td>Pure DPS <span class="lo">(lock, mage, rogue, fury…)</span></td><td>1.0</td><td class="hi">2.25</td><td>1.0</td><td>1.0</td><td class="lo">0.5</td></tr>
+        <tr><td>Utility DPS <span class="lo">(ele, enh, survival, affli, shadow, ret…)</span></td><td>1.0</td><td class="hi">1.75</td><td>1.0</td><td>1.0</td><td>1.25</td></tr>
+        <tr><td>Utility-first DPS <span class="lo">(boomkin — the buff-bot)</span></td><td>1.0</td><td>1.0</td><td>1.0</td><td>1.0</td><td class="hi">2.0</td></tr>
+        <tr><td>Healer</td><td>1.0</td><td class="hi">2.0</td><td class="lo">0.5</td><td>1.0</td><td>1.25</td></tr>
+        <tr><td>Tank</td><td>1.0</td><td>1.0</td><td class="hi">1.75</td><td class="hi">2.0</td><td class="lo">0.75</td></tr>
+      </tbody>
+    </table>
+    <div class="note">Role sets the base; a DPS spec's <em>utility tier</em> shifts weight between Performance and Utility — set by how much its utility <em>costs</em> output. So a boomkin is judged on the aura it brings, and a tank isn't judged on damage.</div>
+  </div>
+
+  <table class="mtx">
+    <thead><tr><th style="width:20%">Pillar — what it measures</th><th style="width:41%">How it's scored</th><th style="width:20%">Scoped against</th><th style="width:19%">Source</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><div class="pn">Preparation</div><div class="pw">Showed up raid-ready</div></td>
+        <td class="body">Weighted checklist → 100: flask <b>40</b> (2 elixirs ≈ flask), food <b>25</b>, weapon oil <b>20</b>, in-fight pot <b>10</b>, situational <b>5</b>. Gear gaps deduct: −10 / un-enchanted slot, −6 / empty socket.</td>
+        <td><span class="tag t-abs">Absolute</span><div class="pw" style="margin-top:4px">Same fixed bar for everyone.</div></td>
+        <td class="src">COMBATANT_INFO + combat log + gear audit</td>
+      </tr>
+      <tr>
+        <td><div class="pn">Performance</div><div class="pw">What the player controls</div></td>
+        <td class="body"><b>DPS:</b> activity / GCD-uptime % (boss + trash) is the backbone — buff/tempo-independent — blended with an overlay of <b>on-CD cadence</b> (pressed your cooldowns on time) <b>+ DoT/self-buff uptime</b> (kept your maintenance up, vs loose targets). Filler spells fold into activity. <b>Parse % is shown as context, not scored.</b> <b>Healers:</b> HPS parse. <b>Tanks:</b> threat parse + survivability grade.</td>
+        <td><span class="tag t-inp">Input</span><div class="pw" style="margin-top:4px">What you do, not what buffs/kill-speed inflate.</div></td>
+        <td class="src">WCL casts/events + tables</td>
+      </tr>
+      <tr>
+        <td><div class="pn">Execution</div><div class="pw">Avoided what was avoidable</div></td>
+        <td class="body">Avoidable dmg/min vs cohort cap → 0–100; AoE-into-allies docks (friendly fire + MC), capped; <b>killing a charmed ally → 0</b>. Tanks instead: active-mitigation upkeep (Holy Shield rate / Lacerate uptime).</td>
+        <td><span class="tag t-rel">Cohort</span><div class="pw" style="margin-top:4px">Melee vs ranged separately. Melee-mandatory hits excluded.</div></td>
+        <td class="src">combat log + WCL</td>
+      </tr>
+      <tr>
+        <td><div class="pn">Survival</div><div class="pw">Stayed alive / used tools</div></td>
+        <td class="body">Outcomes from 100: boss death <b>−25</b>, trash death <b>−12</b>, died with an unused healthstone <b>−10</b>. Penalized <b>once per category</b>, not per death.</td>
+        <td><span class="tag t-abs">Absolute</span><div class="pw" style="margin-top:4px">Once-per-category so a wipe night doesn't flatten everyone.</div></td>
+        <td class="src">WCL deaths + combat log</td>
+      </tr>
+      <tr>
+        <td><div class="pn">Utility</div><div class="pw">The job your spec brings</div></td>
+        <td class="body">Signature facet(s) vs an <b>absolute target</b> → min(100, value/target). Your signature (ToW, Windfury, Innervate, mana battery, Sunder…) is your one job — a 0 counts. A spec brought <i>primarily for a debuff</i> is credited its <b>uptime</b> (affli → Curse of Elements, boomkin → Faerie Fire, survival → Expose Weakness). Assigned extras (dispels, battle-res, Expose Armor) are <b>positive-only</b>: lift, never drag.</td>
+        <td><span class="tag t-cls">Class-shaped</span><div class="pw" style="margin-top:4px">Each class judged only on what it provides, vs a target — not the raid's best.</div></td>
+        <td class="src">WCL casts/events + combat log</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="legend">
+    <span><span class="tag t-inp">Input</span> what you control</span>
+    <span><span class="tag t-abs">Absolute</span> fixed bar</span>
+    <span><span class="tag t-rel">Cohort</span> vs our raid, like-for-like</span>
+    <span><span class="tag t-cls">Class-shaped</span> vs your kit's target</span>
+  </div>
+
+  <div class="band grd">
+    <div class="lbl">How it stays honest — and how it's checked</div>
+    <ul>
+      <li><b>Input over output</b> — Performance grades activity + cadence + uptime (what you do), not buff/tempo-inflated parse.</li>
+      <li><b>Absolute targets, not a curve</b> — nobody is forced to last place each week.</li>
+      <li><b>Null, not zero</b> — a pillar/facet that doesn't apply drops out and renormalizes.</li>
+      <li><b>Positive-only extras</b> — assigned utility can only raise a score, never sink it.</li>
+      <li><b>Per-spec weighting</b> — activity and a tank's mitigation aren't compared head-to-head.</li>
+      <li><b>Scored once</b> — each ability lives in exactly one pillar (no double-count).</li>
+      <li><b>Unit-tested core</b> — the scoring logic is a fenced module run on every commit.</li>
+      <li><b>v2 tuning</b> — every weight/target is labeled and calibrated against live weeks.</li>
+    </ul>
+  </div>
+
+  <div class="foot">Reliable for "is this raider meeting their role's mandate?" and spotting outliers · v2 weights/targets are directional, not a precise cross-raider leaderboard.</div>
+</div>
+</body>
+</html>
