@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>Raider Score — Officer Reference</title>
 <style>
-  @page { size: letter; margin: 0.42in; }
+  @page { size: letter; margin: 0.34in; }
   * { box-sizing: border-box; }
   html,body { margin:0; padding:0; }
   body{ font-family: -apple-system, "Segoe UI", system-ui, sans-serif; color:#1f1d18; background:#fff;
@@ -28,7 +28,7 @@
   .note{ font-size:9.3px; color:#7a766c; margin-top:5px; }
   .note em{ font-style:italic; color:#4a463d; }
   .mtx th{ font-size:8.6px; letter-spacing:.04em; text-transform:uppercase; color:#7a766c; font-weight:700; text-align:left; padding:0 8px 5px; border-bottom:1.5px solid #c89b3c; }
-  .mtx td{ vertical-align:top; padding:7px 8px; border-bottom:1px solid #ece7da; }
+  .mtx td{ vertical-align:top; padding:5px 8px; border-bottom:1px solid #ece7da; }
   .pn{ font-weight:800; font-size:11px; color:#1f1d18; }
   .pw{ font-size:9px; color:#7a766c; margin-top:1px; }
   .mtx td.body{ font-size:9.7px; color:#33302a; }
@@ -80,13 +80,13 @@
     <tbody>
       <tr>
         <td><div class="pn">Preparation</div><div class="pw">Showed up raid-ready</div></td>
-        <td class="body">Weighted checklist → 100: flask <b>40</b> (2 elixirs ≈ flask), food <b>25</b>, weapon oil <b>20</b>, in-fight pot <b>10</b>, situational <b>5</b>. Gear gaps deduct: −10 / un-enchanted slot, −6 / empty socket.</td>
+        <td class="body">Weighted checklist → 100, calibrated <b>per archetype</b> from T5 DPS-gain data: flask <b>40</b> (2 elixirs ≈ flask, 1 ≈ half), food, weapon oil/stone, in-fight pot. <i>Physical</i> weights the combat pot &amp; weapon stone heavily; <i>casters</i> weight food more. Stat scroll <b>+5</b> (bonus). Gear gaps deduct: −10 / enchant, −6 / socket.</td>
         <td><span class="tag t-abs">Absolute</span><div class="pw" style="margin-top:4px">Same fixed bar for everyone.</div></td>
         <td class="src">COMBATANT_INFO + combat log + gear audit</td>
       </tr>
       <tr>
         <td><div class="pn">Performance</div><div class="pw">What the player controls</div></td>
-        <td class="body"><b>DPS:</b> activity / GCD-uptime % (boss + trash) is the backbone — buff/tempo-independent — blended with an overlay of <b>on-CD cadence</b> (pressed your cooldowns on time) <b>+ DoT/self-buff uptime</b> (kept your maintenance up, vs loose targets). Filler spells fold into activity. <b>Parse % is shown as context, not scored.</b> <b>Healers:</b> HPS parse. <b>Tanks:</b> threat parse + survivability grade.</td>
+        <td class="body"><b>DPS:</b> activity / GCD-uptime % (boss + trash) is the backbone — buff/tempo-independent — blended with an overlay of <b>on-CD cadence</b>, <b>DoT/self-buff uptime</b>, and <b>rotation share</b> (your main nuke as a % of rotational casts). <b>Parse % is context, not scored.</b> <b>Healers:</b> HPS parse. <b>Tanks:</b> threat parse + survivability grade.</td>
         <td><span class="tag t-inp">Input</span><div class="pw" style="margin-top:4px">What you do, not what buffs/kill-speed inflate.</div></td>
         <td class="src">WCL casts/events + tables</td>
       </tr>

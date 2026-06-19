@@ -48,9 +48,10 @@ const facetsOf = (c, s, r) => JSON.parse(JSON.stringify(
 test('perfArchetype resolves role/spec to the right weighting bucket', () => {
   assert.equal(archOf('Warrior', 'Protection', 'Tank'), 'tank');     // role wins (spec-swap aware)
   assert.equal(archOf('Priest', 'Holy', 'Healer'), 'healer');
-  // ★ cost-of-utility re-derivation (§C): Ret/Shadow have ROTATIONAL (no-cost) utility → judged on
-  // Performance now → tier 1; only the boomkin buff-bot stays utility-FIRST (tier 2).
-  assert.equal(archOf('Paladin', 'Retribution', 'Physical'), 'dps1'); // Ret — rotational utility (seal-twist)
+  // ★ cost-of-utility re-derivation (§C): rotational (no-cost) utility → judged on Performance.
+  // Ret went all the way to tier 0 — its seal-twist is now SCORED as Performance (PERF_ONCD Seal of
+  // Command), leaving only a positive-only dispel. Shadow stays tier 1 (VT/Misery still in Utility).
+  assert.equal(archOf('Paladin', 'Retribution', 'Physical'), 'dps0'); // Ret — seal-twist now Performance
   assert.equal(archOf('Priest', 'Shadow', 'Caster'), 'dps1');         // Shadow — rotational utility (VT/Misery)
   assert.equal(archOf('Druid', 'Balance', 'Caster'), 'dps2');         // boomkin — utility-FIRST (the aura is the point)
   assert.equal(archOf('Warlock', 'Affliction', 'Caster'), 'dps1');    // affli — CoE-credited utility-flavored
@@ -59,44 +60,43 @@ test('perfArchetype resolves role/spec to the right weighting bucket', () => {
   assert.equal(archOf('Rogue', '', 'Physical'), 'dps0');              // blank spec → pure-DPS fallback
 });
 
-// ── 1. Ret seal-twist: the twist facet lifts utility; Ret is now dps1 (rotational utility) ────
-test('Ret seal-twist scores via the twist facet, weighted dps1 (util x1.25)', () => {
+// ── 1. Ret seal-twist is now a PERFORMANCE input (PERF_ONCD Seal of Command); Ret is dps0 ─────
+test('Ret seal-twist scores in Performance (Seal of Command on-CD), weighted dps0', () => {
   const wd = {
     roster: { Ret: { class: 'Paladin', spec: 'Retribution', role: 'Physical' } },
-    // perf is now ACTIVITY backbone + core cadence: 100% active (100s/100s) + full Crusader Strike cadence → 100
-    damageBySelection: { durations: { all: 100, boss: 100 },
-      players: [{ name: 'Ret', vs_replacement: 55, toolkit: { num: 5 }, all: { total: 100, active: 100000 }, boss: { active: 100000 } }] },
-    playerSpells: { Physical: [{ name: 'Ret', abilities: [{ ability: 'Crusader Strike', casts: 5 }, { ability: 'Judgment', casts: 5 }] }] },   // both on-CD ≥ target → 100
-    // no consumables (prep null), no log (exec null) — isolates perf/surv/util
+    // 1-minute selection: cpm == casts. On-CD: Crusader Strike 3 (≥3), Judgment 3 (≥2.5), Seal of
+    // Command 5 (≥5) → all at/above target → on-CD overlay 100; activity 100 → perf 100.
+    damageBySelection: { durations: { all: 60, boss: 60 },
+      players: [{ name: 'Ret', vs_replacement: 55, all: { total: 100, active: 60000 }, boss: { active: 60000 } }] },
+    playerSpells: { Physical: [{ name: 'Ret', abilities: [
+      { ability: 'Crusader Strike', casts: 3 }, { ability: 'Judgment', casts: 3 }, { ability: 'Seal of Command', casts: 5 }] }] },
+    // no consumables (prep null), no log (exec null), no dispels → util null (disp is positive-only)
   };
   const r = rowByName(wd, 'Ret');
-  assert.equal(r.arch, 'dps1');
-  assert.equal(r.w[4], 1.25, 'util pillar weighted x1.25 for a utility-flavored DPS');
-  assert.equal(r.perf, 100, 'activity 100 (x0.7) + core cadence 100 (x0.3) = 100');
-  assert.equal(r.util, 100, 'twist num 5 vs target 5 → 100');
-  assert.match(r.why.util, /Seal twists/);   // FACET_LABEL.twist
-  // composite renormalizes over the 3 present pillars: perf 100 (x1.75) + surv 100 (x1) + util 100 (x1.25)
-  assert.ok(Math.abs(r.composite - (175 + 100 + 125) / 4) < 1e-9, `composite ${r.composite} != 100`);
+  assert.equal(r.arch, 'dps0', 'Ret is pure-DPS now that seal-twist is scored as Performance');
+  assert.equal(r.perf, 100, 'activity 100 + on-CD (CS/Judgment/Seal of Command all at target) → 100');
+  assert.match(r.why.perf, /Seal of Command/, 'seal-twist appears in the Performance breakdown, not Utility');
+  assert.equal(r.util, null, 'Ret utility is dispels-only (positive-only) → null with no dispels');
 });
 
-// ── 2. Paladin utility split is by ROLE: Ret=twist, Prot/Holy=pala (JoW+blessings) ───────────
-test('paladin utility facets split by role (twist vs pala)', () => {
-  assert.deepEqual(facetsOf('Paladin', 'Retribution', 'Physical'), ['twist', 'disp']);
+// ── 2. Paladin utility split is by ROLE: Ret=disp-only (seal-twist→Perf), Prot/Holy=pala ─────
+test('paladin utility facets split by role (ret disp-only vs pala)', () => {
+  assert.deepEqual(facetsOf('Paladin', 'Retribution', 'Physical'), ['disp']);   // twist moved to Performance
   assert.deepEqual(facetsOf('Paladin', 'Protection', 'Tank'), ['pala', 'disp']);
   assert.deepEqual(facetsOf('Paladin', 'Holy', 'Healer'), ['pala', 'disp']);
 });
 
-// ── 2b. Enhancement Windfury is scored as UPTIME% (toolkit num) vs the 90% target, not a drop count ─
-test('Enhancement Windfury utility = Totem uptime% vs the 90 target', () => {
-  assert.deepEqual(facetsOf('Shaman', 'Enhancement', 'Physical'), ['wf'], 'enh signature facet is Windfury');
+// ── 2b. Enhancement has NO utility facet — Windfury/totem-twisting is EXECUTION, moving to Performance
+// (PR #2, scored as twist cadence). The interim must NOT crater a GoA-heavy twister on a WF-uptime target.
+test('Enhancement utility is empty (Windfury moved out of Utility → Performance)', () => {
+  assert.deepEqual(facetsOf('Shaman', 'Enhancement', 'Physical'), []);
   const wd = {
     roster: { Enh: { class: 'Shaman', spec: 'Enhancement', role: 'Physical' } },
-    // toolkit.num now carries modeled WF Totem UPTIME% (was a drop count). 90% vs target 90 → 100.
-    damageBySelection: { durations: { all: 100 }, players: [{ name: 'Enh', toolkit: { num: 90 }, all: { total: 1, active: 0 } }] },
+    // low WF uptime (a twister) must NOT show up as a cratered utility score anymore.
+    damageBySelection: { durations: { all: 100 }, players: [{ name: 'Enh', toolkit: { num: 12 }, all: { total: 1, active: 0 } }] },
   };
   const r = rowByName(wd, 'Enh');
-  assert.equal(r.util, 100, 'WF uptime 90 vs target 90 → 100');
-  assert.match(r.why.util, /Windfury % 90 vs 90 target/);
+  assert.equal(r.util, null, 'no utility facet → util null (not a cratered 13 from low WF)');
 });
 
 // ── 3. Rogue Expose is positive-only: it LIFTS the assigned rogue, never drags a pure-DPS one ─
@@ -162,18 +162,34 @@ test('group-buff gear lifts the provider, never drags a non-provider', () => {
 });
 
 // ── 6c. Hunter weapon-oil slot is N/A → Prep renormalizes so the n/a doesn't cap them ─────────
-test('hunter n/a weapon-oil slot renormalizes Prep (not a 20-point cap)', () => {
+// Compared WITHIN the phys archetype (both flask+food, no oil): the hunter's oil is N/A (renormalized
+// OUT of the denominator), a melee rogue's oil is a real UNFILLED slot (counts against them).
+test('hunter n/a weapon-oil slot renormalizes Prep (not a flat cap)', () => {
   const wd = {
     roster: { H: { class: 'Hunter', spec: 'Marksmanship', role: 'Physical' },
-              M: { class: 'Mage',   spec: 'Fire',          role: 'Caster'   } },
+              R: { class: 'Rogue',  spec: 'Combat',        role: 'Physical' } },
     consumables: [ { name: 'H', flask: true, food: true },     // hunter: flask+food, oil N/A
-                   { name: 'M', flask: true, food: true } ],    // mage: same, oil just unfilled
+                   { name: 'R', flask: true, food: true } ],    // rogue: same, oil a real unfilled slot
   };
-  const h = rowByName(wd, 'H'), m = rowByName(wd, 'M');
-  assert.equal(h.prep, Math.round(65 * 100 / 80), 'hunter core 65 renormalized over 80 → 81');
-  assert.equal(m.prep, 65, 'non-hunter core 65 over 100 → 65 (oil is a real unfilled slot)');
-  assert.ok(h.prep > m.prep, 'hunter not capped for a slot that does not apply to them');
+  // phys set: FLASK 40, FOOD 15, OIL 25, POT 30, ALT 5 → setMax 115. core = flask+food = 55.
+  const h = rowByName(wd, 'H'), r = rowByName(wd, 'R');
+  assert.equal(h.prep, Math.round(55 * 100 / (115 - 25)), 'hunter core 55 renormalized over 90 (oil N/A) → 61');
+  assert.equal(r.prep, Math.round(55 * 100 / 115), 'rogue core 55 over the full 115 (oil unfilled) → 48');
+  assert.ok(h.prep > r.prep, 'hunter not capped for a slot that does not apply to them');
   assert.match(h.why.prep, /weapon oil n\/a/);
+});
+
+// ── 6d. Per-archetype prep: 2 distinct elixirs ≈ a flask > 1 elixir; combat pot lifts phys a lot ──
+test('per-archetype prep: 2 elixirs ≈ flask > 1 elixir; phys combat pot is heavily weighted', () => {
+  const mk = c => ({ roster: { W: { class: 'Warrior', spec: 'Fury', role: 'Physical' } }, consumables: [{ name: 'W', ...c }] });
+  const flask = rowByName(mk({ flask: true, food: true }), 'W').prep;
+  const two   = rowByName(mk({ elixirs: ['Major Strength', 'Mongoose'], food: true }), 'W').prep;
+  const one   = rowByName(mk({ elixirs: ['Major Strength'], food: true }), 'W').prep;
+  assert.ok(two > one, '2 distinct elixirs beat 1 (the missing 1-vs-2 rule)');
+  assert.ok(flask >= two && (flask - two) <= 5, '2 elixirs ≈ a flask (within a few points)');
+  const noPot  = rowByName(mk({ flask: true, food: true }), 'W').prep;
+  const withPot = rowByName(mk({ flask: true, food: true, combat_pots: ['Haste Potion'] }), 'W').prep;
+  assert.ok(withPot - noPot >= 15, 'a phys combat pot is a big lift (chart: Haste Potion is the top gain)');
 });
 
 // ── 7. DPS perf = activity backbone + core cadence (NOT parse); engineering lifts it positive-only ─
@@ -185,12 +201,12 @@ test('DPS perf = 0.7·activity + 0.3·core cadence (parse is context); engineeri
       players: [ { name: 'A', vs_replacement: 95, all: { total: 1, active: 70000 }, boss: { active: 60000 } },
                  { name: 'B', vs_replacement: 40, all: { total: 1, active: 70000 }, boss: { active: 60000 } } ] },
     playerSpells: { Physical: [ { name: 'A', abilities: [{ ability: 'Bloodthirst', casts: 4 }, { ability: 'Whirlwind', casts: 3 }] },
-                                { name: 'B', abilities: [{ ability: 'Bloodthirst', casts: 4 }, { ability: 'Whirlwind', casts: 3 }] } ] },  // BT+WW both ≥ target → on-CD 100
+                                { name: 'B', abilities: [{ ability: 'Bloodthirst', casts: 4 }, { ability: 'Whirlwind', casts: 3 }] } ] },  // BT+WW both ≥ target → on-CD 100 (Fury has no rotation-share entry)
     engineering: [{ name: 'A', eng: { 'Super Sapper Charge': 6 } }],   // A actively uses engineering
   };
   const a = rowByName(wd, 'A'), b = rowByName(wd, 'B');
-  // 70% activity (x0.7) + full core cadence 100 (x0.3) = 79; parse (95 vs 40) is NOT in the score
-  assert.equal(b.perf, 79, 'perf = 0.7·activity + 0.3·core — independent of parse (B parses 40 but scores 79)');
+  // 70% activity (x0.7) + full overlay 100 (x0.3) = 79; parse (95 vs 40) is NOT in the score
+  assert.equal(b.perf, 79, 'perf = 0.7·activity + 0.3·overlay — independent of parse (B parses 40 but scores 79)');
   assert.equal(a.perf, 85, 'engineering +6 lifts A from 79 → 85, positive-only');
   assert.ok(a.perf > b.perf, 'identical activity + cadence, but the engineer is lifted');
   assert.match(a.why.perf, /activity/);
@@ -258,6 +274,35 @@ test('Affliction is credited CoE uptime as a primary Utility facet (§C)', () =>
   const r = rowByName(wd, 'Lock');
   assert.equal(r.util, 100, 'stones 100 + CoE 100 (both primary) → 100');
   assert.match(r.why.util, /Curse of Elements % 90 vs 90 target/);
+});
+
+// ── 7f. ROTATION SHARE: the main nuke as a % of the rotational cast set (fills the activity blind spot) ─
+test('rotation share scores Arcane Blast share; minority weight cannot invert activity', () => {
+  const mk = (ab, fb) => ({
+    roster: { Mage: { class: 'Mage', spec: 'Arcane', role: 'Caster' } },
+    damageBySelection: { durations: { all: 100 }, players: [{ name: 'Mage', all: { total: 1, active: 100000 } }] }, // 100% activity
+    playerSpells: { Caster: [{ name: 'Mage', abilities: [{ ability: 'Arcane Blast', casts: ab }, { ability: 'Frostbolt', casts: fb }] }] },
+  });
+  const good = rowByName(mk(55, 45), 'Mage');   // AB share 0.55 / target 0.55 → 100
+  assert.equal(good.perf, 100, '0.7·activity 100 + 0.3·share 100 → 100');
+  assert.match(good.why.perf, /Arcane Blast 55% of rotation/);
+  const bad = rowByName(mk(30, 70), 'Mage');     // AB share 0.30 → ~55 → overlay drags
+  assert.ok(bad.perf < good.perf, 'wrong-nuke mage scores lower at IDENTICAL activity (the blind spot fixed)');
+  assert.ok(bad.perf >= 80, 'minority overlay nudges, never inverts the 100% activity backbone');
+});
+
+// ── 7g. The curated denominator EXCLUDES Auto Shot (the hunter problem) ───────────────────────
+test('hunter Steady Shot share excludes Auto Shot from the denominator', () => {
+  const wd = {
+    roster: { Hunter: { class: 'Hunter', spec: 'Marksmanship', role: 'Physical' } },
+    damageBySelection: { durations: { all: 60 }, players: [{ name: 'Hunter', all: { total: 1, active: 60000 } }] },
+    // Steady 80 / Arcane 20 / Multi 0 → denom 100, share 0.80. Auto Shot 300 must be EXCLUDED (else 80/380=0.21).
+    playerSpells: { Physical: [{ name: 'Hunter', abilities: [
+      { ability: 'Steady Shot', casts: 80 }, { ability: 'Arcane Shot', casts: 20 },
+      { ability: 'Auto Shot', casts: 300 }, { ability: 'Kill Command', casts: 3 }] }] },
+  };
+  const r = rowByName(wd, 'Hunter');
+  assert.match(r.why.perf, /Steady Shot 80% of rotation/, 'share = 80/100 (Auto excluded), not 80/380 = 21%');
 });
 
 // ── 6. A facet nobody did this week drops out (null) — never a damaging 0 ─────────────────────
