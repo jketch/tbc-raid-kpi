@@ -193,6 +193,23 @@ def build_summary(wd: dict) -> str:
     heal = wd.get("healing", [])
     if heal:
         leaders.append(f"💚 Top healer **{heal[0]['name']}** {round(heal[0].get('eff_hps') or 0):,} HPS")
+    # JC group-buff necks PROVIDED (Eye of the Night / Chain of the Twilight Owl) — a positive
+    # raid-utility call-out; names the providers (no shaming) + a short +SP/+crit tag per neck
+    # (derived from the label so a future neck self-tags), deduped per provider to keep it compact.
+    gbg = wd.get("groupBuffGear") or []
+    if gbg:
+        def _gb_tag(lbl):
+            l = (lbl or "").lower()
+            return ("+SP" if ("spell power" in l or "spell damage" in l)
+                    else "+crit" if "crit" in l else "+haste" if "haste" in l else (lbl or "?"))
+        def _prov(g):
+            tags = []
+            for b in (g.get("buffs") or []):
+                t = _gb_tag(b.get("label"))
+                if t not in tags:
+                    tags.append(t)
+            return f"**{g['name']}**" + (f" ({'/'.join(tags)})" if tags else "")
+        leaders.append("💎 Group buffs " + ", ".join(_prov(g) for g in gbg))
 
     # ── Raid-wide stats — cohort accountability, no individual names ──
     stats = []
@@ -239,9 +256,53 @@ def _section_loss_guard(prev_latest, new_latest):
     return reasons
 
 
+def _stale_latest_reason(new_ms, baseline_ms):
+    """Reason to BLOCK as a FRESHNESS regression, or None. Pure (testable): the staged latest week
+    (new_ms) is OLDER than the canonical current latest (baseline_ms = newest start_ms across the
+    last deploy + the orphan `data` branch). This catches a stale LOCAL deploy clobbering a newer
+    cloud-processed week — the June-15-overwritten-by-June-8 incident, whose only prior defense was
+    run_weekly.bat's `sync_state.py check` (bypassed when deploying via the raw scripts)."""
+    if not isinstance(new_ms, (int, float)) or not isinstance(baseline_ms, (int, float)):
+        return None
+    if new_ms < baseline_ms:
+        return (f"staged latest week (start_ms {int(new_ms)}) is OLDER than the current canonical "
+                f"latest (start_ms {int(baseline_ms)}) — your local state is behind the cloud `data` "
+                f"branch / last deploy. Pull first: `python scripts/tools/sync_state.py pull`.")
+    return None
+
+
+def _origin_data_latest_ms():
+    """Best-effort: the newest raid-night `start_ms` recorded on the orphan `data` branch (the
+    cloud workflow's canonical state). Returns None when git / the branch / the network is
+    unavailable, so offline local dev simply SKIPS the freshness check (degrades to prior behavior;
+    the section-loss guard still runs). Never raises."""
+    import subprocess
+    try:
+        subprocess.run(["git", "fetch", "--quiet", "origin", "data"], cwd=str(ROOT),
+                       capture_output=True, timeout=30)
+        ls = subprocess.run(["git", "ls-tree", "-r", "--name-only", "origin/data"], cwd=str(ROOT),
+                            capture_output=True, text=True, timeout=30)
+        best = None
+        for f in ls.stdout.splitlines():
+            if not (f.startswith("cache/week_data/") and f.endswith(".json")):
+                continue
+            blob = subprocess.run(["git", "show", f"origin/data:{f}"], cwd=str(ROOT),
+                                  capture_output=True, text=True, timeout=30)
+            try:
+                sm = (json.loads(blob.stdout).get("meta") or {}).get("start_ms")
+                if isinstance(sm, (int, float)) and (best is None or sm > best):
+                    best = sm
+            except Exception:
+                pass
+        return best
+    except Exception:
+        return None
+
+
 def deploy_netlify(force: bool = False):
     """Deploy dashboard (as index.html) to the linked Netlify site. Returns live URL or None.
-    force: skip the section-loss guard (deploy even if a section regressed to empty)."""
+    force: skip the section-loss + freshness guards (deploy even if a section regressed to empty,
+    or the staged latest week is older than the cloud's canonical latest)."""
     cfg = _netlify_config()
     if not cfg:
         print("  ⚠ Netlify not configured — skipping deploy (set NETLIFY_AUTH_TOKEN in .env "
@@ -307,6 +368,22 @@ def deploy_netlify(force: bool = False):
                 print(f"    ✗ {r}")
             print("  ╚════════════════════════════════════════════════════════╝")
             print("  Re-run with --force to deploy anyway, or fix the data (likely `reprocess.py --all`).")
+            return None
+        # ── freshness guard ── block a deploy whose latest week is OLDER than the canonical current
+        # latest (the orphan `data` branch + the last deploy). Entry-point-independent: fires whether
+        # you deploy via run_weekly.bat or the raw scripts, so a stale local state can't clobber a
+        # newer cloud-processed week. Skipped silently when origin/data is unreachable (offline dev).
+        new_ms  = (new_latest or {}).get("meta", {}).get("start_ms")
+        base_ms = max([m for m in (
+            (prev_latest or {}).get("meta", {}).get("start_ms"),
+            _origin_data_latest_ms(),
+        ) if isinstance(m, (int, float))], default=None)
+        stale = _stale_latest_reason(new_ms, base_ms)
+        if stale and not force:
+            print("\n  ╔══ DEPLOY BLOCKED — stale deploy (older than the cloud's latest week) ══╗")
+            print(f"    ✗ {stale}")
+            print("  ╚══════════════════════════════════════════════════════════════════════╝")
+            print("  Pull the cloud state (sync_state.py pull), or --force to intentionally regress the latest week.")
             return None
         url = _netlify_deploy(token, site_id, _zip_deploy_dir(DEPLOY))
         if url and new_latest:

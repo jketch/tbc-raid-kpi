@@ -992,6 +992,15 @@
   </div>
   </div>
 
+  <!-- ═══════════════ GROUP BUFF GEAR (JC necks) ═══════════════ -->
+  <div class="tsec" data-tab="utility">
+  <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_jewelry_necklace_28.jpg" alt=""> Group Buffs Provided — Jewelcrafting Necks</div>
+  <div class="card gold">
+    <div class="hs-sub">Jewelcrafter-only necks with a <b>use: buff your whole party</b> effect — <b>Eye of the Night</b> (+34 spell power) and <b>Chain of the Twilight Owl</b> (+2% spell crit). From COMBATANT_INFO pull auras: the provider carries the party buff self-sourced, so only the raider who used it is credited; the party members who receive it are not.</div>
+    <div class="scroll-x"><div id="groupBuffCard"></div></div>
+  </div>
+  </div>
+
   <div class="tsec" data-tab="utility">
   <div class="section-label"><img class="ticon-lg" src="https://wow.zamimg.com/images/wow/icons/large/inv_misc_book_09.jpg" alt=""> Action / Spell Usage by Role</div>
   <div class="card">
@@ -2671,6 +2680,31 @@ function renderDispels(){
     <tbody>${rows}</tbody></table>`;
 }
 
+function renderGroupBuffGear(){
+  const el = document.getElementById("groupBuffCard"); if(!el) return;
+  const data = WEEK_DATA.groupBuffGear || [];
+  if(!data.length){ const c = el.closest(".card"); if(c) c.style.display = "none"; return; }
+  // item → icon slug (mirrors game_constants.GROUP_BUFF_GEAR; both verified 200 on zamimg)
+  const ICON = {
+    "Eye of the Night": "inv_jewelry_necklace_28",
+    "Chain of the Twilight Owl": "inv_jewelry_necklace_ahnqiraj_02",
+  };
+  const rows = data.map(p => {
+    const nc = nameColor(p.name, p.role);
+    const buffs = (p.buffs||[]).map(b => {
+      const ic = ICON[b.item] ? gicon(ICON[b.item]) : "";
+      return `<span class="ipill">${ic}${esc(b.item)} <span style="color:var(--muted);font-size:10px">${esc(b.label)}</span></span>`;
+    }).join(" ");
+    return `<tr>
+      <td><span class="cname" style="color:${nc}">${esc(p.name)}</span></td>
+      <td style="min-width:160px"><span style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${buffs}</span></td>
+    </tr>`;
+  }).join("");
+  el.innerHTML = `<table class="mini-table" style="width:100%">
+    <thead><tr><th>Player</th><th>Party buff provided</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
 function renderManaReturns(){
   const el = document.getElementById("manaReturns"); if(!el) return;
   const mr = WEEK_DATA.manaReturns || {};
@@ -3011,6 +3045,60 @@ const PERF_TUNING = {
   // raiding with an un-enchanted slot or an empty socket isn't fully prepped). Tunable; no penalty
   // when there's no gear data for that raider.
   PREP_ENCH_PENALTY: 10, PREP_SOCKET_PENALTY: 6,
+  // Engineering = a DPS-EXECUTION input (sapper/bomb = self-controlled extra damage on a cooldown), NOT
+  // utility (Drums stays utility). Positive-only: lifts an engineer's Performance, N/A for non-engineers —
+  // the one CD-usage signal we capture cleanly (ENG_SPELLS cast counts). Small + capped. v1.
+  PERF_ENG_BONUS: 6, PERF_ENG_TARGET: 6,
+  // Coarse core-ability cadence blends UNDER the activity backbone (minority weight): perf =
+  // PERF_ACT_W·activity + PERF_CORE_W·coreCadence (+ engineering). Minority so a loose-band cadence miss
+  // nudges, never inverts the ranking. Falls back to activity alone when the spec has no band / no casts.
+  PERF_ACT_W: 0.7, PERF_CORE_W: 0.3,
+};
+// Per-spec rotation overlay for the Performance input — DPS_SPEC_PERFORMANCE_FRAMEWORK.md §7. Three ability
+// classes: ON-CD (rate-scored, here), FILLER (Shadow Bolt / Steady Shot / Lightning Bolt / Sinister Strike /
+// Starfire / Arcane Blast → fold into the activity backbone, NOT scored), MAINTAIN (DoTs / self-buffs → need
+// the Debuffs/Buffs-events UPTIME fetch = v2, NOT scored yet). So only the ON-CD abilities below are graded
+// now; a spec with no on-CD entry is activity-only. Targets v1 — lenient for resource-gated abilities
+// (rage: BT/WW/MS; proc: Kill Command). Ability names must match the log verbatim.
+const PERF_ONCD = {     // spec -> [{ability, target cpm}] — averaged, blended UNDER activity at PERF_CORE_W
+  Fury:         [{ability:"Bloodthirst", target:3.0}, {ability:"Whirlwind", target:2.0}],
+  Arms:         [{ability:"Mortal Strike", target:2.5}, {ability:"Whirlwind", target:2.0}],
+  Enhancement:  [{ability:"Stormstrike", target:5.0}],
+  Shadow:       [{ability:"Mind Blast", target:3.0}],
+  Retribution:  [{ability:"Crusader Strike", target:3.0}, {ability:"Judgment", target:2.5}],
+  BeastMastery: [{ability:"Kill Command", target:3.0}],
+  Marksmanship: [{ability:"Kill Command", target:3.0}],
+  Survival:     [{ability:"Kill Command", target:3.0}],
+  Elemental:    [{ability:"Chain Lightning", target:2.5}],
+  // Affliction / Balance / Combat / Arcane / Destruction: no on-CD scorable now. Arcane/Destruction are
+  // legitimately near-pure backbone; Affliction/Balance/Combat's real signal is MAINTAIN uptime → v2.
+};
+// MAINTAIN uptime overlay (v2) — DoT/self-buff UPTIME% from WEEK_DATA.maintainUptime (the WCL
+// Debuffs/Buffs-table fetch, fetch_maintain_uptime). Uptime is the honest maintenance signal a
+// cast-count can't give (clipping vs a lapsed DoT — the VT proof, framework §6). Each entry scores
+// min(100, uptime/target); folded into the SAME overlay as PERF_ONCD (the overlay = avg of on-CD +
+// maintain sub-scores), blended UNDER activity at PERF_CORE_W (minority — nudges, never inverts).
+// `gate:true` = build-dependent/optional: DROPS OUT (null, not a damaging 0) below PERF_MAINTAIN_GATE×
+// target, so a spec that doesn't run it (ele/BM Flame Shock/Serpent Sting, a SB-only destro) isn't
+// punished; the CORE maintains (Corruption, SW:P, VT, Moonfire, SnD) are ungated — a near-zero there
+// is a real miss. Targets calibrated to LIVE night-averaged uptime over boss kills (movement fights
+// drag DoTs to ~65-85%, NOT the idealized 90-95%) — scripts/tools/probe_maintain_uptime.py. The
+// spec's UTILITY-credited debuff (affli CoE / boomkin Faerie Fire / survival Expose Weakness) is NOT
+// here — scored once, in the Utility pillar (framework §4 caveat #4). VT is a CONSCIOUS split: uptime
+// here (did you keep it up), mana VALUE in Utility (`mana`) — two different metrics of one ability.
+const PERF_MAINTAIN_GATE = 1/3;   // a gated ability drops below this × its target (clearly not running it)
+const PERF_MAINTAIN = {     // spec -> [{ability, target uptime%, gate?}] — averaged with PERF_ONCD into the overlay
+  Affliction:   [{ability:"Corruption", target:85}, {ability:"Unstable Affliction", target:90, gate:true}, {ability:"Siphon Life", target:40, gate:true}, {ability:"Immolate", target:50, gate:true}],
+  Destruction:  [{ability:"Immolate", target:50, gate:true}],
+  Shadow:       [{ability:"Shadow Word: Pain", target:80}, {ability:"Vampiric Touch", target:75}],
+  Balance:      [{ability:"Moonfire", target:70}, {ability:"Insect Swarm", target:45, gate:true}],
+  Combat:       [{ability:"Slice and Dice", target:80}, {ability:"Rupture", target:35, gate:true}],
+  Enhancement:  [{ability:"Flame Shock", target:45, gate:true}, {ability:"Lightning Shield", target:90, gate:true}],
+  Elemental:    [{ability:"Flame Shock", target:45, gate:true}],
+  Survival:     [{ability:"Serpent Sting", target:70, gate:true}],
+  Marksmanship: [{ability:"Serpent Sting", target:70, gate:true}],
+  // Arms Rend intentionally ABSENT — Blood Frenzy's aura is untrackable (TBC_RAID_MECHANICS §1); don't
+  // invent a Rend/BF uptime. Arcane/BeastMastery/Fury are pure-backbone or on-CD only → no maintain.
 };
 // Melee-MANDATORY avoidable mechanics — damage you take by being in melee (a spinning boss hits
 // all melee; low-mobility warriors/rets can't escape it, only high-mobility rogues clip it). EXCLUDED
@@ -3024,8 +3112,8 @@ const MELEE_MANDATORY = new Set(["Whirlwind", "Whirl", "Scalding Water"]);
 // RELATIVE magnitudes. v1 — recalibrate after a real week.
 const PERF_ARCHETYPE = {           // [prep, perf, exec, surv, util]
   dps0:   [1.0, 2.25, 1.0,  1.0, 0.5 ],   // pure DPS — top-parse classes (locks, mages, rogues, BM/MM hunter, fury/arms)
-  dps1:   [1.0, 1.75, 1.0,  1.0, 1.25],   // utility-flavored DPS (ele, enh, boomkin, survival, feral-cat)
-  dps2:   [1.0, 1.0,  1.0,  1.0, 2.0 ],   // utility-FIRST DPS (Ret, Shadow — personal parse understates them)
+  dps1:   [1.0, 1.75, 1.0,  1.0, 1.25],   // utility-flavored DPS (ele, enh, survival, feral-cat, affli, shadow, ret)
+  dps2:   [1.0, 1.0,  1.0,  1.0, 2.0 ],   // utility-FIRST DPS (boomkin — the buff-bot: personal damage is secondary to its aura)
   healer: [1.0, 2.0,  0.5,  1.0, 1.25],   // HPS is the mandate; healers eat little avoidable so exec counts less
   tank:   [1.0, 1.0,  1.75, 2.0, 0.75],   // survival + active-mitigation execution are the mandate
 };
@@ -3033,11 +3121,18 @@ const PERF_ARCH_LABEL = {dps0:"pure DPS", dps1:"utility DPS", dps2:"utility-firs
 // DPS utility tiers BY SPEC (tanks/healers resolve by ROLE, see perfArchetype). Tier 2 = utility-first;
 // tier 1 = utility-flavored; everything else = tier 0 (pure parse). "Feral" here means CAT dps — a Feral
 // who TANKED is role=Tank and hits the tank archetype first.
-// Tier-2 is reserved for specs whose PERSONAL parse structurally understates them (Ret, Shadow);
-// ele/enh/boomkin carry a defining buff but still parse on their own bar → tier 1. Decision
-// confirmed 2026-06-13; docs/TBC_RAID_MECHANICS.md §2 states the same rule (kept in sync).
-const PERF_UTIL_TIER2 = new Set(["Retribution","Shadow"]);
-const PERF_UTIL_TIER1 = new Set(["Elemental","Enhancement","Balance","Survival","Feral"]);
+// ★ RE-DERIVED on the COST-OF-UTILITY principle (handoff §C, 2026-06-16) after Performance moved from
+// PARSE to ACTIVITY. The old tier-2 ("parse structurally understates Ret/Shadow") DISSOLVED — activity
+// doesn't understate a seal-twisting ret or a DoT-rolling shadow priest. New basis: how much does a
+// spec's utility COST its output? Utility that's PASSIVE / part of the rotation (ret seal-twist, shadow
+// VT/Misery, survival Expose Weakness) costs no output → judge MORE on Performance (tier 1). Utility
+// that's the spec's WHOLE reason for being, with personal damage secondary (boomkin's +5% crit / +3%
+// hit aura), weights Utility first (tier 2). The §C spec-baseline credits (affli CoE, boomkin IFF,
+// survival Expose Weakness — utilFacetsFor) had to land FIRST, else a tier move scored a spec on utility
+// it got no points for. Moves: Ret & Shadow tier2→1, Affliction 0→1 (CoE now credited), Balance 1→2
+// (IFF credited; the buff-bot). dps2 shrank to just the boomkin. Keep in sync with docs/TBC_RAID_MECHANICS.md §2.
+const PERF_UTIL_TIER2 = new Set(["Balance"]);
+const PERF_UTIL_TIER1 = new Set(["Elemental","Enhancement","Survival","Feral","Affliction","Shadow","Retribution"]);
 function perfArchetype(cls, spec, role){
   if(role==="Tank")   return "tank";       // bear/prot — the played role is ground truth (spec-swap aware)
   if(role==="Healer") return "healer";
@@ -3053,10 +3148,17 @@ const PERF_PILLARS = ["prep","perf","exec","surv","util"];
 // Uptimes are %, counts are raw, mana is raw mana returned. The 100k mana target caps the VT-vs-ManaTide
 // mismatch so a Mana Tide reads as a real battery, not 19% of a shadow priest's VT. v1 — calibrate live.
 const PERF_FACET_TARGET = {
-  tow: 95, bshout: 90,                                                       // uptime %
-  wf: 140, md: 6, intr: 4, disp: 4, save: 3, fward: 4, stones: 50, sunder: 40, pala: 500, innervate: 5,  // counts
+  tow: 95, bshout: 90, wf: 90,                                               // uptime %
+  md: 6, intr: 4, disp: 4, save: 3, fward: 4, stones: 50, sunder: 40, pala: 500, innervate: 5,  // counts
   twist: 5,            // ret Seal of Command casts/min — ~5/min = actively twisting (vs ~0.3 set-and-forget). v1.
   expose: 80,          // rogue Expose Armor uptime % — held the armor slot most of the night (positive-only). v1.
+  // Spec-baseline utility credits (handoff §C) — a debuff/buff UPTIME% (WEEK_DATA.maintainUptime) a
+  // spec is the DESIGNATED provider of (its invited role), so it's a PRIMARY facet, not positive-only.
+  // Targets calibrated to live night-averaged uptime (probe_maintain_uptime.py): affli holds CoE near
+  // 95%, boomkin Faerie Fire near 88%; Expose Weakness is proc-driven so its target is lower. v1.
+  coe: 90,             // Affliction — Curse of the Elements uptime % (the dedicated CoE holder)
+  iff: 80,             // Balance — Improved Faerie Fire uptime % (+3% spell hit for the raid)
+  exposew: 55,         // Survival hunter — Expose Weakness uptime % (on-crit +AP for physical)
   mana: 100000,                                                             // raw mana returned to the raid
   gbuff: 1,            // group-buff GEAR provided (JC necks): bringing ONE = full positive-only credit. v1.
 };
@@ -3074,8 +3176,8 @@ const PERF_ROLE_FACETS = { Physical:["intr","sunder","save"], Caster:["intr","ma
 // reactive utility); 'disp' = dispels KPI (cleanse+purge — the cleanser classes' assigned job);
 // 'mana' = mana returned; 'intr' = interrupts (now WCL-durable — works without a combat log);
 // 'sunder' = Sunder Armor upkeep; 'md' = hunter Misdirection/Tranq, 'bshout' = warrior Battle Shout
-// uptime, 'tow' = ele Totem of Wrath uptime%, 'wf' = enh Windfury drops (all the toolkit num — each
-// cohort-scoped to its own class/spec, since the nums aren't comparable across kits). Curse coverage is
+// uptime, 'tow' = ele Totem of Wrath uptime%, 'wf' = enh Windfury Totem uptime% (modeled like ToW — all
+// the toolkit num — each cohort-scoped to its own class/spec, since the nums aren't comparable across kits). Curse coverage is
 // deliberately ABSENT — a shared raid debuff (all warlocks benefit even if two maintain it).
 const CLASS_UTIL_FACETS = {     // Paladin is spec/role-split in utilFacetsFor (Ret 'twist' vs Prot/Holy 'pala')
   Warlock:["stones"], Mage:["intr"],
@@ -3099,9 +3201,21 @@ function utilFacetsFor(cls, spec, role){
   }
   if(cls==="Druid"){                                   // druids have no totem battery — Innervate IS their
     if(role==="Healer")    return ["innervate","disp"];// mana-return. resto — Innervate + decurse/abolish
-    if(spec==="Balance")   return ["innervate","save"];// boomkin — Innervate + battle-res (Rebirth)
+    // boomkin — Innervate + battle-res + the SPEC-BASELINE credit it's invited for: Improved Faerie
+    // Fire uptime (+3% raid spell hit). 'iff' is what lets boomkin move utility-first (§C) without
+    // tanking its score on uncredited utility. (Moonkin Aura is passive/unloggable → IFF carries it.)
+    if(spec==="Balance")   return ["innervate","save","iff"];
     return ["innervate","save"];                       // feral cat/bear — Innervate + Rebirth
   }
+  // Warlock — raid provision (stones) + the Affliction SPEC-BASELINE credit: affli is the dedicated
+  // Curse of the Elements holder (§C), so its CoE uptime is its invited-for utility ('coe'). Destro/
+  // demo are stones-only (their curse is assigned, not spec-owned). Reverses the old blanket
+  // "exclude shared curses" stance for the DESIGNATED provider only.
+  if(cls==="Warlock") return spec==="Affliction" ? ["stones","coe"] : ["stones"];
+  // Hunter — Misdirection/Tranq baseline + the Survival SPEC-BASELINE credit: Survival is "typically
+  // only brought for" Expose Weakness (+AP for all physical), so its uptime is the invited-for utility
+  // ('exposew'). BM/MM are md-only. (§C)
+  if(cls==="Hunter") return spec==="Survival" ? ["md","exposew"] : ["md"];
   if(cls==="Paladin"){                                 // SPEC-SPLIT (like Shaman/Druid) — Ret ≠ buff-bot.
     // Ret is the ONLY DPS paladin (role Physical); its signature is SEAL-TWISTING (an active DPS
     // technique — keeping Seal of Command twisted with a second seal), NOT JoW-botting. Scoring a ret
@@ -3234,7 +3348,16 @@ function _perfRows(){
         sunder=byName(((wd.sunderArmor||{}).players)||[]),
         expose=byName(((wd.exposeArmor||{}).players)||[]),
         gbuff=byName(wd.groupBuffGear),   // JC group-buff necks PROVIDED → positive-only Utility credit
+        eng=byName(wd.engineering),       // sapper/bomb usage → positive-only Performance (DPS-execution) bonus
         gear=byName(((wd.gearAudit||{}).players)||[]);
+  // per-player MAINTAIN uptime% {name:{ability:pct}} — DoT/self-buff overlay (Performance) + the
+  // spec-baseline utility debuffs CoE/Faerie Fire/Expose Weakness (Utility). fetch_maintain_uptime.
+  const maintainUp=wd.maintainUptime||{}, muOf=(n,ab)=>(maintainUp[n]||{})[ab]||0;
+  const dur=(wd.damageBySelection||{}).durations||{};   // {all,boss,trash} seconds — denominator for activity %
+  // per-player ability cast counts (flattened from playerSpells) — for the coarse core-ability cadence layer
+  const playerAbil={};
+  Object.values(wd.playerSpells||{}).forEach(arr=>(arr||[]).forEach(p=>{
+    const m={}; (p.abilities||[]).forEach(a=>{ m[a.ability]=(m[a.ability]||0)+(a.casts||0); }); playerAbil[p.name]=m; }));
   const mcLiable=new Set((wd.mcLiable||[]).map(x=>x.name));
   const mcKill=new Set((wd.mcLiable||[]).filter(x=>(x.kills||0)>0).map(x=>x.name));  // KILLED a charmed teammate
   const raidMin=((Object.values(wd.boss_times||{}).reduce((s,v)=>s+v,0))||0)/60 || 1;
@@ -3272,16 +3395,20 @@ function _perfRows(){
   // toolkit num, but are SEPARATE facet keys so each ranks within its own class cohort — the toolkit
   // num isn't comparable across classes (MD count ~6 vs Battle Shout ~89%).
   const tkNum=n=>(((dps[n]||{}).toolkit||{}).num||0);
-  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="expose"?((expose[n]||{}).uptime||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="disp"?dispTot(n) : f==="innervate"?(innv[n]||0) : f==="stones"?((usage[n]||{}).stones_made||0) : f==="fward"?((usage[n]||{}).fear_ward||0) : f==="pala"?(((usage[n]||{}).judge_util||0)+((usage[n]||{}).blessing||0)) : (f==="md"||f==="bshout"||f==="tow"||f==="wf"||f==="twist")?tkNum(n) : 0;
+  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="expose"?((expose[n]||{}).uptime||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="disp"?dispTot(n) : f==="innervate"?(innv[n]||0) : f==="stones"?((usage[n]||{}).stones_made||0) : f==="fward"?((usage[n]||{}).fear_ward||0) : f==="pala"?(((usage[n]||{}).judge_util||0)+((usage[n]||{}).blessing||0)) : f==="coe"?muOf(n,"Curse of the Elements") : f==="iff"?muOf(n,"Faerie Fire") : f==="exposew"?muOf(n,"Expose Weakness") : (f==="md"||f==="bshout"||f==="tow"||f==="wf"||f==="twist")?tkNum(n) : 0;
   // best[facet] scoped to the COHORT that provides it (the classes whose CLASS_UTIL_FACETS list it),
   // NOT the whole raid — so a hunter's Misdirection ranks vs other hunters, not vs a mage's toolkit
   // num. A facet that's naturally class-exclusive (stones) collapses to its one cohort either way.
   const bestF={}, bestN={};   // bestN[f] = who leads facet f (for the drilldown "vs best (X)")
   Object.entries(roster).forEach(([n,r])=>{ utilFacetsFor(r.class,r.spec,r.role).forEach(f=>{ const v=facetVal(n,f); if(v>(bestF[f]||0)) bestN[f]=n; bestF[f]=Math.max(bestF[f]||0, v); }); });
-  const FACET_LABEL={intr:"interrupts",sunder:"Sunder",mana:"mana returned",save:"externals",disp:"dispels",stones:"stones",fward:"Fear Ward",pala:"JoW+blessings",md:"Misdirection",bshout:"Battle Shout",tow:"Totem of Wrath",wf:"Windfury",innervate:"Innervate",twist:"Seal twists/min",expose:"Expose Armor %"};
+  const FACET_LABEL={intr:"interrupts",sunder:"Sunder",mana:"mana returned",save:"externals",disp:"dispels",stones:"stones",fward:"Fear Ward",pala:"JoW+blessings",md:"Misdirection",bshout:"Battle Shout",tow:"Totem of Wrath",wf:"Windfury %",innervate:"Innervate",twist:"Seal twists/min",expose:"Expose Armor %",coe:"Curse of Elements %",iff:"Faerie Fire %",exposew:"Expose Weakness %"};
 
   return Object.entries(roster).map(([name,r])=>{
-    const role=r.role, d=deaths[name]||{total:0,trash:0};
+    // Judge by EFFECTIVE role (what they actually did most of the night), NOT the roster slot. A DPS who
+    // filled a heal/tank gap for a few fights is roster-labeled Healer/Tank (spec/gear-derived) but is
+    // really a DPS — effective_role (heal/tank <50% of fights → reclassified) corrects that. Falls back to
+    // the roster role when no effective_role is present. This is what keeps a fill-in out of the wrong cohort.
+    const role=(cons[name]||{}).effective_role||(dps[name]||{}).effective_role||r.role, d=deaths[name]||{total:0,trash:0};
     // PREP
     // PREP — consumables is a compliance grid (no numeric score). Weight covered slots by TBC
     // raid-consumable importance (Wowhead): flask (or 2 elixirs) dominates, food + oil expected, an
@@ -3305,11 +3432,35 @@ function _perfRows(){
       if(gr){ pts -= (gr.missing_enchants||[]).length * T.PREP_ENCH_PENALTY;
               pts -= (gr.empty_sockets||0) * T.PREP_SOCKET_PENALTY; }
       prep = Math.round(clamp(pts, 0, 100)); }   // round (renormalization can make it fractional)
-    // PERFORMANCE (role-appropriate parse %)
-    let perf=null;
+    // PERFORMANCE. Healers/tanks keep their throughput measure (HPS parse / threat+survival). DPS moved
+    // OFF WCL parse % to ACTIVITY % (GCD/active uptime, boss + trash) — input-based, buff/tempo-independent:
+    // parse swings with comp/buffs/kill-speed, activity reflects what the player actually did. Parse →
+    // context only (shown in why/extra). Engineering (sapper/bomb) is a positive-only DPS-execution bonus —
+    // the one CD-usage signal we capture cleanly. Hybrids (Moojerked-type) DPS on ~every fight, so the
+    // zone-aggregate activity is already representative — no per-fight role intersection needed (data-verified).
+    let perf=null, _dpsAct=null, _dpsActB=null, _engN=0, _engBon=0, _coreScore=null, _coreParts=null;
     if(role==="Healer") perf=heal[name]?heal[name].vs_replacement:null;
     else if(role==="Tank"){ const t=tank[name]||{}; const vs=[t.vs_replacement,(t.survival||{}).score].filter(v=>v!=null); perf=vs.length?vs.reduce((s,v)=>s+v,0)/vs.length:null; }
-    else perf=dps[name]?dps[name].vs_replacement:null;
+    else { const dr=dps[name];
+      if(dr){ _dpsAct =dur.all ?(((dr.all ||{}).active||0)/1000)/dur.all *100:null;
+              _dpsActB=dur.boss?(((dr.boss||{}).active||0)/1000)/dur.boss*100:null;
+              _engN=Object.values((eng[name]||{}).eng||{}).reduce((s,v)=>s+(v||0),0);
+              _engBon=_engN>0?Math.min(PERF_TUNING.PERF_ENG_BONUS,_engN/PERF_TUNING.PERF_ENG_TARGET*PERF_TUNING.PERF_ENG_BONUS):0;
+              // OVERLAY (minority): ON-CD cadence (casts/min vs a loose target) + MAINTAIN uptime% (DoT/
+              // self-buff vs target — v2). Both fold into ONE overlay (averaged) blended under activity at
+              // PERF_CORE_W. Fillers fold into the backbone (not here). A gated maintain DROPS OUT below
+              // PERF_MAINTAIN_GATE×target (a spec that doesn't run it isn't punished — null, not a 0).
+              // maint applies ONLY when the player appears in maintainUptime (the fetch ran and saw
+              // them) — so an old snapshot WITHOUT the section, or a week the fetch returned nothing,
+              // falls back to the v1.5 activity+on-CD behavior instead of an ungated core maintain
+              // reading 0% and unfairly tanking every DoT spec.
+              const oncd=PERF_ONCD[r.spec]||[], maint=(maintainUp[name]?PERF_MAINTAIN[r.spec]:null)||[], am=(((dr.all||{}).active||0)/1000)/60;
+              const _parts=[];
+              if(am>0) oncd.forEach(o=>{ const cpm=((playerAbil[name]||{})[o.ability]||0)/am; _parts.push({ab:o.ability, kind:"cpm", cpm, s:clamp(cpm/o.target,0,1)*100}); });
+              maint.forEach(m=>{ const up=muOf(name,m.ability); if(m.gate && up<PERF_MAINTAIN_GATE*m.target) return; _parts.push({ab:m.ability, kind:"up", up, s:Math.min(100,up/m.target*100)}); });
+              if(_parts.length){ _coreParts=_parts; _coreScore=Math.round(_parts.reduce((a,p)=>a+p.s,0)/_parts.length); }
+              const base=_coreScore==null?_dpsAct:(PERF_TUNING.PERF_ACT_W*_dpsAct+PERF_TUNING.PERF_CORE_W*_coreScore);
+              perf=_dpsAct==null?null:clamp(base+_engBon,0,100); } }
     if(perf!=null) perf=Math.round(perf);
     // EXECUTION (clean play). Non-tanks: avoidable vs the player's POSITIONING-cohort cap + FF + MC.
     // Tanks: active-mitigation MAINTENANCE normalized to boss-melee-taken time (plate = Holy Shield/
@@ -3379,7 +3530,17 @@ function _perfRows(){
       why.prep=p.join(" · "); } else why.prep="consumable data unavailable";
     if(role==="Healer") why.perf=heal[name]?`healer parse ${heal[name].vs_replacement??"—"} (HPS vs all logged)`:"not ranked yet";
     else if(role==="Tank"){ const t=tank[name]||{}; why.perf=`threat parse ${t.vs_replacement??"—"} + survival grade ${(t.survival||{}).score??"—"}, averaged`; }
-    else why.perf=dps[name]?`DPS parse ${dps[name].vs_replacement??"—"} (vs all logged)`:"not ranked yet";
+    else { const dr=dps[name];
+      if(dr){ const aA=_dpsAct==null?"—":Math.round(_dpsAct), aB=_dpsActB==null?"—":Math.round(_dpsActB);
+        const ps=[`${aA}% activity — boss + trash (boss ${aB}%) [${Math.round(PERF_TUNING.PERF_ACT_W*100)}% wt]`];
+        if(_coreParts) ps.push(`${_coreParts.map(p=>p.kind==="up"?`${p.ab} ${Math.round(p.up)}% up`:`${p.ab} ${p.cpm.toFixed(1)}/min`).join(", ")} → overlay ${_coreScore} [${Math.round(PERF_TUNING.PERF_CORE_W*100)}% wt]`);
+        if(r.class==="Hunter"){ const pa=playerAbil[name]||{}, au=pa["Auto Shot"]||0, st=pa["Steady Shot"]||0; if(au>0) ps.push(`shot ratio ${(st/au).toFixed(2)} Steady:Auto (diagnostic, not scored)`); }
+        if(_engN>0) ps.push(`+${Math.round(_engBon)} engineering (${_engN} sapper/bomb)`);
+        ps.push(`parse ${dr.vs_replacement??"—"} (context, not scored)`);
+        const ch=cons[name]||{}, fh=ch.fights_healed||0, ft=ch.fights_tanked||0, tot=ch.fights_total||0;
+        if(tot && (fh||ft)) ps.push(`hybrid: ${Math.max(0,tot-fh-ft)} dps${fh?` / ${fh} heal`:""}${ft?` / ${ft} tank`:""} fights`);
+        why.perf=ps.join(" · "); }
+      else why.perf="not ranked yet"; }
     if(noLog) why.exec="no combat log this week";
     else if(role!=="Tank"){ const av=avoid[name]||{};
       if(mcKill.has(name)) why.exec="killed a Mind-Controlled teammate → execution floored to 0";
@@ -3427,7 +3588,7 @@ function renderPerformance(){
     return (av-bv)*dir;
   });
   const cols=[["name","Player"],["prep","Prep"],["perf","Perf"],["exec","Exec"],["surv","Surv"],["util","Util"],["composite","Score"]];
-  const titles={prep:"Preparation — consumables (flask/food/weapon oil + in-fight pots, incl. mana gems/potions) minus gear gaps (missing enchants / empty sockets) → 0–100.",perf:"Performance — WCL parse % (role-appropriate; tanks blend threat + survivability).",exec:"Execution — clean play. DPS: avoidable dmg/min vs your POSITIONING cohort (melee vs ranged) + AoE-into-allies (friendly fire + MC liability, combined-capped — a single graze can't tank you; but a KILLING BLOW on a charmed teammate floors execution to 0). TANKS: active-mitigation maintenance per boss-melee-taken time — plate = Holy Shield/Shield Block cast-rate, bear = Lacerate uptime% — plus CD discipline. (Avoidable can't fairly score tanks; Survival is the outcome side: crushes/crits/deaths.)",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, ele Totem of Wrath, enh Windfury, druid Innervate, hunter Misdirection, warrior Battle Shout, ret paladin seal-twist cadence / prot+holy paladin JoW+blessings, priest Fear Ward / mana battery, dispels, interrupts, Sunder, rogue Expose Armor uptime) vs an ABSOLUTE target — 'did your job', not vs the best provider. A facet nobody did this week drops out (no penalty, never a 0). Dispels &amp; battle-res are positive-only — credited if you did them, dropped if not (they're usually one person's assignment, so they never drag). Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars, weighted PER SPEC by what that spec is invited for: a top-parse DPS leans on Performance, Ret/Shadow on Utility, tanks on Survival/Execution. (n/5) = computed over the pillars present."};
+  const titles={prep:"Preparation — consumables (flask/food/weapon oil + in-fight pots, incl. mana gems/potions) minus gear gaps (missing enchants / empty sockets) → 0–100.",perf:"Performance — DPS: ACTIVITY / uptime % (boss + trash) is the backbone — input-based, so it doesn't swing with comp, buffs, or kill speed the way parse does — blended with an ON-CD cadence check (did you press your spec's cooldown abilities — Bloodthirst, Mind Blast, Stormstrike, Kill Command, etc. — on time; loose targets, minority weight, never inverts). Filler spells (Shadow Bolt, Steady Shot…) fold into the activity backbone. DoT / self-buff UPTIME (Affliction, Balance, Combat's Slice & Dice, Shadow) is a known gap pending a v2 fetch — those specs score on activity alone for now. Engineering (sapper/bomb) is a positive-only bonus. Parse % is shown as context, NOT scored. Healers: HPS parse. Tanks: threat parse + survivability grade.",exec:"Execution — clean play. DPS: avoidable dmg/min vs your POSITIONING cohort (melee vs ranged) + AoE-into-allies (friendly fire + MC liability, combined-capped — a single graze can't tank you; but a KILLING BLOW on a charmed teammate floors execution to 0). TANKS: active-mitigation maintenance per boss-melee-taken time — plate = Holy Shield/Shield Block cast-rate, bear = Lacerate uptime% — plus CD discipline. (Avoidable can't fairly score tanks; Survival is the outcome side: crushes/crits/deaths.)",surv:"Survival — deaths (boss-weighted) + tank survivability grade + healthstone use.",util:"Utility — class-shaped: each class scored on the utility it provides (warlock stones, ele Totem of Wrath, enh Windfury, druid Innervate, hunter Misdirection, warrior Battle Shout, ret paladin seal-twist cadence / prot+holy paladin JoW+blessings, priest Fear Ward / mana battery, dispels, interrupts, Sunder, rogue Expose Armor uptime) vs an ABSOLUTE target — 'did your job', not vs the best provider. A facet nobody did this week drops out (no penalty, never a 0). Dispels &amp; battle-res are positive-only — credited if you did them, dropped if not (they're usually one person's assignment, so they never drag). Curses excluded (shared raid debuff). MOST EXPERIMENTAL — directional.",composite:"Raider Score — weighted blend of the 5 pillars, weighted PER SPEC by what that spec is invited for: a top-parse DPS leans on Performance, Ret/Shadow on Utility, tanks on Survival/Execution. (n/5) = computed over the pillars present."};
   const arrow=c=>_perfSort.col===c?(_perfSort.dir<0?" ▼":" ▲"):"";
   hd.innerHTML=cols.map(([c,lbl])=>`<th class="${c==='name'?'':'num'}" style="cursor:pointer;${c==='composite'?'color:var(--accent)':''}" title="${titles[c]}" onclick="_perfSortBy('${c}')">${lbl}${arrow(c)}</th>`).join("");
   const cell=v=>v==null?'<span style="color:var(--muted)">—</span>':`<span style="color:${parseColor(v)};font-weight:600">${v}</span>`;
@@ -3492,6 +3653,7 @@ function renderAll(){
   renderManaReturns();
   renderSaves();
   renderDispels();
+  renderGroupBuffGear();
   renderTanks();
   renderEngTable();
   renderInterruptBars();

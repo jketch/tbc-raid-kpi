@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Performance Composite — Per-Spec Logic</title>
+<style>
+  @page { size: letter; margin: 0.45in; }
+  * { box-sizing: border-box; }
+  html,body { margin:0; padding:0; }
+  body{ font-family:-apple-system,"Segoe UI",system-ui,sans-serif; color:#1f1d18; background:#fff;
+        font-size:9.7px; line-height:1.34; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .page{ max-width:7.6in; margin:0 auto; }
+  h1{ font-size:16px; margin:0; color:#8a6a16; }
+  .toprow{ display:flex; justify-content:space-between; align-items:baseline; border-bottom:2px solid #c89b3c; padding-bottom:5px; margin-bottom:8px; }
+  .meta{ font-size:9px; color:#7a766c; font-weight:600; letter-spacing:.04em; }
+  .lede{ font-size:10px; color:#4a463d; margin:0 0 9px; }
+  .lbl{ font-size:9px; letter-spacing:.07em; text-transform:uppercase; color:#8a6a16; font-weight:800; margin:11px 0 5px; }
+  .band{ border:1px solid #e2ddcf; background:#faf7ee; border-radius:6px; padding:7px 10px; margin-bottom:9px; font-size:9.3px; }
+  .band b{ color:#8a6a16; }
+  table{ border-collapse:collapse; width:100%; }
+  th{ font-size:8.3px; letter-spacing:.03em; text-transform:uppercase; color:#7a766c; font-weight:700; text-align:left; padding:3px 6px; border-bottom:1.5px solid #c89b3c; }
+  td{ padding:3px 6px; border-bottom:1px solid #ece7da; vertical-align:top; }
+  td.spec{ font-weight:700; color:#1f1d18; white-space:nowrap; }
+  .tier{ font-size:8px; font-weight:800; padding:1px 4px; border-radius:3px; background:#eee6d6; color:#8a6a16; }
+  .perf{ color:#2f64c0; }
+  .util{ color:#8a40c8; }
+  .muted{ color:#9a958a; }
+  .v2{ color:#a9760c; font-style:italic; }
+  code{ font-family:"Consolas",monospace; font-size:8.6px; background:#f3efe4; padding:0 2px; border-radius:2px; }
+  ul{ margin:4px 0; padding-left:16px; }
+  li{ margin:2px 0; }
+  .ok{ color:#218a4a; font-weight:700; }
+  .warn{ color:#a9760c; font-weight:700; }
+  .foot{ margin-top:9px; font-size:8.4px; color:#9a958a; text-align:center; border-top:1px solid #ece7da; padding-top:6px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="toprow">
+    <h1>Performance Composite — Per-Spec Logic</h1>
+    <div class="meta">Officer reference · v2 · Jun 2026</div>
+  </div>
+  <p class="lede">How the <b>Performance</b> pillar is scored for each DPS spec, and which inputs live in <b>Performance</b> vs the <b>Utility</b> pillar — so no input is counted twice.</p>
+
+  <div class="band">
+    <b>Performance = 0.7 · activity% (boss + trash) &nbsp;+&nbsp; 0.3 · overlay &nbsp;+&nbsp; engineering bonus.</b>
+    Activity (GCD uptime) is the buff/tempo-independent backbone. The <b>overlay</b> averages two ability classes: <b>on-CD</b> (rate-scored — press your cooldown on time) and <b>maintain</b> (DoT / self-buff <b>uptime %</b> — kept it up, vs a loose target).
+    <b>Filler</b> spells (Shadow Bolt, Steady Shot, Lightning Bolt, Sinister Strike, Starfire, Arcane Blast) fold into the activity backbone — not scored. Optional maintains drop out if the spec doesn't run them (no penalty).
+    <b>Parse %</b> is shown as context, <i>not</i> scored. Engineering (sapper/bomb) only lifts, never drags.
+  </div>
+
+  <div class="lbl">Per-spec — Performance input vs Utility facets</div>
+  <table>
+    <thead><tr><th style="width:15%">Spec</th><th style="width:7%">Tier</th><th style="width:7%">Perf wt</th><th style="width:40%">Performance (scored)</th><th style="width:31%">Utility (separate pillar)</th></tr></thead>
+    <tbody>
+      <tr><td class="spec">Warrior Fury</td><td><span class="tier">dps0</span></td><td>×2.25</td><td class="perf">Bloodthirst + Whirlwind + activity</td><td class="util">Battle Shout, Sunder</td></tr>
+      <tr><td class="spec">Warrior Arms</td><td><span class="tier">dps0</span></td><td>×2.25</td><td class="perf">Mortal Strike + Whirlwind + activity</td><td class="util">Battle Shout, Sunder</td></tr>
+      <tr><td class="spec">Rogue Combat</td><td><span class="tier">dps0</span></td><td>×2.25</td><td class="perf">Slice &amp; Dice uptime + activity</td><td class="util">Kick, Expose Armor</td></tr>
+      <tr><td class="spec">Mage Arcane</td><td><span class="tier">dps0</span></td><td>×2.25</td><td><span class="muted">activity-only</span> (Arcane Blast = filler)</td><td class="util">Counterspell (interrupt)</td></tr>
+      <tr><td class="spec">Warlock Affliction</td><td><span class="tier">dps1</span></td><td>×1.75</td><td class="perf">Corruption + DoT uptime + activity</td><td class="util">Stones, <b>Curse of the Elements</b></td></tr>
+      <tr><td class="spec">Warlock Destruction</td><td><span class="tier">dps0</span></td><td>×2.25</td><td class="perf">Immolate uptime (if run) + activity</td><td class="util">Stones</td></tr>
+      <tr><td class="spec">Hunter Beast Mastery</td><td><span class="tier">dps0</span></td><td>×2.25</td><td class="perf">Kill Command + activity</td><td class="util">Misdirection</td></tr>
+      <tr><td class="spec">Hunter Survival</td><td><span class="tier">dps1</span></td><td>×1.75</td><td class="perf">Kill Command + Serpent Sting + activity</td><td class="util">Misdirection, <b>Expose Weakness</b></td></tr>
+      <tr><td class="spec">Shaman Enhancement</td><td><span class="tier">dps1</span></td><td>×1.75</td><td class="perf">Stormstrike + Flame Shock/Lightning Shield + activity</td><td class="util">Windfury Totem</td></tr>
+      <tr><td class="spec">Shaman Elemental</td><td><span class="tier">dps1</span></td><td>×1.75</td><td class="perf">Chain Lightning + activity</td><td class="util">Totem of Wrath</td></tr>
+      <tr><td class="spec">Druid Balance</td><td><span class="tier">dps2</span></td><td>×1.0</td><td class="perf">Moonfire/Insect Swarm uptime + activity</td><td class="util">Innervate, Rebirth, <b>Faerie Fire (IFF)</b></td></tr>
+      <tr><td class="spec">Paladin Retribution</td><td><span class="tier">dps1</span></td><td>×1.75</td><td class="perf">Crusader Strike + Judgment + activity</td><td class="util">Seal-twist (Seal of Command), dispels</td></tr>
+      <tr><td class="spec">Priest Shadow</td><td><span class="tier">dps1</span></td><td>×1.75</td><td class="perf">Mind Blast + SW:P + VT uptime + activity</td><td class="util">VT mana battery, dispels</td></tr>
+    </tbody>
+  </table>
+  <div style="font-size:8.6px;color:#7a766c;margin-top:4px">Tier sets the composite weighting (<code>perfArchetype</code>): <b>dps0</b> pure parse (perf ×2.25, util ×0.5) · <b>dps1</b> utility-flavored (perf ×1.75, util ×1.25) · <b>dps2</b> utility-first — boomkin, the buff-bot (perf ×1.0, util ×2.0). Tiers are set by how much a spec's utility <i>costs</i> output: rotational/no-cost utility (Ret seal-twist, Shadow VT) → judged on Performance (dps1); a spec that exists for its raid aura → Utility-weighted (dps2). Hunters/healers/tanks resolve by role. Hunter Steady:Auto ratio is shown as a <i>diagnostic</i>, not scored (it's haste-driven).</div>
+
+  <div class="lbl">Double-count check — <span class="ok">clean</span></div>
+  <div class="band">
+    Every Performance-scored ability was cross-checked against every Utility facet: <b class="ok">no input is scored in both pillars.</b> It holds by construction — each utility ability is tagged <code>utility</code> and kept out of the maintain/on-CD lists.
+    <ul>
+      <li><b>Seal-twisting (Ret):</b> Seal of Command → <span class="util">Utility only</span> (<code>twist</code>). Crusader Strike + Judgment → <span class="perf">Performance only</span>. Different abilities — clean split. <span class="ok">✓</span></li>
+      <li><b>Slice and Dice (Combat):</b> its uptime is a <span class="perf">Performance</span> maintain; it's not a Utility facet — scored once. <span class="ok">✓</span></li>
+      <li><b>Spec-baseline debuffs:</b> Curse of Elements (affli), Faerie Fire (boomkin), Expose Weakness (survival) are scored as <span class="util">Utility</span> uptime — and deliberately kept OUT of those specs' Performance maintain list. Scored once. <span class="ok">✓</span></li>
+      <li>None of {Battle Shout, Windfury, Totem of Wrath, Misdirection, Sunder, Expose Armor, Seal of Command, CoE, Faerie Fire, Expose Weakness} appears in the Performance overlay. <span class="ok">✓</span></li>
+    </ul>
+  </div>
+
+  <div class="lbl">The one conscious cross-pillar split — <span class="warn">Vampiric Touch</span> <span class="ok">(decided)</span></div>
+  <div class="band">
+    VT is the single ability that lives in <b>both</b> pillars, <b>by design</b>: its <span class="perf">uptime</span> (did the shadow priest keep it rolling — execution) is a Performance maintain, while its <span class="util">mana-returned value</span> (the raid battery it feeds) is a Utility facet (<code>mana</code>).
+    These are <b>two different metrics of one ability</b> — keeping it up vs how much mana it returned — not a double-count of the same number. Every other ability is scored in exactly one pillar.
+  </div>
+
+  <div class="foot">Prep / Execution / Survival pillars are spec-agnostic (consumables+gear / avoidable+AoE-into-allies / deaths+healthstone) — no per-spec double-count risk. Source of truth: <code>PERF_ONCD</code> + <code>PERF_MAINTAIN</code> + <code>utilFacetsFor</code> in template.html · framework: docs/DPS_SPEC_PERFORMANCE_FRAMEWORK.md</div>
+</div>
+</body>
+</html>

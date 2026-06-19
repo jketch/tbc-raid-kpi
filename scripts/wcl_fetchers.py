@@ -1483,12 +1483,15 @@ def _toolkit_metric(cls, spec, c, kill_min):
     if cls == "Shaman":
         bl = g("bloodlust", 0)
         bl_d = f" · {bl} Bloodlust" if bl else ""
-        if g("wf_totem", 0) > 0:                              # enhance — Windfury + twisting
-            goa, sw = g("goa_totem", 0), g("wf_swaps", 0)
+        if g("wf_totem", 0) > 0:                              # enhance — Windfury uptime + twisting
+            goa, sw, drops = g("goa_totem", 0), g("wf_swaps", 0), g("wf_totem", 0)
+            up = g("wf_up", 0)                                # modeled uptime% (like ToW)
             twisting = sw >= 20 and goa >= 10                 # alternating both air totems
-            cell = {"label": "Windfury", "value": str(g("wf_totem", 0)), "num": g("wf_totem", 0),
-                    "title": ("Windfury Totem drops" + (f" · {goa} Grace of Air" if goa else "")
-                              + (f" · {sw} WF↔GoA swaps (twisting)" if twisting else "") + bl_d),
+            cell = {"label": "WF uptime", "value": f"~{up:g}%", "num": up,
+                    "title": (f"Windfury Totem uptime — modeled from recast cadence ({drops} drops; "
+                              "totem buffs aren't logged as auras in 2.5)"
+                              + (f" · {goa} Grace of Air" if goa else "")
+                              + (f" · {sw} WF↔GoA swaps (twisting → WF intentionally down for GoA)" if twisting else "") + bl_d),
                     "icon_ability": "Windfury Totem", "fallback": "spell_nature_windfury"}
             if twisting:
                 cell["tag"] = "🌀 twist"
@@ -1680,6 +1683,10 @@ def build_class_toolkit(token, report_code, kills, md: dict | None = None):
         if wf:
             seq = sorted([(t, "w") for t in wf] + [(t, "g") for t in goa])
             counts[nm]["wf_swaps"] = sum(1 for i in range(1, len(seq)) if seq[i][1] != seq[i-1][1])
+            # Windfury Totem UPTIME, modeled the same way as ToW (120s band per recast — totem pulse
+            # buffs aren't logged as auras in 2.5). A parked WF reads ~100%; a WF↔GoA twister reads
+            # lower BY DESIGN (it drops WF for GoA windows) — the twist tag carries that context.
+            counts[nm]["wf_up"] = _totem_uptime(sorted(wf), kills, 120_000)
         tow = tk.get("tow_totem", [])
         if tow:
             counts[nm]["tow_up"] = _totem_uptime(sorted(tow), kills, 120_000)
@@ -2756,6 +2763,148 @@ def fetch_expose_armor(token: str, report_code: str, kills: list, md: dict | Non
     players.sort(key=lambda x: (-x["uptime"], -x["applications"], x["name"]))
     print(f"  ✓ expose armor: {len(players)} rogue(s) maintaining the armor slot")
     return {"players": players}
+
+
+# ── v2 INPUT-BASED PERFORMANCE: per-player MAINTAIN uptime ─────────────────────────────────────
+# The MAINTAIN ability class (DPS_SPEC_PERFORMANCE_FRAMEWORK §1/§7) — DoTs and self-buffs whose
+# UPTIME% (not cast count) is the honest signal: a cast-count over-credits clipping and can't see a
+# lapsed DoT (the Vampiric Touch proof in §6 — a good priest shows ~100% uptime with FEW recasts,
+# which a cast-count ranks BELOW a clipper). Also carries the spec-baseline UTILITY debuffs (handoff
+# §C) a designated provider is INVITED for — same uptime fetch, scored in the Utility pillar.
+#   kind "debuff"   = a debuff on the enemy (Debuffs table, hostilityType: Enemies, by sourceID).
+#   kind "selfbuff" = a buff on self (Buffs table, by sourceID — the _buff_uptime_batch path).
+# Names match the log / playerSpells verbatim; resolved name→gameID via md (rank-union) so ranks and
+# Anniversary renames don't break it (the build_class_toolkit pattern). Moonkin Aura is intentionally
+# ABSENT — it's a passive form aura (never cast), so the casts-applier prepass can't see it; the
+# boomkin's baseline-utility credit rides on Improved Faerie Fire (cast, +spell-hit) instead.
+MAINTAIN_UPTIME_ABILITIES = {
+    # ── MAINTAIN (Performance overlay) ──
+    "Corruption": "debuff", "Unstable Affliction": "debuff", "Siphon Life": "debuff",
+    "Immolate": "debuff", "Shadow Word: Pain": "debuff", "Vampiric Touch": "debuff",
+    "Moonfire": "debuff", "Insect Swarm": "debuff", "Serpent Sting": "debuff",
+    "Flame Shock": "debuff", "Rupture": "debuff",
+    "Slice and Dice": "selfbuff", "Lightning Shield": "selfbuff",
+    # ── spec-baseline UTILITY credits (handoff §C) — scored in the Utility pillar, NOT Performance ──
+    "Curse of the Elements": "debuff",   # Affliction — the dedicated CoE holder
+    "Faerie Fire": "debuff",             # Balance — Improved Faerie Fire (+3% spell hit)
+    "Expose Weakness": "debuff",         # Survival hunter — on-crit +AP for all physical
+}
+
+
+def fetch_maintain_uptime(token, report_code, kills, md: dict | None = None) -> dict:
+    """Per-player UPTIME% of each tracked MAINTAIN ability + spec-baseline UTILITY debuff
+    (MAINTAIN_UPTIME_ABILITIES) — the input-based Performance metric's v2 overlay. Uptime is the
+    maintenance signal a cast-count can't give (clipping vs a lapsed DoT). Pure WCL, no combat log.
+
+    Two-step (cheap): ONE Casts-events pagination over the kills builds {ability → who APPLIED it}
+    (a non-provider never appears, so no roster lookup is needed), then ONE batched Debuffs/Buffs
+    *table* query reads each real (provider, ability) uptime — debuffs as the merged enemy band
+    union (≈ 'up on the boss'; a multi-add fight inflates it, capped at 100), self-buffs as the
+    self totalUptime. Returns {name: {ability_name: uptime_pct}} — {} when no kills / no providers.
+
+    Mirrors fetch_debuff_coverage (Debuffs table on Enemies + _merge_bands) and _buff_uptime_batch
+    (sourceID-filtered self-aura totalUptime). Source-filtered, so attribution is exact."""
+    if not kills:
+        return {}
+    if md is None:
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
+    fids = [f["id"] for f in kills]
+    st   = min(f["startTime"] for f in kills)
+    en   = max(f["endTime"]   for f in kills)
+    kdur = sum(f["endTime"] - f["startTime"] for f in kills) or 1
+    id2name = md["id2name"]
+    # tracked name (canonical) → [gameIDs] (rank-union); and gameID → canonical name (for the prepass)
+    want = {n.lower(): n for n in MAINTAIN_UPTIME_ABILITIES}
+    name_ids = defaultdict(list)
+    gid2canon = {}
+    for a in (md.get("abilities") or []):
+        canon = want.get((a.get("name") or "").lower())
+        if canon and a.get("gameID") is not None:
+            name_ids[canon].append(a["gameID"])
+            gid2canon[a["gameID"]] = canon
+    if not gid2canon:
+        return {}
+    # ── prepass: who applied each tracked aura (one full Casts-events pagination, like toolkit) ──
+    QC = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts,
+               limit: 10000){ data nextPageTimestamp }}}}"""
+    appliers = defaultdict(set)             # canonical ability name → {sourceID}
+    cur = st
+    try:
+        for _pg in range(MAX_EVENT_PAGES):
+            ev = _report(gql(token, QC, {"c": report_code, "ids": fids, "st": cur, "en": en}),
+                         "events", default={})
+            for d in ev.get("data", []):
+                if d.get("type") != "cast":
+                    continue
+                canon = gid2canon.get(d.get("abilityGameID"))
+                if canon and d.get("sourceID") in id2name:
+                    appliers[canon].add(d["sourceID"])
+            nx = ev.get("nextPageTimestamp")
+            if not nx:
+                break
+            cur = nx
+    except Exception as ex:
+        print(f"  Warning: maintain-uptime casts prepass failed: {ex}")
+        return {}
+    if not appliers:
+        print("  ✓ maintain uptime: no tracked maintenance abilities cast")
+        return {}
+    # ── uptime: aliased Debuffs/Buffs-table queries over the real (provider, ability) pairs only ──
+    fids_lit = ",".join(str(int(x)) for x in fids)
+    alias2 = {}                             # alias → (name, canonical ability, kind)
+    clauses = []
+    for canon in sorted(appliers):
+        kind = MAINTAIN_UPTIME_ABILITIES[canon]
+        for sid in sorted(appliers[canon]):
+            for aid in sorted(name_ids[canon]):
+                al = f"u{len(alias2)}"
+                alias2[al] = (id2name.get(sid), canon, kind)
+                if kind == "debuff":
+                    # NB: sourceID + hostilityType:Enemies returns 0 on the Debuffs table (live-verified —
+                    # the two filters don't compose); sourceID alone already restricts to the source's
+                    # ENEMY targets (these tracked debuffs are enemy-only), so drop hostilityType. The
+                    # returned auras are per enemy target — merge their bands (union ≈ 'up on the boss').
+                    clauses.append(f'{al}: table(dataType: Debuffs, '
+                                   f'fightIDs:[{fids_lit}], sourceID:{int(sid)}, abilityID:{float(aid)})')
+                else:
+                    clauses.append(f'{al}: table(dataType: Buffs, fightIDs:[{fids_lit}], '
+                                   f'sourceID:{int(sid)}, abilityID:{float(aid)})')
+    covered = defaultdict(lambda: defaultdict(float))   # name → ability → covered ms
+    keys = list(alias2)
+    BATCH = 18                               # cap aliases/query for the WCL complexity budget
+    for b in range(0, len(keys), BATCH):
+        sub = keys[b:b + BATCH]
+        Q = "query($c:String!){reportData{report(code:$c){" + \
+            " ".join(clauses[b:b + BATCH]) + "}}}"
+        try:
+            rep = _report(gql(token, Q, {"c": report_code}), default={})
+        except Exception as ex:
+            print(f"  Warning: maintain-uptime uptime batch failed: {ex}")
+            continue
+        for al in sub:
+            nm, canon, kind = alias2[al]
+            if not nm:
+                continue
+            t = _loads_alias(rep.get(al))
+            auras = (t or {}).get("data", {}).get("auras", []) if t else []
+            if kind == "debuff":
+                bands = []
+                for a in auras:
+                    bands.extend(a.get("bands") or [])
+                covered[nm][canon] = max(covered[nm][canon], _merge_bands(bands))
+            else:
+                covered[nm][canon] = max(covered[nm][canon],
+                                         sum(a.get("totalUptime", 0) for a in auras))
+    res = {}
+    for nm in sorted(covered):
+        res[nm] = {ab: round(min(100.0, covered[nm][ab] / kdur * 100), 1)
+                   for ab in sorted(covered[nm]) if covered[nm][ab] > 0}
+        if not res[nm]:
+            del res[nm]
+    print(f"  ✓ maintain uptime: {len(res)} player(s), "
+          f"{len(MAINTAIN_UPTIME_ABILITIES)} abilities tracked")
+    return res
 
 
 def _stack_ramp(evs, f_start, f_end, declared_max):

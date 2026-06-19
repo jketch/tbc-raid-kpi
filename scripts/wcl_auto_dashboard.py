@@ -96,6 +96,7 @@ from wcl_fetchers import (                                                      
     _merge_bands, _totem_uptime, fetch_debuff_coverage, fetch_debuff_ramp_speed,
     MANA_SOURCES, INNERVATE_ICON,
     fetch_mana_returns, fetch_sunder_armor, fetch_expose_armor, fetch_mechanic_compliance,
+    MAINTAIN_UPTIME_ABILITIES, fetch_maintain_uptime,
 )
 
 from week_map import (_tally_spells, _interrupt_row, _ice_player_spells,              # noqa: F401
@@ -406,6 +407,7 @@ def build_week_data(report_code: str, token: str,
     mana_returns  = fetch_mana_returns(token, report_code, kills, md)
     sunder_armor  = fetch_sunder_armor(token, report_code, kills, md)
     expose_armor  = fetch_expose_armor(token, report_code, kills, md)   # rogue armor-debuff (fills the Sunder slot)
+    maintain_uptime = fetch_maintain_uptime(token, report_code, kills, md)  # per-player DoT/self-buff uptime (perf v2 + §C utility)
     saves         = fetch_saves(token, report_code, kills, md)   # protective/external casts on allies
     interrupts_wcl = fetch_interrupts(token, report_code, kills, md)  # WCL-durable interrupt headline
     engineering_wcl = fetch_engineering_casts(token, report_code, kills, md)  # WCL-durable eng headline (no log)
@@ -540,6 +542,9 @@ def build_week_data(report_code: str, token: str,
         "sunder_armor":    sunder_armor,
         # per-rogue Expose Armor uptime — same armor slot as Sunder, mutually exclusive (pure WCL)
         "expose_armor":    expose_armor,
+        # per-player MAINTAIN uptime% (DoTs/self-buffs) + spec-baseline utility debuffs (CoE/IFF/
+        # Expose Weakness) — the input-based Performance v2 overlay + §C utility credits (pure WCL)
+        "maintain_uptime": maintain_uptime,
         # protective/external casts on allies (paladin Hands, battle-res, reactive utility) — "saving others"
         "saves":           saves,
         # WCL-durable interrupt headline (events) — name → {count, spells}; map prefers this, log fallback
