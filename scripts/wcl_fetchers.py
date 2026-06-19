@@ -1433,6 +1433,17 @@ def compute_reaction_times(log_data: dict, danger: int = 50, cap_s: float = 10.0
 
 
 # ── CLASS TOOLKIT — each DPS's signature class-relative utility ───────────────
+# Rotation-share denominator abilities (the template.html PERF_PRIMARY denoms) — counted per player
+# from the full Casts-EVENTS pass in build_class_toolkit, because the Casts TABLE that feeds
+# playerSpells truncates to a player's top-6 (dropping Execute). Matched by exact ability NAME (all
+# ranks share a name). ★ KEEP IN SYNC with PERF_PRIMARY in dashboard/template.html (the union of every
+# spec's {ability} + denom[]).
+ROTATION_CAST_ABILITIES = {
+    "Arcane Blast", "Frostbolt", "Fireball", "Fire Blast",                 # mage arcane
+    "Shadow Bolt", "Incinerate", "Soul Fire", "Conflagrate",              # warlock destruction
+    "Steady Shot", "Arcane Shot", "Multi-Shot",                          # hunter MM/BM
+    "Execute", "Bloodthirst", "Whirlwind", "Slam", "Mortal Strike",      # warrior fury/arms
+}
 # One contextual metric per class: "did you bring your kit?" Cast-based & spec-agnostic
 # (so off-spec play is captured for ANYONE who cast the ability — no spec gating), sourced
 # from the WCL Casts table (the durable headline; combat log can enrich later). Match is by
@@ -1486,12 +1497,16 @@ def _toolkit_metric(cls, spec, c, kill_min):
         if g("wf_totem", 0) > 0:                              # enhance — Windfury uptime PROVIDED to party
             goa, sw, drops = g("goa_totem", 0), g("wf_swaps", 0), g("wf_totem", 0)
             up, goa_up = g("wf_up", 0), g("goa_up", 0)        # air-slot-exclusive modeled uptime%
+            tw_min = round(sw / kill_min, 1) if kill_min else 0   # WF↔GoA twists per minute
             twisting = sw >= 20 and goa >= 10                 # alternating both air totems
-            cell = {"label": "Party WF uptime", "value": f"~{up:g}%", "num": up,
-                    "title": (f"Windfury Totem uptime PROVIDED TO HIS PARTY ({drops} drops) — air-slot-"
-                              "exclusive (WF drops while Grace of Air is up; totem buffs aren't logged as "
-                              "auras in 2.5, so modeled from casts). The shaman never benefits himself "
-                              "(WF weapon enchant suppresses it)."
+            # Show BOTH the party WF uptime AND the twist rate (the two halves of the over-twist-OOM ↔
+            # under-twist-low-WF balance an enh shaman is managing).
+            cell = {"label": "Party WF · twists", "value": f"~{up:g}% · {tw_min:g}/min", "num": up,
+                    "swaps_min": tw_min, "wf_up": up, "goa_up": goa_up,   # for the Performance twist-cadence score
+                    "title": (f"Windfury Totem uptime PROVIDED TO HIS PARTY ({drops} drops, {tw_min:g} "
+                              "twists/min) — air-slot-exclusive (WF drops while Grace of Air is up; totem "
+                              "buffs aren't logged as auras in 2.5, so modeled from casts). The shaman never "
+                              "benefits himself (WF weapon enchant suppresses it)."
                               + (f" · {goa} Grace of Air (~{goa_up:g}% up)" if goa else "")
                               + (f" · {sw} WF↔GoA swaps (twisting → WF down for GoA windows)" if twisting else "") + bl_d),
                     "icon_ability": "Windfury Totem", "fallback": "spell_nature_windfury"}
@@ -1631,6 +1646,7 @@ def build_class_toolkit(token, report_code, kills, md: dict | None = None):
     name2id = md["name2id"]
     # abilityGameID → canonical toolkit key (via the name map; unions all ranks)
     gid2key = {}
+    gid2rot = {}                                     # gameID → ROTATION ability NAME (untruncated counts)
     ae_ids  = []                                     # Arcane Explosion ranks (whole-report meme)
     snd_ids = []                                     # Slice and Dice (rogue uptime)
     bs_ids  = []                                     # Battle Shout (warrior uptime, self-target)
@@ -1639,6 +1655,8 @@ def build_class_toolkit(token, report_code, kills, md: dict | None = None):
         key = TOOLKIT_ABILITIES.get(nm_a.lower())
         if key:
             gid2key[a.get("gameID")] = key
+        if nm_a in ROTATION_CAST_ABILITIES:         # rotation-share denom abilities (PERF_PRIMARY) by name
+            gid2rot[a.get("gameID")] = nm_a
         if nm_a == "Arcane Explosion":
             ae_ids.append(a.get("gameID"))
         if nm_a == "Slice and Dice":
@@ -1649,6 +1667,7 @@ def build_class_toolkit(token, report_code, kills, md: dict | None = None):
         events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts,
                limit: 10000){ data nextPageTimestamp }}}}"""
     counts = defaultdict(lambda: defaultdict(int))   # [name][canonical_key] = casts
+    rot    = defaultdict(lambda: defaultdict(int))   # [name][rotation ability NAME] = casts (untruncated)
     # Totem cast timestamps for shaman analytics: enhance WF↔GoA twisting + ele ToW uptime.
     TOTEM_TS = {"wf_totem", "goa_totem", "tow_totem"}
     tstamps  = defaultdict(lambda: defaultdict(list)) # [name][key] = [cast timestamps]
@@ -1660,19 +1679,51 @@ def build_class_toolkit(token, report_code, kills, md: dict | None = None):
             for d in ev.get("data", []):
                 if d.get("type") != "cast":
                     continue
-                key = gid2key.get(d.get("abilityGameID"))
-                if key:
+                gid = d.get("abilityGameID")
+                key = gid2key.get(gid)
+                rkey = gid2rot.get(gid)
+                if key or rkey:
                     nm = id2name.get(d.get("sourceID"))
                     if nm:
-                        counts[nm][key] += 1
-                        if key in TOTEM_TS and d.get("timestamp") is not None:
-                            tstamps[nm][key].append(d["timestamp"])
+                        if key:
+                            counts[nm][key] += 1
+                            if key in TOTEM_TS and d.get("timestamp") is not None:
+                                tstamps[nm][key].append(d["timestamp"])
+                        if rkey:
+                            rot[nm][rkey] += 1
             nx = ev.get("nextPageTimestamp")
             if not nx:
                 break
             cur = nx
     except Exception as ex:
         print(f"  Warning: class-toolkit events failed: {ex}")
+
+    # Execute does NOT emit Casts events in 2.5 (damage-only — live-verified: 0 cast events, present only
+    # in DamageDone), so the casts loop above can't see it. Count its DamageDone hits (1 hit ≈ 1 cast) so
+    # the warrior rotation-share has it (the "gaming warriors maximize Execute" signal). One abilityID-
+    # filtered DamageDone-events query per Execute rank — cheap (~1 page).
+    ex_ids = sorted({a.get("gameID") for a in (md.get("abilities") or []) if (a.get("name") or "") == "Execute"})
+    if ex_ids:
+        QX = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!,$a:Float!){reportData{report(code:$c){
+            events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: DamageDone, abilityID:$a,
+                   limit: 10000){ data nextPageTimestamp }}}}"""
+        try:
+            for aid in ex_ids:
+                cur = st
+                for _pg in range(MAX_EVENT_PAGES):
+                    ev = _report(gql(token, QX, {"c": report_code, "ids": fids, "st": cur, "en": en,
+                                                 "a": float(aid)}), "events", default={})
+                    for d in ev.get("data", []):
+                        if d.get("type") == "damage":          # one damage event ≈ one Execute cast
+                            nm = id2name.get(d.get("sourceID"))
+                            if nm:
+                                rot[nm]["Execute"] += 1
+                    nx = ev.get("nextPageTimestamp")
+                    if not nx:
+                        break
+                    cur = nx
+        except Exception as ex:
+            print(f"  Warning: class-toolkit Execute-damage pass failed: {ex}")
 
     # Shaman totem analytics from the timestamps above:
     #  • Enhance — WF↔GoA twisting: # of swaps between the two (mutually-exclusive) air totems.
@@ -1748,7 +1799,12 @@ def build_class_toolkit(token, report_code, kills, md: dict | None = None):
     # here — fetch_mana_returns already pages Resources energize events and sums VT per provider
     # (MANA_SOURCES[0]). build_week_data folds that provider total into counts[priest]["vt_mana"]
     # after both run, so this avoids a SECOND full Resources pagination. (See the fold below.)
-    return {nm: dict(d) for nm, d in counts.items()}
+    # Fold the UNTRUNCATED rotation-ability counts (for rotation-share / Execute) under "_rot" — the
+    # Casts TABLE that feeds playerSpells truncates to a player's top-6, dropping Execute; these come
+    # from the full Casts-EVENTS pass above, so they're complete. sorted → deterministic key order.
+    for nm, rd in rot.items():
+        counts[nm]["_rot"] = {a: rd[a] for a in sorted(rd)}
+    return {nm: dict(d) for nm, d in sorted(counts.items())}
 
 
 def fetch_engineering_casts(token, report_code, kills, md: dict | None = None):
