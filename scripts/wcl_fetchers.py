@@ -1496,19 +1496,20 @@ def _toolkit_metric(cls, spec, c, kill_min):
         bl_d = f" · {bl} Bloodlust" if bl else ""
         if g("wf_totem", 0) > 0:                              # enhance — Windfury uptime PROVIDED to party
             goa, sw, drops = g("goa_totem", 0), g("wf_swaps", 0), g("wf_totem", 0)
-            up, goa_up = g("wf_up", 0), g("goa_up", 0)        # air-slot-exclusive modeled uptime%
+            up, goa_up = g("wf_up", 0), g("goa_up", 0)        # modeled uptime% (cadence; buffs persist through twists)
             tw_min = round(sw / kill_min, 1) if kill_min else 0   # WF↔GoA twists per minute
-            twisting = sw >= 20 and goa >= 10                 # alternating both air totems
-            # Show BOTH the party WF uptime AND the twist rate (the two halves of the over-twist-OOM ↔
-            # under-twist-low-WF balance an enh shaman is managing).
+            twisting = sw >= 20 and goa >= 10                 # actively twisting both air totems
+            # Show BOTH the party WF uptime AND the twist rate. Twisting is OPTIMAL — the WF totem buff
+            # persists after the totem is swapped, so a twister keeps WF AND GoA both up (provides both).
             cell = {"label": "Party WF · twists", "value": f"~{up:g}% · {tw_min:g}/min", "num": up,
                     "swaps_min": tw_min, "wf_up": up, "goa_up": goa_up,   # for the Performance twist-cadence score
                     "title": (f"Windfury Totem uptime PROVIDED TO HIS PARTY ({drops} drops, {tw_min:g} "
-                              "twists/min) — air-slot-exclusive (WF drops while Grace of Air is up; totem "
-                              "buffs aren't logged as auras in 2.5, so modeled from casts). The shaman never "
-                              "benefits himself (WF weapon enchant suppresses it)."
-                              + (f" · {goa} Grace of Air (~{goa_up:g}% up)" if goa else "")
-                              + (f" · {sw} WF↔GoA swaps (twisting → WF down for GoA windows)" if twisting else "") + bl_d),
+                              "twists/min; totem buffs aren't logged as auras in 2.5, so modeled from cast "
+                              "cadence). Twisting is OPTIMAL — the WF buff persists when swapped, so a twister "
+                              "keeps WF AND Grace of Air up. The shaman never benefits himself (WF weapon "
+                              "enchant suppresses it)."
+                              + (f" · Grace of Air ~{goa_up:g}% up" if goa else "")
+                              + (f" · {sw} WF↔GoA swaps (actively twisting both)" if twisting else "") + bl_d),
                     "icon_ability": "Windfury Totem", "fallback": "spell_nature_windfury"}
             if twisting:
                 cell["tag"] = "🌀 twist"
@@ -1736,12 +1737,14 @@ def build_class_toolkit(token, report_code, kills, md: dict | None = None):
         if wf:
             seq = sorted([(t, "w") for t in wf] + [(t, "g") for t in goa])
             counts[nm]["wf_swaps"] = sum(1 for i in range(1, len(seq)) if seq[i][1] != seq[i-1][1])
-            # Windfury Totem UPTIME the shaman PROVIDES TO HIS PARTY — AIR-SLOT-EXCLUSIVE (a GoA twist
-            # drops WF), so GoA casts truncate the WF bands. A parker reads ~100%; a WF↔GoA twister reads
-            # lower BY DESIGN (WF is genuinely down during GoA windows). The shaman never benefits from
-            # his own totem (his WF weapon enchant suppresses it), so this is purely a party-provided
-            # signal. GoA uptime surfaced alongside for the twist tradeoff.
-            counts[nm]["wf_up"]  = _air_totem_uptime(wf, goa, kills, 120_000)
+            # Windfury Totem UPTIME the shaman PROVIDES TO HIS PARTY. NOT air-slot-exclusive: the WF totem
+            # BUFF persists on party members after the totem is replaced — that's exactly what twisting
+            # exploits (drop WF → buff lands → swap to GoA → both buffs stay up). So WF and GoA are modeled
+            # the SAME cadence way (each cast covers a 120s band, merged): a heavy twister keeps BOTH up
+            # ~100% (provides WF AND GoA = optimal), a WF-parker has ~100% WF / 0% GoA, a GoA-only shaman
+            # ~0% WF. The shaman never benefits himself (WF weapon enchant suppresses it) — party-provided.
+            # (Twisting EFFORT is scored separately via swaps/min in PERF_TWIST.)
+            counts[nm]["wf_up"]  = _totem_uptime(sorted(wf), kills, 120_000)
             counts[nm]["goa_up"] = _totem_uptime(sorted(goa), kills, 120_000)
         tow = tk.get("tow_totem", [])
         if tow:
@@ -2011,34 +2014,6 @@ def _totem_uptime(ts: list, kills: list, dur_ms: int) -> float:
         bands = [{"startTime": max(s, t), "endTime": min(e, t + dur_ms)} for t in casts]
         if casts[0] - s <= dur_ms:                      # pre-pull drop → cover the lead-in
             bands.append({"startTime": s, "endTime": min(e, casts[0])})
-        covered += _merge_bands(bands)
-    return round(covered / total * 100, 1) if total else 0
-
-
-def _air_totem_uptime(wf: list, goa: list, kills: list, dur_ms: int) -> float:
-    """AIR-SLOT-EXCLUSIVE Windfury Totem uptime% — the WF coverage a shaman PROVIDES TO HIS PARTY,
-    modeled from casts (2.5 doesn't log totem auras + WCL exposes no party membership, so cast
-    reconstruction is the only signal). Windfury and Grace of Air share the ONE exclusive air-totem
-    slot, so dropping GoA REMOVES Windfury: each WF cast covers a band ending at the EARLIEST of the
-    next air-slot cast after it (a WF re-drop OR a GoA drop), `cast+dur_ms`, or fight end. GoA casts
-    only TRUNCATE WF, never add coverage — so a WF↔GoA twister correctly reads LOWER than a parker.
-    `goa=[]` reproduces _totem_uptime exactly (the no-twist case)."""
-    air = sorted(set(wf) | set(goa))                    # every air-slot drop = a truncation boundary
-    covered = total = 0
-    for f in kills:
-        s, e = f["startTime"], f["endTime"]
-        total += (e - s)
-        wfc = sorted(t for t in wf if s <= t <= e)
-        if not wfc:
-            continue
-        bands = []
-        for t in wfc:
-            nxt = next((a for a in air if a > t), None)         # next air drop strictly after this WF
-            end = min(e, t + dur_ms, nxt if nxt is not None else e)
-            bands.append({"startTime": max(s, t), "endTime": end})
-        if wfc[0] - s <= dur_ms:                                # pre-pull WF still up at the pull…
-            cut = next((a for a in air if s < a < wfc[0]), wfc[0])   # …until the first GoA in the gap
-            bands.append({"startTime": s, "endTime": cut})
         covered += _merge_bands(bands)
     return round(covered / total * 100, 1) if total else 0
 
