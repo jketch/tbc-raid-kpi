@@ -23,7 +23,6 @@ from wcl_fetchers import (
     _loads_alias,
     _merge_bands,
     _totem_uptime,
-    _air_totem_uptime,
     _tank_survival_grade,
     parse_damage_table,
     merge_actor_names,
@@ -144,43 +143,6 @@ class TestTotemUptime(unittest.TestCase):
 
     def test_no_kills_yields_zero(self):
         self.assertEqual(_totem_uptime([0, 50], [], 50), 0)
-
-
-# ── _air_totem_uptime (Windfury air-slot-exclusive, party-provided) ────────────
-class TestAirTotemUptime(unittest.TestCase):
-    K = [{"startTime": 0, "endTime": 100}]
-
-    def test_parker_no_goa_equals_totem_uptime(self):
-        # No GoA → must reproduce the plain cadence model exactly (a parker reads the same).
-        kills = [{"startTime": 0, "endTime": 100}]
-        self.assertEqual(_air_totem_uptime([0, 50], [], kills, 50),
-                         _totem_uptime([0, 50], kills, 50))                  # both 100%
-        self.assertEqual(_air_totem_uptime([0], [], kills, 20),
-                         _totem_uptime([0], kills, 20))                      # both 20% (a long gap)
-
-    def test_perfect_twister_is_about_half(self):
-        # WF/GoA alternating every 10s over [0,120] → WF up only on the WF halves = 50%.
-        kills = [{"startTime": 0, "endTime": 120}]
-        wf  = [0, 20, 40, 60, 80, 100]
-        goa = [10, 30, 50, 70, 90, 110]
-        self.assertEqual(_air_totem_uptime(wf, goa, kills, 120), 50.0)
-
-    def test_goa_truncates_wf_band(self):
-        # WF at pull, GoA at 30 drops it → WF up only [0,30] of [0,100] = 30% (vs 100% with no GoA).
-        self.assertEqual(_air_totem_uptime([0], [30], self.K, 120), 30.0)
-        self.assertEqual(_air_totem_uptime([0], [], self.K, 120), 100.0)    # contrast: no twist
-
-    def test_goa_truncates_pre_pull_lead_in(self):
-        # pre-pull WF up at the pull, but a GoA at t=10 cuts it; WF re-drop at 40 covers to end.
-        # → [0,10] + [40,100] = 70 (the [10,40] GoA window is correctly removed).
-        self.assertEqual(_air_totem_uptime([40], [10], self.K, 120), 70.0)
-
-    def test_default_goa_arg_matches_totem_uptime(self):
-        # the goa list drives all truncation; identical to _totem_uptime when empty.
-        kills = [{"startTime": 0, "endTime": 100}]
-        for wf in ([0], [0, 60], [60]):
-            self.assertEqual(_air_totem_uptime(wf, [], kills, 30),
-                             _totem_uptime(sorted(wf), kills, 30))
 
 
 # ── _tank_survival_grade ──────────────────────────────────────────────────────

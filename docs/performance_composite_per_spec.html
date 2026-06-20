@@ -44,7 +44,7 @@
 
   <div class="band">
     <b>Performance = 0.7 · activity% (boss + trash) &nbsp;+&nbsp; 0.3 · overlay &nbsp;+&nbsp; engineering bonus.</b>
-    Activity (GCD uptime) is the buff/tempo-independent backbone. The <b>overlay</b> averages three ability classes: <b>on-CD</b> (rate-scored — press your cooldown on time), <b>maintain</b> (DoT / self-buff <b>uptime %</b> — kept it up), and <b>rotation share</b> (your main nuke as a <b>% of rotational casts</b> — were you casting the right thing, not just busy).
+    Activity (GCD uptime) is the buff/tempo-independent backbone. The <b>overlay</b> averages the spec's execution signals: <b>on-CD</b> (rate-scored — press your cooldown on time), <b>maintain</b> (DoT / self-buff <b>uptime %</b>), <b>rotation share</b> (your main nuke as a <b>% of rotational casts</b> — casting the right thing, not just busy), and a few cadence signals (ret seal-twist, enh WF↔GoA twist).
     <b>Filler</b> spells (Shadow Bolt, Steady Shot, Lightning Bolt, Sinister Strike, Starfire, Arcane Blast) fold into the activity backbone — not scored. Optional maintains drop out if the spec doesn't run them (no penalty).
     <b>Parse %</b> is shown as context, <i>not</i> scored. Engineering (sapper/bomb) only lifts, never drags.
   </div>
@@ -53,15 +53,15 @@
   <table>
     <thead><tr><th style="width:15%">Spec</th><th style="width:7%">Tier</th><th style="width:7%">Perf wt</th><th style="width:40%">Performance (scored)</th><th style="width:31%">Utility (separate pillar)</th></tr></thead>
     <tbody>
-      <tr><td class="spec">Warrior Fury</td><td><span class="tier">dps0</span></td><td>×2.25</td><td class="perf">Bloodthirst + Whirlwind + activity</td><td class="util">Battle Shout, Sunder</td></tr>
-      <tr><td class="spec">Warrior Arms</td><td><span class="tier">dps0</span></td><td>×2.25</td><td class="perf">Mortal Strike + Whirlwind + activity</td><td class="util">Battle Shout, Sunder</td></tr>
+      <tr><td class="spec">Warrior Fury</td><td><span class="tier">dps0</span></td><td>×2.25</td><td class="perf">Bloodthirst + Whirlwind + <b>Execute share</b> + activity</td><td class="util">Battle Shout, Sunder</td></tr>
+      <tr><td class="spec">Warrior Arms</td><td><span class="tier">dps0</span></td><td>×2.25</td><td class="perf">Mortal Strike + Whirlwind + <b>Execute share</b> + activity</td><td class="util">Battle Shout, Sunder</td></tr>
       <tr><td class="spec">Rogue Combat</td><td><span class="tier">dps0</span></td><td>×2.25</td><td class="perf">Slice &amp; Dice uptime + activity</td><td class="util">Kick, Expose Armor</td></tr>
       <tr><td class="spec">Mage Arcane</td><td><span class="tier">dps0</span></td><td>×2.25</td><td class="perf">Arcane Blast <b>rotation share</b> + activity</td><td class="util">Counterspell (interrupt)</td></tr>
       <tr><td class="spec">Warlock Affliction</td><td><span class="tier">dps1</span></td><td>×1.75</td><td class="perf">Corruption + DoT uptime + activity</td><td class="util">Stones, <b>Curse of the Elements</b></td></tr>
       <tr><td class="spec">Warlock Destruction</td><td><span class="tier">dps0</span></td><td>×2.25</td><td class="perf">Shadow Bolt <b>rotation share</b> + Immolate + activity</td><td class="util">Stones</td></tr>
       <tr><td class="spec">Hunter Beast Mastery</td><td><span class="tier">dps0</span></td><td>×2.25</td><td class="perf">Kill Command + Steady Shot <b>share</b> + activity</td><td class="util">Misdirection</td></tr>
       <tr><td class="spec">Hunter Survival</td><td><span class="tier">dps1</span></td><td>×1.75</td><td class="perf">Kill Command + Steady Shot <b>share</b> + Serpent Sting</td><td class="util">Misdirection, <b>Expose Weakness</b></td></tr>
-      <tr><td class="spec">Shaman Enhancement</td><td><span class="tier">dps1</span></td><td>×1.75</td><td class="perf">Stormstrike + Flame Shock/Lightning Shield + activity</td><td class="util"><span class="muted">Windfury → Performance (twist cadence, PR#2)</span></td></tr>
+      <tr><td class="spec">Shaman Enhancement</td><td><span class="tier">dps1</span></td><td>×1.75</td><td class="perf">Stormstrike + <b>totem-twist cadence (WF↔GoA swaps/min)</b> + activity</td><td class="util"><span class="muted">— (twisting is now Performance)</span></td></tr>
       <tr><td class="spec">Shaman Elemental</td><td><span class="tier">dps1</span></td><td>×1.75</td><td class="perf">Chain Lightning + activity</td><td class="util">Totem of Wrath</td></tr>
       <tr><td class="spec">Druid Balance</td><td><span class="tier">dps2</span></td><td>×1.0</td><td class="perf">Moonfire/Insect Swarm uptime + activity</td><td class="util">Innervate, Rebirth, <b>Faerie Fire (IFF)</b></td></tr>
       <tr><td class="spec">Paladin Retribution</td><td><span class="tier">dps0</span></td><td>×2.25</td><td class="perf">Crusader Strike + Judgment + <b>Seal of Command (twist)</b> + activity</td><td class="util">dispels (positive-only)</td></tr>
@@ -78,7 +78,9 @@
       <li><b>Rotation share:</b> the main nuke's share (Arcane Blast / Shadow Bolt / Steady Shot) is a <span class="perf">Performance</span> ratio — its casts already fold into activity; the share is a new derived signal, not a second scoring. <span class="ok">✓</span></li>
       <li><b>Slice and Dice (Combat):</b> its uptime is a <span class="perf">Performance</span> maintain; it's not a Utility facet — scored once. <span class="ok">✓</span></li>
       <li><b>Spec-baseline debuffs:</b> Curse of Elements (affli), Faerie Fire (boomkin), Expose Weakness (survival) are scored as <span class="util">Utility</span> uptime — and deliberately kept OUT of those specs' Performance maintain list. Scored once. <span class="ok">✓</span></li>
-      <li>None of {Battle Shout, Windfury, Totem of Wrath, Misdirection, Sunder, Expose Armor, Seal of Command, CoE, Faerie Fire, Expose Weakness} appears in the Performance overlay. <span class="ok">✓</span></li>
+      <li><b>Enh totem-twisting + Ret seal-twist:</b> both are <span class="perf">Performance</span> cadences (WF↔GoA swaps/min · Seal of Command), scored once — and removed from the Utility facets, so no double-count. <span class="ok">✓</span></li>
+      <li><b>Warrior Execute:</b> damage-only in 2.5 (no cast events), so counted from DamageDone into <code>rotationCasts</code> and scored once as <span class="perf">Performance</span> rotation share. <span class="ok">✓</span></li>
+      <li>The remaining <span class="util">Utility</span> facets {Battle Shout, Totem of Wrath, Misdirection, Sunder, Expose Armor, CoE, Faerie Fire, Expose Weakness} appear NOWHERE in the Performance overlay. <span class="ok">✓</span></li>
     </ul>
   </div>
 
@@ -88,7 +90,7 @@
     These are <b>two different metrics of one ability</b> — keeping it up vs how much mana it returned — not a double-count of the same number. Every other ability is scored in exactly one pillar.
   </div>
 
-  <div class="foot">Prep / Execution / Survival pillars are spec-agnostic (consumables+gear / avoidable+AoE-into-allies / deaths+healthstone) — no per-spec double-count risk. Source of truth: <code>PERF_ONCD</code> + <code>PERF_MAINTAIN</code> + <code>utilFacetsFor</code> in template.html · framework: docs/DPS_SPEC_PERFORMANCE_FRAMEWORK.md</div>
+  <div class="foot">Prep / Execution / Survival pillars are spec-agnostic (consumables+gear / avoidable+AoE-into-allies / deaths+healthstone) — no per-spec double-count risk. Source of truth: <code>PERF_ONCD</code> + <code>PERF_MAINTAIN</code> + <code>PERF_PRIMARY</code> + <code>PERF_TWIST</code> + <code>utilFacetsFor</code> in template.html · framework: docs/DPS_SPEC_PERFORMANCE_FRAMEWORK.md</div>
 </div>
 </body>
 </html>
