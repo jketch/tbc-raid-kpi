@@ -267,11 +267,6 @@
       "deaths": 2
     },
     {
-      "name": "Skeptxo",
-      "role": "Physical",
-      "deaths": 2
-    },
-    {
       "name": "Areso",
       "role": "Physical",
       "deaths": 2
@@ -282,9 +277,9 @@
       "deaths": 2
     },
     {
-      "name": "Ohshiz",
-      "role": "Healer",
-      "deaths": 1
+      "name": "Skeptxo",
+      "role": "Physical",
+      "deaths": 2
     },
     {
       "name": "Pewpslurper",
@@ -292,13 +287,18 @@
       "deaths": 1
     },
     {
-      "name": "Bahguul",
+      "name": "Ohshiz",
+      "role": "Healer",
+      "deaths": 1
+    },
+    {
+      "name": "Zetla",
       "role": "Caster",
       "deaths": 1
     },
     {
-      "name": "Juricc",
-      "role": "Physical",
+      "name": "Bahguul",
+      "role": "Caster",
       "deaths": 1
     },
     {
@@ -312,12 +312,12 @@
       "deaths": 1
     },
     {
-      "name": "Shovelpriest",
-      "role": "Caster",
+      "name": "Juricc",
+      "role": "Physical",
       "deaths": 1
     },
     {
-      "name": "Zetla",
+      "name": "Shovelpriest",
       "role": "Caster",
       "deaths": 1
     }
@@ -985,516 +985,6 @@
       }
     },
     {
-      "name": "Blunderdin",
-      "role": "Tank",
-      "class": "Paladin",
-      "spec": "Justicar",
-      "expected_crit": 13.16,
-      "actual_crit": 41.5,
-      "luck_delta": 28.34,
-      "gear_crit_rating": 20,
-      "total_dmg": 2550843,
-      "active_pct": 70.4,
-      "deaths": 0,
-      "deaths_trash": 4,
-      "fights_total": 10,
-      "fights_healed": 0,
-      "fights_tanked": 2,
-      "fights_dps": 8,
-      "uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 46.1
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 97.4
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 72.3
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 56.7
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 95.2
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 81.2
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 96.5
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 97.8
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 97.7
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 52.6
-        }
-      ],
-      "healer_uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 18.8
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 68.3
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 53.1
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 31.0
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 83.3
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 56.7
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 95.8
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 47.2
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 32.4
-        }
-      ],
-      "crit_baseline": 42.1,
-      "crit_weeks": 4,
-      "crit_std": 4.6,
-      "crit_series": [
-        37.4,
-        43.2,
-        38.7,
-        49.1,
-        41.5
-      ],
-      "crit_prev": 49.1,
-      "luck_hist": -0.6,
-      "interrupt_count": 0,
-      "interrupt_list": [],
-      "eng": {
-        "Super Sapper": 4
-      },
-      "eng_dmg": 16184,
-      "avoidable_dmg": 97610,
-      "avoidable_sources": {
-        "Blinding Light": 2316,
-        "Conflagration": 4500,
-        "Arcane Disruption": 2055,
-        "Nether Beam": 3244,
-        "Nether Vapor": 1535,
-        "Shock Barrier": 1557,
-        "Scalding Water": 22000,
-        "Whirl": 13499,
-        "Geyser": 3734,
-        "Whirlwind": 42670,
-        "Entangle": 500
-      },
-      "avoidable_hits": {
-        "Blinding Light": [
-          {
-            "t": "19:52:03",
-            "amt": 2316
-          }
-        ],
-        "Conflagration": [
-          {
-            "t": "20:05:57",
-            "amt": 450
-          },
-          {
-            "t": "20:05:58",
-            "amt": 450
-          },
-          {
-            "t": "20:05:59",
-            "amt": 450
-          },
-          {
-            "t": "20:06:00",
-            "amt": 450
-          },
-          {
-            "t": "20:06:01",
-            "amt": 450
-          },
-          {
-            "t": "20:06:02",
-            "amt": 450
-          },
-          {
-            "t": "20:06:03",
-            "amt": 450
-          },
-          {
-            "t": "20:06:04",
-            "amt": 450
-          },
-          {
-            "t": "20:06:05",
-            "amt": 450
-          },
-          {
-            "t": "20:06:06",
-            "amt": 450
-          }
-        ],
-        "Arcane Disruption": [
-          {
-            "t": "20:06:37",
-            "amt": 2055
-          }
-        ],
-        "Nether Beam": [
-          {
-            "t": "20:08:05",
-            "amt": 1793
-          },
-          {
-            "t": "20:08:19",
-            "amt": 1451
-          }
-        ],
-        "Nether Vapor": [
-          {
-            "t": "20:08:05",
-            "amt": 470
-          },
-          {
-            "t": "20:08:09",
-            "amt": 526
-          },
-          {
-            "t": "20:08:11",
-            "amt": 539
-          }
-        ],
-        "Shock Barrier": [
-          {
-            "t": "20:08:07",
-            "amt": 659
-          },
-          {
-            "t": "20:08:07",
-            "amt": 731
-          },
-          {
-            "t": "20:08:07",
-            "amt": 167
-          }
-        ],
-        "Scalding Water": [
-          {
-            "t": "20:30:21",
-            "amt": 500
-          },
-          {
-            "t": "20:30:24",
-            "amt": 500
-          },
-          {
-            "t": "20:30:27",
-            "amt": 500
-          },
-          {
-            "t": "20:30:30",
-            "amt": 500
-          },
-          {
-            "t": "20:30:33",
-            "amt": 500
-          },
-          {
-            "t": "20:30:36",
-            "amt": 500
-          },
-          {
-            "t": "20:30:38",
-            "amt": 500
-          },
-          {
-            "t": "20:30:41",
-            "amt": 500
-          },
-          {
-            "t": "20:30:44",
-            "amt": 500
-          },
-          {
-            "t": "20:30:47",
-            "amt": 500
-          },
-          {
-            "t": "20:30:50",
-            "amt": 500
-          },
-          {
-            "t": "20:30:53",
-            "amt": 500
-          },
-          {
-            "t": "20:30:56",
-            "amt": 500
-          },
-          {
-            "t": "20:30:59",
-            "amt": 500
-          },
-          {
-            "t": "20:31:02",
-            "amt": 500
-          },
-          {
-            "t": "20:31:05",
-            "amt": 500
-          },
-          {
-            "t": "20:31:08",
-            "amt": 500
-          },
-          {
-            "t": "20:31:11",
-            "amt": 500
-          },
-          {
-            "t": "20:31:14",
-            "amt": 500
-          },
-          {
-            "t": "20:31:17",
-            "amt": 500
-          },
-          {
-            "t": "20:31:20",
-            "amt": 500
-          },
-          {
-            "t": "20:31:23",
-            "amt": 500
-          },
-          {
-            "t": "20:31:26",
-            "amt": 500
-          },
-          {
-            "t": "20:31:29",
-            "amt": 500
-          },
-          {
-            "t": "20:31:32",
-            "amt": 500
-          },
-          {
-            "t": "20:31:35",
-            "amt": 500
-          },
-          {
-            "t": "20:31:38",
-            "amt": 500
-          },
-          {
-            "t": "20:31:41",
-            "amt": 500
-          },
-          {
-            "t": "20:31:44",
-            "amt": 500
-          },
-          {
-            "t": "20:31:47",
-            "amt": 500
-          },
-          {
-            "t": "20:32:06",
-            "amt": 500
-          },
-          {
-            "t": "20:32:35",
-            "amt": 500
-          },
-          {
-            "t": "20:32:38",
-            "amt": 500
-          },
-          {
-            "t": "20:32:41",
-            "amt": 500
-          },
-          {
-            "t": "20:32:44",
-            "amt": 500
-          },
-          {
-            "t": "20:32:47",
-            "amt": 500
-          },
-          {
-            "t": "20:32:50",
-            "amt": 500
-          },
-          {
-            "t": "20:32:53",
-            "amt": 500
-          },
-          {
-            "t": "20:32:56",
-            "amt": 500
-          },
-          {
-            "t": "20:32:59",
-            "amt": 500
-          }
-        ],
-        "Whirl": [
-          {
-            "t": "20:30:37",
-            "amt": 2481
-          },
-          {
-            "t": "20:30:55",
-            "amt": 2774
-          },
-          {
-            "t": "20:31:21",
-            "amt": 2879
-          },
-          {
-            "t": "20:31:40",
-            "amt": 2995
-          },
-          {
-            "t": "20:32:56",
-            "amt": 2370
-          }
-        ],
-        "Geyser": [
-          {
-            "t": "20:31:23",
-            "amt": 3734
-          }
-        ],
-        "Whirlwind": [
-          {
-            "t": "21:01:32",
-            "amt": 1523
-          },
-          {
-            "t": "21:01:33",
-            "amt": 1539
-          },
-          {
-            "t": "21:01:34",
-            "amt": 1523
-          },
-          {
-            "t": "21:01:35",
-            "amt": 1523
-          },
-          {
-            "t": "21:01:37",
-            "amt": 1672
-          },
-          {
-            "t": "21:01:38",
-            "amt": 1672
-          },
-          {
-            "t": "21:01:39",
-            "amt": 1671
-          },
-          {
-            "t": "21:01:40",
-            "amt": 1672
-          },
-          {
-            "t": "21:01:41",
-            "amt": 1523
-          },
-          {
-            "t": "21:01:42",
-            "amt": 1523
-          },
-          {
-            "t": "21:01:45",
-            "amt": 2375
-          },
-          {
-            "t": "21:01:48",
-            "amt": 2375
-          },
-          {
-            "t": "21:01:51",
-            "amt": 2375
-          },
-          {
-            "t": "21:01:54",
-            "amt": 2375
-          },
-          {
-            "t": "21:01:57",
-            "amt": 2375
-          },
-          {
-            "t": "21:02:03",
-            "amt": 1539
-          },
-          {
-            "t": "21:02:04",
-            "amt": 1540
-          },
-          {
-            "t": "21:02:07",
-            "amt": 2375
-          },
-          {
-            "t": "21:02:10",
-            "amt": 2375
-          },
-          {
-            "t": "21:02:13",
-            "amt": 2375
-          },
-          {
-            "t": "21:02:16",
-            "amt": 2375
-          },
-          {
-            "t": "21:02:19",
-            "amt": 2375
-          }
-        ],
-        "Entangle": [
-          {
-            "t": "21:09:50",
-            "amt": 500
-          }
-        ]
-      }
-    },
-    {
       "name": "Dmbp",
       "role": "Tank",
       "class": "Paladin",
@@ -2101,363 +1591,362 @@
       }
     },
     {
-      "name": "Ohshiz",
-      "role": "Healer",
-      "class": "Shaman",
-      "spec": "Restoration",
-      "expected_crit": 16.65,
-      "actual_crit": 0.0,
-      "luck_delta": -16.65,
-      "gear_crit_rating": 15,
-      "total_dmg": 0,
-      "active_pct": 0.0,
-      "deaths": 1,
+      "name": "Blunderdin",
+      "role": "Tank",
+      "class": "Paladin",
+      "spec": "Justicar",
+      "expected_crit": 13.16,
+      "actual_crit": 41.5,
+      "luck_delta": 28.34,
+      "gear_crit_rating": 20,
+      "total_dmg": 2550843,
+      "active_pct": 70.4,
+      "deaths": 0,
       "deaths_trash": 4,
       "fights_total": 10,
-      "fights_healed": 10,
-      "fights_tanked": 0,
-      "fights_dps": 0,
-      "uptime_by_fight": [],
-      "healer_uptime_by_fight": [
+      "fights_healed": 0,
+      "fights_tanked": 2,
+      "fights_dps": 8,
+      "uptime_by_fight": [
         {
           "boss": "Al'ar",
-          "uptime": 92.3
+          "uptime": 46.1
         },
         {
           "boss": "Void Reaver",
-          "uptime": 97.3
+          "uptime": 97.4
         },
         {
           "boss": "High Astromancer Solarian",
-          "uptime": 95.8
+          "uptime": 72.3
         },
         {
           "boss": "Kael'thas Sunstrider",
-          "uptime": 78.0
+          "uptime": 56.7
         },
         {
           "boss": "Hydross the Unstable",
-          "uptime": 94.6
+          "uptime": 95.2
         },
         {
           "boss": "The Lurker Below",
-          "uptime": 96.9
+          "uptime": 81.2
         },
         {
           "boss": "Morogrim Tidewalker",
-          "uptime": 99.2
+          "uptime": 96.5
         },
         {
           "boss": "Fathom-Lord Karathress",
-          "uptime": 96.9
+          "uptime": 97.8
         },
         {
           "boss": "Leotheras the Blind",
-          "uptime": 96.2
+          "uptime": 97.7
         },
         {
           "boss": "Lady Vashj",
-          "uptime": 86.6
+          "uptime": 52.6
         }
       ],
-      "crit_baseline": 18.4,
-      "crit_weeks": 2,
-      "crit_std": 1.7,
-      "crit_series": [
-        20.0,
-        16.7,
-        0.0
+      "healer_uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 18.8
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 68.3
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 53.1
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 31.0
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 83.3
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 56.7
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 95.8
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 47.2
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 32.4
+        }
       ],
-      "crit_prev": 16.7,
-      "luck_hist": null,
+      "crit_baseline": 42.1,
+      "crit_weeks": 4,
+      "crit_std": 4.6,
+      "crit_series": [
+        37.4,
+        43.2,
+        38.7,
+        49.1,
+        41.5
+      ],
+      "crit_prev": 49.1,
+      "luck_hist": -0.6,
       "interrupt_count": 0,
       "interrupt_list": [],
-      "eng": {},
-      "eng_dmg": 0,
-      "avoidable_dmg": 32369,
+      "eng": {
+        "Super Sapper": 4
+      },
+      "eng_dmg": 16184,
+      "avoidable_dmg": 97610,
       "avoidable_sources": {
-        "Blinding Light": 2496,
-        "Arcane Disruption": 1965,
-        "Nether Vapor": 2113,
-        "Nether Beam": 1421,
-        "Geyser": 6789,
-        "Scalding Water": 2500,
-        "Whirlwind": 13410,
-        "Chaos Blast": 1675
+        "Blinding Light": 2316,
+        "Conflagration": 4500,
+        "Arcane Disruption": 2055,
+        "Nether Beam": 3244,
+        "Nether Vapor": 1535,
+        "Shock Barrier": 1557,
+        "Scalding Water": 22000,
+        "Whirl": 13499,
+        "Geyser": 3734,
+        "Whirlwind": 42670,
+        "Entangle": 500
       },
       "avoidable_hits": {
         "Blinding Light": [
           {
             "t": "19:52:03",
-            "amt": 2496
+            "amt": 2316
+          }
+        ],
+        "Conflagration": [
+          {
+            "t": "20:05:57",
+            "amt": 450
+          },
+          {
+            "t": "20:05:58",
+            "amt": 450
+          },
+          {
+            "t": "20:05:59",
+            "amt": 450
+          },
+          {
+            "t": "20:06:00",
+            "amt": 450
+          },
+          {
+            "t": "20:06:01",
+            "amt": 450
+          },
+          {
+            "t": "20:06:02",
+            "amt": 450
+          },
+          {
+            "t": "20:06:03",
+            "amt": 450
+          },
+          {
+            "t": "20:06:04",
+            "amt": 450
+          },
+          {
+            "t": "20:06:05",
+            "amt": 450
+          },
+          {
+            "t": "20:06:06",
+            "amt": 450
           }
         ],
         "Arcane Disruption": [
           {
             "t": "20:06:37",
-            "amt": 1965
-          }
-        ],
-        "Nether Vapor": [
-          {
-            "t": "20:08:23",
-            "amt": 1120
-          },
-          {
-            "t": "20:08:25",
-            "amt": 993
-          }
-        ],
-        "Nether Beam": [
-          {
-            "t": "20:08:30",
-            "amt": 1421
-          }
-        ],
-        "Geyser": [
-          {
-            "t": "20:30:26",
-            "amt": 3299
-          },
-          {
-            "t": "20:32:58",
-            "amt": 3490
-          }
-        ],
-        "Scalding Water": [
-          {
-            "t": "20:31:07",
-            "amt": 500
-          },
-          {
-            "t": "20:31:10",
-            "amt": 500
-          },
-          {
-            "t": "20:32:40",
-            "amt": 500
-          },
-          {
-            "t": "20:32:43",
-            "amt": 500
-          },
-          {
-            "t": "20:33:00",
-            "amt": 500
-          }
-        ],
-        "Whirlwind": [
-          {
-            "t": "21:02:03",
-            "amt": 1535
-          },
-          {
-            "t": "21:02:06",
-            "amt": 2375
-          },
-          {
-            "t": "21:02:09",
-            "amt": 2375
-          },
-          {
-            "t": "21:02:12",
-            "amt": 2375
-          },
-          {
-            "t": "21:02:15",
-            "amt": 2375
-          },
-          {
-            "t": "21:02:18",
-            "amt": 2375
-          }
-        ],
-        "Chaos Blast": [
-          {
-            "t": "21:03:19",
-            "amt": 1675
-          }
-        ]
-      }
-    },
-    {
-      "name": "Sweetheart",
-      "role": "Healer",
-      "class": "Priest",
-      "spec": "Holy",
-      "expected_crit": 16.64,
-      "actual_crit": 40.0,
-      "luck_delta": 23.36,
-      "gear_crit_rating": 0,
-      "total_dmg": 35367,
-      "active_pct": 6.7,
-      "deaths": 2,
-      "deaths_trash": 3,
-      "fights_total": 10,
-      "fights_healed": 10,
-      "fights_tanked": 0,
-      "fights_dps": 0,
-      "uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 2.5
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 2.0
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 6.9
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 13.0
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 24.0
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 7.8
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 11.4
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 9.0
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 1.8
-        }
-      ],
-      "healer_uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 96.2
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 94.9
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 93.5
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 84.8
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 96.9
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 95.0
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 97.1
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 97.1
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 96.1
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 89.6
-        }
-      ],
-      "crit_baseline": 18.9,
-      "crit_weeks": 3,
-      "crit_std": 10.4,
-      "crit_series": [
-        14.3,
-        9.1,
-        33.3,
-        40.0
-      ],
-      "crit_prev": 33.3,
-      "luck_hist": 21.1,
-      "interrupt_count": 0,
-      "interrupt_list": [],
-      "eng": {},
-      "eng_dmg": 0,
-      "avoidable_dmg": 19570,
-      "avoidable_sources": {
-        "Arcane Disruption": 1887,
-        "Shock Barrier": 92,
-        "Nether Beam": 6449,
-        "Nether Vapor": 1462,
-        "Scalding Water": 4000,
-        "Whirl": 4005,
-        "Chaos Blast": 1675
-      },
-      "avoidable_hits": {
-        "Arcane Disruption": [
-          {
-            "t": "20:06:37",
-            "amt": 1887
-          }
-        ],
-        "Shock Barrier": [
-          {
-            "t": "20:07:54",
-            "amt": 92
+            "amt": 2055
           }
         ],
         "Nether Beam": [
           {
             "t": "20:08:05",
-            "amt": 949
+            "amt": 1793
           },
           {
-            "t": "20:08:15",
-            "amt": 1973
-          },
-          {
-            "t": "20:08:23",
-            "amt": 2109
-          },
-          {
-            "t": "20:08:26",
-            "amt": 1418
+            "t": "20:08:19",
+            "amt": 1451
           }
         ],
         "Nether Vapor": [
           {
+            "t": "20:08:05",
+            "amt": 470
+          },
+          {
+            "t": "20:08:09",
+            "amt": 526
+          },
+          {
             "t": "20:08:11",
-            "amt": 513
+            "amt": 539
+          }
+        ],
+        "Shock Barrier": [
+          {
+            "t": "20:08:07",
+            "amt": 659
           },
           {
-            "t": "20:08:15",
-            "amt": 474
+            "t": "20:08:07",
+            "amt": 731
           },
           {
-            "t": "20:08:25",
-            "amt": 475
+            "t": "20:08:07",
+            "amt": 167
           }
         ],
         "Scalding Water": [
           {
-            "t": "20:31:01",
+            "t": "20:30:21",
             "amt": 500
           },
           {
-            "t": "20:31:04",
+            "t": "20:30:24",
+            "amt": 500
+          },
+          {
+            "t": "20:30:27",
+            "amt": 500
+          },
+          {
+            "t": "20:30:30",
+            "amt": 500
+          },
+          {
+            "t": "20:30:33",
+            "amt": 500
+          },
+          {
+            "t": "20:30:36",
+            "amt": 500
+          },
+          {
+            "t": "20:30:38",
+            "amt": 500
+          },
+          {
+            "t": "20:30:41",
+            "amt": 500
+          },
+          {
+            "t": "20:30:44",
+            "amt": 500
+          },
+          {
+            "t": "20:30:47",
+            "amt": 500
+          },
+          {
+            "t": "20:30:50",
+            "amt": 500
+          },
+          {
+            "t": "20:30:53",
+            "amt": 500
+          },
+          {
+            "t": "20:30:56",
+            "amt": 500
+          },
+          {
+            "t": "20:30:59",
+            "amt": 500
+          },
+          {
+            "t": "20:31:02",
+            "amt": 500
+          },
+          {
+            "t": "20:31:05",
+            "amt": 500
+          },
+          {
+            "t": "20:31:08",
+            "amt": 500
+          },
+          {
+            "t": "20:31:11",
+            "amt": 500
+          },
+          {
+            "t": "20:31:14",
             "amt": 500
           },
           {
             "t": "20:31:17",
+            "amt": 500
+          },
+          {
+            "t": "20:31:20",
+            "amt": 500
+          },
+          {
+            "t": "20:31:23",
+            "amt": 500
+          },
+          {
+            "t": "20:31:26",
+            "amt": 500
+          },
+          {
+            "t": "20:31:29",
+            "amt": 500
+          },
+          {
+            "t": "20:31:32",
+            "amt": 500
+          },
+          {
+            "t": "20:31:35",
+            "amt": 500
+          },
+          {
+            "t": "20:31:38",
+            "amt": 500
+          },
+          {
+            "t": "20:31:41",
+            "amt": 500
+          },
+          {
+            "t": "20:31:44",
+            "amt": 500
+          },
+          {
+            "t": "20:31:47",
+            "amt": 500
+          },
+          {
+            "t": "20:32:06",
+            "amt": 500
+          },
+          {
+            "t": "20:32:35",
+            "amt": 500
+          },
+          {
+            "t": "20:32:38",
+            "amt": 500
+          },
+          {
+            "t": "20:32:41",
             "amt": 500
           },
           {
@@ -2469,11 +1958,15 @@
             "amt": 500
           },
           {
-            "t": "20:32:57",
+            "t": "20:32:50",
             "amt": 500
           },
           {
-            "t": "20:32:58",
+            "t": "20:32:53",
+            "amt": 500
+          },
+          {
+            "t": "20:32:56",
             "amt": 500
           },
           {
@@ -2483,14 +1976,126 @@
         ],
         "Whirl": [
           {
+            "t": "20:30:37",
+            "amt": 2481
+          },
+          {
+            "t": "20:30:55",
+            "amt": 2774
+          },
+          {
+            "t": "20:31:21",
+            "amt": 2879
+          },
+          {
+            "t": "20:31:40",
+            "amt": 2995
+          },
+          {
             "t": "20:32:56",
-            "amt": 4005
+            "amt": 2370
           }
         ],
-        "Chaos Blast": [
+        "Geyser": [
           {
-            "t": "21:03:19",
-            "amt": 1675
+            "t": "20:31:23",
+            "amt": 3734
+          }
+        ],
+        "Whirlwind": [
+          {
+            "t": "21:01:32",
+            "amt": 1523
+          },
+          {
+            "t": "21:01:33",
+            "amt": 1539
+          },
+          {
+            "t": "21:01:34",
+            "amt": 1523
+          },
+          {
+            "t": "21:01:35",
+            "amt": 1523
+          },
+          {
+            "t": "21:01:37",
+            "amt": 1672
+          },
+          {
+            "t": "21:01:38",
+            "amt": 1672
+          },
+          {
+            "t": "21:01:39",
+            "amt": 1671
+          },
+          {
+            "t": "21:01:40",
+            "amt": 1672
+          },
+          {
+            "t": "21:01:41",
+            "amt": 1523
+          },
+          {
+            "t": "21:01:42",
+            "amt": 1523
+          },
+          {
+            "t": "21:01:45",
+            "amt": 2375
+          },
+          {
+            "t": "21:01:48",
+            "amt": 2375
+          },
+          {
+            "t": "21:01:51",
+            "amt": 2375
+          },
+          {
+            "t": "21:01:54",
+            "amt": 2375
+          },
+          {
+            "t": "21:01:57",
+            "amt": 2375
+          },
+          {
+            "t": "21:02:03",
+            "amt": 1539
+          },
+          {
+            "t": "21:02:04",
+            "amt": 1540
+          },
+          {
+            "t": "21:02:07",
+            "amt": 2375
+          },
+          {
+            "t": "21:02:10",
+            "amt": 2375
+          },
+          {
+            "t": "21:02:13",
+            "amt": 2375
+          },
+          {
+            "t": "21:02:16",
+            "amt": 2375
+          },
+          {
+            "t": "21:02:19",
+            "amt": 2375
+          }
+        ],
+        "Entangle": [
+          {
+            "t": "21:09:50",
+            "amt": 500
           }
         ]
       }
@@ -2720,6 +2325,186 @@
           {
             "t": "21:17:42",
             "amt": 500
+          }
+        ]
+      }
+    },
+    {
+      "name": "Ohshiz",
+      "role": "Healer",
+      "class": "Shaman",
+      "spec": "Restoration",
+      "expected_crit": 16.65,
+      "actual_crit": 0.0,
+      "luck_delta": -16.65,
+      "gear_crit_rating": 15,
+      "total_dmg": 0,
+      "active_pct": 0.0,
+      "deaths": 1,
+      "deaths_trash": 4,
+      "fights_total": 10,
+      "fights_healed": 10,
+      "fights_tanked": 0,
+      "fights_dps": 0,
+      "uptime_by_fight": [],
+      "healer_uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 92.3
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 97.3
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 95.8
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 78.0
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 94.6
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 96.9
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 99.2
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 96.9
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 96.2
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 86.6
+        }
+      ],
+      "crit_baseline": 18.4,
+      "crit_weeks": 2,
+      "crit_std": 1.7,
+      "crit_series": [
+        20.0,
+        16.7,
+        0.0
+      ],
+      "crit_prev": 16.7,
+      "luck_hist": null,
+      "interrupt_count": 0,
+      "interrupt_list": [],
+      "eng": {},
+      "eng_dmg": 0,
+      "avoidable_dmg": 32369,
+      "avoidable_sources": {
+        "Blinding Light": 2496,
+        "Arcane Disruption": 1965,
+        "Nether Vapor": 2113,
+        "Nether Beam": 1421,
+        "Geyser": 6789,
+        "Scalding Water": 2500,
+        "Whirlwind": 13410,
+        "Chaos Blast": 1675
+      },
+      "avoidable_hits": {
+        "Blinding Light": [
+          {
+            "t": "19:52:03",
+            "amt": 2496
+          }
+        ],
+        "Arcane Disruption": [
+          {
+            "t": "20:06:37",
+            "amt": 1965
+          }
+        ],
+        "Nether Vapor": [
+          {
+            "t": "20:08:23",
+            "amt": 1120
+          },
+          {
+            "t": "20:08:25",
+            "amt": 993
+          }
+        ],
+        "Nether Beam": [
+          {
+            "t": "20:08:30",
+            "amt": 1421
+          }
+        ],
+        "Geyser": [
+          {
+            "t": "20:30:26",
+            "amt": 3299
+          },
+          {
+            "t": "20:32:58",
+            "amt": 3490
+          }
+        ],
+        "Scalding Water": [
+          {
+            "t": "20:31:07",
+            "amt": 500
+          },
+          {
+            "t": "20:31:10",
+            "amt": 500
+          },
+          {
+            "t": "20:32:40",
+            "amt": 500
+          },
+          {
+            "t": "20:32:43",
+            "amt": 500
+          },
+          {
+            "t": "20:33:00",
+            "amt": 500
+          }
+        ],
+        "Whirlwind": [
+          {
+            "t": "21:02:03",
+            "amt": 1535
+          },
+          {
+            "t": "21:02:06",
+            "amt": 2375
+          },
+          {
+            "t": "21:02:09",
+            "amt": 2375
+          },
+          {
+            "t": "21:02:12",
+            "amt": 2375
+          },
+          {
+            "t": "21:02:15",
+            "amt": 2375
+          },
+          {
+            "t": "21:02:18",
+            "amt": 2375
+          }
+        ],
+        "Chaos Blast": [
+          {
+            "t": "21:03:19",
+            "amt": 1675
           }
         ]
       }
@@ -3109,6 +2894,456 @@
       }
     },
     {
+      "name": "Sweetheart",
+      "role": "Healer",
+      "class": "Priest",
+      "spec": "Holy",
+      "expected_crit": 16.64,
+      "actual_crit": 40.0,
+      "luck_delta": 23.36,
+      "gear_crit_rating": 0,
+      "total_dmg": 35367,
+      "active_pct": 6.7,
+      "deaths": 2,
+      "deaths_trash": 3,
+      "fights_total": 10,
+      "fights_healed": 10,
+      "fights_tanked": 0,
+      "fights_dps": 0,
+      "uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 2.5
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 2.0
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 6.9
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 13.0
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 24.0
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 7.8
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 11.4
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 9.0
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 1.8
+        }
+      ],
+      "healer_uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 96.2
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 94.9
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 93.5
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 84.8
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 96.9
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 95.0
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 97.1
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 97.1
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 96.1
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 89.6
+        }
+      ],
+      "crit_baseline": 18.9,
+      "crit_weeks": 3,
+      "crit_std": 10.4,
+      "crit_series": [
+        14.3,
+        9.1,
+        33.3,
+        40.0
+      ],
+      "crit_prev": 33.3,
+      "luck_hist": 21.1,
+      "interrupt_count": 0,
+      "interrupt_list": [],
+      "eng": {},
+      "eng_dmg": 0,
+      "avoidable_dmg": 19570,
+      "avoidable_sources": {
+        "Arcane Disruption": 1887,
+        "Shock Barrier": 92,
+        "Nether Beam": 6449,
+        "Nether Vapor": 1462,
+        "Scalding Water": 4000,
+        "Whirl": 4005,
+        "Chaos Blast": 1675
+      },
+      "avoidable_hits": {
+        "Arcane Disruption": [
+          {
+            "t": "20:06:37",
+            "amt": 1887
+          }
+        ],
+        "Shock Barrier": [
+          {
+            "t": "20:07:54",
+            "amt": 92
+          }
+        ],
+        "Nether Beam": [
+          {
+            "t": "20:08:05",
+            "amt": 949
+          },
+          {
+            "t": "20:08:15",
+            "amt": 1973
+          },
+          {
+            "t": "20:08:23",
+            "amt": 2109
+          },
+          {
+            "t": "20:08:26",
+            "amt": 1418
+          }
+        ],
+        "Nether Vapor": [
+          {
+            "t": "20:08:11",
+            "amt": 513
+          },
+          {
+            "t": "20:08:15",
+            "amt": 474
+          },
+          {
+            "t": "20:08:25",
+            "amt": 475
+          }
+        ],
+        "Scalding Water": [
+          {
+            "t": "20:31:01",
+            "amt": 500
+          },
+          {
+            "t": "20:31:04",
+            "amt": 500
+          },
+          {
+            "t": "20:31:17",
+            "amt": 500
+          },
+          {
+            "t": "20:32:44",
+            "amt": 500
+          },
+          {
+            "t": "20:32:47",
+            "amt": 500
+          },
+          {
+            "t": "20:32:57",
+            "amt": 500
+          },
+          {
+            "t": "20:32:58",
+            "amt": 500
+          },
+          {
+            "t": "20:32:59",
+            "amt": 500
+          }
+        ],
+        "Whirl": [
+          {
+            "t": "20:32:56",
+            "amt": 4005
+          }
+        ],
+        "Chaos Blast": [
+          {
+            "t": "21:03:19",
+            "amt": 1675
+          }
+        ]
+      }
+    },
+    {
+      "name": "Zetla",
+      "role": "Caster",
+      "class": "Mage",
+      "spec": "Arcane",
+      "expected_crit": 36.73,
+      "actual_crit": 43.3,
+      "luck_delta": 6.57,
+      "gear_crit_rating": 363,
+      "total_dmg": 3584928,
+      "active_pct": 72.2,
+      "deaths": 1,
+      "deaths_trash": 3,
+      "fights_total": 10,
+      "fights_healed": 0,
+      "fights_tanked": 0,
+      "fights_dps": 10,
+      "uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 64.5
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 88.5
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 68.9
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 61.6
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 93.9
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 68.9
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 97.6
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 87.9
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 98.2
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 55.7
+        }
+      ],
+      "healer_uptime_by_fight": [],
+      "crit_baseline": 41.5,
+      "crit_weeks": 4,
+      "crit_std": 3.3,
+      "crit_series": [
+        36.0,
+        44.4,
+        41.9,
+        43.9,
+        43.3
+      ],
+      "crit_prev": 43.9,
+      "luck_hist": 1.8,
+      "interrupt_count": 4,
+      "interrupt_list": [
+        "Frostbolt",
+        "Fireball",
+        "Fireball",
+        "Fireball"
+      ],
+      "eng": {},
+      "eng_dmg": 0,
+      "avoidable_dmg": 40786,
+      "avoidable_sources": {
+        "Flame Patch": 4834,
+        "Blinding Light": 2313,
+        "Arcane Disruption": 2199,
+        "Shock Barrier": 4056,
+        "Nether Beam": 7571,
+        "Scalding Water": 4500,
+        "Geyser": 3469,
+        "Whirlwind": 11844
+      },
+      "avoidable_hits": {
+        "Flame Patch": [
+          {
+            "t": "19:18:15",
+            "amt": 2276
+          },
+          {
+            "t": "19:18:16",
+            "amt": 2558
+          }
+        ],
+        "Blinding Light": [
+          {
+            "t": "19:52:03",
+            "amt": 2313
+          }
+        ],
+        "Arcane Disruption": [
+          {
+            "t": "20:06:37",
+            "amt": 2199
+          }
+        ],
+        "Shock Barrier": [
+          {
+            "t": "20:07:53",
+            "amt": 475
+          },
+          {
+            "t": "20:07:55",
+            "amt": 462
+          },
+          {
+            "t": "20:08:06",
+            "amt": 455
+          },
+          {
+            "t": "20:08:07",
+            "amt": 450
+          },
+          {
+            "t": "20:08:13",
+            "amt": 852
+          },
+          {
+            "t": "20:08:15",
+            "amt": 482
+          },
+          {
+            "t": "20:08:21",
+            "amt": 880
+          }
+        ],
+        "Nether Beam": [
+          {
+            "t": "20:08:12",
+            "amt": 2004
+          },
+          {
+            "t": "20:08:19",
+            "amt": 1995
+          },
+          {
+            "t": "20:08:23",
+            "amt": 1482
+          },
+          {
+            "t": "20:08:26",
+            "amt": 2090
+          }
+        ],
+        "Scalding Water": [
+          {
+            "t": "20:31:01",
+            "amt": 500
+          },
+          {
+            "t": "20:31:04",
+            "amt": 500
+          },
+          {
+            "t": "20:31:07",
+            "amt": 500
+          },
+          {
+            "t": "20:31:09",
+            "amt": 500
+          },
+          {
+            "t": "20:31:36",
+            "amt": 500
+          },
+          {
+            "t": "20:32:43",
+            "amt": 500
+          },
+          {
+            "t": "20:32:46",
+            "amt": 500
+          },
+          {
+            "t": "20:32:49",
+            "amt": 500
+          },
+          {
+            "t": "20:32:52",
+            "amt": 500
+          }
+        ],
+        "Geyser": [
+          {
+            "t": "20:31:34",
+            "amt": 3469
+          }
+        ],
+        "Whirlwind": [
+          {
+            "t": "21:01:33",
+            "amt": 2323
+          },
+          {
+            "t": "21:01:36",
+            "amt": 2375
+          },
+          {
+            "t": "21:01:39",
+            "amt": 2375
+          },
+          {
+            "t": "21:01:42",
+            "amt": 2375
+          },
+          {
+            "t": "21:01:45",
+            "amt": 2375
+          },
+          {
+            "t": "21:01:48",
+            "amt": 21
+          }
+        ]
+      }
+    },
+    {
       "name": "Bahguul",
       "role": "Caster",
       "class": "Druid",
@@ -3376,18 +3611,18 @@
       }
     },
     {
-      "name": "Juricc",
+      "name": "Jadyx",
       "role": "Physical",
-      "class": "Shaman",
-      "spec": "Enhancement",
-      "expected_crit": 28.27,
-      "actual_crit": 43.7,
-      "luck_delta": 15.43,
-      "gear_crit_rating": 227,
-      "total_dmg": 2551479,
-      "active_pct": 75.6,
-      "deaths": 1,
-      "deaths_trash": 5,
+      "class": "Hunter",
+      "spec": "BeastMastery",
+      "expected_crit": 33.79,
+      "actual_crit": 31.8,
+      "luck_delta": -1.99,
+      "gear_crit_rating": 125,
+      "total_dmg": 2916109,
+      "active_pct": 81.7,
+      "deaths": 0,
+      "deaths_trash": 2,
       "fights_total": 10,
       "fights_healed": 0,
       "fights_tanked": 0,
@@ -3395,11 +3630,11 @@
       "uptime_by_fight": [
         {
           "boss": "Al'ar",
-          "uptime": 58.0
+          "uptime": 70.3
         },
         {
           "boss": "Void Reaver",
-          "uptime": 97.0
+          "uptime": 97.4
         },
         {
           "boss": "High Astromancer Solarian",
@@ -3407,269 +3642,160 @@
         },
         {
           "boss": "Kael'thas Sunstrider",
-          "uptime": 62.7
+          "uptime": 62.3
         },
         {
           "boss": "Hydross the Unstable",
-          "uptime": 95.3
+          "uptime": 97.0
         },
         {
           "boss": "The Lurker Below",
-          "uptime": 87.2
+          "uptime": 79.1
         },
         {
           "boss": "Morogrim Tidewalker",
-          "uptime": 98.2
+          "uptime": 98.9
         },
         {
           "boss": "Fathom-Lord Karathress",
-          "uptime": 96.7
+          "uptime": 98.2
         },
         {
           "boss": "Leotheras the Blind",
-          "uptime": 97.2
+          "uptime": 96.9
         },
         {
           "boss": "Lady Vashj",
-          "uptime": 61.6
+          "uptime": 83.2
         }
       ],
       "healer_uptime_by_fight": [
         {
           "boss": "Al'ar",
-          "uptime": 53.2
+          "uptime": 76.2
         },
         {
           "boss": "Void Reaver",
-          "uptime": 60.2
+          "uptime": 97.0
         },
         {
           "boss": "High Astromancer Solarian",
-          "uptime": 53.8
+          "uptime": 85.5
         },
         {
           "boss": "Kael'thas Sunstrider",
-          "uptime": 36.9
+          "uptime": 65.8
         },
         {
           "boss": "Hydross the Unstable",
-          "uptime": 78.3
+          "uptime": 96.3
         },
         {
           "boss": "The Lurker Below",
-          "uptime": 59.2
+          "uptime": 95.5
         },
         {
           "boss": "Morogrim Tidewalker",
-          "uptime": 87.0
+          "uptime": 98.7
         },
         {
           "boss": "Fathom-Lord Karathress",
-          "uptime": 67.4
+          "uptime": 88.7
         },
         {
           "boss": "Leotheras the Blind",
-          "uptime": 65.4
+          "uptime": 80.8
         },
         {
           "boss": "Lady Vashj",
-          "uptime": 35.2
+          "uptime": 71.5
         }
       ],
-      "crit_baseline": 45.6,
+      "crit_baseline": 32.5,
       "crit_weeks": 4,
-      "crit_std": 1.4,
+      "crit_std": 5.1,
       "crit_series": [
-        43.4,
-        45.3,
-        46.9,
-        46.8,
-        43.7
+        28.4,
+        26.9,
+        35.2,
+        39.5,
+        31.8
       ],
-      "crit_prev": 46.8,
-      "luck_hist": -1.9,
-      "interrupt_count": 5,
-      "interrupt_list": [
-        "Holy Smite",
-        "Great Heal",
-        "Fireball",
-        "Fireball",
-        "Fireball"
-      ],
+      "crit_prev": 39.5,
+      "luck_hist": -0.7,
+      "interrupt_count": 0,
+      "interrupt_list": [],
       "eng": {},
       "eng_dmg": 0,
-      "avoidable_dmg": 111637,
+      "avoidable_dmg": 24306,
       "avoidable_sources": {
-        "Blinding Light": 2432,
-        "Conflagration": 5371,
-        "Arcane Disruption": 1294,
-        "Shock Barrier": 1019,
-        "Nether Beam": 7292,
-        "Whirl": 15902,
-        "Geyser": 10390,
-        "Scalding Water": 8000,
-        "Sear Nova": 12927,
-        "Whirlwind": 42854,
-        "Entangle": 4156
+        "Blinding Light": 2320,
+        "Arcane Disruption": 2220,
+        "Shock Barrier": 1531,
+        "Nether Beam": 5979,
+        "Scalding Water": 9000,
+        "Geyser": 3256
       },
       "avoidable_hits": {
         "Blinding Light": [
           {
             "t": "19:52:03",
-            "amt": 2432
-          }
-        ],
-        "Conflagration": [
-          {
-            "t": "20:05:57",
-            "amt": 895
-          },
-          {
-            "t": "20:05:58",
-            "amt": 895
-          },
-          {
-            "t": "20:05:59",
-            "amt": 448
-          },
-          {
-            "t": "20:06:00",
-            "amt": 448
-          },
-          {
-            "t": "20:06:01",
-            "amt": 448
-          },
-          {
-            "t": "20:06:02",
-            "amt": 447
-          },
-          {
-            "t": "20:06:03",
-            "amt": 448
-          },
-          {
-            "t": "20:06:04",
-            "amt": 448
-          },
-          {
-            "t": "20:06:05",
-            "amt": 447
-          },
-          {
-            "t": "20:06:06",
-            "amt": 447
+            "amt": 2320
           }
         ],
         "Arcane Disruption": [
           {
             "t": "20:06:37",
-            "amt": 1294
+            "amt": 2220
           }
         ],
         "Shock Barrier": [
           {
-            "t": "20:07:53",
-            "amt": 103
+            "t": "20:07:54",
+            "amt": 450
           },
           {
             "t": "20:07:55",
-            "amt": 71
-          },
-          {
-            "t": "20:08:13",
-            "amt": 76
-          },
-          {
-            "t": "20:08:13",
-            "amt": 299
+            "amt": 158
           },
           {
             "t": "20:08:14",
-            "amt": 46
+            "amt": 147
           },
           {
-            "t": "20:08:15",
-            "amt": 118
+            "t": "20:08:14",
+            "amt": 455
           },
           {
-            "t": "20:08:21",
-            "amt": 48
+            "t": "20:08:20",
+            "amt": 151
           },
           {
-            "t": "20:08:21",
-            "amt": 258
+            "t": "20:08:20",
+            "amt": 170
           }
         ],
         "Nether Beam": [
           {
-            "t": "20:08:08",
-            "amt": 2004
+            "t": "20:08:05",
+            "amt": 1948
           },
           {
             "t": "20:08:12",
-            "amt": 1926
-          },
-          {
-            "t": "20:08:19",
-            "amt": 511
-          },
-          {
-            "t": "20:08:23",
-            "amt": 2130
+            "amt": 1932
           },
           {
             "t": "20:08:30",
-            "amt": 721
-          }
-        ],
-        "Whirl": [
-          {
-            "t": "20:30:37",
-            "amt": 3378
-          },
-          {
-            "t": "20:30:55",
-            "amt": 3360
-          },
-          {
-            "t": "20:31:21",
-            "amt": 2819
-          },
-          {
-            "t": "20:31:40",
-            "amt": 3297
-          },
-          {
-            "t": "20:32:56",
-            "amt": 3048
-          }
-        ],
-        "Geyser": [
-          {
-            "t": "20:30:39",
-            "amt": 3544
-          },
-          {
-            "t": "20:31:23",
-            "amt": 3325
-          },
-          {
-            "t": "20:31:34",
-            "amt": 3521
+            "amt": 2099
           }
         ],
         "Scalding Water": [
           {
-            "t": "20:30:41",
+            "t": "20:31:09",
             "amt": 500
           },
           {
-            "t": "20:31:03",
-            "amt": 500
-          },
-          {
-            "t": "20:31:08",
+            "t": "20:31:12",
             "amt": 500
           },
           {
@@ -3677,198 +3803,70 @@
             "amt": 500
           },
           {
-            "t": "20:31:25",
+            "t": "20:31:17",
             "amt": 500
           },
           {
-            "t": "20:31:25",
+            "t": "20:31:19",
             "amt": 500
           },
           {
-            "t": "20:31:26",
+            "t": "20:31:55",
             "amt": 500
           },
           {
-            "t": "20:31:36",
+            "t": "20:31:57",
             "amt": 500
           },
           {
-            "t": "20:31:37",
+            "t": "20:32:00",
             "amt": 500
           },
           {
-            "t": "20:31:45",
+            "t": "20:32:03",
             "amt": 500
           },
           {
-            "t": "20:31:47",
+            "t": "20:32:06",
             "amt": 500
           },
           {
-            "t": "20:32:07",
+            "t": "20:32:09",
             "amt": 500
           },
           {
-            "t": "20:32:41",
+            "t": "20:32:12",
             "amt": 500
           },
           {
-            "t": "20:32:48",
+            "t": "20:32:15",
             "amt": 500
           },
           {
-            "t": "20:32:53",
+            "t": "20:32:39",
             "amt": 500
           },
           {
-            "t": "20:32:55",
+            "t": "20:33:00",
+            "amt": 500
+          },
+          {
+            "t": "20:33:03",
+            "amt": 500
+          },
+          {
+            "t": "20:33:06",
+            "amt": 500
+          },
+          {
+            "t": "20:33:09",
             "amt": 500
           }
         ],
-        "Sear Nova": [
+        "Geyser": [
           {
-            "t": "20:55:17",
-            "amt": 3039
-          },
-          {
-            "t": "20:55:45",
-            "amt": 4918
-          },
-          {
-            "t": "20:56:08",
-            "amt": 4970
-          }
-        ],
-        "Whirlwind": [
-          {
-            "t": "21:01:31",
-            "amt": 1941
-          },
-          {
-            "t": "21:01:32",
-            "amt": 1358
-          },
-          {
-            "t": "21:01:33",
-            "amt": 1373
-          },
-          {
-            "t": "21:01:34",
-            "amt": 1358
-          },
-          {
-            "t": "21:01:36",
-            "amt": 1338
-          },
-          {
-            "t": "21:01:37",
-            "amt": 1338
-          },
-          {
-            "t": "21:01:38",
-            "amt": 1338
-          },
-          {
-            "t": "21:01:39",
-            "amt": 1338
-          },
-          {
-            "t": "21:01:41",
-            "amt": 1338
-          },
-          {
-            "t": "21:01:42",
-            "amt": 1338
-          },
-          {
-            "t": "21:01:45",
-            "amt": 1653
-          },
-          {
-            "t": "21:01:48",
-            "amt": 2362
-          },
-          {
-            "t": "21:01:51",
-            "amt": 2362
-          },
-          {
-            "t": "21:01:54",
-            "amt": 2361
-          },
-          {
-            "t": "21:01:57",
-            "amt": 2362
-          },
-          {
-            "t": "21:02:03",
-            "amt": 1962
-          },
-          {
-            "t": "21:02:04",
-            "amt": 1962
-          },
-          {
-            "t": "21:02:05",
-            "amt": 1962
-          },
-          {
-            "t": "21:02:08",
-            "amt": 2362
-          },
-          {
-            "t": "21:02:11",
-            "amt": 2362
-          },
-          {
-            "t": "21:02:14",
-            "amt": 2362
-          },
-          {
-            "t": "21:02:17",
-            "amt": 2362
-          },
-          {
-            "t": "21:02:20",
-            "amt": 2362
-          }
-        ],
-        "Entangle": [
-          {
-            "t": "21:09:50",
-            "amt": 495
-          },
-          {
-            "t": "21:09:52",
-            "amt": 495
-          },
-          {
-            "t": "21:09:54",
-            "amt": 495
-          },
-          {
-            "t": "21:09:56",
-            "amt": 494
-          },
-          {
-            "t": "21:17:15",
-            "amt": 346
-          },
-          {
-            "t": "21:17:17",
-            "amt": 347
-          },
-          {
-            "t": "21:17:19",
-            "amt": 495
-          },
-          {
-            "t": "21:17:21",
-            "amt": 495
-          },
-          {
-            "t": "21:17:23",
-            "amt": 494
+            "t": "20:32:58",
+            "amt": 3256
           }
         ]
       }
@@ -4274,1166 +4272,6 @@
           {
             "t": "21:17:44",
             "amt": 500
-          }
-        ]
-      }
-    },
-    {
-      "name": "Zyph",
-      "role": "Physical",
-      "class": "Hunter",
-      "spec": "BeastMastery",
-      "expected_crit": 33.86,
-      "actual_crit": 29.3,
-      "luck_delta": -4.56,
-      "gear_crit_rating": 121,
-      "total_dmg": 2744175,
-      "active_pct": 81.3,
-      "deaths": 1,
-      "deaths_trash": 4,
-      "fights_total": 10,
-      "fights_healed": 0,
-      "fights_tanked": 0,
-      "fights_dps": 10,
-      "uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 75.5
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 98.0
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 74.1
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 63.5
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 96.3
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 72.9
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 71.5
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 95.4
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 97.9
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 90.3
-        }
-      ],
-      "healer_uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 32.3
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 11.2
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 96.0
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 89.0
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 71.0
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 95.4
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 97.5
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 90.4
-        }
-      ],
-      "crit_baseline": 28.2,
-      "crit_weeks": 4,
-      "crit_std": 1.0,
-      "crit_series": [
-        27.0,
-        29.1,
-        27.5,
-        29.2,
-        29.3
-      ],
-      "crit_prev": 29.2,
-      "luck_hist": 1.1,
-      "interrupt_count": 0,
-      "interrupt_list": [],
-      "eng": {},
-      "eng_dmg": 0,
-      "avoidable_dmg": 36649,
-      "avoidable_sources": {
-        "Flame Patch": 2273,
-        "Arcane Orb": 11581,
-        "Blinding Light": 2365,
-        "Conflagration": 9000,
-        "Arcane Disruption": 1936,
-        "Shock Barrier": 2546,
-        "Nether Beam": 1950,
-        "Scalding Water": 4998
-      },
-      "avoidable_hits": {
-        "Flame Patch": [
-          {
-            "t": "19:19:33",
-            "amt": 2273
-          }
-        ],
-        "Arcane Orb": [
-          {
-            "t": "19:41:02",
-            "amt": 6025
-          },
-          {
-            "t": "19:42:18",
-            "amt": 5556
-          }
-        ],
-        "Blinding Light": [
-          {
-            "t": "19:52:03",
-            "amt": 2365
-          }
-        ],
-        "Conflagration": [
-          {
-            "t": "20:03:04",
-            "amt": 900
-          },
-          {
-            "t": "20:03:05",
-            "amt": 900
-          },
-          {
-            "t": "20:03:06",
-            "amt": 900
-          },
-          {
-            "t": "20:03:07",
-            "amt": 900
-          },
-          {
-            "t": "20:03:08",
-            "amt": 900
-          },
-          {
-            "t": "20:03:09",
-            "amt": 900
-          },
-          {
-            "t": "20:03:10",
-            "amt": 900
-          },
-          {
-            "t": "20:03:11",
-            "amt": 900
-          },
-          {
-            "t": "20:03:12",
-            "amt": 900
-          },
-          {
-            "t": "20:03:13",
-            "amt": 900
-          }
-        ],
-        "Arcane Disruption": [
-          {
-            "t": "20:06:37",
-            "amt": 1936
-          }
-        ],
-        "Shock Barrier": [
-          {
-            "t": "20:07:53",
-            "amt": 443
-          },
-          {
-            "t": "20:07:54",
-            "amt": 467
-          },
-          {
-            "t": "20:08:07",
-            "amt": 168
-          },
-          {
-            "t": "20:08:13",
-            "amt": 465
-          },
-          {
-            "t": "20:08:14",
-            "amt": 167
-          },
-          {
-            "t": "20:08:20",
-            "amt": 180
-          },
-          {
-            "t": "20:08:21",
-            "amt": 163
-          },
-          {
-            "t": "20:08:22",
-            "amt": 493
-          }
-        ],
-        "Nether Beam": [
-          {
-            "t": "20:08:30",
-            "amt": 1950
-          }
-        ],
-        "Scalding Water": [
-          {
-            "t": "20:31:07",
-            "amt": 500
-          },
-          {
-            "t": "20:31:10",
-            "amt": 500
-          },
-          {
-            "t": "20:31:12",
-            "amt": 500
-          },
-          {
-            "t": "20:31:54",
-            "amt": 500
-          },
-          {
-            "t": "20:31:55",
-            "amt": 500
-          },
-          {
-            "t": "20:31:57",
-            "amt": 500
-          },
-          {
-            "t": "20:32:00",
-            "amt": 499
-          },
-          {
-            "t": "20:32:37",
-            "amt": 500
-          },
-          {
-            "t": "20:32:40",
-            "amt": 499
-          },
-          {
-            "t": "20:32:42",
-            "amt": 500
-          }
-        ]
-      }
-    },
-    {
-      "name": "Skeptxo",
-      "role": "Physical",
-      "class": "Rogue",
-      "spec": "Combat",
-      "expected_crit": 37.79,
-      "actual_crit": 31.0,
-      "luck_delta": -6.79,
-      "gear_crit_rating": 204,
-      "total_dmg": 2142373,
-      "active_pct": 68.3,
-      "deaths": 2,
-      "deaths_trash": 3,
-      "fights_total": 10,
-      "fights_healed": 0,
-      "fights_tanked": 0,
-      "fights_dps": 10,
-      "uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 63.3
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 98.8
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 72.2
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 58.4
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 96.2
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 80.3
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 87.9
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 96.5
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 57.8
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 47.5
-        }
-      ],
-      "healer_uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 20.0
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 11.2
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 1.7
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 87.4
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 22.3
-        }
-      ],
-      "crit_baseline": 30.1,
-      "crit_weeks": 4,
-      "crit_std": 1.5,
-      "crit_series": [
-        32.3,
-        29.6,
-        28.1,
-        30.2,
-        31.0
-      ],
-      "crit_prev": 30.2,
-      "luck_hist": 0.9,
-      "interrupt_count": 1,
-      "interrupt_list": [
-        "Great Heal"
-      ],
-      "eng": {},
-      "eng_dmg": 0,
-      "avoidable_dmg": 87343,
-      "avoidable_sources": {
-        "Blinding Light": 2315,
-        "Conflagration": 4477,
-        "Arcane Disruption": 2135,
-        "Shock Barrier": 1622,
-        "Nether Vapor": 4102,
-        "Nether Beam": 3446,
-        "Scalding Water": 10981,
-        "Whirl": 17440,
-        "Geyser": 7042,
-        "Sear Nova": 15782,
-        "Whirlwind": 15016,
-        "Entangle": 2985
-      },
-      "avoidable_hits": {
-        "Blinding Light": [
-          {
-            "t": "19:52:03",
-            "amt": 2315
-          }
-        ],
-        "Conflagration": [
-          {
-            "t": "20:03:04",
-            "amt": 896
-          },
-          {
-            "t": "20:03:05",
-            "amt": 896
-          },
-          {
-            "t": "20:03:06",
-            "amt": 895
-          },
-          {
-            "t": "20:03:07",
-            "amt": 895
-          },
-          {
-            "t": "20:03:08",
-            "amt": 895
-          }
-        ],
-        "Arcane Disruption": [
-          {
-            "t": "20:06:37",
-            "amt": 2135
-          }
-        ],
-        "Shock Barrier": [
-          {
-            "t": "20:07:53",
-            "amt": 177
-          },
-          {
-            "t": "20:07:54",
-            "amt": 102
-          },
-          {
-            "t": "20:08:05",
-            "amt": 371
-          },
-          {
-            "t": "20:08:06",
-            "amt": 72
-          },
-          {
-            "t": "20:08:07",
-            "amt": 183
-          },
-          {
-            "t": "20:08:07",
-            "amt": 106
-          },
-          {
-            "t": "20:08:14",
-            "amt": 98
-          },
-          {
-            "t": "20:08:14",
-            "amt": 38
-          },
-          {
-            "t": "20:08:14",
-            "amt": 171
-          },
-          {
-            "t": "20:08:20",
-            "amt": 88
-          },
-          {
-            "t": "20:08:21",
-            "amt": 103
-          },
-          {
-            "t": "20:08:22",
-            "amt": 86
-          },
-          {
-            "t": "20:08:22",
-            "amt": 27
-          }
-        ],
-        "Nether Vapor": [
-          {
-            "t": "20:08:03",
-            "amt": 506
-          },
-          {
-            "t": "20:08:03",
-            "amt": 437
-          },
-          {
-            "t": "20:08:07",
-            "amt": 524
-          },
-          {
-            "t": "20:08:09",
-            "amt": 488
-          },
-          {
-            "t": "20:08:11",
-            "amt": 517
-          },
-          {
-            "t": "20:08:13",
-            "amt": 535
-          },
-          {
-            "t": "20:08:15",
-            "amt": 556
-          },
-          {
-            "t": "20:08:25",
-            "amt": 539
-          }
-        ],
-        "Nether Beam": [
-          {
-            "t": "20:08:05",
-            "amt": 1506
-          },
-          {
-            "t": "20:08:26",
-            "amt": 1940
-          }
-        ],
-        "Scalding Water": [
-          {
-            "t": "20:30:19",
-            "amt": 500
-          },
-          {
-            "t": "20:30:22",
-            "amt": 497
-          },
-          {
-            "t": "20:30:25",
-            "amt": 497
-          },
-          {
-            "t": "20:30:28",
-            "amt": 498
-          },
-          {
-            "t": "20:30:31",
-            "amt": 497
-          },
-          {
-            "t": "20:30:34",
-            "amt": 497
-          },
-          {
-            "t": "20:30:37",
-            "amt": 498
-          },
-          {
-            "t": "20:30:52",
-            "amt": 500
-          },
-          {
-            "t": "20:30:53",
-            "amt": 500
-          },
-          {
-            "t": "20:30:56",
-            "amt": 500
-          },
-          {
-            "t": "20:30:57",
-            "amt": 500
-          },
-          {
-            "t": "20:31:05",
-            "amt": 500
-          },
-          {
-            "t": "20:31:08",
-            "amt": 500
-          },
-          {
-            "t": "20:31:16",
-            "amt": 500
-          },
-          {
-            "t": "20:31:19",
-            "amt": 497
-          },
-          {
-            "t": "20:31:47",
-            "amt": 500
-          },
-          {
-            "t": "20:31:59",
-            "amt": 500
-          },
-          {
-            "t": "20:32:30",
-            "amt": 500
-          },
-          {
-            "t": "20:32:35",
-            "amt": 500
-          },
-          {
-            "t": "20:32:47",
-            "amt": 500
-          },
-          {
-            "t": "20:32:52",
-            "amt": 500
-          },
-          {
-            "t": "20:32:54",
-            "amt": 500
-          }
-        ],
-        "Whirl": [
-          {
-            "t": "20:30:37",
-            "amt": 3245
-          },
-          {
-            "t": "20:30:55",
-            "amt": 3393
-          },
-          {
-            "t": "20:31:21",
-            "amt": 3800
-          },
-          {
-            "t": "20:31:40",
-            "amt": 3076
-          },
-          {
-            "t": "20:32:56",
-            "amt": 3926
-          }
-        ],
-        "Geyser": [
-          {
-            "t": "20:30:50",
-            "amt": 3441
-          },
-          {
-            "t": "20:31:45",
-            "amt": 3601
-          }
-        ],
-        "Sear Nova": [
-          {
-            "t": "20:54:39",
-            "amt": 3088
-          },
-          {
-            "t": "20:55:17",
-            "amt": 3129
-          },
-          {
-            "t": "20:55:45",
-            "amt": 4851
-          },
-          {
-            "t": "20:56:08",
-            "amt": 4714
-          }
-        ],
-        "Whirlwind": [
-          {
-            "t": "21:01:33",
-            "amt": 2058
-          },
-          {
-            "t": "21:01:34",
-            "amt": 2058
-          },
-          {
-            "t": "21:01:37",
-            "amt": 2363
-          },
-          {
-            "t": "21:01:40",
-            "amt": 2363
-          },
-          {
-            "t": "21:01:40",
-            "amt": 2058
-          },
-          {
-            "t": "21:01:41",
-            "amt": 2058
-          },
-          {
-            "t": "21:01:42",
-            "amt": 2058
-          }
-        ],
-        "Entangle": [
-          {
-            "t": "21:09:50",
-            "amt": 498
-          },
-          {
-            "t": "21:09:52",
-            "amt": 497
-          },
-          {
-            "t": "21:09:54",
-            "amt": 497
-          },
-          {
-            "t": "21:09:56",
-            "amt": 498
-          },
-          {
-            "t": "21:09:58",
-            "amt": 497
-          },
-          {
-            "t": "21:17:15",
-            "amt": 498
-          }
-        ]
-      }
-    },
-    {
-      "name": "Alldorin",
-      "role": "Caster",
-      "class": "Warlock",
-      "spec": "Affliction",
-      "expected_crit": 24.75,
-      "actual_crit": 28.7,
-      "luck_delta": 3.95,
-      "gear_crit_rating": 212,
-      "total_dmg": 2311236,
-      "active_pct": 79.1,
-      "deaths": 0,
-      "deaths_trash": 5,
-      "fights_total": 10,
-      "fights_healed": 0,
-      "fights_tanked": 0,
-      "fights_dps": 10,
-      "uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 77.6
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 95.0
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 68.4
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 61.2
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 91.3
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 65.9
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 83.6
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 94.7
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 94.4
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 83.6
-        }
-      ],
-      "healer_uptime_by_fight": [
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 6.5
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 15.4
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 26.6
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 17.3
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 12.8
-        }
-      ],
-      "crit_baseline": 26.5,
-      "crit_weeks": 3,
-      "crit_std": 1.4,
-      "crit_series": [
-        24.9,
-        26.4,
-        28.3,
-        28.7
-      ],
-      "crit_prev": 28.3,
-      "luck_hist": 2.2,
-      "interrupt_count": 0,
-      "interrupt_list": [],
-      "eng": {},
-      "eng_dmg": 0,
-      "avoidable_dmg": 21311,
-      "avoidable_sources": {
-        "Flame Patch": 4872,
-        "Blinding Light": 2382,
-        "Arcane Disruption": 1780,
-        "Shock Barrier": 1877,
-        "Nether Beam": 3936,
-        "Geyser": 3464,
-        "Scalding Water": 3000
-      },
-      "avoidable_hits": {
-        "Flame Patch": [
-          {
-            "t": "19:19:16",
-            "amt": 2296
-          },
-          {
-            "t": "19:19:17",
-            "amt": 2576
-          }
-        ],
-        "Blinding Light": [
-          {
-            "t": "19:52:03",
-            "amt": 2382
-          }
-        ],
-        "Arcane Disruption": [
-          {
-            "t": "20:06:37",
-            "amt": 1780
-          }
-        ],
-        "Shock Barrier": [
-          {
-            "t": "20:07:54",
-            "amt": 539
-          },
-          {
-            "t": "20:08:05",
-            "amt": 160
-          },
-          {
-            "t": "20:08:05",
-            "amt": 595
-          },
-          {
-            "t": "20:08:07",
-            "amt": 51
-          },
-          {
-            "t": "20:08:13",
-            "amt": 68
-          },
-          {
-            "t": "20:08:14",
-            "amt": 73
-          },
-          {
-            "t": "20:08:14",
-            "amt": 160
-          },
-          {
-            "t": "20:08:20",
-            "amt": 61
-          },
-          {
-            "t": "20:08:20",
-            "amt": 134
-          },
-          {
-            "t": "20:08:21",
-            "amt": 36
-          }
-        ],
-        "Nether Beam": [
-          {
-            "t": "20:08:05",
-            "amt": 1993
-          },
-          {
-            "t": "20:08:26",
-            "amt": 1943
-          }
-        ],
-        "Geyser": [
-          {
-            "t": "20:30:26",
-            "amt": 3464
-          }
-        ],
-        "Scalding Water": [
-          {
-            "t": "20:31:04",
-            "amt": 500
-          },
-          {
-            "t": "20:31:07",
-            "amt": 500
-          },
-          {
-            "t": "20:31:10",
-            "amt": 500
-          },
-          {
-            "t": "20:32:39",
-            "amt": 500
-          },
-          {
-            "t": "20:32:42",
-            "amt": 500
-          },
-          {
-            "t": "20:32:45",
-            "amt": 500
-          }
-        ]
-      }
-    },
-    {
-      "name": "Mucoid",
-      "role": "Physical",
-      "class": "Hunter",
-      "spec": "BeastMastery",
-      "expected_crit": 37.24,
-      "actual_crit": 34.5,
-      "luck_delta": -2.74,
-      "gear_crit_rating": 194,
-      "total_dmg": 2644454,
-      "active_pct": 68.4,
-      "deaths": 1,
-      "deaths_trash": 2,
-      "fights_total": 10,
-      "fights_healed": 0,
-      "fights_tanked": 0,
-      "fights_dps": 10,
-      "uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 74.4
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 97.6
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 75.2
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 60.4
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 86.3
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 77.3
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 97.6
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 96.0
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 90.7
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 29.4
-        }
-      ],
-      "healer_uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 73.6
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 97.3
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 97.1
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 62.5
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 86.2
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 85.2
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 97.3
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 96.1
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 90.7
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 30.0
-        }
-      ],
-      "crit_baseline": 32.9,
-      "crit_weeks": 4,
-      "crit_std": 2.7,
-      "crit_series": [
-        31.4,
-        29.3,
-        34.8,
-        36.2,
-        34.5
-      ],
-      "crit_prev": 36.2,
-      "luck_hist": 1.6,
-      "interrupt_count": 0,
-      "interrupt_list": [],
-      "eng": {},
-      "eng_dmg": 0,
-      "avoidable_dmg": 25007,
-      "avoidable_sources": {
-        "Arcane Orb": 11992,
-        "Blinding Light": 2393,
-        "Arcane Disruption": 2199,
-        "Shock Barrier": 3001,
-        "Nether Beam": 1924,
-        "Scalding Water": 3498
-      },
-      "avoidable_hits": {
-        "Arcane Orb": [
-          {
-            "t": "19:41:38",
-            "amt": 5694
-          },
-          {
-            "t": "19:42:08",
-            "amt": 6298
-          }
-        ],
-        "Blinding Light": [
-          {
-            "t": "19:52:03",
-            "amt": 2393
-          }
-        ],
-        "Arcane Disruption": [
-          {
-            "t": "20:06:37",
-            "amt": 2199
-          }
-        ],
-        "Shock Barrier": [
-          {
-            "t": "20:07:53",
-            "amt": 433
-          },
-          {
-            "t": "20:07:55",
-            "amt": 466
-          },
-          {
-            "t": "20:08:06",
-            "amt": 411
-          },
-          {
-            "t": "20:08:07",
-            "amt": 180
-          },
-          {
-            "t": "20:08:07",
-            "amt": 159
-          },
-          {
-            "t": "20:08:13",
-            "amt": 177
-          },
-          {
-            "t": "20:08:15",
-            "amt": 471
-          },
-          {
-            "t": "20:08:21",
-            "amt": 208
-          },
-          {
-            "t": "20:08:21",
-            "amt": 496
-          }
-        ],
-        "Nether Beam": [
-          {
-            "t": "20:08:12",
-            "amt": 1924
-          }
-        ],
-        "Scalding Water": [
-          {
-            "t": "20:31:08",
-            "amt": 500
-          },
-          {
-            "t": "20:31:11",
-            "amt": 499
-          },
-          {
-            "t": "20:31:14",
-            "amt": 500
-          },
-          {
-            "t": "20:31:51",
-            "amt": 500
-          },
-          {
-            "t": "20:32:00",
-            "amt": 500
-          },
-          {
-            "t": "20:32:37",
-            "amt": 500
-          },
-          {
-            "t": "20:32:40",
-            "amt": 499
           }
         ]
       }
@@ -6368,256 +5206,16 @@
       }
     },
     {
-      "name": "Marvels",
-      "role": "Caster",
-      "class": "Warlock",
-      "spec": "Destruction",
-      "expected_crit": 27.01,
-      "actual_crit": 34.0,
-      "luck_delta": 6.99,
-      "gear_crit_rating": 241,
-      "total_dmg": 2833160,
-      "active_pct": 71.4,
-      "deaths": 0,
-      "deaths_trash": 5,
-      "fights_total": 10,
-      "fights_healed": 0,
-      "fights_tanked": 0,
-      "fights_dps": 10,
-      "uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 68.5
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 93.8
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 68.5
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 61.4
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 82.8
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 46.7
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 73.5
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 91.0
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 96.6
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 67.7
-        }
-      ],
-      "healer_uptime_by_fight": [],
-      "crit_baseline": 32.5,
-      "crit_weeks": 2,
-      "crit_std": 1.1,
-      "crit_series": [
-        31.4,
-        33.6,
-        34.0
-      ],
-      "crit_prev": 33.6,
-      "luck_hist": null,
-      "interrupt_count": 0,
-      "interrupt_list": [],
-      "eng": {},
-      "eng_dmg": 0,
-      "avoidable_dmg": 30815,
-      "avoidable_sources": {
-        "Blinding Light": 1776,
-        "Conflagration": 4500,
-        "Arcane Disruption": 1784,
-        "Shock Barrier": 2584,
-        "Nether Beam": 5885,
-        "Scalding Water": 6000,
-        "Geyser": 3261,
-        "Chaos Blast": 5025
-      },
-      "avoidable_hits": {
-        "Blinding Light": [
-          {
-            "t": "19:52:03",
-            "amt": 1776
-          }
-        ],
-        "Conflagration": [
-          {
-            "t": "20:05:24",
-            "amt": 450
-          },
-          {
-            "t": "20:05:25",
-            "amt": 450
-          },
-          {
-            "t": "20:05:26",
-            "amt": 450
-          },
-          {
-            "t": "20:05:27",
-            "amt": 450
-          },
-          {
-            "t": "20:05:28",
-            "amt": 450
-          },
-          {
-            "t": "20:05:29",
-            "amt": 450
-          },
-          {
-            "t": "20:05:30",
-            "amt": 450
-          },
-          {
-            "t": "20:05:31",
-            "amt": 450
-          },
-          {
-            "t": "20:05:32",
-            "amt": 450
-          },
-          {
-            "t": "20:05:33",
-            "amt": 450
-          }
-        ],
-        "Arcane Disruption": [
-          {
-            "t": "20:06:37",
-            "amt": 1784
-          }
-        ],
-        "Shock Barrier": [
-          {
-            "t": "20:07:54",
-            "amt": 636
-          },
-          {
-            "t": "20:08:05",
-            "amt": 549
-          },
-          {
-            "t": "20:08:14",
-            "amt": 733
-          },
-          {
-            "t": "20:08:20",
-            "amt": 666
-          }
-        ],
-        "Nether Beam": [
-          {
-            "t": "20:08:15",
-            "amt": 1921
-          },
-          {
-            "t": "20:08:19",
-            "amt": 2060
-          },
-          {
-            "t": "20:08:30",
-            "amt": 1904
-          }
-        ],
-        "Scalding Water": [
-          {
-            "t": "20:31:01",
-            "amt": 500
-          },
-          {
-            "t": "20:31:04",
-            "amt": 500
-          },
-          {
-            "t": "20:31:07",
-            "amt": 500
-          },
-          {
-            "t": "20:31:10",
-            "amt": 500
-          },
-          {
-            "t": "20:31:10",
-            "amt": 500
-          },
-          {
-            "t": "20:31:36",
-            "amt": 500
-          },
-          {
-            "t": "20:31:37",
-            "amt": 500
-          },
-          {
-            "t": "20:31:38",
-            "amt": 500
-          },
-          {
-            "t": "20:31:39",
-            "amt": 500
-          },
-          {
-            "t": "20:32:39",
-            "amt": 500
-          },
-          {
-            "t": "20:32:42",
-            "amt": 500
-          },
-          {
-            "t": "20:32:45",
-            "amt": 500
-          }
-        ],
-        "Geyser": [
-          {
-            "t": "20:31:34",
-            "amt": 3261
-          }
-        ],
-        "Chaos Blast": [
-          {
-            "t": "21:02:08",
-            "amt": 1675
-          },
-          {
-            "t": "21:02:11",
-            "amt": 3350
-          }
-        ]
-      }
-    },
-    {
-      "name": "Shovelpriest",
-      "role": "Caster",
-      "class": "Priest",
-      "spec": "Shadow",
-      "expected_crit": 18.89,
-      "actual_crit": 26.5,
-      "luck_delta": 7.61,
-      "gear_crit_rating": 113,
-      "total_dmg": 1731685,
-      "active_pct": 70.8,
+      "name": "Zyph",
+      "role": "Physical",
+      "class": "Hunter",
+      "spec": "BeastMastery",
+      "expected_crit": 33.86,
+      "actual_crit": 29.3,
+      "luck_delta": -4.56,
+      "gear_crit_rating": 121,
+      "total_dmg": 2744175,
+      "active_pct": 81.3,
       "deaths": 1,
       "deaths_trash": 4,
       "fights_total": 10,
@@ -6627,253 +5225,19 @@
       "uptime_by_fight": [
         {
           "boss": "Al'ar",
-          "uptime": 85.9
+          "uptime": 75.5
         },
         {
           "boss": "Void Reaver",
-          "uptime": 95.2
+          "uptime": 98.0
         },
         {
           "boss": "High Astromancer Solarian",
-          "uptime": 61.5
+          "uptime": 74.1
         },
         {
           "boss": "Kael'thas Sunstrider",
-          "uptime": 68.4
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 92.9
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 69.3
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 84.1
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 93.5
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 94.8
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 36.1
-        }
-      ],
-      "healer_uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 89.3
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 95.2
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 61.5
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 65.0
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 92.9
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 69.3
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 84.1
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 93.5
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 94.8
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 36.1
-        }
-      ],
-      "crit_baseline": 23.1,
-      "crit_weeks": 2,
-      "crit_std": 0.0,
-      "crit_series": [
-        23.1,
-        23.2,
-        26.5
-      ],
-      "crit_prev": 23.2,
-      "luck_hist": null,
-      "interrupt_count": 0,
-      "interrupt_list": [],
-      "eng": {},
-      "eng_dmg": 0,
-      "avoidable_dmg": 9717,
-      "avoidable_sources": {
-        "Flame Patch": 2339,
-        "Blinding Light": 2294,
-        "Arcane Disruption": 2177,
-        "Shock Barrier": 907,
-        "Scalding Water": 2000
-      },
-      "avoidable_hits": {
-        "Flame Patch": [
-          {
-            "t": "19:18:15",
-            "amt": 2339
-          }
-        ],
-        "Blinding Light": [
-          {
-            "t": "19:52:03",
-            "amt": 2294
-          }
-        ],
-        "Arcane Disruption": [
-          {
-            "t": "20:06:37",
-            "amt": 2177
-          }
-        ],
-        "Shock Barrier": [
-          {
-            "t": "20:07:53",
-            "amt": 125
-          },
-          {
-            "t": "20:07:54",
-            "amt": 125
-          },
-          {
-            "t": "20:08:13",
-            "amt": 150
-          },
-          {
-            "t": "20:08:14",
-            "amt": 104
-          },
-          {
-            "t": "20:08:14",
-            "amt": 157
-          },
-          {
-            "t": "20:08:20",
-            "amt": 115
-          },
-          {
-            "t": "20:08:20",
-            "amt": 131
-          }
-        ],
-        "Scalding Water": [
-          {
-            "t": "20:31:01",
-            "amt": 500
-          },
-          {
-            "t": "20:32:07",
-            "amt": 500
-          },
-          {
-            "t": "20:32:43",
-            "amt": 500
-          },
-          {
-            "t": "20:32:46",
-            "amt": 500
-          }
-        ]
-      }
-    },
-    {
-      "name": "Jadyx",
-      "role": "Physical",
-      "class": "Hunter",
-      "spec": "BeastMastery",
-      "expected_crit": 33.79,
-      "actual_crit": 31.8,
-      "luck_delta": -1.99,
-      "gear_crit_rating": 125,
-      "total_dmg": 2916109,
-      "active_pct": 81.7,
-      "deaths": 0,
-      "deaths_trash": 2,
-      "fights_total": 10,
-      "fights_healed": 0,
-      "fights_tanked": 0,
-      "fights_dps": 10,
-      "uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 70.3
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 97.4
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 72.9
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 62.3
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 97.0
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 79.1
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 98.9
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 98.2
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 96.9
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 83.2
-        }
-      ],
-      "healer_uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 76.2
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 97.0
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 85.5
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 65.8
+          "uptime": 63.5
         },
         {
           "boss": "Hydross the Unstable",
@@ -6881,106 +5245,204 @@
         },
         {
           "boss": "The Lurker Below",
-          "uptime": 95.5
+          "uptime": 72.9
         },
         {
           "boss": "Morogrim Tidewalker",
-          "uptime": 98.7
+          "uptime": 71.5
         },
         {
           "boss": "Fathom-Lord Karathress",
-          "uptime": 88.7
+          "uptime": 95.4
         },
         {
           "boss": "Leotheras the Blind",
-          "uptime": 80.8
+          "uptime": 97.9
         },
         {
           "boss": "Lady Vashj",
-          "uptime": 71.5
+          "uptime": 90.3
         }
       ],
-      "crit_baseline": 32.5,
-      "crit_weeks": 4,
-      "crit_std": 5.1,
-      "crit_series": [
-        28.4,
-        26.9,
-        35.2,
-        39.5,
-        31.8
+      "healer_uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 32.3
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 11.2
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 96.0
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 89.0
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 71.0
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 95.4
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 97.5
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 90.4
+        }
       ],
-      "crit_prev": 39.5,
-      "luck_hist": -0.7,
+      "crit_baseline": 28.2,
+      "crit_weeks": 4,
+      "crit_std": 1.0,
+      "crit_series": [
+        27.0,
+        29.1,
+        27.5,
+        29.2,
+        29.3
+      ],
+      "crit_prev": 29.2,
+      "luck_hist": 1.1,
       "interrupt_count": 0,
       "interrupt_list": [],
       "eng": {},
       "eng_dmg": 0,
-      "avoidable_dmg": 24306,
+      "avoidable_dmg": 36649,
       "avoidable_sources": {
-        "Blinding Light": 2320,
-        "Arcane Disruption": 2220,
-        "Shock Barrier": 1531,
-        "Nether Beam": 5979,
-        "Scalding Water": 9000,
-        "Geyser": 3256
+        "Flame Patch": 2273,
+        "Arcane Orb": 11581,
+        "Blinding Light": 2365,
+        "Conflagration": 9000,
+        "Arcane Disruption": 1936,
+        "Shock Barrier": 2546,
+        "Nether Beam": 1950,
+        "Scalding Water": 4998
       },
       "avoidable_hits": {
+        "Flame Patch": [
+          {
+            "t": "19:19:33",
+            "amt": 2273
+          }
+        ],
+        "Arcane Orb": [
+          {
+            "t": "19:41:02",
+            "amt": 6025
+          },
+          {
+            "t": "19:42:18",
+            "amt": 5556
+          }
+        ],
         "Blinding Light": [
           {
             "t": "19:52:03",
-            "amt": 2320
+            "amt": 2365
+          }
+        ],
+        "Conflagration": [
+          {
+            "t": "20:03:04",
+            "amt": 900
+          },
+          {
+            "t": "20:03:05",
+            "amt": 900
+          },
+          {
+            "t": "20:03:06",
+            "amt": 900
+          },
+          {
+            "t": "20:03:07",
+            "amt": 900
+          },
+          {
+            "t": "20:03:08",
+            "amt": 900
+          },
+          {
+            "t": "20:03:09",
+            "amt": 900
+          },
+          {
+            "t": "20:03:10",
+            "amt": 900
+          },
+          {
+            "t": "20:03:11",
+            "amt": 900
+          },
+          {
+            "t": "20:03:12",
+            "amt": 900
+          },
+          {
+            "t": "20:03:13",
+            "amt": 900
           }
         ],
         "Arcane Disruption": [
           {
             "t": "20:06:37",
-            "amt": 2220
+            "amt": 1936
           }
         ],
         "Shock Barrier": [
           {
+            "t": "20:07:53",
+            "amt": 443
+          },
+          {
             "t": "20:07:54",
-            "amt": 450
+            "amt": 467
           },
           {
-            "t": "20:07:55",
-            "amt": 158
+            "t": "20:08:07",
+            "amt": 168
+          },
+          {
+            "t": "20:08:13",
+            "amt": 465
           },
           {
             "t": "20:08:14",
-            "amt": 147
-          },
-          {
-            "t": "20:08:14",
-            "amt": 455
+            "amt": 167
           },
           {
             "t": "20:08:20",
-            "amt": 151
+            "amt": 180
           },
           {
-            "t": "20:08:20",
-            "amt": 170
+            "t": "20:08:21",
+            "amt": 163
+          },
+          {
+            "t": "20:08:22",
+            "amt": 493
           }
         ],
         "Nether Beam": [
           {
-            "t": "20:08:05",
-            "amt": 1948
-          },
-          {
-            "t": "20:08:12",
-            "amt": 1932
-          },
-          {
             "t": "20:08:30",
-            "amt": 2099
+            "amt": 1950
           }
         ],
         "Scalding Water": [
           {
-            "t": "20:31:09",
+            "t": "20:31:07",
+            "amt": 500
+          },
+          {
+            "t": "20:31:10",
             "amt": 500
           },
           {
@@ -6988,15 +5450,7 @@
             "amt": 500
           },
           {
-            "t": "20:31:15",
-            "amt": 500
-          },
-          {
-            "t": "20:31:17",
-            "amt": 500
-          },
-          {
-            "t": "20:31:19",
+            "t": "20:31:54",
             "amt": 500
           },
           {
@@ -7009,70 +5463,36 @@
           },
           {
             "t": "20:32:00",
+            "amt": 499
+          },
+          {
+            "t": "20:32:37",
             "amt": 500
           },
           {
-            "t": "20:32:03",
-            "amt": 500
+            "t": "20:32:40",
+            "amt": 499
           },
           {
-            "t": "20:32:06",
+            "t": "20:32:42",
             "amt": 500
-          },
-          {
-            "t": "20:32:09",
-            "amt": 500
-          },
-          {
-            "t": "20:32:12",
-            "amt": 500
-          },
-          {
-            "t": "20:32:15",
-            "amt": 500
-          },
-          {
-            "t": "20:32:39",
-            "amt": 500
-          },
-          {
-            "t": "20:33:00",
-            "amt": 500
-          },
-          {
-            "t": "20:33:03",
-            "amt": 500
-          },
-          {
-            "t": "20:33:06",
-            "amt": 500
-          },
-          {
-            "t": "20:33:09",
-            "amt": 500
-          }
-        ],
-        "Geyser": [
-          {
-            "t": "20:32:58",
-            "amt": 3256
           }
         ]
       }
     },
     {
-      "name": "Cindybrooke",
+      "name": "Mucoid",
       "role": "Physical",
-      "class": "Rogue",
-      "spec": "Combat",
-      "expected_crit": 38.39,
-      "actual_crit": 40.2,
-      "luck_delta": 1.81,
-      "gear_crit_rating": 145,
-      "total_dmg": 2710537,
-      "active_pct": 76.0,
-      "deaths": 0,
-      "deaths_trash": 4,
+      "class": "Hunter",
+      "spec": "BeastMastery",
+      "expected_crit": 37.24,
+      "actual_crit": 34.5,
+      "luck_delta": -2.74,
+      "gear_crit_rating": 194,
+      "total_dmg": 2644454,
+      "active_pct": 68.4,
+      "deaths": 1,
+      "deaths_trash": 2,
       "fights_total": 10,
       "fights_healed": 0,
       "fights_tanked": 0,
@@ -7080,259 +5500,177 @@
       "uptime_by_fight": [
         {
           "boss": "Al'ar",
-          "uptime": 63.5
+          "uptime": 74.4
         },
         {
           "boss": "Void Reaver",
-          "uptime": 97.8
+          "uptime": 97.6
         },
         {
           "boss": "High Astromancer Solarian",
-          "uptime": 70.6
+          "uptime": 75.2
         },
         {
           "boss": "Kael'thas Sunstrider",
-          "uptime": 58.7
+          "uptime": 60.4
         },
         {
           "boss": "Hydross the Unstable",
-          "uptime": 97.3
+          "uptime": 86.3
         },
         {
           "boss": "The Lurker Below",
-          "uptime": 78.8
+          "uptime": 77.3
         },
         {
           "boss": "Morogrim Tidewalker",
-          "uptime": 97.8
+          "uptime": 97.6
         },
         {
           "boss": "Fathom-Lord Karathress",
-          "uptime": 94.4
+          "uptime": 96.0
         },
         {
           "boss": "Leotheras the Blind",
-          "uptime": 98.0
+          "uptime": 90.7
         },
         {
           "boss": "Lady Vashj",
-          "uptime": 66.7
+          "uptime": 29.4
         }
       ],
       "healer_uptime_by_fight": [
         {
           "boss": "Al'ar",
-          "uptime": 53.7
+          "uptime": 73.6
         },
         {
           "boss": "Void Reaver",
-          "uptime": 86.7
+          "uptime": 97.3
         },
         {
           "boss": "High Astromancer Solarian",
-          "uptime": 50.3
+          "uptime": 97.1
         },
         {
           "boss": "Kael'thas Sunstrider",
-          "uptime": 38.1
+          "uptime": 62.5
         },
         {
           "boss": "Hydross the Unstable",
-          "uptime": 73.8
+          "uptime": 86.2
         },
         {
           "boss": "The Lurker Below",
-          "uptime": 67.1
+          "uptime": 85.2
         },
         {
           "boss": "Morogrim Tidewalker",
-          "uptime": 97.2
+          "uptime": 97.3
         },
         {
           "boss": "Fathom-Lord Karathress",
-          "uptime": 88.3
+          "uptime": 96.1
         },
         {
           "boss": "Leotheras the Blind",
-          "uptime": 86.5
+          "uptime": 90.7
         },
         {
           "boss": "Lady Vashj",
-          "uptime": 51.3
+          "uptime": 30.0
         }
       ],
-      "crit_baseline": 34.2,
+      "crit_baseline": 32.9,
       "crit_weeks": 4,
-      "crit_std": 2.0,
+      "crit_std": 2.7,
       "crit_series": [
-        30.8,
-        35.6,
-        35.5,
-        35.1,
-        40.2
+        31.4,
+        29.3,
+        34.8,
+        36.2,
+        34.5
       ],
-      "crit_prev": 35.1,
-      "luck_hist": 6.0,
-      "interrupt_count": 1,
-      "interrupt_list": [
-        "Fireball"
-      ],
-      "eng": {
-        "Super Sapper": 7
-      },
-      "eng_dmg": 32287,
-      "avoidable_dmg": 95096,
+      "crit_prev": 36.2,
+      "luck_hist": 1.6,
+      "interrupt_count": 0,
+      "interrupt_list": [],
+      "eng": {},
+      "eng_dmg": 0,
+      "avoidable_dmg": 25007,
       "avoidable_sources": {
-        "Blinding Light": 2485,
-        "Conflagration": 2234,
-        "Arcane Disruption": 1885,
-        "Shock Barrier": 1881,
-        "Nether Vapor": 2440,
-        "Nether Beam": 3519,
-        "Whirl": 13947,
-        "Scalding Water": 7500,
-        "Geyser": 6883,
-        "Sear Nova": 14259,
-        "Whirlwind": 34597,
-        "Entangle": 3466
+        "Arcane Orb": 11992,
+        "Blinding Light": 2393,
+        "Arcane Disruption": 2199,
+        "Shock Barrier": 3001,
+        "Nether Beam": 1924,
+        "Scalding Water": 3498
       },
       "avoidable_hits": {
+        "Arcane Orb": [
+          {
+            "t": "19:41:38",
+            "amt": 5694
+          },
+          {
+            "t": "19:42:08",
+            "amt": 6298
+          }
+        ],
         "Blinding Light": [
           {
             "t": "19:52:03",
-            "amt": 2485
-          }
-        ],
-        "Conflagration": [
-          {
-            "t": "20:05:57",
-            "amt": 894
-          },
-          {
-            "t": "20:05:58",
-            "amt": 893
-          },
-          {
-            "t": "20:05:59",
-            "amt": 447
+            "amt": 2393
           }
         ],
         "Arcane Disruption": [
           {
             "t": "20:06:37",
-            "amt": 1885
+            "amt": 2199
           }
         ],
         "Shock Barrier": [
           {
-            "t": "20:07:55",
-            "amt": 181
+            "t": "20:07:53",
+            "amt": 433
           },
           {
             "t": "20:07:55",
-            "amt": 145
-          },
-          {
-            "t": "20:07:55",
-            "amt": 327
+            "amt": 466
           },
           {
             "t": "20:08:06",
-            "amt": 94
-          },
-          {
-            "t": "20:08:06",
-            "amt": 50
-          },
-          {
-            "t": "20:08:06",
-            "amt": 130
+            "amt": 411
           },
           {
             "t": "20:08:07",
-            "amt": 68
+            "amt": 180
           },
           {
             "t": "20:08:07",
-            "amt": 212
-          },
-          {
-            "t": "20:08:07",
-            "amt": 35
+            "amt": 159
           },
           {
             "t": "20:08:13",
-            "amt": 77
-          },
-          {
-            "t": "20:08:13",
-            "amt": 278
+            "amt": 177
           },
           {
             "t": "20:08:15",
-            "amt": 66
+            "amt": 471
           },
           {
             "t": "20:08:21",
-            "amt": 67
+            "amt": 208
           },
           {
             "t": "20:08:21",
-            "amt": 50
-          },
-          {
-            "t": "20:08:21",
-            "amt": 101
-          }
-        ],
-        "Nether Vapor": [
-          {
-            "t": "20:08:03",
-            "amt": 533
-          },
-          {
-            "t": "20:08:05",
-            "amt": 448
-          },
-          {
-            "t": "20:08:13",
-            "amt": 460
-          },
-          {
-            "t": "20:08:15",
-            "amt": 494
-          },
-          {
-            "t": "20:08:25",
-            "amt": 505
+            "amt": 496
           }
         ],
         "Nether Beam": [
           {
-            "t": "20:08:05",
-            "amt": 2129
-          },
-          {
-            "t": "20:08:19",
-            "amt": 1390
-          }
-        ],
-        "Whirl": [
-          {
-            "t": "20:30:37",
-            "amt": 3750
-          },
-          {
-            "t": "20:30:55",
-            "amt": 3615
-          },
-          {
-            "t": "20:31:21",
-            "amt": 3104
-          },
-          {
-            "t": "20:31:40",
-            "amt": 3478
+            "t": "20:08:12",
+            "amt": 1924
           }
         ],
         "Scalding Water": [
@@ -7341,11 +5679,784 @@
             "amt": 500
           },
           {
+            "t": "20:31:11",
+            "amt": 499
+          },
+          {
+            "t": "20:31:14",
+            "amt": 500
+          },
+          {
+            "t": "20:31:51",
+            "amt": 500
+          },
+          {
+            "t": "20:32:00",
+            "amt": 500
+          },
+          {
+            "t": "20:32:37",
+            "amt": 500
+          },
+          {
+            "t": "20:32:40",
+            "amt": 499
+          }
+        ]
+      }
+    },
+    {
+      "name": "Skeptxo",
+      "role": "Physical",
+      "class": "Rogue",
+      "spec": "Combat",
+      "expected_crit": 37.79,
+      "actual_crit": 31.0,
+      "luck_delta": -6.79,
+      "gear_crit_rating": 204,
+      "total_dmg": 2142373,
+      "active_pct": 68.3,
+      "deaths": 2,
+      "deaths_trash": 3,
+      "fights_total": 10,
+      "fights_healed": 0,
+      "fights_tanked": 0,
+      "fights_dps": 10,
+      "uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 63.3
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 98.8
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 72.2
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 58.4
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 96.2
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 80.3
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 87.9
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 96.5
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 57.8
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 47.5
+        }
+      ],
+      "healer_uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 20.0
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 11.2
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 1.7
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 87.4
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 22.3
+        }
+      ],
+      "crit_baseline": 30.1,
+      "crit_weeks": 4,
+      "crit_std": 1.5,
+      "crit_series": [
+        32.3,
+        29.6,
+        28.1,
+        30.2,
+        31.0
+      ],
+      "crit_prev": 30.2,
+      "luck_hist": 0.9,
+      "interrupt_count": 1,
+      "interrupt_list": [
+        "Great Heal"
+      ],
+      "eng": {},
+      "eng_dmg": 0,
+      "avoidable_dmg": 87343,
+      "avoidable_sources": {
+        "Blinding Light": 2315,
+        "Conflagration": 4477,
+        "Arcane Disruption": 2135,
+        "Shock Barrier": 1622,
+        "Nether Vapor": 4102,
+        "Nether Beam": 3446,
+        "Scalding Water": 10981,
+        "Whirl": 17440,
+        "Geyser": 7042,
+        "Sear Nova": 15782,
+        "Whirlwind": 15016,
+        "Entangle": 2985
+      },
+      "avoidable_hits": {
+        "Blinding Light": [
+          {
+            "t": "19:52:03",
+            "amt": 2315
+          }
+        ],
+        "Conflagration": [
+          {
+            "t": "20:03:04",
+            "amt": 896
+          },
+          {
+            "t": "20:03:05",
+            "amt": 896
+          },
+          {
+            "t": "20:03:06",
+            "amt": 895
+          },
+          {
+            "t": "20:03:07",
+            "amt": 895
+          },
+          {
+            "t": "20:03:08",
+            "amt": 895
+          }
+        ],
+        "Arcane Disruption": [
+          {
+            "t": "20:06:37",
+            "amt": 2135
+          }
+        ],
+        "Shock Barrier": [
+          {
+            "t": "20:07:53",
+            "amt": 177
+          },
+          {
+            "t": "20:07:54",
+            "amt": 102
+          },
+          {
+            "t": "20:08:05",
+            "amt": 371
+          },
+          {
+            "t": "20:08:06",
+            "amt": 72
+          },
+          {
+            "t": "20:08:07",
+            "amt": 183
+          },
+          {
+            "t": "20:08:07",
+            "amt": 106
+          },
+          {
+            "t": "20:08:14",
+            "amt": 98
+          },
+          {
+            "t": "20:08:14",
+            "amt": 38
+          },
+          {
+            "t": "20:08:14",
+            "amt": 171
+          },
+          {
+            "t": "20:08:20",
+            "amt": 88
+          },
+          {
+            "t": "20:08:21",
+            "amt": 103
+          },
+          {
+            "t": "20:08:22",
+            "amt": 86
+          },
+          {
+            "t": "20:08:22",
+            "amt": 27
+          }
+        ],
+        "Nether Vapor": [
+          {
+            "t": "20:08:03",
+            "amt": 506
+          },
+          {
+            "t": "20:08:03",
+            "amt": 437
+          },
+          {
+            "t": "20:08:07",
+            "amt": 524
+          },
+          {
+            "t": "20:08:09",
+            "amt": 488
+          },
+          {
+            "t": "20:08:11",
+            "amt": 517
+          },
+          {
+            "t": "20:08:13",
+            "amt": 535
+          },
+          {
+            "t": "20:08:15",
+            "amt": 556
+          },
+          {
+            "t": "20:08:25",
+            "amt": 539
+          }
+        ],
+        "Nether Beam": [
+          {
+            "t": "20:08:05",
+            "amt": 1506
+          },
+          {
+            "t": "20:08:26",
+            "amt": 1940
+          }
+        ],
+        "Scalding Water": [
+          {
+            "t": "20:30:19",
+            "amt": 500
+          },
+          {
+            "t": "20:30:22",
+            "amt": 497
+          },
+          {
+            "t": "20:30:25",
+            "amt": 497
+          },
+          {
+            "t": "20:30:28",
+            "amt": 498
+          },
+          {
+            "t": "20:30:31",
+            "amt": 497
+          },
+          {
+            "t": "20:30:34",
+            "amt": 497
+          },
+          {
+            "t": "20:30:37",
+            "amt": 498
+          },
+          {
+            "t": "20:30:52",
+            "amt": 500
+          },
+          {
+            "t": "20:30:53",
+            "amt": 500
+          },
+          {
+            "t": "20:30:56",
+            "amt": 500
+          },
+          {
+            "t": "20:30:57",
+            "amt": 500
+          },
+          {
+            "t": "20:31:05",
+            "amt": 500
+          },
+          {
+            "t": "20:31:08",
+            "amt": 500
+          },
+          {
+            "t": "20:31:16",
+            "amt": 500
+          },
+          {
+            "t": "20:31:19",
+            "amt": 497
+          },
+          {
+            "t": "20:31:47",
+            "amt": 500
+          },
+          {
+            "t": "20:31:59",
+            "amt": 500
+          },
+          {
+            "t": "20:32:30",
+            "amt": 500
+          },
+          {
+            "t": "20:32:35",
+            "amt": 500
+          },
+          {
+            "t": "20:32:47",
+            "amt": 500
+          },
+          {
+            "t": "20:32:52",
+            "amt": 500
+          },
+          {
+            "t": "20:32:54",
+            "amt": 500
+          }
+        ],
+        "Whirl": [
+          {
+            "t": "20:30:37",
+            "amt": 3245
+          },
+          {
+            "t": "20:30:55",
+            "amt": 3393
+          },
+          {
+            "t": "20:31:21",
+            "amt": 3800
+          },
+          {
+            "t": "20:31:40",
+            "amt": 3076
+          },
+          {
+            "t": "20:32:56",
+            "amt": 3926
+          }
+        ],
+        "Geyser": [
+          {
+            "t": "20:30:50",
+            "amt": 3441
+          },
+          {
+            "t": "20:31:45",
+            "amt": 3601
+          }
+        ],
+        "Sear Nova": [
+          {
+            "t": "20:54:39",
+            "amt": 3088
+          },
+          {
+            "t": "20:55:17",
+            "amt": 3129
+          },
+          {
+            "t": "20:55:45",
+            "amt": 4851
+          },
+          {
+            "t": "20:56:08",
+            "amt": 4714
+          }
+        ],
+        "Whirlwind": [
+          {
+            "t": "21:01:33",
+            "amt": 2058
+          },
+          {
+            "t": "21:01:34",
+            "amt": 2058
+          },
+          {
+            "t": "21:01:37",
+            "amt": 2363
+          },
+          {
+            "t": "21:01:40",
+            "amt": 2363
+          },
+          {
+            "t": "21:01:40",
+            "amt": 2058
+          },
+          {
+            "t": "21:01:41",
+            "amt": 2058
+          },
+          {
+            "t": "21:01:42",
+            "amt": 2058
+          }
+        ],
+        "Entangle": [
+          {
+            "t": "21:09:50",
+            "amt": 498
+          },
+          {
+            "t": "21:09:52",
+            "amt": 497
+          },
+          {
+            "t": "21:09:54",
+            "amt": 497
+          },
+          {
+            "t": "21:09:56",
+            "amt": 498
+          },
+          {
+            "t": "21:09:58",
+            "amt": 497
+          },
+          {
+            "t": "21:17:15",
+            "amt": 498
+          }
+        ]
+      }
+    },
+    {
+      "name": "Juricc",
+      "role": "Physical",
+      "class": "Shaman",
+      "spec": "Enhancement",
+      "expected_crit": 28.27,
+      "actual_crit": 43.7,
+      "luck_delta": 15.43,
+      "gear_crit_rating": 227,
+      "total_dmg": 2551479,
+      "active_pct": 75.6,
+      "deaths": 1,
+      "deaths_trash": 5,
+      "fights_total": 10,
+      "fights_healed": 0,
+      "fights_tanked": 0,
+      "fights_dps": 10,
+      "uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 58.0
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 97.0
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 72.9
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 62.7
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 95.3
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 87.2
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 98.2
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 96.7
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 97.2
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 61.6
+        }
+      ],
+      "healer_uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 53.2
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 60.2
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 53.8
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 36.9
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 78.3
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 59.2
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 87.0
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 67.4
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 65.4
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 35.2
+        }
+      ],
+      "crit_baseline": 45.6,
+      "crit_weeks": 4,
+      "crit_std": 1.4,
+      "crit_series": [
+        43.4,
+        45.3,
+        46.9,
+        46.8,
+        43.7
+      ],
+      "crit_prev": 46.8,
+      "luck_hist": -1.9,
+      "interrupt_count": 5,
+      "interrupt_list": [
+        "Holy Smite",
+        "Great Heal",
+        "Fireball",
+        "Fireball",
+        "Fireball"
+      ],
+      "eng": {},
+      "eng_dmg": 0,
+      "avoidable_dmg": 111637,
+      "avoidable_sources": {
+        "Blinding Light": 2432,
+        "Conflagration": 5371,
+        "Arcane Disruption": 1294,
+        "Shock Barrier": 1019,
+        "Nether Beam": 7292,
+        "Whirl": 15902,
+        "Geyser": 10390,
+        "Scalding Water": 8000,
+        "Sear Nova": 12927,
+        "Whirlwind": 42854,
+        "Entangle": 4156
+      },
+      "avoidable_hits": {
+        "Blinding Light": [
+          {
+            "t": "19:52:03",
+            "amt": 2432
+          }
+        ],
+        "Conflagration": [
+          {
+            "t": "20:05:57",
+            "amt": 895
+          },
+          {
+            "t": "20:05:58",
+            "amt": 895
+          },
+          {
+            "t": "20:05:59",
+            "amt": 448
+          },
+          {
+            "t": "20:06:00",
+            "amt": 448
+          },
+          {
+            "t": "20:06:01",
+            "amt": 448
+          },
+          {
+            "t": "20:06:02",
+            "amt": 447
+          },
+          {
+            "t": "20:06:03",
+            "amt": 448
+          },
+          {
+            "t": "20:06:04",
+            "amt": 448
+          },
+          {
+            "t": "20:06:05",
+            "amt": 447
+          },
+          {
+            "t": "20:06:06",
+            "amt": 447
+          }
+        ],
+        "Arcane Disruption": [
+          {
+            "t": "20:06:37",
+            "amt": 1294
+          }
+        ],
+        "Shock Barrier": [
+          {
+            "t": "20:07:53",
+            "amt": 103
+          },
+          {
+            "t": "20:07:55",
+            "amt": 71
+          },
+          {
+            "t": "20:08:13",
+            "amt": 76
+          },
+          {
+            "t": "20:08:13",
+            "amt": 299
+          },
+          {
+            "t": "20:08:14",
+            "amt": 46
+          },
+          {
+            "t": "20:08:15",
+            "amt": 118
+          },
+          {
+            "t": "20:08:21",
+            "amt": 48
+          },
+          {
+            "t": "20:08:21",
+            "amt": 258
+          }
+        ],
+        "Nether Beam": [
+          {
+            "t": "20:08:08",
+            "amt": 2004
+          },
+          {
+            "t": "20:08:12",
+            "amt": 1926
+          },
+          {
+            "t": "20:08:19",
+            "amt": 511
+          },
+          {
+            "t": "20:08:23",
+            "amt": 2130
+          },
+          {
+            "t": "20:08:30",
+            "amt": 721
+          }
+        ],
+        "Whirl": [
+          {
+            "t": "20:30:37",
+            "amt": 3378
+          },
+          {
+            "t": "20:30:55",
+            "amt": 3360
+          },
+          {
+            "t": "20:31:21",
+            "amt": 2819
+          },
+          {
+            "t": "20:31:40",
+            "amt": 3297
+          },
+          {
+            "t": "20:32:56",
+            "amt": 3048
+          }
+        ],
+        "Geyser": [
+          {
+            "t": "20:30:39",
+            "amt": 3544
+          },
+          {
+            "t": "20:31:23",
+            "amt": 3325
+          },
+          {
+            "t": "20:31:34",
+            "amt": 3521
+          }
+        ],
+        "Scalding Water": [
+          {
+            "t": "20:30:41",
+            "amt": 500
+          },
+          {
+            "t": "20:31:03",
+            "amt": 500
+          },
+          {
+            "t": "20:31:08",
+            "amt": 500
+          },
+          {
+            "t": "20:31:15",
+            "amt": 500
+          },
+          {
             "t": "20:31:25",
             "amt": 500
           },
           {
-            "t": "20:31:26",
+            "t": "20:31:25",
             "amt": 500
           },
           {
@@ -7361,130 +6472,140 @@
             "amt": 500
           },
           {
-            "t": "20:31:59",
+            "t": "20:31:45",
             "amt": 500
           },
           {
-            "t": "20:32:00",
+            "t": "20:31:47",
             "amt": 500
           },
           {
-            "t": "20:32:08",
+            "t": "20:32:07",
             "amt": 500
           },
           {
-            "t": "20:32:15",
+            "t": "20:32:41",
             "amt": 500
           },
           {
-            "t": "20:32:18",
+            "t": "20:32:48",
             "amt": 500
           },
           {
-            "t": "20:32:18",
+            "t": "20:32:53",
             "amt": 500
           },
           {
-            "t": "20:32:29",
+            "t": "20:32:55",
             "amt": 500
-          },
-          {
-            "t": "20:32:47",
-            "amt": 500
-          },
-          {
-            "t": "20:32:52",
-            "amt": 500
-          }
-        ],
-        "Geyser": [
-          {
-            "t": "20:31:23",
-            "amt": 3526
-          },
-          {
-            "t": "20:31:34",
-            "amt": 3357
           }
         ],
         "Sear Nova": [
           {
-            "t": "20:54:39",
-            "amt": 1568
-          },
-          {
             "t": "20:55:17",
-            "amt": 3047
+            "amt": 3039
           },
           {
             "t": "20:55:45",
-            "amt": 4892
+            "amt": 4918
           },
           {
             "t": "20:56:08",
-            "amt": 4752
+            "amt": 4970
           }
         ],
         "Whirlwind": [
           {
+            "t": "21:01:31",
+            "amt": 1941
+          },
+          {
+            "t": "21:01:32",
+            "amt": 1358
+          },
+          {
+            "t": "21:01:33",
+            "amt": 1373
+          },
+          {
             "t": "21:01:34",
-            "amt": 2352
+            "amt": 1358
+          },
+          {
+            "t": "21:01:36",
+            "amt": 1338
           },
           {
             "t": "21:01:37",
-            "amt": 2351
+            "amt": 1338
           },
           {
-            "t": "21:01:40",
-            "amt": 2352
+            "t": "21:01:38",
+            "amt": 1338
+          },
+          {
+            "t": "21:01:39",
+            "amt": 1338
+          },
+          {
+            "t": "21:01:41",
+            "amt": 1338
           },
           {
             "t": "21:01:42",
-            "amt": 2042
+            "amt": 1338
           },
           {
             "t": "21:01:45",
-            "amt": 2351
+            "amt": 1653
           },
           {
             "t": "21:01:48",
-            "amt": 2351
+            "amt": 2362
           },
           {
             "t": "21:01:51",
-            "amt": 2352
+            "amt": 2362
           },
           {
             "t": "21:01:54",
-            "amt": 2351
+            "amt": 2361
           },
           {
             "t": "21:01:57",
-            "amt": 2352
+            "amt": 2362
           },
           {
             "t": "21:02:03",
-            "amt": 1985
+            "amt": 1962
           },
           {
-            "t": "21:02:06",
-            "amt": 2352
+            "t": "21:02:04",
+            "amt": 1962
           },
           {
-            "t": "21:02:09",
-            "amt": 2351
+            "t": "21:02:05",
+            "amt": 1962
           },
           {
-            "t": "21:02:12",
-            "amt": 2351
+            "t": "21:02:08",
+            "amt": 2362
           },
           {
-            "t": "21:02:15",
-            "amt": 2352
+            "t": "21:02:11",
+            "amt": 2362
           },
           {
-            "t": "21:02:18",
-            "amt": 2352
+            "t": "21:02:14",
+            "amt": 2362
+          },
+          {
+            "t": "21:02:17",
+            "amt": 2362
+          },
+          {
+            "t": "21:02:20",
+            "amt": 2362
           }
         ],
         "Entangle": [
@@ -7497,416 +6618,32 @@
             "amt": 495
           },
           {
+            "t": "21:09:54",
+            "amt": 495
+          },
+          {
+            "t": "21:09:56",
+            "amt": 494
+          },
+          {
             "t": "21:17:15",
+            "amt": 346
+          },
+          {
+            "t": "21:17:17",
+            "amt": 347
+          },
+          {
+            "t": "21:17:19",
             "amt": 495
           },
           {
-            "t": "21:17:42",
+            "t": "21:17:21",
             "amt": 495
           },
           {
-            "t": "21:17:44",
-            "amt": 495
-          },
-          {
-            "t": "21:17:46",
-            "amt": 495
-          },
-          {
-            "t": "21:17:48",
-            "amt": 496
-          }
-        ]
-      }
-    },
-    {
-      "name": "Feelsbaldman",
-      "role": "Caster",
-      "class": "Shaman",
-      "spec": "Elemental",
-      "expected_crit": 32.88,
-      "actual_crit": 43.6,
-      "luck_delta": 10.72,
-      "gear_crit_rating": 364,
-      "total_dmg": 2193114,
-      "active_pct": 69.3,
-      "deaths": 0,
-      "deaths_trash": 5,
-      "fights_total": 10,
-      "fights_healed": 0,
-      "fights_tanked": 0,
-      "fights_dps": 10,
-      "uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 63.4
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 97.4
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 60.4
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 45.8
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 88.8
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 63.7
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 97.7
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 93.1
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 94.6
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 58.5
-        }
-      ],
-      "healer_uptime_by_fight": [
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 32.8
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 6.8
-        }
-      ],
-      "crit_baseline": 41.9,
-      "crit_weeks": 4,
-      "crit_std": 0.5,
-      "crit_series": [
-        41.6,
-        41.8,
-        41.5,
-        42.8,
-        43.6
-      ],
-      "crit_prev": 42.8,
-      "luck_hist": 1.7,
-      "interrupt_count": 0,
-      "interrupt_list": [],
-      "eng": {},
-      "eng_dmg": 0,
-      "avoidable_dmg": 18796,
-      "avoidable_sources": {
-        "Blinding Light": 2389,
-        "Arcane Disruption": 1904,
-        "Shock Barrier": 1001,
-        "Nether Vapor": 1439,
-        "Nether Beam": 9063,
-        "Scalding Water": 3000
-      },
-      "avoidable_hits": {
-        "Blinding Light": [
-          {
-            "t": "19:52:03",
-            "amt": 2389
-          }
-        ],
-        "Arcane Disruption": [
-          {
-            "t": "20:06:37",
-            "amt": 1904
-          }
-        ],
-        "Shock Barrier": [
-          {
-            "t": "20:07:54",
-            "amt": 239
-          },
-          {
-            "t": "20:08:13",
-            "amt": 677
-          },
-          {
-            "t": "20:08:15",
-            "amt": 85
-          }
-        ],
-        "Nether Vapor": [
-          {
-            "t": "20:08:11",
-            "amt": 450
-          },
-          {
-            "t": "20:08:13",
-            "amt": 551
-          },
-          {
-            "t": "20:08:15",
-            "amt": 438
-          }
-        ],
-        "Nether Beam": [
-          {
-            "t": "20:08:15",
-            "amt": 2130
-          },
-          {
-            "t": "20:08:19",
-            "amt": 1994
-          },
-          {
-            "t": "20:08:23",
-            "amt": 1917
-          },
-          {
-            "t": "20:08:26",
-            "amt": 983
-          },
-          {
-            "t": "20:08:30",
-            "amt": 2039
-          }
-        ],
-        "Scalding Water": [
-          {
-            "t": "20:31:04",
-            "amt": 500
-          },
-          {
-            "t": "20:31:07",
-            "amt": 500
-          },
-          {
-            "t": "20:31:10",
-            "amt": 500
-          },
-          {
-            "t": "20:32:38",
-            "amt": 500
-          },
-          {
-            "t": "20:32:41",
-            "amt": 500
-          },
-          {
-            "t": "20:32:44",
-            "amt": 500
-          }
-        ]
-      }
-    },
-    {
-      "name": "Cheesecurds",
-      "role": "Physical",
-      "class": "Hunter",
-      "spec": "Survival",
-      "expected_crit": 37.34,
-      "actual_crit": 37.1,
-      "luck_delta": -0.24,
-      "gear_crit_rating": 65,
-      "total_dmg": 2946512,
-      "active_pct": 88.4,
-      "deaths": 0,
-      "deaths_trash": 0,
-      "fights_total": 10,
-      "fights_healed": 0,
-      "fights_tanked": 0,
-      "fights_dps": 10,
-      "uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 76.8
-        },
-        {
-          "boss": "Void Reaver",
-          "uptime": 97.8
-        },
-        {
-          "boss": "High Astromancer Solarian",
-          "uptime": 76.4
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 71.5
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "uptime": 99.1
-        },
-        {
-          "boss": "The Lurker Below",
-          "uptime": 88.5
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 98.8
-        },
-        {
-          "boss": "Fathom-Lord Karathress",
-          "uptime": 97.4
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 98.1
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 96.7
-        }
-      ],
-      "healer_uptime_by_fight": [
-        {
-          "boss": "Al'ar",
-          "uptime": 25.0
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "uptime": 10.1
-        },
-        {
-          "boss": "Morogrim Tidewalker",
-          "uptime": 97.3
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "uptime": 15.3
-        },
-        {
-          "boss": "Lady Vashj",
-          "uptime": 25.6
-        }
-      ],
-      "crit_baseline": 37.9,
-      "crit_weeks": 2,
-      "crit_std": 1.0,
-      "crit_series": [
-        38.9,
-        36.9,
-        37.1
-      ],
-      "crit_prev": 36.9,
-      "luck_hist": null,
-      "interrupt_count": 0,
-      "interrupt_list": [],
-      "eng": {},
-      "eng_dmg": 0,
-      "avoidable_dmg": 17032,
-      "avoidable_sources": {
-        "Blinding Light": 2230,
-        "Arcane Disruption": 1915,
-        "Shock Barrier": 3430,
-        "Nether Beam": 1423,
-        "Scalding Water": 4493,
-        "Geyser": 3541
-      },
-      "avoidable_hits": {
-        "Blinding Light": [
-          {
-            "t": "19:52:03",
-            "amt": 2230
-          }
-        ],
-        "Arcane Disruption": [
-          {
-            "t": "20:06:37",
-            "amt": 1915
-          }
-        ],
-        "Shock Barrier": [
-          {
-            "t": "20:07:54",
-            "amt": 186
-          },
-          {
-            "t": "20:07:54",
-            "amt": 403
-          },
-          {
-            "t": "20:08:05",
-            "amt": 177
-          },
-          {
-            "t": "20:08:07",
-            "amt": 513
-          },
-          {
-            "t": "20:08:13",
-            "amt": 188
-          },
-          {
-            "t": "20:08:14",
-            "amt": 648
-          },
-          {
-            "t": "20:08:15",
-            "amt": 593
-          },
-          {
-            "t": "20:08:20",
-            "amt": 542
-          },
-          {
-            "t": "20:08:21",
-            "amt": 180
-          }
-        ],
-        "Nether Beam": [
-          {
-            "t": "20:08:05",
-            "amt": 1423
-          }
-        ],
-        "Scalding Water": [
-          {
-            "t": "20:31:03",
-            "amt": 500
-          },
-          {
-            "t": "20:31:06",
-            "amt": 498
-          },
-          {
-            "t": "20:31:09",
-            "amt": 498
-          },
-          {
-            "t": "20:31:25",
-            "amt": 500
-          },
-          {
-            "t": "20:31:28",
-            "amt": 498
-          },
-          {
-            "t": "20:31:49",
-            "amt": 500
-          },
-          {
-            "t": "20:32:40",
-            "amt": 500
-          },
-          {
-            "t": "20:32:43",
-            "amt": 499
-          },
-          {
-            "t": "20:32:46",
-            "amt": 500
-          }
-        ],
-        "Geyser": [
-          {
-            "t": "20:31:23",
-            "amt": 3541
+            "t": "21:17:23",
+            "amt": 494
           }
         ]
       }
@@ -8410,18 +7147,18 @@
       }
     },
     {
-      "name": "Zetla",
+      "name": "Marvels",
       "role": "Caster",
-      "class": "Mage",
-      "spec": "Arcane",
-      "expected_crit": 36.73,
-      "actual_crit": 43.3,
-      "luck_delta": 6.57,
-      "gear_crit_rating": 363,
-      "total_dmg": 3584928,
-      "active_pct": 72.2,
-      "deaths": 1,
-      "deaths_trash": 3,
+      "class": "Warlock",
+      "spec": "Destruction",
+      "expected_crit": 27.01,
+      "actual_crit": 34.0,
+      "luck_delta": 6.99,
+      "gear_crit_rating": 241,
+      "total_dmg": 2833160,
+      "active_pct": 71.4,
+      "deaths": 0,
+      "deaths_trash": 5,
       "fights_total": 10,
       "fights_healed": 0,
       "fights_tanked": 0,
@@ -8429,147 +7166,156 @@
       "uptime_by_fight": [
         {
           "boss": "Al'ar",
-          "uptime": 64.5
+          "uptime": 68.5
         },
         {
           "boss": "Void Reaver",
-          "uptime": 88.5
+          "uptime": 93.8
         },
         {
           "boss": "High Astromancer Solarian",
-          "uptime": 68.9
+          "uptime": 68.5
         },
         {
           "boss": "Kael'thas Sunstrider",
-          "uptime": 61.6
+          "uptime": 61.4
         },
         {
           "boss": "Hydross the Unstable",
-          "uptime": 93.9
+          "uptime": 82.8
         },
         {
           "boss": "The Lurker Below",
-          "uptime": 68.9
+          "uptime": 46.7
         },
         {
           "boss": "Morogrim Tidewalker",
-          "uptime": 97.6
+          "uptime": 73.5
         },
         {
           "boss": "Fathom-Lord Karathress",
-          "uptime": 87.9
+          "uptime": 91.0
         },
         {
           "boss": "Leotheras the Blind",
-          "uptime": 98.2
+          "uptime": 96.6
         },
         {
           "boss": "Lady Vashj",
-          "uptime": 55.7
+          "uptime": 67.7
         }
       ],
       "healer_uptime_by_fight": [],
-      "crit_baseline": 41.5,
-      "crit_weeks": 4,
-      "crit_std": 3.3,
+      "crit_baseline": 32.5,
+      "crit_weeks": 2,
+      "crit_std": 1.1,
       "crit_series": [
-        36.0,
-        44.4,
-        41.9,
-        43.9,
-        43.3
+        31.4,
+        33.6,
+        34.0
       ],
-      "crit_prev": 43.9,
-      "luck_hist": 1.8,
-      "interrupt_count": 4,
-      "interrupt_list": [
-        "Frostbolt",
-        "Fireball",
-        "Fireball",
-        "Fireball"
-      ],
+      "crit_prev": 33.6,
+      "luck_hist": null,
+      "interrupt_count": 0,
+      "interrupt_list": [],
       "eng": {},
       "eng_dmg": 0,
-      "avoidable_dmg": 40786,
+      "avoidable_dmg": 30815,
       "avoidable_sources": {
-        "Flame Patch": 4834,
-        "Blinding Light": 2313,
-        "Arcane Disruption": 2199,
-        "Shock Barrier": 4056,
-        "Nether Beam": 7571,
-        "Scalding Water": 4500,
-        "Geyser": 3469,
-        "Whirlwind": 11844
+        "Blinding Light": 1776,
+        "Conflagration": 4500,
+        "Arcane Disruption": 1784,
+        "Shock Barrier": 2584,
+        "Nether Beam": 5885,
+        "Scalding Water": 6000,
+        "Geyser": 3261,
+        "Chaos Blast": 5025
       },
       "avoidable_hits": {
-        "Flame Patch": [
-          {
-            "t": "19:18:15",
-            "amt": 2276
-          },
-          {
-            "t": "19:18:16",
-            "amt": 2558
-          }
-        ],
         "Blinding Light": [
           {
             "t": "19:52:03",
-            "amt": 2313
+            "amt": 1776
+          }
+        ],
+        "Conflagration": [
+          {
+            "t": "20:05:24",
+            "amt": 450
+          },
+          {
+            "t": "20:05:25",
+            "amt": 450
+          },
+          {
+            "t": "20:05:26",
+            "amt": 450
+          },
+          {
+            "t": "20:05:27",
+            "amt": 450
+          },
+          {
+            "t": "20:05:28",
+            "amt": 450
+          },
+          {
+            "t": "20:05:29",
+            "amt": 450
+          },
+          {
+            "t": "20:05:30",
+            "amt": 450
+          },
+          {
+            "t": "20:05:31",
+            "amt": 450
+          },
+          {
+            "t": "20:05:32",
+            "amt": 450
+          },
+          {
+            "t": "20:05:33",
+            "amt": 450
           }
         ],
         "Arcane Disruption": [
           {
             "t": "20:06:37",
-            "amt": 2199
+            "amt": 1784
           }
         ],
         "Shock Barrier": [
           {
-            "t": "20:07:53",
-            "amt": 475
+            "t": "20:07:54",
+            "amt": 636
           },
           {
-            "t": "20:07:55",
-            "amt": 462
+            "t": "20:08:05",
+            "amt": 549
           },
           {
-            "t": "20:08:06",
-            "amt": 455
+            "t": "20:08:14",
+            "amt": 733
           },
           {
-            "t": "20:08:07",
-            "amt": 450
-          },
-          {
-            "t": "20:08:13",
-            "amt": 852
-          },
-          {
-            "t": "20:08:15",
-            "amt": 482
-          },
-          {
-            "t": "20:08:21",
-            "amt": 880
+            "t": "20:08:20",
+            "amt": 666
           }
         ],
         "Nether Beam": [
           {
-            "t": "20:08:12",
-            "amt": 2004
+            "t": "20:08:15",
+            "amt": 1921
           },
           {
             "t": "20:08:19",
-            "amt": 1995
+            "amt": 2060
           },
           {
-            "t": "20:08:23",
-            "amt": 1482
-          },
-          {
-            "t": "20:08:26",
-            "amt": 2090
+            "t": "20:08:30",
+            "amt": 1904
           }
         ],
         "Scalding Water": [
@@ -8586,11 +7332,639 @@
             "amt": 500
           },
           {
-            "t": "20:31:09",
+            "t": "20:31:10",
+            "amt": 500
+          },
+          {
+            "t": "20:31:10",
             "amt": 500
           },
           {
             "t": "20:31:36",
+            "amt": 500
+          },
+          {
+            "t": "20:31:37",
+            "amt": 500
+          },
+          {
+            "t": "20:31:38",
+            "amt": 500
+          },
+          {
+            "t": "20:31:39",
+            "amt": 500
+          },
+          {
+            "t": "20:32:39",
+            "amt": 500
+          },
+          {
+            "t": "20:32:42",
+            "amt": 500
+          },
+          {
+            "t": "20:32:45",
+            "amt": 500
+          }
+        ],
+        "Geyser": [
+          {
+            "t": "20:31:34",
+            "amt": 3261
+          }
+        ],
+        "Chaos Blast": [
+          {
+            "t": "21:02:08",
+            "amt": 1675
+          },
+          {
+            "t": "21:02:11",
+            "amt": 3350
+          }
+        ]
+      }
+    },
+    {
+      "name": "Alldorin",
+      "role": "Caster",
+      "class": "Warlock",
+      "spec": "Affliction",
+      "expected_crit": 24.75,
+      "actual_crit": 28.7,
+      "luck_delta": 3.95,
+      "gear_crit_rating": 212,
+      "total_dmg": 2311236,
+      "active_pct": 79.1,
+      "deaths": 0,
+      "deaths_trash": 5,
+      "fights_total": 10,
+      "fights_healed": 0,
+      "fights_tanked": 0,
+      "fights_dps": 10,
+      "uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 77.6
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 95.0
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 68.4
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 61.2
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 91.3
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 65.9
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 83.6
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 94.7
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 94.4
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 83.6
+        }
+      ],
+      "healer_uptime_by_fight": [
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 6.5
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 15.4
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 26.6
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 17.3
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 12.8
+        }
+      ],
+      "crit_baseline": 26.5,
+      "crit_weeks": 3,
+      "crit_std": 1.4,
+      "crit_series": [
+        24.9,
+        26.4,
+        28.3,
+        28.7
+      ],
+      "crit_prev": 28.3,
+      "luck_hist": 2.2,
+      "interrupt_count": 0,
+      "interrupt_list": [],
+      "eng": {},
+      "eng_dmg": 0,
+      "avoidable_dmg": 21311,
+      "avoidable_sources": {
+        "Flame Patch": 4872,
+        "Blinding Light": 2382,
+        "Arcane Disruption": 1780,
+        "Shock Barrier": 1877,
+        "Nether Beam": 3936,
+        "Geyser": 3464,
+        "Scalding Water": 3000
+      },
+      "avoidable_hits": {
+        "Flame Patch": [
+          {
+            "t": "19:19:16",
+            "amt": 2296
+          },
+          {
+            "t": "19:19:17",
+            "amt": 2576
+          }
+        ],
+        "Blinding Light": [
+          {
+            "t": "19:52:03",
+            "amt": 2382
+          }
+        ],
+        "Arcane Disruption": [
+          {
+            "t": "20:06:37",
+            "amt": 1780
+          }
+        ],
+        "Shock Barrier": [
+          {
+            "t": "20:07:54",
+            "amt": 539
+          },
+          {
+            "t": "20:08:05",
+            "amt": 160
+          },
+          {
+            "t": "20:08:05",
+            "amt": 595
+          },
+          {
+            "t": "20:08:07",
+            "amt": 51
+          },
+          {
+            "t": "20:08:13",
+            "amt": 68
+          },
+          {
+            "t": "20:08:14",
+            "amt": 73
+          },
+          {
+            "t": "20:08:14",
+            "amt": 160
+          },
+          {
+            "t": "20:08:20",
+            "amt": 61
+          },
+          {
+            "t": "20:08:20",
+            "amt": 134
+          },
+          {
+            "t": "20:08:21",
+            "amt": 36
+          }
+        ],
+        "Nether Beam": [
+          {
+            "t": "20:08:05",
+            "amt": 1993
+          },
+          {
+            "t": "20:08:26",
+            "amt": 1943
+          }
+        ],
+        "Geyser": [
+          {
+            "t": "20:30:26",
+            "amt": 3464
+          }
+        ],
+        "Scalding Water": [
+          {
+            "t": "20:31:04",
+            "amt": 500
+          },
+          {
+            "t": "20:31:07",
+            "amt": 500
+          },
+          {
+            "t": "20:31:10",
+            "amt": 500
+          },
+          {
+            "t": "20:32:39",
+            "amt": 500
+          },
+          {
+            "t": "20:32:42",
+            "amt": 500
+          },
+          {
+            "t": "20:32:45",
+            "amt": 500
+          }
+        ]
+      }
+    },
+    {
+      "name": "Feelsbaldman",
+      "role": "Caster",
+      "class": "Shaman",
+      "spec": "Elemental",
+      "expected_crit": 32.88,
+      "actual_crit": 43.6,
+      "luck_delta": 10.72,
+      "gear_crit_rating": 364,
+      "total_dmg": 2193114,
+      "active_pct": 69.3,
+      "deaths": 0,
+      "deaths_trash": 5,
+      "fights_total": 10,
+      "fights_healed": 0,
+      "fights_tanked": 0,
+      "fights_dps": 10,
+      "uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 63.4
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 97.4
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 60.4
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 45.8
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 88.8
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 63.7
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 97.7
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 93.1
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 94.6
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 58.5
+        }
+      ],
+      "healer_uptime_by_fight": [
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 32.8
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 6.8
+        }
+      ],
+      "crit_baseline": 41.9,
+      "crit_weeks": 4,
+      "crit_std": 0.5,
+      "crit_series": [
+        41.6,
+        41.8,
+        41.5,
+        42.8,
+        43.6
+      ],
+      "crit_prev": 42.8,
+      "luck_hist": 1.7,
+      "interrupt_count": 0,
+      "interrupt_list": [],
+      "eng": {},
+      "eng_dmg": 0,
+      "avoidable_dmg": 18796,
+      "avoidable_sources": {
+        "Blinding Light": 2389,
+        "Arcane Disruption": 1904,
+        "Shock Barrier": 1001,
+        "Nether Vapor": 1439,
+        "Nether Beam": 9063,
+        "Scalding Water": 3000
+      },
+      "avoidable_hits": {
+        "Blinding Light": [
+          {
+            "t": "19:52:03",
+            "amt": 2389
+          }
+        ],
+        "Arcane Disruption": [
+          {
+            "t": "20:06:37",
+            "amt": 1904
+          }
+        ],
+        "Shock Barrier": [
+          {
+            "t": "20:07:54",
+            "amt": 239
+          },
+          {
+            "t": "20:08:13",
+            "amt": 677
+          },
+          {
+            "t": "20:08:15",
+            "amt": 85
+          }
+        ],
+        "Nether Vapor": [
+          {
+            "t": "20:08:11",
+            "amt": 450
+          },
+          {
+            "t": "20:08:13",
+            "amt": 551
+          },
+          {
+            "t": "20:08:15",
+            "amt": 438
+          }
+        ],
+        "Nether Beam": [
+          {
+            "t": "20:08:15",
+            "amt": 2130
+          },
+          {
+            "t": "20:08:19",
+            "amt": 1994
+          },
+          {
+            "t": "20:08:23",
+            "amt": 1917
+          },
+          {
+            "t": "20:08:26",
+            "amt": 983
+          },
+          {
+            "t": "20:08:30",
+            "amt": 2039
+          }
+        ],
+        "Scalding Water": [
+          {
+            "t": "20:31:04",
+            "amt": 500
+          },
+          {
+            "t": "20:31:07",
+            "amt": 500
+          },
+          {
+            "t": "20:31:10",
+            "amt": 500
+          },
+          {
+            "t": "20:32:38",
+            "amt": 500
+          },
+          {
+            "t": "20:32:41",
+            "amt": 500
+          },
+          {
+            "t": "20:32:44",
+            "amt": 500
+          }
+        ]
+      }
+    },
+    {
+      "name": "Shovelpriest",
+      "role": "Caster",
+      "class": "Priest",
+      "spec": "Shadow",
+      "expected_crit": 18.89,
+      "actual_crit": 26.5,
+      "luck_delta": 7.61,
+      "gear_crit_rating": 113,
+      "total_dmg": 1731685,
+      "active_pct": 70.8,
+      "deaths": 1,
+      "deaths_trash": 4,
+      "fights_total": 10,
+      "fights_healed": 0,
+      "fights_tanked": 0,
+      "fights_dps": 10,
+      "uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 85.9
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 95.2
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 61.5
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 68.4
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 92.9
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 69.3
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 84.1
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 93.5
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 94.8
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 36.1
+        }
+      ],
+      "healer_uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 89.3
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 95.2
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 61.5
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 65.0
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 92.9
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 69.3
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 84.1
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 93.5
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 94.8
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 36.1
+        }
+      ],
+      "crit_baseline": 23.1,
+      "crit_weeks": 2,
+      "crit_std": 0.0,
+      "crit_series": [
+        23.1,
+        23.2,
+        26.5
+      ],
+      "crit_prev": 23.2,
+      "luck_hist": null,
+      "interrupt_count": 0,
+      "interrupt_list": [],
+      "eng": {},
+      "eng_dmg": 0,
+      "avoidable_dmg": 9717,
+      "avoidable_sources": {
+        "Flame Patch": 2339,
+        "Blinding Light": 2294,
+        "Arcane Disruption": 2177,
+        "Shock Barrier": 907,
+        "Scalding Water": 2000
+      },
+      "avoidable_hits": {
+        "Flame Patch": [
+          {
+            "t": "19:18:15",
+            "amt": 2339
+          }
+        ],
+        "Blinding Light": [
+          {
+            "t": "19:52:03",
+            "amt": 2294
+          }
+        ],
+        "Arcane Disruption": [
+          {
+            "t": "20:06:37",
+            "amt": 2177
+          }
+        ],
+        "Shock Barrier": [
+          {
+            "t": "20:07:53",
+            "amt": 125
+          },
+          {
+            "t": "20:07:54",
+            "amt": 125
+          },
+          {
+            "t": "20:08:13",
+            "amt": 150
+          },
+          {
+            "t": "20:08:14",
+            "amt": 104
+          },
+          {
+            "t": "20:08:14",
+            "amt": 157
+          },
+          {
+            "t": "20:08:20",
+            "amt": 115
+          },
+          {
+            "t": "20:08:20",
+            "amt": 131
+          }
+        ],
+        "Scalding Water": [
+          {
+            "t": "20:31:01",
+            "amt": 500
+          },
+          {
+            "t": "20:32:07",
             "amt": 500
           },
           {
@@ -8600,9 +7974,547 @@
           {
             "t": "20:32:46",
             "amt": 500
+          }
+        ]
+      }
+    },
+    {
+      "name": "Cheesecurds",
+      "role": "Physical",
+      "class": "Hunter",
+      "spec": "Survival",
+      "expected_crit": 37.34,
+      "actual_crit": 37.1,
+      "luck_delta": -0.24,
+      "gear_crit_rating": 65,
+      "total_dmg": 2946512,
+      "active_pct": 88.4,
+      "deaths": 0,
+      "deaths_trash": 0,
+      "fights_total": 10,
+      "fights_healed": 0,
+      "fights_tanked": 0,
+      "fights_dps": 10,
+      "uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 76.8
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 97.8
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 76.4
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 71.5
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 99.1
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 88.5
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 98.8
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 97.4
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 98.1
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 96.7
+        }
+      ],
+      "healer_uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 25.0
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 10.1
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 97.3
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 15.3
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 25.6
+        }
+      ],
+      "crit_baseline": 37.9,
+      "crit_weeks": 2,
+      "crit_std": 1.0,
+      "crit_series": [
+        38.9,
+        36.9,
+        37.1
+      ],
+      "crit_prev": 36.9,
+      "luck_hist": null,
+      "interrupt_count": 0,
+      "interrupt_list": [],
+      "eng": {},
+      "eng_dmg": 0,
+      "avoidable_dmg": 17032,
+      "avoidable_sources": {
+        "Blinding Light": 2230,
+        "Arcane Disruption": 1915,
+        "Shock Barrier": 3430,
+        "Nether Beam": 1423,
+        "Scalding Water": 4493,
+        "Geyser": 3541
+      },
+      "avoidable_hits": {
+        "Blinding Light": [
+          {
+            "t": "19:52:03",
+            "amt": 2230
+          }
+        ],
+        "Arcane Disruption": [
+          {
+            "t": "20:06:37",
+            "amt": 1915
+          }
+        ],
+        "Shock Barrier": [
+          {
+            "t": "20:07:54",
+            "amt": 186
           },
           {
-            "t": "20:32:49",
+            "t": "20:07:54",
+            "amt": 403
+          },
+          {
+            "t": "20:08:05",
+            "amt": 177
+          },
+          {
+            "t": "20:08:07",
+            "amt": 513
+          },
+          {
+            "t": "20:08:13",
+            "amt": 188
+          },
+          {
+            "t": "20:08:14",
+            "amt": 648
+          },
+          {
+            "t": "20:08:15",
+            "amt": 593
+          },
+          {
+            "t": "20:08:20",
+            "amt": 542
+          },
+          {
+            "t": "20:08:21",
+            "amt": 180
+          }
+        ],
+        "Nether Beam": [
+          {
+            "t": "20:08:05",
+            "amt": 1423
+          }
+        ],
+        "Scalding Water": [
+          {
+            "t": "20:31:03",
+            "amt": 500
+          },
+          {
+            "t": "20:31:06",
+            "amt": 498
+          },
+          {
+            "t": "20:31:09",
+            "amt": 498
+          },
+          {
+            "t": "20:31:25",
+            "amt": 500
+          },
+          {
+            "t": "20:31:28",
+            "amt": 498
+          },
+          {
+            "t": "20:31:49",
+            "amt": 500
+          },
+          {
+            "t": "20:32:40",
+            "amt": 500
+          },
+          {
+            "t": "20:32:43",
+            "amt": 499
+          },
+          {
+            "t": "20:32:46",
+            "amt": 500
+          }
+        ],
+        "Geyser": [
+          {
+            "t": "20:31:23",
+            "amt": 3541
+          }
+        ]
+      }
+    },
+    {
+      "name": "Cindybrooke",
+      "role": "Physical",
+      "class": "Rogue",
+      "spec": "Combat",
+      "expected_crit": 38.39,
+      "actual_crit": 40.2,
+      "luck_delta": 1.81,
+      "gear_crit_rating": 145,
+      "total_dmg": 2710537,
+      "active_pct": 76.0,
+      "deaths": 0,
+      "deaths_trash": 4,
+      "fights_total": 10,
+      "fights_healed": 0,
+      "fights_tanked": 0,
+      "fights_dps": 10,
+      "uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 63.5
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 97.8
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 70.6
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 58.7
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 97.3
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 78.8
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 97.8
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 94.4
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 98.0
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 66.7
+        }
+      ],
+      "healer_uptime_by_fight": [
+        {
+          "boss": "Al'ar",
+          "uptime": 53.7
+        },
+        {
+          "boss": "Void Reaver",
+          "uptime": 86.7
+        },
+        {
+          "boss": "High Astromancer Solarian",
+          "uptime": 50.3
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "uptime": 38.1
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "uptime": 73.8
+        },
+        {
+          "boss": "The Lurker Below",
+          "uptime": 67.1
+        },
+        {
+          "boss": "Morogrim Tidewalker",
+          "uptime": 97.2
+        },
+        {
+          "boss": "Fathom-Lord Karathress",
+          "uptime": 88.3
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "uptime": 86.5
+        },
+        {
+          "boss": "Lady Vashj",
+          "uptime": 51.3
+        }
+      ],
+      "crit_baseline": 34.2,
+      "crit_weeks": 4,
+      "crit_std": 2.0,
+      "crit_series": [
+        30.8,
+        35.6,
+        35.5,
+        35.1,
+        40.2
+      ],
+      "crit_prev": 35.1,
+      "luck_hist": 6.0,
+      "interrupt_count": 1,
+      "interrupt_list": [
+        "Fireball"
+      ],
+      "eng": {
+        "Super Sapper": 7
+      },
+      "eng_dmg": 32287,
+      "avoidable_dmg": 95096,
+      "avoidable_sources": {
+        "Blinding Light": 2485,
+        "Conflagration": 2234,
+        "Arcane Disruption": 1885,
+        "Shock Barrier": 1881,
+        "Nether Vapor": 2440,
+        "Nether Beam": 3519,
+        "Whirl": 13947,
+        "Scalding Water": 7500,
+        "Geyser": 6883,
+        "Sear Nova": 14259,
+        "Whirlwind": 34597,
+        "Entangle": 3466
+      },
+      "avoidable_hits": {
+        "Blinding Light": [
+          {
+            "t": "19:52:03",
+            "amt": 2485
+          }
+        ],
+        "Conflagration": [
+          {
+            "t": "20:05:57",
+            "amt": 894
+          },
+          {
+            "t": "20:05:58",
+            "amt": 893
+          },
+          {
+            "t": "20:05:59",
+            "amt": 447
+          }
+        ],
+        "Arcane Disruption": [
+          {
+            "t": "20:06:37",
+            "amt": 1885
+          }
+        ],
+        "Shock Barrier": [
+          {
+            "t": "20:07:55",
+            "amt": 181
+          },
+          {
+            "t": "20:07:55",
+            "amt": 145
+          },
+          {
+            "t": "20:07:55",
+            "amt": 327
+          },
+          {
+            "t": "20:08:06",
+            "amt": 94
+          },
+          {
+            "t": "20:08:06",
+            "amt": 50
+          },
+          {
+            "t": "20:08:06",
+            "amt": 130
+          },
+          {
+            "t": "20:08:07",
+            "amt": 68
+          },
+          {
+            "t": "20:08:07",
+            "amt": 212
+          },
+          {
+            "t": "20:08:07",
+            "amt": 35
+          },
+          {
+            "t": "20:08:13",
+            "amt": 77
+          },
+          {
+            "t": "20:08:13",
+            "amt": 278
+          },
+          {
+            "t": "20:08:15",
+            "amt": 66
+          },
+          {
+            "t": "20:08:21",
+            "amt": 67
+          },
+          {
+            "t": "20:08:21",
+            "amt": 50
+          },
+          {
+            "t": "20:08:21",
+            "amt": 101
+          }
+        ],
+        "Nether Vapor": [
+          {
+            "t": "20:08:03",
+            "amt": 533
+          },
+          {
+            "t": "20:08:05",
+            "amt": 448
+          },
+          {
+            "t": "20:08:13",
+            "amt": 460
+          },
+          {
+            "t": "20:08:15",
+            "amt": 494
+          },
+          {
+            "t": "20:08:25",
+            "amt": 505
+          }
+        ],
+        "Nether Beam": [
+          {
+            "t": "20:08:05",
+            "amt": 2129
+          },
+          {
+            "t": "20:08:19",
+            "amt": 1390
+          }
+        ],
+        "Whirl": [
+          {
+            "t": "20:30:37",
+            "amt": 3750
+          },
+          {
+            "t": "20:30:55",
+            "amt": 3615
+          },
+          {
+            "t": "20:31:21",
+            "amt": 3104
+          },
+          {
+            "t": "20:31:40",
+            "amt": 3478
+          }
+        ],
+        "Scalding Water": [
+          {
+            "t": "20:31:08",
+            "amt": 500
+          },
+          {
+            "t": "20:31:25",
+            "amt": 500
+          },
+          {
+            "t": "20:31:26",
+            "amt": 500
+          },
+          {
+            "t": "20:31:26",
+            "amt": 500
+          },
+          {
+            "t": "20:31:36",
+            "amt": 500
+          },
+          {
+            "t": "20:31:37",
+            "amt": 500
+          },
+          {
+            "t": "20:31:59",
+            "amt": 500
+          },
+          {
+            "t": "20:32:00",
+            "amt": 500
+          },
+          {
+            "t": "20:32:08",
+            "amt": 500
+          },
+          {
+            "t": "20:32:15",
+            "amt": 500
+          },
+          {
+            "t": "20:32:18",
+            "amt": 500
+          },
+          {
+            "t": "20:32:18",
+            "amt": 500
+          },
+          {
+            "t": "20:32:29",
+            "amt": 500
+          },
+          {
+            "t": "20:32:47",
             "amt": 500
           },
           {
@@ -8612,34 +8524,122 @@
         ],
         "Geyser": [
           {
+            "t": "20:31:23",
+            "amt": 3526
+          },
+          {
             "t": "20:31:34",
-            "amt": 3469
+            "amt": 3357
+          }
+        ],
+        "Sear Nova": [
+          {
+            "t": "20:54:39",
+            "amt": 1568
+          },
+          {
+            "t": "20:55:17",
+            "amt": 3047
+          },
+          {
+            "t": "20:55:45",
+            "amt": 4892
+          },
+          {
+            "t": "20:56:08",
+            "amt": 4752
           }
         ],
         "Whirlwind": [
           {
-            "t": "21:01:33",
-            "amt": 2323
+            "t": "21:01:34",
+            "amt": 2352
           },
           {
-            "t": "21:01:36",
-            "amt": 2375
+            "t": "21:01:37",
+            "amt": 2351
           },
           {
-            "t": "21:01:39",
-            "amt": 2375
+            "t": "21:01:40",
+            "amt": 2352
           },
           {
             "t": "21:01:42",
-            "amt": 2375
+            "amt": 2042
           },
           {
             "t": "21:01:45",
-            "amt": 2375
+            "amt": 2351
           },
           {
             "t": "21:01:48",
-            "amt": 21
+            "amt": 2351
+          },
+          {
+            "t": "21:01:51",
+            "amt": 2352
+          },
+          {
+            "t": "21:01:54",
+            "amt": 2351
+          },
+          {
+            "t": "21:01:57",
+            "amt": 2352
+          },
+          {
+            "t": "21:02:03",
+            "amt": 1985
+          },
+          {
+            "t": "21:02:06",
+            "amt": 2352
+          },
+          {
+            "t": "21:02:09",
+            "amt": 2351
+          },
+          {
+            "t": "21:02:12",
+            "amt": 2351
+          },
+          {
+            "t": "21:02:15",
+            "amt": 2352
+          },
+          {
+            "t": "21:02:18",
+            "amt": 2352
+          }
+        ],
+        "Entangle": [
+          {
+            "t": "21:09:50",
+            "amt": 495
+          },
+          {
+            "t": "21:09:52",
+            "amt": 495
+          },
+          {
+            "t": "21:17:15",
+            "amt": 495
+          },
+          {
+            "t": "21:17:42",
+            "amt": 495
+          },
+          {
+            "t": "21:17:44",
+            "amt": 495
+          },
+          {
+            "t": "21:17:46",
+            "amt": 495
+          },
+          {
+            "t": "21:17:48",
+            "amt": 496
           }
         ]
       }
@@ -9596,6 +9596,15 @@
     }
   },
   "healing_metrics": {
+    "Ohshiz": {
+      "eff_heal": 1897775,
+      "eff_hps": 844,
+      "overheal_pct": 44.6,
+      "activity_pct": 90.5,
+      "tank_pct": 55.7,
+      "top_spell": "Chain Heal",
+      "fights_healed": 10
+    },
     "Shieldwagon": {
       "eff_heal": 1906777,
       "eff_hps": 848,
@@ -9603,15 +9612,6 @@
       "activity_pct": 91.4,
       "tank_pct": 47.5,
       "top_spell": "Flash Heal",
-      "fights_healed": 10
-    },
-    "Sweetheart": {
-      "eff_heal": 2392145,
-      "eff_hps": 1064,
-      "overheal_pct": 39.4,
-      "activity_pct": 92.5,
-      "tank_pct": 58.4,
-      "top_spell": "Circle of Healing",
       "fights_healed": 10
     },
     "Pewpslurper": {
@@ -9623,13 +9623,13 @@
       "top_spell": "Rejuvenation",
       "fights_healed": 10
     },
-    "Ohshiz": {
-      "eff_heal": 1897775,
-      "eff_hps": 844,
-      "overheal_pct": 44.6,
-      "activity_pct": 90.5,
-      "tank_pct": 55.7,
-      "top_spell": "Chain Heal",
+    "Sweetheart": {
+      "eff_heal": 2392145,
+      "eff_hps": 1064,
+      "overheal_pct": 39.4,
+      "activity_pct": 92.5,
+      "tank_pct": 58.4,
+      "top_spell": "Circle of Healing",
       "fights_healed": 10
     },
     "Moojerked": {
@@ -10433,24 +10433,24 @@
     ]
   },
   "healer_mana": {
-    "Moojerked": 42020,
+    "Ohshiz": 364310,
     "Shieldwagon": 344625,
-    "Sweetheart": 412930,
+    "Moojerked": 42020,
     "Pewpslurper": 311840,
-    "Ohshiz": 364310
+    "Sweetheart": 412930
   },
   "healer_war": {
     "Faeriefireqt": 37,
     "Blunderdin": 42,
-    "Dmbp": 19,
+    "Dmbp": 17,
     "Pewpslurper": 21,
     "Sweetheart": 81,
     "Shieldwagon": 48,
     "Ohshiz": 78,
     "Bahguul": 28,
     "Zyph": 35,
-    "Jadyx": 59,
-    "Mucoid": 53,
+    "Jadyx": 58,
+    "Mucoid": 52,
     "Cheesecurds": 14,
     "Zetla": 60,
     "Philliam": 15,
@@ -10462,21 +10462,21 @@
     "Boogiez": 7,
     "Juricc": 18,
     "Alldorin": 19,
-    "Marvels": 22,
+    "Marvels": 21,
     "Mmtoast": 13,
     "Areso": 45
   },
   "dps_war": {
-    "Faeriefireqt": 65,
+    "Faeriefireqt": 64,
     "Blunderdin": 79,
     "Dmbp": 63,
     "Pewpslurper": 78,
     "Sweetheart": 55,
     "Shieldwagon": 78,
     "Ohshiz": 31,
-    "Bahguul": 61,
+    "Bahguul": 60,
     "Zyph": 67,
-    "Jadyx": 75,
+    "Jadyx": 74,
     "Mucoid": 68,
     "Cheesecurds": 91,
     "Zetla": 88,
@@ -10490,20 +10490,20 @@
     "Juricc": 73,
     "Alldorin": 58,
     "Marvels": 70,
-    "Mmtoast": 66,
+    "Mmtoast": 65,
     "Areso": 65
   },
   "tank_war": {
-    "Faeriefireqt": 65,
+    "Faeriefireqt": 64,
     "Blunderdin": 79,
     "Dmbp": 63,
     "Pewpslurper": 78,
     "Sweetheart": 55,
     "Shieldwagon": 78,
     "Ohshiz": 31,
-    "Bahguul": 61,
+    "Bahguul": 60,
     "Zyph": 67,
-    "Jadyx": 75,
+    "Jadyx": 74,
     "Mucoid": 68,
     "Cheesecurds": 91,
     "Zetla": 88,
@@ -10517,7 +10517,7 @@
     "Juricc": 73,
     "Alldorin": 58,
     "Marvels": 70,
-    "Mmtoast": 66,
+    "Mmtoast": 65,
     "Areso": 65
   },
   "fight_roles": {
@@ -10938,74 +10938,6 @@
     "63": 509.862
   },
   "tank_metrics": {
-    "Dmbp": {
-      "dtps": 508,
-      "taken": 767988,
-      "hps_recv": 444,
-      "fights_tanked": 5,
-      "phys_pct": 61.3,
-      "magic_pct": 38.7,
-      "crush_count": 4,
-      "crit_count": 0,
-      "avoid_pct": 46.6,
-      "biggest_hit": {
-        "amount": 11925,
-        "ability": "Melee",
-        "boss": "Hydross the Unstable"
-      },
-      "cooldowns": {
-        "Divine Shield": 3,
-        "Lay on Hands": 1
-      },
-      "cd_value": {},
-      "per_boss": [
-        {
-          "boss": "Al'ar",
-          "dtps": 411,
-          "taken": 121847,
-          "seconds": 296
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "dtps": 501,
-          "taken": 207441,
-          "seconds": 414
-        },
-        {
-          "boss": "Hydross the Unstable",
-          "dtps": 1118,
-          "taken": 129726,
-          "seconds": 116
-        },
-        {
-          "boss": "The Lurker Below",
-          "dtps": 996,
-          "taken": 174077,
-          "seconds": 175
-        },
-        {
-          "boss": "Lady Vashj",
-          "dtps": 265,
-          "taken": 134897,
-          "seconds": 510
-        }
-      ],
-      "lowest_hp": {
-        "Al'ar": 13,
-        "Void Reaver": 50,
-        "High Astromancer Solarian": 85,
-        "Kael'thas Sunstrider": 22,
-        "Hydross the Unstable": 41,
-        "The Lurker Below": 18,
-        "Morogrim Tidewalker": 38,
-        "Fathom-Lord Karathress": 52,
-        "Leotheras the Blind": 6,
-        "Lady Vashj": 6
-      },
-      "boss_melee_sec": 1735.2,
-      "mitig_casts": 269,
-      "lacerate_pct": 0
-    },
     "Faeriefireqt": {
       "dtps": 719,
       "taken": 1414156,
@@ -11093,6 +11025,74 @@
       "boss_melee_sec": 1185.8,
       "mitig_casts": 0,
       "lacerate_pct": 79.1
+    },
+    "Dmbp": {
+      "dtps": 508,
+      "taken": 767988,
+      "hps_recv": 444,
+      "fights_tanked": 5,
+      "phys_pct": 61.3,
+      "magic_pct": 38.7,
+      "crush_count": 4,
+      "crit_count": 0,
+      "avoid_pct": 46.6,
+      "biggest_hit": {
+        "amount": 11925,
+        "ability": "Melee",
+        "boss": "Hydross the Unstable"
+      },
+      "cooldowns": {
+        "Divine Shield": 3,
+        "Lay on Hands": 1
+      },
+      "cd_value": {},
+      "per_boss": [
+        {
+          "boss": "Al'ar",
+          "dtps": 411,
+          "taken": 121847,
+          "seconds": 296
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "dtps": 501,
+          "taken": 207441,
+          "seconds": 414
+        },
+        {
+          "boss": "Hydross the Unstable",
+          "dtps": 1118,
+          "taken": 129726,
+          "seconds": 116
+        },
+        {
+          "boss": "The Lurker Below",
+          "dtps": 996,
+          "taken": 174077,
+          "seconds": 175
+        },
+        {
+          "boss": "Lady Vashj",
+          "dtps": 265,
+          "taken": 134897,
+          "seconds": 510
+        }
+      ],
+      "lowest_hp": {
+        "Al'ar": 13,
+        "Void Reaver": 50,
+        "High Astromancer Solarian": 85,
+        "Kael'thas Sunstrider": 22,
+        "Hydross the Unstable": 41,
+        "The Lurker Below": 18,
+        "Morogrim Tidewalker": 38,
+        "Fathom-Lord Karathress": 52,
+        "Leotheras the Blind": 6,
+        "Lady Vashj": 6
+      },
+      "boss_melee_sec": 1735.2,
+      "mitig_casts": 269,
+      "lacerate_pct": 0
     },
     "Blunderdin": {
       "dtps": 513,
@@ -17927,12 +17927,12 @@
         "players": 1
       },
       {
-        "ability": "Mangle (Bear)",
+        "ability": "Seal of the Martyr",
         "casts": 205,
         "players": 1
       },
       {
-        "ability": "Seal of the Martyr",
+        "ability": "Mangle (Bear)",
         "casts": 205,
         "players": 1
       },
@@ -18010,11 +18010,11 @@
             "casts": 26
           },
           {
-            "ability": "Mana Spring Totem",
+            "ability": "Wrath of Air Totem",
             "casts": 25
           },
           {
-            "ability": "Wrath of Air Totem",
+            "ability": "Mana Spring Totem",
             "casts": 25
           }
         ]
@@ -18567,7 +18567,7 @@
             "casts": 19
           },
           {
-            "ability": "Mana Spring Totem",
+            "ability": "Wrath of Air Totem",
             "casts": 15
           }
         ]
@@ -18658,7 +18658,7 @@
             "casts": 66
           },
           {
-            "ability": "Hammer of Wrath",
+            "ability": "Righteous Defense",
             "casts": 18
           }
         ]
@@ -21044,13 +21044,13 @@
         "empty_sockets": 0
       },
       {
-        "name": "Juricc",
-        "ilvl": 123,
+        "name": "Jadyx",
+        "ilvl": 126,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
-        "gems_filled": 8,
-        "sockets_total": 8,
+        "gems_filled": 13,
+        "sockets_total": 13,
         "empty_sockets": 0
       },
       {
@@ -21062,16 +21062,6 @@
         "gems_filled": 13,
         "sockets_total": 13,
         "empty_sockets": 0
-      },
-      {
-        "name": "Zyph",
-        "ilvl": 121,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 15,
-        "sockets_total": 18,
-        "empty_sockets": 3
       },
       {
         "name": "Mucoid",
@@ -21087,20 +21077,8 @@
         "empty_sockets": 0
       },
       {
-        "name": "Moojerked",
-        "ilvl": 118,
-        "ench_ok": 8,
-        "ench_total": 9,
-        "missing_enchants": [
-          "Back"
-        ],
-        "gems_filled": 16,
-        "sockets_total": 16,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Boogiez",
-        "ilvl": 122,
+        "name": "Skeptxo",
+        "ilvl": 120,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
@@ -21109,38 +21087,18 @@
         "empty_sockets": 0
       },
       {
-        "name": "Marvels",
+        "name": "Juricc",
+        "ilvl": 123,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 8,
+        "sockets_total": 8,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Mmtoast",
         "ilvl": 118,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 17,
-        "sockets_total": 17,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Faeriefireqt",
-        "ilvl": 126,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 9,
-        "sockets_total": 9,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Feelsbaldman",
-        "ilvl": 117,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 17,
-        "sockets_total": 17,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Cheesecurds",
-        "ilvl": 117,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
@@ -21159,18 +21117,20 @@
         "empty_sockets": 0
       },
       {
-        "name": "Zetla",
-        "ilvl": 125,
-        "ench_ok": 9,
+        "name": "Moojerked",
+        "ilvl": 118,
+        "ench_ok": 8,
         "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 10,
-        "sockets_total": 10,
+        "missing_enchants": [
+          "Back"
+        ],
+        "gems_filled": 16,
+        "sockets_total": 16,
         "empty_sockets": 0
       },
       {
-        "name": "Sweetheart",
-        "ilvl": 125,
+        "name": "Cheesecurds",
+        "ilvl": 117,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
@@ -21191,8 +21151,8 @@
         "empty_sockets": 0
       },
       {
-        "name": "Skeptxo",
-        "ilvl": 120,
+        "name": "Blunderdin",
+        "ilvl": 119,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
@@ -21201,13 +21161,23 @@
         "empty_sockets": 0
       },
       {
-        "name": "Alldorin",
-        "ilvl": 116,
+        "name": "Faeriefireqt",
+        "ilvl": 126,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
-        "gems_filled": 16,
-        "sockets_total": 16,
+        "gems_filled": 9,
+        "sockets_total": 9,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Zetla",
+        "ilvl": 125,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 10,
+        "sockets_total": 10,
         "empty_sockets": 0
       },
       {
@@ -21224,6 +21194,46 @@
         "empty_sockets": 0
       },
       {
+        "name": "Boogiez",
+        "ilvl": 122,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 13,
+        "sockets_total": 13,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Zyph",
+        "ilvl": 121,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 15,
+        "sockets_total": 18,
+        "empty_sockets": 3
+      },
+      {
+        "name": "Marvels",
+        "ilvl": 118,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 17,
+        "sockets_total": 17,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Alldorin",
+        "ilvl": 116,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 16,
+        "sockets_total": 16,
+        "empty_sockets": 0
+      },
+      {
         "name": "Shovelpriest",
         "ilvl": 114,
         "ench_ok": 7,
@@ -21237,13 +21247,23 @@
         "empty_sockets": 0
       },
       {
-        "name": "Jadyx",
-        "ilvl": 126,
+        "name": "Feelsbaldman",
+        "ilvl": 117,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
-        "gems_filled": 13,
-        "sockets_total": 13,
+        "gems_filled": 17,
+        "sockets_total": 17,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Sweetheart",
+        "ilvl": 125,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 16,
+        "sockets_total": 16,
         "empty_sockets": 0
       },
       {
@@ -21254,26 +21274,6 @@
         "missing_enchants": [],
         "gems_filled": 12,
         "sockets_total": 12,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Blunderdin",
-        "ilvl": 119,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 13,
-        "sockets_total": 13,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Mmtoast",
-        "ilvl": 118,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 16,
-        "sockets_total": 16,
         "empty_sockets": 0
       }
     ],
@@ -21309,7 +21309,7 @@
       "goa_totem": 144,
       "bloodlust": 1,
       "wf_swaps": 279,
-      "wf_up": 14.1,
+      "wf_up": 100.0,
       "goa_up": 94.5
     },
     "Cheesecurds": {
@@ -21348,7 +21348,7 @@
       "goa_totem": 118,
       "bloodlust": 1,
       "wf_swaps": 234,
-      "wf_up": 45.7,
+      "wf_up": 100.0,
       "goa_up": 77.4
     },
     "Marvels": {
