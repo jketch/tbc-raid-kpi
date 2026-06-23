@@ -2409,6 +2409,11 @@ def fetch_deaths_split(token: str, report_code: str, md: dict | None = None):
     fights = _report(gql(token, Qf, {"c": report_code}), "fights", default=[])
     if not fights:                                 # partial payload — degrade to an empty section
         return {}, {}, {}, {}
+    # Drop off-content (T4 warmup) fights so their deaths/recaps don't leak — this fetcher runs
+    # its own fights query, so it must apply the same content filter build_week_data does.
+    _excl = content_excluded_fight_ids(fights, EXCLUDED_ENCOUNTERS)
+    if _excl:
+        fights = [f for f in fights if f["id"] not in _excl]
     fid_is_boss = {f["id"]: bool(f["encounterID"]) for f in fights}
     fid_is_kill = {f["id"]: bool(f.get("kill")) for f in fights}
     fid_name    = {f["id"]: f.get("name", "") for f in fights}
