@@ -52,6 +52,24 @@ _SECTION_TABLE = {
 }
 
 
+# (table, guard-section) for the idempotent delete-first re-write in write_week. Every per-row
+# report-keyed table is here so a re-run that drops rows (T4-warmup exclusion, roster change) leaves
+# no orphans. guard-section = the WEEK_DATA section the downgrade-guard tracks for that table; if it's
+# being preserved (in `dropped`), the clear is skipped so a thin re-run can't wipe richer data. None =
+# always-WCL-populated auxiliary table (crit) with no thin-snapshot risk → always cleared. `weeks` is
+# excluded (1 row/report, never orphans).
+_CLEAR_ON_REWRITE = [
+    ("roster", "roster"), ("luck_kpi", "luckKPI"), ("avoidable_dmg", "avoidableDmg"),
+    ("avoidable_sources", "avoidableDmg"), ("deaths", "deaths"), ("consumables", "consumables"),
+    ("drums", "drums"), ("engineering", "engineering"), ("interrupts", "interrupts"),
+    ("crit", None), ("boss_times", "boss_times"), ("dps", "damageBySelection"),
+    ("class_toolkit", "damageBySelection"), ("mana_returns", "manaReturns"), ("healing", "healing"),
+    ("healing_spells", "healing"), ("friendly_fire", "friendlyFire"), ("tank_scorecard", "tankScorecard"),
+    ("tank_boss_dtps", "tankScorecard"), ("sunder_armor", "sunderArmor"), ("saves", "saves"),
+    ("dispels", "dispels"), ("loot", "loot"), ("debuff_coverage", "debuffCoverage"),
+]
+
+
 def _db_dropped_sections(con, rc: str, week_data: dict) -> set:
     """Sections the existing DB row HAS that the incoming write would drop (existing − incoming).
     Empty set = safe write (incoming is at least as rich). Used by the write_week downgrade-guard."""
@@ -414,6 +432,23 @@ def write_week(week_data: dict, db_path: Path | None = None, *, allow_downgrade:
                 print(f"  ⚠ write_week: preserving {sorted(dropped)} from the existing richer row "
                       f"for {rc} (incoming snapshot is thin on them); all other sections are written. "
                       f"Pass allow_downgrade=True to overwrite instead.")
+
+        # ── idempotent re-write: clear this report's existing rows up front ──────
+        # INSERT OR REPLACE only overwrites matching keys — it never removes rows the new write no
+        # longer produces, so a re-run that SHRINKS the row set (the T4-warmup exclusion dropping
+        # bosses + alt-swap players; a roster change) would leave ORPHANS (the stale Gruul boss_times
+        # / alt roster that survived a clean re-run). Delete this report's rows from every per-row
+        # table first, then the inserts below repopulate exactly what the new write produces. Skip any
+        # table whose SECTION is being preserved by the downgrade-guard (`dropped`) so a thin/log-less
+        # re-run still can't wipe the richer existing data. `weeks` is 1 row/report (no orphans) → kept
+        # as INSERT OR REPLACE. (Supersedes the three inline section-guarded clears below.)
+        for _tbl, _sec in _CLEAR_ON_REWRITE:
+            if _sec is not None and _sec in dropped:
+                continue
+            try:
+                con.execute(f"DELETE FROM {_tbl} WHERE report_code = ?", (rc,))
+            except sqlite3.OperationalError:
+                pass   # table missing on an older DB
 
         # ── weeks ──────────────────────────────────────────────────────────────
         _hs = week_data.get("healthstoneStats") or {}
