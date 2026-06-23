@@ -50,6 +50,14 @@ CC_ABILITIES = {
     "Intimidating Shout", "Seduction",
 }
 
+# ── Control / defensive utility CASTS (Performance utility facets) ─────────────
+# Curated cast-count utilities that aren't a save/dispel/interrupt but are real raid utility:
+#   Hammer of Justice — paladin stun/control (also interrupts a cast) → facet 'hoj'
+#   Grounding Totem    — shaman spell-eater (redirects a harmful spell off the party) → facet 'grounding'
+# Counted from WCL Casts events (fetch_utility_actions), PLAYER sources only (mobs cast HOJ, a charmed
+# shaman's totem logs under the boss). Both positive-only facets — they only lift, never drag. Tier-stable.
+UTILITY_CAST_ABILITIES = {"Hammer of Justice": "hoj", "Grounding Totem": "grounding"}
+
 # ── Consumables ───────────────────────────────────────────────────────────────
 # Detected per player from pull-time COMBATANT_INFO buff auras. Recognition is ID-ANCHORED
 # (FLASK_AURA_IDS / ELIXIR_AURA_IDS below, keyed on the aura's `ability` spell-ID) with the

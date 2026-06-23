@@ -3237,6 +3237,7 @@ const PERF_PILLARS = ["prep","perf","exec","surv","util"];
 const PERF_FACET_TARGET = {
   tow: 95, bshout: 90, wf: 90,                                               // uptime %
   md: 6, intr: 4, disp: 4, save: 3, fward: 4, stones: 50, sunder: 40, pala: 500, innervate: 5,  // counts
+  hoj: 8, grounding: 3,   // counts — Hammer of Justice (paladin control) / Grounding Totem (shaman spell-eater); positive-only. v1.
   expose: 80,          // rogue Expose Armor uptime % — held the armor slot most of the night (positive-only). v1.
   // Spec-baseline utility credits (handoff §C) — a debuff/buff UPTIME% (WEEK_DATA.maintainUptime) a
   // spec is the DESIGNATED provider of (its invited role), so it's a PRIMARY facet, not positive-only.
@@ -3253,7 +3254,7 @@ const PERF_FACET_TARGET = {
 // damaging 0 — so a shadow priest who nailed VT isn't dragged to 50 because the assigned cleanser
 // handled dispels. Signature facets (ToW, Windfury, stones, Innervate, mana battery, MD, Battle Shout,
 // JoW, Fear Ward, interrupts) are NOT here — they're your one job, so a 0 counts.
-const PERF_POSITIVE_ONLY = new Set(["disp","save","expose"]);
+const PERF_POSITIVE_ONLY = new Set(["disp","save","expose","intr","hoj","grounding"]);
 const PERF_ROLE_FACETS = { Physical:["intr","sunder","save"], Caster:["intr","mana","save"], Healer:["save","mana"], Tank:["intr","save"] };
 // Utility is CLASS-shaped, not role-shaped: each class is credited on the utility IT actually
 // provides, scored vs an ABSOLUTE target (PERF_FACET_TARGET, not the raid's best), so a class isn't
@@ -3281,12 +3282,12 @@ const CLASS_UTIL_FACETS = {     // Paladin is spec/role-split in utilFacetsFor (
 function utilFacetsFor(cls, spec, role){
   if(cls==="Priest") return role==="Healer" ? ["fward","disp"] : ["mana","disp"];
   if(cls==="Shaman"){
-    if(role==="Healer")      return ["mana","disp"];   // resto — Mana Tide/Spring battery + cleanses
-    if(spec==="Enhancement") return [];                // Windfury/totem-twisting is EXECUTION, not utility →
+    if(role==="Healer")      return ["mana","disp","grounding"];   // resto — Mana Tide/Spring battery + cleanses + Grounding
+    if(spec==="Enhancement") return ["grounding"];     // Windfury/totem-twisting is EXECUTION (Performance); Grounding is utility →
       // moving to the Performance pillar (PR #2, scored as twist cadence like ret seal-twist). No utility
       // facet in the interim (don't crater a good twister on a harsh WF-uptime target). The "Party WF
       // uptime ~X%" + GoA cell still shows on the DPS tab — it's just not the old utility score.
-    return ["tow"];                                    // elemental — Totem of Wrath uptime is the signature
+    return ["tow","grounding"];                        // elemental — Totem of Wrath uptime (signature) + Grounding
   }
   if(cls==="Druid"){                                   // druids have no totem battery — Innervate IS their
     if(role==="Healer")    return ["innervate","disp"];// mana-return. resto — Innervate + decurse/abolish
@@ -3312,10 +3313,16 @@ function utilFacetsFor(cls, spec, role){
     // personal parse is already de-weighted, so the util pillar wrongly sank the whole score). Prot
     // (Tank) / Holy (Healer) DO run the JoW + Greater-Blessing package → they keep 'pala'. Split by
     // ROLE (reliable) not the WCL spec label (paladin builds log as Justicar/Protection — unreliable).
-    if(role==="Physical") return ["disp"];             // ret — seal-twist moved to Performance; utility = dispels (positive-only)
-    return ["pala","disp"];                            // prot / holy — JoW + Greater Blessings + dispels
+    if(role==="Physical") return ["disp","save","hoj"];        // ret — seal-twist→Performance; utility = dispels + BOP/saves + HoJ (all positive-only)
+    return ["pala","disp","save","hoj"];               // prot / holy — JoW + Greater Blessings + dispels + BOP/saves + HoJ
   }
   return CLASS_UTIL_FACETS[cls] || PERF_ROLE_FACETS[role] || [];
+}
+// Interrupts are credited UNIVERSALLY (positive-only): anyone who lands a Counterspell / Kick / Pummel /
+// Wind Shock / Spell Lock is lifted, and no one is dragged for not interrupting. Appended to every
+// class's facet list so it scores alongside their signature utility (dedup so intr-native kits aren't doubled).
+function utilFacetsWithUniversal(cls, spec, role){
+  return [...new Set([...utilFacetsFor(cls, spec, role), "intr"])];
 }
 // __PERF_SCORING_PURE_END__
 let _perfRole="all", _perfGroup=false;
@@ -3484,13 +3491,14 @@ function _perfRows(){
   // toolkit num, but are SEPARATE facet keys so each ranks within its own class cohort — the toolkit
   // num isn't comparable across classes (MD count ~6 vs Battle Shout ~89%).
   const tkNum=n=>(((dps[n]||{}).toolkit||{}).num||0);
-  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="expose"?((expose[n]||{}).uptime||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="disp"?dispTot(n) : f==="innervate"?(innv[n]||0) : f==="stones"?((usage[n]||{}).stones_made||0) : f==="fward"?((usage[n]||{}).fear_ward||0) : f==="pala"?(((usage[n]||{}).judge_util||0)+((usage[n]||{}).blessing||0)) : f==="coe"?muOf(n,"Curse of the Elements") : f==="iff"?muOf(n,"Faerie Fire") : f==="exposew"?muOf(n,"Expose Weakness") : (f==="md"||f==="bshout"||f==="tow"||f==="wf")?tkNum(n) : 0;
+  const ua=wd.utilityActions||{};   // {name:{hoj,grounding}} — HOJ / Grounding Totem cast counts (positive-only facets)
+  const facetVal=(n,f)=> f==="intr"?((intr[n]||{}).count||0) : f==="sunder"?((sunder[n]||{}).total||0) : f==="expose"?((expose[n]||{}).uptime||0) : f==="mana"?(mana[n]||0) : f==="save"?saveTot(n) : f==="disp"?dispTot(n) : f==="innervate"?(innv[n]||0) : f==="stones"?((usage[n]||{}).stones_made||0) : f==="fward"?((usage[n]||{}).fear_ward||0) : f==="pala"?(((usage[n]||{}).judge_util||0)+((usage[n]||{}).blessing||0)) : f==="coe"?muOf(n,"Curse of the Elements") : f==="iff"?muOf(n,"Faerie Fire") : f==="exposew"?muOf(n,"Expose Weakness") : f==="hoj"?((ua[n]||{}).hoj||0) : f==="grounding"?((ua[n]||{}).grounding||0) : (f==="md"||f==="bshout"||f==="tow"||f==="wf")?tkNum(n) : 0;
   // best[facet] scoped to the COHORT that provides it (the classes whose CLASS_UTIL_FACETS list it),
   // NOT the whole raid — so a hunter's Misdirection ranks vs other hunters, not vs a mage's toolkit
   // num. A facet that's naturally class-exclusive (stones) collapses to its one cohort either way.
   const bestF={}, bestN={};   // bestN[f] = who leads facet f (for the drilldown "vs best (X)")
-  Object.entries(roster).forEach(([n,r])=>{ utilFacetsFor(r.class,r.spec,r.role).forEach(f=>{ const v=facetVal(n,f); if(v>(bestF[f]||0)) bestN[f]=n; bestF[f]=Math.max(bestF[f]||0, v); }); });
-  const FACET_LABEL={intr:"interrupts",sunder:"Sunder",mana:"mana returned",save:"externals",disp:"dispels",stones:"stones",fward:"Fear Ward",pala:"JoW+blessings",md:"Misdirection",bshout:"Battle Shout",tow:"Totem of Wrath",wf:"Windfury %",innervate:"Innervate",expose:"Expose Armor %",coe:"Curse of Elements %",iff:"Faerie Fire %",exposew:"Expose Weakness %"};
+  Object.entries(roster).forEach(([n,r])=>{ utilFacetsWithUniversal(r.class,r.spec,r.role).forEach(f=>{ const v=facetVal(n,f); if(v>(bestF[f]||0)) bestN[f]=n; bestF[f]=Math.max(bestF[f]||0, v); }); });
+  const FACET_LABEL={intr:"interrupts",sunder:"Sunder",mana:"mana returned",save:"externals",disp:"dispels",stones:"stones",fward:"Fear Ward",pala:"JoW+blessings",md:"Misdirection",bshout:"Battle Shout",tow:"Totem of Wrath",wf:"Windfury %",innervate:"Innervate",expose:"Expose Armor %",coe:"Curse of Elements %",iff:"Faerie Fire %",exposew:"Expose Weakness %",hoj:"Hammer of Justice",grounding:"Grounding Totem"};
 
   return Object.entries(roster).map(([name,r])=>{
     // Judge by EFFECTIVE role (what they actually did most of the night), NOT the roster slot. A DPS who
@@ -3597,7 +3605,7 @@ function _perfRows(){
     // UTILITY (class-shaped, scored vs an ABSOLUTE target per facet — bestF is only the applicability
     // gate — experimental). Scored only on the utility the player's CLASS provides, so a structural gap
     // → null facet (drops out), not a damaging 0. null when the class contributes no facet this week.
-    const myFacets = utilFacetsFor(r.class, r.spec, role);
+    const myFacets = utilFacetsWithUniversal(r.class, r.spec, role);
     // Score = value vs the facet's absolute TARGET (clamped 100), not the cohort best. bestF>0 is just
     // the applicability gate (a facet nobody did this week → null, not a 0). PRIMARY facets (your
     // signature — must-do) average together; POSITIVE-ONLY facets (dispels, battle-res — usually one

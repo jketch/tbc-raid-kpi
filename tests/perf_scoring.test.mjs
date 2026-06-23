@@ -79,24 +79,25 @@ test('Ret seal-twist scores in Performance (Seal of Command on-CD), weighted dps
   assert.equal(r.util, null, 'Ret utility is dispels-only (positive-only) → null with no dispels');
 });
 
-// ── 2. Paladin utility split is by ROLE: Ret=disp-only (seal-twist→Perf), Prot/Holy=pala ─────
-test('paladin utility facets split by role (ret disp-only vs pala)', () => {
-  assert.deepEqual(facetsOf('Paladin', 'Retribution', 'Physical'), ['disp']);   // twist moved to Performance
-  assert.deepEqual(facetsOf('Paladin', 'Protection', 'Tank'), ['pala', 'disp']);
-  assert.deepEqual(facetsOf('Paladin', 'Holy', 'Healer'), ['pala', 'disp']);
+// ── 2. Paladin utility split is by ROLE: Ret (seal-twist→Perf) vs Prot/Holy (pala); both also get
+// BOP/saves + HoJ (positive-only). facetsOf = per-class utilFacetsFor (universal interrupts append separately).
+test('paladin utility facets split by role (ret vs pala), both + save/hoj', () => {
+  assert.deepEqual(facetsOf('Paladin', 'Retribution', 'Physical'), ['disp', 'save', 'hoj']);
+  assert.deepEqual(facetsOf('Paladin', 'Protection', 'Tank'), ['pala', 'disp', 'save', 'hoj']);
+  assert.deepEqual(facetsOf('Paladin', 'Holy', 'Healer'), ['pala', 'disp', 'save', 'hoj']);
 });
 
-// ── 2b. Enhancement has NO utility facet — Windfury/totem-twisting is EXECUTION, moving to Performance
-// (PR #2, scored as twist cadence). The interim must NOT crater a GoA-heavy twister on a WF-uptime target.
-test('Enhancement utility is empty (Windfury moved out of Utility → Performance)', () => {
-  assert.deepEqual(facetsOf('Shaman', 'Enhancement', 'Physical'), []);
+// ── 2b. Enhancement's only utility facet is Grounding Totem (Windfury/twisting is EXECUTION → Performance).
+// Grounding is POSITIVE-ONLY, so an enh who dropped none still scores util null (never a cratered WF-uptime).
+test('Enhancement utility is Grounding only (Windfury moved to Performance)', () => {
+  assert.deepEqual(facetsOf('Shaman', 'Enhancement', 'Physical'), ['grounding']);
   const wd = {
     roster: { Enh: { class: 'Shaman', spec: 'Enhancement', role: 'Physical' } },
-    // low WF uptime (a twister) must NOT show up as a cratered utility score anymore.
+    // no grounding casts + low WF uptime → util null (positive-only grounding drops out, WF isn't scored here).
     damageBySelection: { durations: { all: 100 }, players: [{ name: 'Enh', toolkit: { num: 12 }, all: { total: 1, active: 0 } }] },
   };
   const r = rowByName(wd, 'Enh');
-  assert.equal(r.util, null, 'no utility facet → util null (not a cratered 13 from low WF)');
+  assert.equal(r.util, null, 'no grounding cast (positive-only) → util null (not a cratered 13 from low WF)');
 });
 
 // ── 3. Rogue Expose is positive-only: it LIFTS the assigned rogue, never drags a pure-DPS one ─
