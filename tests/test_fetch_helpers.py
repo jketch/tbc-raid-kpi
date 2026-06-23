@@ -27,7 +27,49 @@ from wcl_fetchers import (
     parse_damage_table,
     merge_actor_names,
     _median,
+    content_excluded_fight_ids,
 )
+
+
+# ── content_excluded_fight_ids: drop off-content (T4 warmup) kills + their adjacent trash ──
+class TestContentExcluded(unittest.TestCase):
+    EXCL = {"High King Maulgar", "Gruul the Dragonkiller"}
+
+    def _f(self, fid, name, kill, s, e, enc=None):
+        return {"id": fid, "name": name, "kill": kill, "startTime": s, "endTime": e, "encounterID": enc}
+
+    def test_no_excluded_encounters_returns_empty(self):
+        fights = [self._f(1, "Lady Vashj", True, 0, 100),
+                  self._f(2, None, False, 100, 120)]   # trash
+        self.assertEqual(content_excluded_fight_ids(fights, self.EXCL), set())
+
+    def test_drops_excluded_kills_and_their_trash(self):
+        # SSC/TK block (0–1000), then a Gruul's-Lair block (2000–3000) with its own trash.
+        fights = [
+            self._f(1, "Lady Vashj", True, 0, 900),
+            self._f(2, None, False, 950, 990),          # SSC trash — nearest kill is Vashj → KEEP
+            self._f(3, "High King Maulgar", True, 2000, 2100),
+            self._f(4, None, False, 2150, 2300),        # Gruul's-Lair trash → nearest is HKM/Gruul → DROP
+            self._f(5, "Gruul the Dragonkiller", True, 2400, 2600),
+        ]
+        excl = content_excluded_fight_ids(fights, self.EXCL)
+        self.assertEqual(excl, {3, 4, 5})
+
+    def test_non_contiguous_warmup_does_not_swallow_real_content(self):
+        # HKM at the START, SSC in the middle, Gruul at the END — a naive [first..last] window
+        # would swallow all of SSC. Nearest-kill assignment must not.
+        fights = [
+            self._f(10, "High King Maulgar", True, 0, 100),
+            self._f(11, None, False, 120, 140),         # near HKM → DROP
+            self._f(12, "Lady Vashj", True, 500, 900),
+            self._f(13, None, False, 905, 950),          # near Vashj → KEEP
+            self._f(14, "Gruul the Dragonkiller", True, 1500, 1700),
+            self._f(15, None, False, 1710, 1750),        # near Gruul → DROP
+        ]
+        excl = content_excluded_fight_ids(fights, self.EXCL)
+        self.assertEqual(excl, {10, 11, 14, 15})
+        self.assertNotIn(12, excl)   # real content survives
+        self.assertNotIn(13, excl)
 
 
 # ── _report: the durability guard ─────────────────────────────────────────────

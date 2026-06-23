@@ -77,7 +77,7 @@ from wcl_fetchers import (                                                      
     _loads_alias, MAX_EVENT_PAGES, Q_REPORT, Q_PLAYER_DETAILS, Q_DAMAGE_TABLE,
     Q_BUFFS_TABLE, Q_COMBATANT_INFO, Q_DAMAGE_EVENTS, parse_damage_table,
     fetch_gear_from_events, fetch_actual_crit, merge_actor_names,
-    fetch_damage_by_selection, fetch_master_data, _GEAR_SLOT, _ENCHANTABLE_SLOTS,
+    fetch_damage_by_selection, content_excluded_fight_ids, fetch_master_data, _GEAR_SLOT, _ENCHANTABLE_SLOTS,
     _ILVL_SKIP_SLOTS, _item_sockets, fetch_gear_audit,
     # per-fight roles + healers
     fetch_fight_roles, build_fight_roles_from_log, harden_tank_fights,
@@ -121,7 +121,15 @@ def build_week_data(report_code: str, token: str,
     zone      = (report.get("zone") or {}).get("name", "Unknown")  # WCL returns zone:null
     start_ms  = report["startTime"]                                 # until it classifies a report
     start_dt  = time.strftime("%b %d, %Y %H:%M", time.localtime(start_ms / 1000))
-    kills     = [f for f in report["fights"] if f.get("kill")]
+    # Drop off-content kills (a T4 Gruul's-Lair warmup bundled into the SSC/TK report) — they
+    # pollute the roster (alt-swaps), boss tiles, tank scorecard and every denominator. Q_REPORT
+    # returns kills only, so this just removes the warmup bosses; their trash is scrubbed inside
+    # fetch_damage_by_selection (which queries all fights) via the same helper.
+    _excl = content_excluded_fight_ids(report["fights"], EXCLUDED_ENCOUNTERS)
+    if _excl:
+        _dropped = sorted({f["name"] for f in report["fights"] if f["id"] in _excl})
+        print(f"   ⊘ excluding off-content (T4 warmup): {', '.join(_dropped)}")
+    kills     = [f for f in report["fights"] if f.get("kill") and f["id"] not in _excl]
     fight_ids = [f["id"] for f in kills]
 
     # Group kill times by zone for the header pills. `boss_times` stays a flat

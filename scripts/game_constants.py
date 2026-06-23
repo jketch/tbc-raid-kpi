@@ -317,6 +317,14 @@ DEFENSIVE_CD_NAMES = {"Shield Wall", "Last Stand", "Frenzied Regeneration", "Bar
 # this section into content_t6.py and select by report["zone"].
 # ══════════════════════════════════════════════════════════════════════════════
 
+# ── Off-content encounters to DROP entirely ──────────────────────────────────
+# The dashboard is SSC / TK (T5). A raid night often bundles a T4 warmup clear (Gruul's Lair)
+# into the SAME WCL report — those kills, their roster (alt-swaps), and their trash are NOT part
+# of this dashboard and pollute every denominator (boss tiles, tank scorecard, utility roster,
+# All/Trash DPS). Excluded by encounter NAME (stable, language-independent on this client).
+# TO ADD T6: this set stays Gruul's Lair (still a T4 warmup) unless the group stops running it.
+EXCLUDED_ENCOUNTERS = {"High King Maulgar", "Gruul the Dragonkiller"}
+
 # ── Avoidable damage ability map (for context in UI) ─────────────────────────
 AVOIDABLE_ABILITIES = [
     "Whirlwind", "Cleave", "Shatter", "Scalding Water", "Cave In",
