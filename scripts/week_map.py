@@ -380,12 +380,13 @@ def map_to_week_data(wcl: dict) -> WeekData:
             "buffs": [{"item": it, "label": lb} for it, lb in sorted(items.items())],
         })
 
-    # Windfury Totem RECEIVED — per non-shaman melee, the count of Windfury extra-attack procs
-    # the totem granted that night (the receiving end of an enh shaman's Windfury Totem). Combat-log
-    # only: the 2.5 client folds the totem's extra swing into the recipient's "Melee" damage, so WCL
-    # can't see it; SPELL_EXTRA_ATTACKS "Windfury Attack" can. Shamans are excluded — their procs are
-    # their own Windfury Weapon (self), not the totem. Empty without a log (LOG-tier). No provider
-    # attribution — raiders know their groups.
+    # Windfury extra-attacks RECEIVED — per melee, the count of Windfury extra-attack procs that
+    # night. Combat-log only: the 2.5 client folds the extra swing into the recipient's "Melee"
+    # damage (invisible in WCL); SPELL_EXTRA_ATTACKS "Windfury Attack" exposes it. EVERY melee is
+    # shown so no one's left out — but the SOURCE differs and we flag it: a non-shaman can only get
+    # Windfury from the TOTEM (pure totem value); a shaman's procs are his own Windfury WEAPON imbue
+    # (self, not the totem). `source` carries that distinction for the card. Empty without a log
+    # (LOG-tier). No provider attribution — raiders know their groups.
     _wf_extra = wcl.get("windfury_extra") or {}
     _kill_sec = sum((wcl.get("boss_times") or {}).values()) or 0
     windfury_received = []
@@ -394,12 +395,11 @@ def map_to_week_data(wcl: dict) -> WeekData:
         if not pinfo or cnt <= 0:            # roster melee only (drops non-roster / name-mismatch procs)
             continue
         cls = pinfo.get("class", pinfo.get("type", ""))
-        if cls == "Shaman":                  # a shaman's WF Attack is his own Weapon imbue, not the totem
-            continue
         windfury_received.append({
             "name": nm, "role": pinfo.get("role", ""), "class": cls,
             "procs": cnt,
             "per_min": round(cnt / (_kill_sec / 60), 1) if _kill_sec else 0,
+            "source": "weapon" if cls == "Shaman" else "totem",
         })
     windfury_received.sort(key=lambda x: (-x["procs"], x["name"]))
 

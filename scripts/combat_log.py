@@ -463,18 +463,21 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
             dst_is_boss   = "Creature-" in dst_guid
             src_is_creature = "Creature-" in src_guid
 
-            # ── Windfury Totem RECEIVED (per player; non-shaman filter applied later) ──
-            # The 2.5 client folds the totem's extra swing into the recipient's "Melee" damage
-            # (so it's invisible in WCL), but it DOES fire a SPELL_EXTRA_ATTACKS "Windfury Attack"
-            # event on the recipient. A non-shaman can only get Windfury from the totem (WF Weapon
-            # is shaman-only), so for them this count is pure totem value — the receiving end of an
-            # enh shaman's Windfury Totem. Shamans' own weapon procs are dropped in map_to_week_data
-            # by class. amount=[12] = extra attacks granted (usually 1).
-            if ev == "SPELL_EXTRA_ATTACKS" and len(fields) > 12 and src_is_player \
-                    and fields[10].strip('"') == "Windfury Attack":
-                try:
-                    windfury_extra[src_name] += int(fields[12])
-                except (ValueError, IndexError):
+            # ── Windfury extra-attacks RECEIVED (per player; source split in map_to_week_data) ──
+            # Two event shapes, MUTUALLY EXCLUSIVE by how the player gets Windfury (so no double-count):
+            #   • TOTEM (every non-shaman melee): the 2.5 client folds the totem's extra swing into the
+            #     recipient's "Melee" damage (invisible in WCL), but fires SPELL_EXTRA_ATTACKS
+            #     "Windfury Attack" — amount=[12] = extra attacks granted.
+            #   • WEAPON (enh shamans): the Windfury Weapon imbue's swings ARE logged directly as
+            #     SPELL_DAMAGE/SPELL_MISSED "Windfury Attack" (no grant event) — count each swing.
+            # map_to_week_data labels the source by class (non-shaman→totem · shaman→weapon).
+            if len(fields) > 10 and src_is_player and fields[10].strip('"') == "Windfury Attack":
+                if ev == "SPELL_EXTRA_ATTACKS":
+                    try:
+                        windfury_extra[src_name] += int(fields[12])
+                    except (ValueError, IndexError):
+                        windfury_extra[src_name] += 1
+                elif ev in ("SPELL_DAMAGE", "SPELL_MISSED"):   # a shaman's own WF Weapon swing
                     windfury_extra[src_name] += 1
 
             # ── Per-fight role signals + tank survivability (by boss name) ──────
