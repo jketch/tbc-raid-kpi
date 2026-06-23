@@ -262,6 +262,34 @@ class TestWriteWeekRoundTrip(unittest.TestCase):
         self.assertEqual(second["dps"], 2)
         self.assertEqual(second["tank_scorecard"], 1)
 
+    # ── CASE 2b: a re-run that SHRINKS the row set leaves NO orphans (the T4-warmup-exclusion gap:
+    # INSERT OR REPLACE overwrites matching keys but never deletes vanished ones) ──
+    def test_rewrite_with_fewer_rows_flushes_orphans(self):
+        wd = _week_data()
+        rc = wd["meta"]["report_code"]
+        wd["roster"]["Altswap"] = {"class": "Mage", "spec": "Fire", "role": "Caster"}  # an alt-swap player
+        with temp_db() as dbp:
+            self._write(dbp, wd)   # first write: 4 roster, 2 boss_times
+            con = sqlite3.connect(dbp)
+            self.assertEqual(con.execute("SELECT COUNT(*) FROM roster WHERE report_code=?",
+                                         (rc,)).fetchone()[0], 4)
+            con.close()
+            # the clean re-run drops the alt-swap player AND a (warmup) boss
+            wd2 = _week_data()                                       # roster back to 3 (no Altswap)
+            wd2["boss_times"] = {"Hydross the Unstable": 300.0}      # 2 -> 1 boss
+            self._write(dbp, wd2)
+            con = sqlite3.connect(dbp)
+            try:
+                roster = {p for (p,) in con.execute(
+                    "SELECT player FROM roster WHERE report_code=?", (rc,))}
+                bosses = {b for (b,) in con.execute(
+                    "SELECT boss FROM boss_times WHERE report_code=?", (rc,))}
+            finally:
+                con.close()
+        self.assertNotIn("Altswap", roster)                          # alt orphan flushed
+        self.assertEqual(roster, {"Marvels", "Healz", "Tanky"})
+        self.assertEqual(bosses, {"Hydross the Unstable"})           # dropped-boss orphan flushed
+
     # ── CASE 3: JSON columns survive dumps->loads back to the original Python object ──
     def test_json_columns_roundtrip(self):
         wd = _week_data()
