@@ -380,6 +380,29 @@ def map_to_week_data(wcl: dict) -> WeekData:
             "buffs": [{"item": it, "label": lb} for it, lb in sorted(items.items())],
         })
 
+    # Windfury Totem RECEIVED — per non-shaman melee, the count of Windfury extra-attack procs
+    # the totem granted that night (the receiving end of an enh shaman's Windfury Totem). Combat-log
+    # only: the 2.5 client folds the totem's extra swing into the recipient's "Melee" damage, so WCL
+    # can't see it; SPELL_EXTRA_ATTACKS "Windfury Attack" can. Shamans are excluded — their procs are
+    # their own Windfury Weapon (self), not the totem. Empty without a log (LOG-tier). No provider
+    # attribution — raiders know their groups.
+    _wf_extra = wcl.get("windfury_extra") or {}
+    _kill_sec = sum((wcl.get("boss_times") or {}).values()) or 0
+    windfury_received = []
+    for nm, cnt in _wf_extra.items():
+        pinfo = roster_idx.get(nm)
+        if not pinfo or cnt <= 0:            # roster melee only (drops non-roster / name-mismatch procs)
+            continue
+        cls = pinfo.get("class", pinfo.get("type", ""))
+        if cls == "Shaman":                  # a shaman's WF Attack is his own Weapon imbue, not the totem
+            continue
+        windfury_received.append({
+            "name": nm, "role": pinfo.get("role", ""), "class": cls,
+            "procs": cnt,
+            "per_min": round(cnt / (_kill_sec / 60), 1) if _kill_sec else 0,
+        })
+    windfury_received.sort(key=lambda x: (-x["procs"], x["name"]))
+
     # Healer scorecard — actual healers only (role=Healer), ranked by effective HPS.
     # Throughput + overheal% (efficiency) + activity% differentiate them; crit luck doesn't.
     heal_metrics = wcl.get("healing_metrics", {})
@@ -464,6 +487,7 @@ def map_to_week_data(wcl: dict) -> WeekData:
         "mcLiable":            mc_liable,
         "consumableUsage":     consum_usage,
         "groupBuffGear":       group_buff_gear,
+        "windfuryReceived":    windfury_received,
         # Healthstone accountability (trended): raid-wide stones used + how many of the
         # raiders who died never popped one. {total_used, died_total, died_no_stone}.
         "healthstoneStats":    (lambda hs, dd: {
@@ -648,6 +672,7 @@ def merge_log_into_wcl(wcl_data: dict, log_data: dict) -> dict:
     wcl_data["mc_liable"]           = log_data.get("mc_liable", [])
     wcl_data["consum_use"]          = log_data.get("consum_use", {})
     wcl_data["consum_label"]        = log_data.get("consum_label", {})
+    wcl_data["windfury_extra"]      = log_data.get("windfury_extra", {})
 
     # Melee auto-attack swings → into the spell-usage breakdown. The WCL Casts table omits
     # auto-attacks, so melee classes were missing their single biggest "action". Combat-log
