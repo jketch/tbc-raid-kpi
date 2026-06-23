@@ -327,6 +327,18 @@ def build_week_data(report_code: str, token: str,
     log_missing = [f["name"] for f in kills if f["name"] not in logged_bosses] if log_data else []
     if log_missing:
         print(f"   ⚠ no combat-log coverage for: {', '.join(log_missing)}")
+    # Only Warriors, Druids, and Paladins can tank a TBC raid boss. The combat-log Tank signal
+    # (build_fight_roles_from_log) is the boss-melee-taken share — spec/class-blind, so a caster
+    # who pulled aggro and ate a pull's worth of boss melee (a threat slip) gets tagged Tank for
+    # that fight and lands on the tank scorecard (Marvels-the-Warlock as a "tank"). Gate the Tank
+    # role to the three tank-capable classes — durable game truth that preserves feral/prot
+    # detection. (The API path is already restricted via harden_tank_fights's roster_tanks set.)
+    TANK_CAPABLE = {"Warrior", "Druid", "Paladin"}
+    name_class = {p["name"]: p.get("type", "") for p in players}
+    for nm, fr in fight_roles.items():
+        if fr.get("Tank") and name_class.get(nm) not in TANK_CAPABLE:
+            fr["dps"] = sorted(set(fr.get("dps", [])) | set(fr["Tank"]))   # they DPS'd that fight
+            fr["Tank"] = []
     n_kills = len(kills)
     for p in players:
         fr = fight_roles.get(p["name"], {})
