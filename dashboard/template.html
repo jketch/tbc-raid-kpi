@@ -877,8 +877,8 @@
   </div>
 
   <div class="card physical" style="margin-top:22px">
-    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_nature_windfury.jpg" alt=""> Windfury Totem — Received by Melee</div>
-    <div class="hs-sub">Extra melee swings the <b>Windfury Totem</b> granted each non-shaman melee — the receiving end of an enh shaman's totem. <b>Combat-log only</b>: the 2.5 client folds the totem's extra attack into your "Melee" damage (WCL can't see it), so this counts the <code>Windfury Attack</code> procs directly. A shaman's own Windfury is weapon-sourced and excluded; the provider isn't auto-attributed — you know your group.</div>
+    <div class="card-title"><img class="ticon" src="https://wow.zamimg.com/images/wow/icons/large/spell_nature_windfury.jpg" alt=""> Windfury — Extra Attacks by Melee</div>
+    <div class="hs-sub">Extra melee swings Windfury granted each melee this night. <b>Combat-log only</b>: the 2.5 client folds the extra attack into your "Melee" damage (WCL can't see it), so this counts the <code>Windfury Attack</code> procs directly. <b>Source</b>: <span style="color:var(--physical)">totem</span> = from an enh shaman's <b>Windfury Totem</b> (a non-shaman can only get it this way) · <span style="color:var(--caster)">weapon</span> = a shaman's own Windfury Weapon imbue (self). Provider isn't auto-attributed — you know your group.</div>
     <div class="scroll-x"><div id="windfuryReceived"></div></div>
   </div>
 
@@ -2715,20 +2715,30 @@ function renderWindfuryReceived(){
   const el = document.getElementById("windfuryReceived"); if(!el) return;
   const data = WEEK_DATA.windfuryReceived || [];
   if(!data.length){ const c = el.closest(".card"); if(c) c.style.display = "none"; return; }
-  const max = data[0].procs || 1;
+  // bar scales PER SOURCE — a shaman's weapon procs (~4x) would otherwise squash the totem
+  // recipients' bars; the absolute count column carries the true magnitude.
+  const maxBy = {totem:1, weapon:1};
+  data.forEach(p => { const s=p.source==="weapon"?"weapon":"totem"; maxBy[s]=Math.max(maxBy[s], p.procs); });
   const rows = data.map(p => {
     const nc = nameColor(p.name, p.role);
-    const bar = Math.round(p.procs/max*100);
+    const totem = p.source !== "weapon";
+    const bar = Math.round(p.procs/(totem?maxBy.totem:maxBy.weapon)*100);
+    const barCol = totem ? "var(--physical)" : "var(--caster)";
+    const srcTag = totem
+      ? `<span style="color:var(--physical);font-size:10px" title="from an enh shaman's Windfury Totem — a non-shaman can only get Windfury this way">totem</span>`
+      : `<span style="color:var(--caster);font-size:10px" title="this shaman's own Windfury Weapon imbue (self) — not the party totem">weapon</span>`;
     return `<tr>
       <td><span class="cname" style="color:${nc}">${esc(p.name)}</span></td>
-      <td style="width:170px"><span style="display:block;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden"><span style="display:block;height:100%;width:${bar}%;background:var(--physical)"></span></span></td>
+      <td style="text-align:left">${srcTag}</td>
+      <td style="width:150px"><span style="display:block;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden"><span style="display:block;height:100%;width:${bar}%;background:${barCol}"></span></span></td>
       <td style="text-align:right;font-weight:700;color:var(--text)">${p.procs}</td>
       <td style="text-align:right;color:var(--muted);font-size:11px">${p.per_min}/min</td>
     </tr>`;
   }).join("");
   el.innerHTML = `<table class="mini-table" style="width:100%">
-    <thead><tr><th>Melee</th><th></th>
-      <th style="text-align:right" title="Windfury extra-attack procs the totem granted this player across boss kills.">WF procs</th>
+    <thead><tr><th>Melee</th>
+      <th style="text-align:left" title="totem = from an enh shaman's Windfury Totem (non-shaman = pure totem value) · weapon = a shaman's own Windfury Weapon imbue (self)">Source</th><th></th>
+      <th style="text-align:right" title="Windfury extra-attack procs across boss kills.">WF procs</th>
       <th style="text-align:right" title="Procs per minute of boss-kill time — comparable across players with different attendance.">Rate</th></tr></thead>
     <tbody>${rows}</tbody></table>`;
 }
