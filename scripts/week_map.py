@@ -564,6 +564,8 @@ def map_to_week_data(wcl: dict) -> WeekData:
         "maintainUptime": wcl.get("maintain_uptime", {}),
         # per-player control/defensive utility cast counts ({name:{hoj,grounding}}) — Performance util facets
         "utilityActions": wcl.get("utility_actions", {}),
+        # {boss: main-tank name} — who took the BOSS NPC's own melee (combat-log; empty without a log)
+        "bossMainTank": wcl.get("boss_main_tank", {}),
         # per-player UNTRUNCATED rotation-ability cast counts ({name:{ability:count}}) — for rotation-share
         # (incl. Execute, which the truncated playerSpells drops). From class_toolkit's "_rot" sub-dicts.
         "rotationCasts": {nm: tk["_rot"] for nm, tk in (_toolkit_counts or {}).items() if tk.get("_rot")},
@@ -675,6 +677,7 @@ def merge_log_into_wcl(wcl_data: dict, log_data: dict) -> dict:
     wcl_data["consum_use"]          = log_data.get("consum_use", {})
     wcl_data["consum_label"]        = log_data.get("consum_label", {})
     wcl_data["windfury_extra"]      = log_data.get("windfury_extra", {})
+    wcl_data["boss_main_tank"]      = log_data.get("boss_main_tank", {})
 
     # Melee auto-attack swings → into the spell-usage breakdown. The WCL Casts table omits
     # auto-attacks, so melee classes were missing their single biggest "action". Combat-log

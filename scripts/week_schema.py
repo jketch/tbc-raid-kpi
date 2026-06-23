@@ -95,6 +95,8 @@ SECTIONS = {
                                    desc="per-player DoT/self-buff uptime% + spec-baseline utility debuffs (perf v2; empty: no DoT specs)"),
     "utilityActions":      Section(WCL,  False, predicate=lambda v: isinstance(v, dict) and bool(v),
                                    desc="per-player HOJ/Grounding-Totem cast counts (Performance util facets; empty: none cast)"),
+    "bossMainTank":        Section(LOG,  False, predicate=lambda v: isinstance(v, dict) and bool(v),
+                                   desc="{boss: main-tank name} from boss-NPC melee (tanks-only); per-boss MT/OT split. Log-only, empty without a log"),
     "rotationCasts":       Section(WCL,  False, predicate=lambda v: isinstance(v, dict) and bool(v),
                                    desc="per-player untruncated rotation-ability cast counts (rotation-share incl. Execute; empty: no such specs)"),
     "manaReturns":         Section(WCL,  False, predicate=_has_batteries,
@@ -231,6 +233,7 @@ class WeekData(TypedDict, total=False):
     exposeArmor: dict
     maintainUptime: dict
     utilityActions: dict
+    bossMainTank: dict
     rotationCasts: dict
     manaReturns: dict
     saves: list

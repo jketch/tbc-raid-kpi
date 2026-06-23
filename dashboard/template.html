@@ -1193,7 +1193,6 @@ function renderTanks() {
   tbody.innerHTML = data.map(t => {
     const cc = nameColor(t.name, "Tank");
     const ft = t.fights_total || totalK, fk = t.fights_tanked || 0;
-    const partial = ft && fk < ft;
     const deathChip = t.deaths >= 3 ? "orange" : t.deaths >= 1 ? "yellow" : "green";
     const cls = (roster[t.name] || {}).class || "";
     // physical/magic mini-bar (grey physical · purple magic) — shows spell-damage exposure
@@ -1216,7 +1215,7 @@ function renderTanks() {
       : `<span class="chip ${svCol}" title="${svTitle}">${svScore}</span>${fmtDelta(sv.delta_score, true)}`;
     return `<tr>
       <td><span class="cname" style="color:${cc}">${esc(t.name)}</span></td>
-      <td class="num" title="tanked ${fk} of ${ft} kills"><span style="color:${partial?'var(--orange)':'var(--muted)'}">${fk}/${ft}</span>${partial?' ⚠':''}</td>
+      <td class="num" title="kills this tank held a tank role for, of ${ft} — ASSIGNMENT, not a target. In a 2-tank rotation each tank covers a subset (the rest they DPS or sit); see the per-boss MT/OT split below."><span style="color:var(--muted)">${fk}/${ft}</span></td>
       <td class="num">${warCell}</td>
       <td class="num">${svCell}</td>
       <td class="num" style="font-weight:600;color:var(--text)" title="damage taken per second on tank fights — lower is better mitigation/avoidance">${(t.dtps||0).toLocaleString()}${fmtDelta(t.delta_dtps, false)}</td>
@@ -1240,6 +1239,13 @@ function renderTankPerBoss(data){
   const oi = b => { const i = BOSS_ORDER.indexOf(b); return i < 0 ? 99 : i; };
   let gmax = 0;
   data.forEach(t => (t.per_boss||[]).forEach(pb => { if (pb.dtps > gmax) gmax = pb.dtps; }));
+  // Which tank LED each boss: the boss's main-hand melee only lands on its current target, so the lead
+  // is whoever took the BOSS NPC's OWN melee (NOT total damage — the tank soaking an add pack takes more;
+  // and restricted to tanks so a DPS who ripped can't be mistaken for one). Computed in the combat log →
+  // WEEK_DATA.bossMainTank. Log-only: absent without a log → no badge (no wrong guess).
+  const _mtByBoss = WEEK_DATA.bossMainTank || {};
+  const _nTankByBoss = {};
+  data.forEach(t => (t.per_boss||[]).forEach(pb => { _nTankByBoss[pb.boss] = (_nTankByBoss[pb.boss]||0) + 1; }));
   host.innerHTML = data.map(t => {
     const cc = nameColor(t.name, "Tank");
     const pbs = [...(t.per_boss||[])].sort((a,b) => oi(a.boss) - oi(b.boss));
@@ -1269,8 +1275,15 @@ function renderTankPerBoss(data){
       // severity by DTPS, same red/orange ramp as Avoidable Damage (not class colors)
       const sev = pb.dtps > .8*gmax ? 'var(--red)' : pb.dtps > .6*gmax ? 'var(--orange)' : 'var(--muted)';
       const lh = low[pb.boss];
+      // Neutral "who LED" — mark only the tank who held this boss's own melee, and only when 2+ tanks
+      // shared it (solo is obvious). NOT a ranking: which tank leads a given boss is a deliberate split
+      // (the damage profile fits their toolkit, or a mechanic needs it) — the other handled adds / swaps.
+      const _ledName = _mtByBoss[pb.boss];   // lead tank for this boss (boss-NPC melee); undefined w/o a log
+      const role = (_ledName && _nTankByBoss[pb.boss] >= 2 && t.name === _ledName)
+        ? `<span title="held ${esc(pb.boss)}'s own melee — led this fight (the other tank took adds / swapped)" style="color:var(--tank);font-size:9px;font-weight:600;letter-spacing:.2px">led</span>`
+        : '';
       return `<div class="tpb-row">
-        <span class="tpb-boss">${pb.boss}</span>
+        <span class="tpb-boss">${pb.boss}${role?' '+role:''}</span>
         <span class="tpb-dtps" style="color:${sev}" title="damage taken/sec">${pb.dtps.toLocaleString()}<span class="tpb-unit"> DTPS</span></span>
         <span class="tpb-taken" title="total damage taken">${hsK(pb.taken)}</span>
         ${lh!=null?`<span class="tpb-low" title="lowest HP% survived (combat log)">▼${lh}%</span>`:''}
