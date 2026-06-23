@@ -169,7 +169,8 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
     pet_owner    = {}   # summoned-unit GUID → owner name (SPELL_SUMMON; a pet already out before logging started stays unmapped)
     # Per-fight role signals (by boss name) — ground truth for spec-swap-aware roles,
     # immune to WCL's tank spec-label quirks (Warden/Justicar). See classify below.
-    fight_melee_taken  = defaultdict(lambda: defaultdict(int))  # [boss][player] = boss MELEE dmg taken (TANK signal)
+    fight_melee_taken  = defaultdict(lambda: defaultdict(int))  # [boss][player] = ALL creature melee taken (boss+adds; tank-role signal)
+    fight_boss_melee   = defaultdict(lambda: defaultdict(int))  # [boss][player] = the BOSS NPC's OWN melee taken (main-tank signal — boss melee only hits its current target)
     fight_healing_done = defaultdict(lambda: defaultdict(int))  # [boss][player] = effective healing (HEALER signal)
     fight_damage_done  = defaultdict(lambda: defaultdict(int))  # [boss][player] = damage to creatures (DPS signal)
     fight_dmg_taken    = defaultdict(lambda: defaultdict(int))  # [boss][player] = ALL dmg taken (tank DTPS)
@@ -491,7 +492,9 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                         amt = int(fields[idx])
                         fight_dmg_taken[_boss][dst_name] += amt
                         if ev == "SWING_DAMAGE":
-                            fight_melee_taken[_boss][dst_name] += amt   # in the boss's face = TANK
+                            fight_melee_taken[_boss][dst_name] += amt   # ALL creature melee (tank-role signal)
+                            if fields[2].strip('"') == _boss:           # the BOSS NPC's OWN melee → its current target = the boss's main tank
+                                fight_boss_melee[_boss][dst_name] += amt
                     except: pass
                 # Healing: done by source (HEALER signal) + received by dest (tank soak).
                 # Advanced-log SPELL_HEAL layout (this client): amount=[31], overheal=[32].
@@ -711,6 +714,17 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                 roles["dps"].append(p)
         fight_roles_log[boss] = roles
 
+    # Main tank per boss = the TANK who took the most of the BOSS NPC's OWN melee (its auto-attack only
+    # lands on its current target). Restricted to roster tanks for THIS boss (roles["Tank"]) so a DPS
+    # who ripped threat and ate a swing — or died to it — can't be mistaken for the tank. Boss-melee, not
+    # total damage, so an off-tank soaking an add pack (more total dmg) isn't called the main tank.
+    boss_main_tank = {}
+    for boss, roles in fight_roles_log.items():
+        bm = fight_boss_melee.get(boss, {})
+        cand = {t: bm[t] for t in roles.get("Tank", []) if bm.get(t, 0) > 0}
+        if cand:
+            boss_main_tank[boss] = max(sorted(cand), key=cand.get)   # sorted() → deterministic on ties
+
     # ── Tank execution aggregates ── close any open boss-melee window, then merge to total
     # active-melee seconds, and compute the bear's Lacerate uptime as the INTERSECTION of its
     # Lacerate windows with active-melee time (NOT total Lacerate / melee, which exceeds 100%).
@@ -746,6 +760,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
             "consumables": consumes_out,
             "mc_saves": mc_saves_out, "mc_liable": mc_liable_out,
             "fight_roles_log": fight_roles_log,
+            "boss_main_tank": boss_main_tank,   # {boss: main-tank name} — boss-NPC-melee, tanks-only
             "fight_dmg_taken": {b: dict(v) for b, v in fight_dmg_taken.items()},
             "fight_heal_recv": {b: dict(v) for b, v in fight_heal_recv.items()},
             "consum_use": {n: dict(v) for n, v in consum_use.items()},
