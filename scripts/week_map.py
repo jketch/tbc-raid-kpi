@@ -562,6 +562,8 @@ def map_to_week_data(wcl: dict) -> WeekData:
         # per-player MAINTAIN uptime% (DoTs/self-buffs) + spec-baseline utility debuffs — pass through
         # ({name:{ability:pct}}); the perf-scoring core (template.html) reads it by ability name
         "maintainUptime": wcl.get("maintain_uptime", {}),
+        # per-player control/defensive utility cast counts ({name:{hoj,grounding}}) — Performance util facets
+        "utilityActions": wcl.get("utility_actions", {}),
         # per-player UNTRUNCATED rotation-ability cast counts ({name:{ability:count}}) — for rotation-share
         # (incl. Execute, which the truncated playerSpells drops). From class_toolkit's "_rot" sub-dicts.
         "rotationCasts": {nm: tk["_rot"] for nm, tk in (_toolkit_counts or {}).items() if tk.get("_rot")},

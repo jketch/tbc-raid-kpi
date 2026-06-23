@@ -88,7 +88,7 @@ from wcl_fetchers import (                                                      
     TANK_CD_IDS, CD_NAMES, HITTYPE_CRUSH, HITTYPE_CRIT, build_tank_scorecard_extended,
     _median, compute_death_hp_timelines, compute_reaction_times, TOOLKIT_ABILITIES,
     _toolkit_metric, _buff_uptime_batch, build_class_toolkit, fetch_engineering_casts,
-    fetch_bloodlust_windows, _tank_survival_grade,
+    fetch_utility_actions, fetch_bloodlust_windows, _tank_survival_grade,
     # parse % (the dashboard's Performance metric — WCL rankPercent vs the FULL logged
     # population; see fetch_parse_percentiles) + utility + buffs/debuffs
     fetch_parse_percentiles, fetch_saves, fetch_interrupts, fetch_dispels,
@@ -431,6 +431,7 @@ def build_week_data(report_code: str, token: str,
     saves         = fetch_saves(token, report_code, kills, md)   # protective/external casts on allies
     interrupts_wcl = fetch_interrupts(token, report_code, kills, md)  # WCL-durable interrupt headline
     engineering_wcl = fetch_engineering_casts(token, report_code, kills, md)  # WCL-durable eng headline (no log)
+    utility_actions = fetch_utility_actions(token, report_code, kills, md)   # HOJ + Grounding casts → util facets
     bloodlust_windows = fetch_bloodlust_windows(token, report_code, kills, md)  # per-lust-window DPS uplift + ≈HP
     dispels       = fetch_dispels(token, report_code, kills, md)  # who-dispelled-what (cleanses + purges)
     damage_by_sel = fetch_damage_by_selection(token, report_code)
@@ -572,6 +573,7 @@ def build_week_data(report_code: str, token: str,
         # WCL-durable engineering headline (Casts events) — name → {ability_name: count}; log overlay
         # (real sapper/bomb damage) stays primary when present, this backfills counts when no log
         "engineering_wcl": engineering_wcl,
+        "utility_actions": utility_actions,
         # per-lust-window raid-DPS uplift vs baseline + ≈boss-HP at cast (pull-burn vs execute-save)
         "bloodlust_windows": bloodlust_windows,
         # who-dispelled-what — cleanses off allies + offensive purges on enemies (WCL Dispels events)

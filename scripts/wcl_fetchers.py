@@ -20,7 +20,7 @@ from paths import ITEM_META_CACHE
 from game_constants import (FOOD_BUFF, ELIXIR_BUFFS, HEAL_MANA_COST, EXTERNAL_ABILITIES,
                             MECHANIC_IDS, FLASK_AURA_IDS, ELIXIR_AURA_IDS, FLASK_EFFECT_NAMES,
                             SCROLL_AURA_IDS, SELF_BUFF_IGNORE, GROUP_BUFF_GEAR, ENG_SPELLS,
-                            EXCLUDED_ENCOUNTERS)
+                            EXCLUDED_ENCOUNTERS, UTILITY_CAST_ABILITIES)
 from roles import _fight_role
 
 # Hard cap on paginated WCL event queries — guards against a runaway non-null nextPageTimestamp
@@ -1885,6 +1885,51 @@ def fetch_engineering_casts(token, report_code, kills, md: dict | None = None):
                 cur = nx
     except Exception as ex:
         print(f"  Warning: engineering casts fetch failed: {ex}")
+        return {}
+    return {nm: dict(d) for nm, d in sorted(counts.items())}
+
+
+def fetch_utility_actions(token, report_code, kills, md: dict | None = None):
+    """WCL-durable per-player count of curated control/defensive utility CASTS — Hammer of Justice
+    (paladin stun/control) and Grounding Totem (shaman spell-eater) — from Casts EVENTS, restricted
+    to PLAYER sources (mobs cast HOJ; a charmed shaman's totem logs under the boss). Feeds the
+    Performance utility facets 'hoj'/'grounding' (both positive-only). Returns {name: {key: count}}.
+    Clones fetch_engineering_casts' abilityID-filtered pass; UTILITY_CAST_ABILITIES maps name→facet key."""
+    if not kills:
+        return {}
+    if md is None:
+        raise ValueError("md is required — pass the shared fetch_master_data() result")
+    fids = [f["id"] for f in kills]
+    st   = min(f["startTime"] for f in kills)
+    en   = max(f["endTime"]   for f in kills)
+    id2name, acts = md["id2name"], md["acts"]
+    # name → facet key → ability gameIDs (all ranks) from masterData
+    aid_key = {a["gameID"]: UTILITY_CAST_ABILITIES[a.get("name") or ""]
+               for a in (md.get("abilities") or [])
+               if a.get("gameID") and (a.get("name") or "") in UTILITY_CAST_ABILITIES}
+    if not aid_key:
+        return {}
+    QU = """query($c:String!,$ids:[Int]!,$st:Float!,$en:Float!,$a:Float!){reportData{report(code:$c){
+        events(fightIDs:$ids, startTime:$st, endTime:$en, dataType: Casts, abilityID:$a,
+               limit: 10000){ data nextPageTimestamp }}}}"""
+    counts = defaultdict(lambda: defaultdict(int))   # [name][facet_key] = casts
+    try:
+        for aid, key in sorted(aid_key.items()):
+            cur = st
+            for _pg in range(MAX_EVENT_PAGES):
+                ev = _report(gql(token, QU, {"c": report_code, "ids": fids, "st": cur,
+                                             "en": en, "a": float(aid)}), "events", default={})
+                for d in ev.get("data", []):
+                    if d.get("type") == "cast" and (acts.get(d.get("sourceID")) or {}).get("type") == "Player":
+                        nm = id2name.get(d.get("sourceID"))
+                        if nm:
+                            counts[nm][key] += 1
+                nx = ev.get("nextPageTimestamp")
+                if not nx:
+                    break
+                cur = nx
+    except Exception as ex:
+        print(f"  Warning: utility-actions fetch failed: {ex}")
         return {}
     return {nm: dict(d) for nm, d in sorted(counts.items())}
 
