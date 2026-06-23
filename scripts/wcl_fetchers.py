@@ -19,7 +19,8 @@ from wcl_client import gql
 from paths import ITEM_META_CACHE
 from game_constants import (FOOD_BUFF, ELIXIR_BUFFS, HEAL_MANA_COST, EXTERNAL_ABILITIES,
                             MECHANIC_IDS, FLASK_AURA_IDS, ELIXIR_AURA_IDS, FLASK_EFFECT_NAMES,
-                            SCROLL_AURA_IDS, SELF_BUFF_IGNORE, GROUP_BUFF_GEAR, ENG_SPELLS)
+                            SCROLL_AURA_IDS, SELF_BUFF_IGNORE, GROUP_BUFF_GEAR, ENG_SPELLS,
+                            EXCLUDED_ENCOUNTERS)
 from roles import _fight_role
 
 # Hard cap on paginated WCL event queries — guards against a runaway non-null nextPageTimestamp
@@ -49,6 +50,36 @@ def _report(data, *path, default=None):
     for k in path:
         cur = (cur or {}).get(k)
     return cur if cur is not None else default
+
+
+def content_excluded_fight_ids(fights, excluded_names):
+    """Fight IDs to drop as off-content — e.g. a T4 Gruul's-Lair warmup bundled into an SSC/TK
+    report (game_constants.EXCLUDED_ENCOUNTERS). Drops the named encounters AND their adjacent
+    TRASH: each trash pull is assigned to the NEAREST boss kill in time, so Gruul's-Lair trash
+    follows Gruul/HKM wherever in the night they ran. Deliberately NOT a single [first..last]
+    window — that would swallow real SSC/TK content if the warmup were split across the night.
+    Pure (no I/O); `fights` are WCL fight dicts with name/kill/startTime/endTime/id."""
+    excl_names = set(excluded_names or ())
+    excl_kills = [f for f in fights if f.get("name") in excl_names and f.get("kill")]
+    if not excl_kills:
+        return set()
+    out = {f["id"] for f in excl_kills}
+    kills = [f for f in fights if f.get("kill")]
+
+    def _gap(a, b):
+        a0, a1 = a.get("startTime", 0), a.get("endTime", a.get("startTime", 0))
+        b0, b1 = b.get("startTime", 0), b.get("endTime", b.get("startTime", 0))
+        if a0 <= b1 and b0 <= a1:          # overlapping in time → no gap
+            return 0
+        return min(abs(a0 - b1), abs(b0 - a1))
+
+    for tf in fights:                       # trash = non-kill pulls; assign each to its nearest boss
+        if tf.get("kill") or tf["id"] in out:
+            continue
+        nearest = min(kills, key=lambda kf: _gap(tf, kf), default=None)
+        if nearest is not None and nearest.get("name") in excl_names:
+            out.add(tf["id"])
+    return out
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -439,13 +470,18 @@ def fetch_damage_by_selection(token: str, report_code: str) -> dict:
     Returns {durations:{all,boss,trash} (sec), players:{name:{all:{total,active},boss,trash}}}."""
     try:
         fights = _report(gql(token, """query($c:String!){reportData{report(code:$c){
-            fights{ id kill encounterID startTime endTime }}}}""",
+            fights{ id name kill encounterID startTime endTime }}}}""",
             {"c": report_code}), "fights", default=[])
     except Exception as ex:
         print(f"  Warning: damage-by-selection fights failed: {ex}")
         return {}
     if not fights:
         return {}
+    # Drop off-content (T4 warmup) kills AND their adjacent trash so All/Trash DPS denominators
+    # don't include Gruul's Lair (the kill set is filtered in build_week_data the same way).
+    _excl = content_excluded_fight_ids(fights, EXCLUDED_ENCOUNTERS)
+    if _excl:
+        fights = [f for f in fights if f["id"] not in _excl]
     durms = {f["id"]: (f["endTime"] - f["startTime"]) for f in fights}
     sels = {
         "all":   [f["id"] for f in fights],
