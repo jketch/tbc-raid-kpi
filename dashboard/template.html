@@ -3401,6 +3401,20 @@ function _perfExtra(name,role,cls){
   if(ub.length) out.util=ub.join(" · ");
   return out;
 }
+// Turn a "·"-joined why string into a scannable list: one driver per row, +N green / −N orange,
+// and "(context/diagnostic/bonus …)" qualifiers muted so the eye skips them. Render-only readability.
+function _perfWhyList(s){
+  if(!s) return `<span style="color:var(--muted)">—</span>`;
+  return s.split(" · ").map(part=>{
+    const html=esc(part)
+      .replace(/(\((?:context|diagnostic)[^)]*\)|\(bonus[^)]*\))/gi,
+               '<span style="color:var(--muted);font-style:italic">$1</span>')
+      .replace(/(^|[\s(])([+−-]\d[\d.,]*%?)/g,
+               (m,a,b)=>a+`<span style="color:${b[0]==='+'?'var(--green)':'var(--orange)'};font-weight:600">${b}</span>`);
+    return `<div style="display:flex;gap:9px;align-items:baseline;padding:3px 0;font-size:13.5px;color:var(--text);line-height:1.45">`
+      + `<span style="flex:none;color:var(--dim);font-size:10px">▸</span><span>${html}</span></div>`;
+  }).join("");
+}
 function _perfBrief(r){
   const wd=WEEK_DATA, nc=nameColor(r.name,r.role), ri=(wd.roster||{})[r.name]||{};
   const sum=(wd.perfSummaries||{})[r.name];
@@ -3415,8 +3429,10 @@ function _perfBrief(r){
         <span style="font-size:12.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)">${lbl}${v!=null&&wt?`<span style="opacity:.6"> · ×${wt}</span>`:""}</span>
         <span style="font-size:24px;font-weight:800;color:${col}">${v==null?"—":v}</span></div>
       ${bar}
-      <div style="font-size:14px;color:var(--text);margin-top:10px;line-height:1.5">${esc((r.why&&r.why[k])||"—")}</div>
-      ${ex[k]?`<div style="font-size:13px;color:var(--gold-soft);margin-top:8px;line-height:1.45">${esc(ex[k])}</div>`:""}
+      <div style="margin-top:11px">${_perfWhyList((r.why&&r.why[k]))}</div>
+      ${ex[k]?`<div style="display:flex;gap:9px;align-items:baseline;margin-top:9px;padding-top:9px;border-top:1px solid var(--border);line-height:1.45">
+        <span style="flex:none;color:var(--muted);font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;padding-top:2px">actual</span>
+        <span style="font-size:12.5px;color:var(--gold-soft)">${esc(ex[k])}</span></div>`:""}
     </div>`;
   }).join("");
   const partial=r.present<5?` · over ${r.present}/5 pillars`:"";
@@ -3524,7 +3540,7 @@ function _perfRows(){
     // raid-consumable importance (Wowhead): flask (or 2 elixirs) dominates, food + oil expected, an
     // in-fight pot = active tryhard, situational a small bonus. Weights in PERF_TUNING.PREP_*.
     const c=cons[name];
-    let prep=null;
+    let prep=null, _prepCore=null, _prepRenorm=null, _prepSetMax=null;   // last three: renorm step for the drill-down
     if(c){ const T=PERF_TUNING;
       // Per-archetype weights (phys vs caster) calibrated from the T5 DPS-gain chart. Weapon OIL is N/A
       // for hunters (their enhancer is the ranged SCOPE = gear), so it drops out and the rest RENORMALIZES.
@@ -3538,6 +3554,7 @@ function _perfRows(){
       core += c.alt_pot ? PP.ALT : 0;
       const setMax = PP.FLASK + PP.FOOD + PP.OIL + PP.POT + PP.ALT;   // flask path = the achievable ceiling
       let pts = core * 100 / (setMax - (oilNA ? PP.OIL : 0));   // renormalize to 100 (oil N/A drops out)
+      _prepCore = core; _prepSetMax = setMax - (oilNA ? PP.OIL : 0); _prepRenorm = Math.round(pts);   // expose the renorm step for the breakdown
       pts += (c.scrolls||[]).length ? T.PREP_SCROLL : 0;   // minor positive-only extra (clamped below)
       // Gear readiness folded in: deduct for un-enchanted slots + empty sockets (no data ⇒ no penalty).
       // For hunters this is where the ranged SCOPE lives (week_map adds a 'Ranged (scope)' miss if absent).
@@ -3648,6 +3665,9 @@ function _perfRows(){
       if(c.food)p.push(`food +${PP.FOOD}`);
       if(r.class==="Hunter")p.push("weapon oil n/a (scope → Gear Readiness)"); else if(c.weapon)p.push(`oil/stone +${PP.OIL}`);
       if((c.combat_pots||[]).length)p.push(`in-fight pot +${PP.POT}`); if(c.alt_pot)p.push(`situational +${PP.ALT}`);
+      // the slots above sum to the raw core; the score renormalizes that to /100 (slot weights total >100,
+      // and oil drops out for hunters) — show the step so the breakdown reconciles to the pillar score.
+      if(_prepCore!=null && _prepCore!==_prepRenorm)p.push(`→ renormalized ${_prepCore} → ${_prepRenorm} (×100/${_prepSetMax})`);
       if((c.scrolls||[]).length)p.push(`scroll +${T.PREP_SCROLL} (${c.scrolls.join(", ")})`);
       const gr=gear[name];
       if(gr&&(gr.missing_enchants||[]).length)p.push(`−${gr.missing_enchants.length*T.PREP_ENCH_PENALTY} no enchant (${gr.missing_enchants.join(", ")})`);
