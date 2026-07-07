@@ -9,6 +9,11 @@ These helpers are the load-bearing plumbing under the WCL fetch layer:
   parse_damage_table   — per-actor crit stats from a DamageDone table blob
   merge_actor_names    — sourceID counts -> name-keyed dict
   _median        — list median (0.0 on empty)
+  _cd_windows    — defensive-CD aura-window reconstruction (fight-scoped pairing + cap)
+  _cd_cover      — CD coverage ratio (unmit-in-window rate / baseline DTPS)
+  _dedup_lust_windows — lust casts -> 30s windows (simultaneous casters merge)
+  _latency_match — cleanse -> most-recent prior debuff-land latency (+ clutch MC breaks)
+  _stack_ramp    — per-(debuff,target) stack timeline -> peak / ramp_ts / uptime-at-threshold
 
 importing wcl_fetchers is fine — it imports `requests`/`gql` transitively but none of the
 helpers tested here touch the network.
@@ -28,6 +33,11 @@ from wcl_fetchers import (
     merge_actor_names,
     _median,
     content_excluded_fight_ids,
+    _cd_windows,
+    _cd_cover,
+    _dedup_lust_windows,
+    _latency_match,
+    _stack_ramp,
 )
 
 
@@ -334,6 +344,158 @@ class TestMedian(unittest.TestCase):
 
     def test_single_element(self):
         self.assertEqual(_median([7]), 7.0)
+
+
+# ── _cd_windows: fight-scoped applybuff→removebuff pairing + the phantom-window cap ──
+class TestCdWindows(unittest.TestCase):
+    def test_normal_pair_within_one_fight(self):
+        evs = [("applybuff", 1000, 1), ("removebuff", 9000, 1)]
+        self.assertEqual(_cd_windows(evs, {1: 100000}), [(1000, 9000)])
+
+    def test_cross_fight_removebuff_is_capped_not_paired(self):
+        # THE trap this helper exists for: the kill-scoped query dropped a removebuff that
+        # expired in a trash gap, so the apply's next removebuff belongs to a LATER boss.
+        # Pairing them naively makes a phantom multi-minute window — must cap at max_cd_ms.
+        evs = [("applybuff", 1000, 1), ("removebuff", 500000, 2)]
+        self.assertEqual(_cd_windows(evs, {1: 100000, 2: 600000}), [(1000, 26000)])
+
+    def test_orphaned_applybuff_at_stream_end_is_capped(self):
+        evs = [("applybuff", 1000, 1)]
+        self.assertEqual(_cd_windows(evs, {1: 100000}), [(1000, 26000)])
+
+    def test_orphan_clamped_to_its_fights_end(self):
+        # cap would say 26000, but the fight ended at 5000 — the window can't outlive the fight
+        evs = [("applybuff", 1000, 1)]
+        self.assertEqual(_cd_windows(evs, {1: 5000}), [(1000, 5000)])
+
+    def test_reapply_without_remove_closes_the_prior_band(self):
+        evs = [("applybuff", 1000, 1), ("applybuff", 60000, 1), ("removebuff", 65000, 1)]
+        self.assertEqual(_cd_windows(evs, {1: 100000}),
+                         [(1000, 26000), (60000, 65000)])
+
+    def test_none_timestamps_and_unsorted_input_handled(self):
+        evs = [("removebuff", 9000, 1), ("applybuff", None, 1), ("applybuff", 1000, 1)]
+        self.assertEqual(_cd_windows(evs, {1: 100000}), [(1000, 9000)])
+
+    def test_empty_yields_empty(self):
+        self.assertEqual(_cd_windows([], {}), [])
+
+
+# ── _cd_cover: unmitigated-rate-in-window / baseline ratio ────────────────────
+class TestCdCover(unittest.TestCase):
+    def test_spike_coverage_ratio(self):
+        # 10s window holding 500 unmit -> 50/s over a 25/s baseline = 2.0 (popped on a spike)
+        self.assertEqual(_cd_cover([(0, 10000)], [(5000, 500)], 25.0), 2.0)
+
+    def test_lull_coverage_below_one(self):
+        self.assertEqual(_cd_cover([(0, 10000)], [(5000, 100)], 25.0), 0.4)
+
+    def test_events_outside_window_excluded(self):
+        # only the in-window 200 counts -> 20/s over 20/s = 1.0 (ev_list ascending, as documented)
+        self.assertEqual(_cd_cover([(0, 10000)], [(5000, 200), (20000, 999)], 20.0), 1.0)
+
+    def test_no_windows_or_bad_baseline_yield_none(self):
+        self.assertIsNone(_cd_cover([], [(0, 100)], 25.0))
+        self.assertIsNone(_cd_cover([(0, 10000)], [(0, 100)], 0))
+
+    def test_zero_length_windows_yield_none(self):
+        self.assertIsNone(_cd_cover([(5000, 5000)], [(0, 100)], 25.0))
+
+
+# ── _dedup_lust_windows: casts -> 30s windows ─────────────────────────────────
+class TestDedupLustWindows(unittest.TestCase):
+    def test_simultaneous_casts_merge_into_one_window(self):
+        # two shamans lusting together = ONE window, both credited
+        out = _dedup_lust_windows([(1000, "Sham1"), (1500, "Sham2")])
+        self.assertEqual(out, [[1000, ["Sham1", "Sham2"]]])
+
+    def test_split_lust_is_two_windows(self):
+        # pull lust + execute lust, > 30s apart
+        out = _dedup_lust_windows([(1000, "Sham1"), (200000, "Sham2")])
+        self.assertEqual(out, [[1000, ["Sham1"]], [200000, ["Sham2"]]])
+
+    def test_same_caster_twice_in_window_not_duplicated(self):
+        out = _dedup_lust_windows([(1000, "Sham1"), (2000, "Sham1")])
+        self.assertEqual(out, [[1000, ["Sham1"]]])
+
+    def test_unsorted_input_is_sorted_first(self):
+        out = _dedup_lust_windows([(200000, "Sham2"), (1000, "Sham1")])
+        self.assertEqual(out[0][0], 1000)
+
+    def test_empty_yields_empty(self):
+        self.assertEqual(_dedup_lust_windows([]), [])
+
+
+# ── _latency_match: cleanse -> most-recent prior land ─────────────────────────
+class TestLatencyMatch(unittest.TestCase):
+    def test_basic_latency(self):
+        lat, clutch = _latency_match([("Pally", 7, 100, 3500)], {(100, 7): [1000]}, {100: "Poison"})
+        self.assertEqual(lat, {"Pally": [2500]})
+        self.assertEqual(clutch, {})
+
+    def test_most_recent_prior_apply_wins(self):
+        # the debuff landed twice; the cleanse times against the RE-application, not the first
+        lat, _ = _latency_match([("Pally", 7, 100, 3500)], {(100, 7): [1000, 3000]}, {100: "Poison"})
+        self.assertEqual(lat, {"Pally": [500]})
+
+    def test_pre_applied_debuff_is_skipped(self):
+        # no recorded apply (landed before the logged window) -> can't be timed
+        lat, _ = _latency_match([("Pally", 7, 100, 3500)], {}, {100: "Poison"})
+        self.assertEqual(lat, {})
+
+    def test_apply_after_cleanse_is_skipped(self):
+        lat, _ = _latency_match([("Pally", 7, 100, 3500)], {(100, 7): [9000]}, {100: "Poison"})
+        self.assertEqual(lat, {})
+
+    def test_dangerous_dispel_records_clutch(self):
+        # Mind Control is in DANGEROUS_DISPELS -> a clutch entry with seconds
+        lat, clutch = _latency_match([("Priest", 3, 200, 2500)], {(200, 3): [1000]},
+                                     {200: "Mind Control"})
+        self.assertEqual(lat, {"Priest": [1500]})
+        self.assertEqual(clutch, {"Priest": [{"aura": "Mind Control", "sec": 1.5}]})
+
+    def test_none_guid_or_timestamp_skipped(self):
+        lat, _ = _latency_match([("Pally", 7, None, 3500), ("Pally", 7, 100, None)],
+                                {(100, 7): [1000]}, {100: "Poison"})
+        self.assertEqual(lat, {})
+
+
+# ── _stack_ramp: stack timeline -> (peak, ramp_ts, uptime-at-threshold) ───────
+class TestStackRamp(unittest.TestCase):
+    def test_single_application_debuff_time_to_first_up(self):
+        evs = [(5000, "applydebuff", None)]
+        peak, ramp, up = _stack_ramp(evs, 0, 60000, declared_max=1)
+        self.assertEqual((peak, ramp), (1, 5000))
+        self.assertEqual(up, 55000)   # still up at fight end
+
+    def test_stacker_ramp_is_time_to_max_stack(self):
+        evs = [(1000, "applydebuff", None)] + \
+              [(1000 * (s + 1), "applydebuffstack", s + 1) for s in range(1, 5)]
+        peak, ramp, up = _stack_ramp(evs, 0, 60000, declared_max=5)
+        self.assertEqual((peak, ramp), (5, 5000))   # ramp = when stack 5 was reached
+        self.assertEqual(up, 55000)
+
+    def test_stacker_that_flatlined_at_one_degrades_to_first_up(self):
+        # declared stacking, but the raid never built it past 1 -> threshold degrades to 1
+        evs = [(3000, "applydebuff", None)]
+        peak, ramp, up = _stack_ramp(evs, 0, 10000, declared_max=5)
+        self.assertEqual((peak, ramp, up), (1, 3000, 7000))
+
+    def test_drop_and_rebuild_accumulates_uptime_ramp_stays_first(self):
+        evs = [(1000, "applydebuff", None), (2000, "applydebuffstack", 5),
+               (10000, "removedebuff", None),
+               (20000, "applydebuff", None), (21000, "applydebuffstack", 5)]
+        peak, ramp, up = _stack_ramp(evs, 0, 30000, declared_max=5)
+        self.assertEqual((peak, ramp), (5, 2000))
+        self.assertEqual(up, (10000 - 2000) + (30000 - 21000))
+
+    def test_stack_event_without_count_falls_back_to_increment(self):
+        evs = [(1000, "applydebuff", None), (2000, "applydebuffstack", None)]
+        peak, _, _ = _stack_ramp(evs, 0, 10000, declared_max=5)
+        self.assertEqual(peak, 2)
+
+    def test_empty_events(self):
+        self.assertEqual(_stack_ramp([], 0, 10000, 5), (0, None, 0))
 
 
 # ── determinism: identical input -> byte-identical serialization ──────────────

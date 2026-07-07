@@ -662,16 +662,6 @@ def reingest_loot(mapped: dict, csv_path: str | None = None) -> dict:
     return mapped
 
 
-
-
-
-
-
-
-
-
-
-
 def print_summary(week_data: dict):
     print("\n" + "="*60)
     print(f"REPORT: {week_data['meta']['report_code']}  |  {week_data['meta']['date']}")

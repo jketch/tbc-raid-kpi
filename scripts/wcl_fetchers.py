@@ -582,11 +582,14 @@ def _item_sockets(item_id, cache) -> int:
         import requests as _rq
         r = _rq.get(f"https://www.wowhead.com/tbc/item={int(item_id)}?xml", timeout=10,
                     headers={"User-Agent": "Mozilla/5.0"})
+        r.raise_for_status()   # an error page has no "nsockets" — without this it would cache a false 0
         m = _re.search(r'"nsockets":(\d+)', r.text)
         n = int(m.group(1)) if m else 0
         cache[key] = {"nsockets": n}
         return n
     except Exception:
+        # in-memory only for THIS run (no refetch per gear slot); the persist step strips None
+        # entries so a transient wowhead failure is retried next week instead of cached forever
         cache[key] = {"nsockets": None}
         return None
 
@@ -642,9 +645,10 @@ def fetch_gear_audit(token: str, report_code: str, kills: list) -> dict:
             "gems_filled": gems_filled, "sockets_total": sockets_total, "empty_sockets": empty,
         })
     try:
-        ITEM_META_CACHE.write_text(json.dumps(cache))
-    except Exception:
-        pass
+        keep = {k: v for k, v in cache.items() if v.get("nsockets") is not None}
+        ITEM_META_CACHE.write_text(json.dumps(keep))
+    except Exception as e:
+        print(f"  ⚠ item-socket cache not saved ({e}) — sockets will refetch next run")
     if not out:
         return {}
     avg = round(sum(p["ilvl"] for p in out) / len(out))

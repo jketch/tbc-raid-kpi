@@ -61,9 +61,16 @@ powershell -NoProfile -Command "python scripts\wcl_auto_dashboard.py %REPORT_COD
 if %ERRORLEVEL% EQU 0 (
     echo.
     echo Publishing dashboard to Netlify...
-    powershell -NoProfile -Command "python scripts\publish.py 2>&1 | Tee-Object -FilePath '%LOGFILE%' -Append"
-    echo.
-    echo Done! Opening dashboard...
+    powershell -NoProfile -Command "python scripts\publish.py 2>&1 | Tee-Object -FilePath '%LOGFILE%' -Append; exit $LASTEXITCODE"
+    if ERRORLEVEL 1 (
+        echo.
+        echo WARNING: the deploy did NOT go live -- a guard blocked it or Netlify failed.
+        echo See the reason above ^(or run.log^). The LOCAL dashboard is still fine.
+    ) else (
+        echo.
+        echo Done!
+    )
+    echo Opening dashboard...
     start "" "dashboard\raid_kpi_dashboard.html"
 ) else (
     echo.

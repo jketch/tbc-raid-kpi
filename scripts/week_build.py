@@ -106,6 +106,9 @@ def from_wcl(report_code, token, *, log_path=None, report=None, history=None):
     import wcl_auto_dashboard as W
     if report is None:
         report = W.gql(token, W.Q_REPORT, {"code": report_code})["reportData"]["report"]
+        if report is None:   # WCL returns report: null for an unknown code — fail with the fix, not a NoneType traceback
+            raise SystemExit(f"ERROR: WCL report '{report_code}' not found — check the code "
+                             "(fresh.warcraftlogs.com/reports/<CODE>)")
     log_data = None
     if log_path and _log_covers_report(log_path, report):
         allowed = {f["name"] for f in report["fights"] if f.get("kill")}

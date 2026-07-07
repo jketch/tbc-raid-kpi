@@ -212,6 +212,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
     # block. Sampled on damage taken / heals received / own melee → dense per-player track.
     hp_samples = defaultdict(lambda: defaultdict(list))  # [player][boss] = [(ts, hp_pct, kind)]
     log_deaths = defaultdict(list)                       # [player] = [(ts, boss)] real UNIT_DIED in a boss window
+    parse_skips = 0   # event lines whose fields didn't parse (unexpected layout) — summarized after the loop
 
     with _open_log(log_path) as f:
         for line in f:
@@ -245,7 +246,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                         "_crit_spell":  int(fields[13]),
                         "_agility":     int(fields[4]),    # [4]=agi, for stat-derived crit backfill
                     }
-                except: pass
+                except (ValueError, IndexError): parse_skips += 1
 
             # Mind Control windows — a controlled player's damage to the raid is the
             # boss's fault, not theirs. Track who's currently MC'd (boss OR trash) by
@@ -378,7 +379,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                     and fields[1] != fields[5]:
                 ff_spell = fields[10].strip('"') if len(fields) > 10 else ""
                 try:    amt = int(fields[30]) if len(fields) > 30 else 0
-                except: amt = 0
+                except ValueError: amt = 0; parse_skips += 1
                 if amt > 0 and ff_spell not in FF_REFLECT:
                     if fields[5] in mc_now:                 # (1) aggressor hit a controlled ally
                         if ff_spell in AOE_ABILITIES and ff_spell not in MC_LIABLE_EXCLUDE:
@@ -495,7 +496,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                             fight_melee_taken[_boss][dst_name] += amt   # ALL creature melee (tank-role signal)
                             if fields[2].strip('"') == _boss:           # the BOSS NPC's OWN melee → its current target = the boss's main tank
                                 fight_boss_melee[_boss][dst_name] += amt
-                    except: pass
+                    except (ValueError, IndexError): parse_skips += 1
                 # Healing: done by source (HEALER signal) + received by dest (tank soak).
                 # Advanced-log SPELL_HEAL layout (this client): amount=[31], overheal=[32].
                 elif ev in ("SPELL_HEAL", "SPELL_PERIODIC_HEAL"):
@@ -503,13 +504,13 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                         eff = max(int(fields[31]) - int(fields[32]), 0)
                         if src_is_player: fight_healing_done[_boss][src_name] += eff
                         if dst_is_player: fight_heal_recv[_boss][dst_name]   += eff
-                    except: pass
+                    except (ValueError, IndexError): parse_skips += 1
                 # DPS: player damage to creatures (any school)
                 elif ev in ("SWING_DAMAGE", "SPELL_DAMAGE", "SPELL_PERIODIC_DAMAGE", "RANGE_DAMAGE") \
                         and src_is_player and dst_is_boss:
                     idx = 27 if ev == "SWING_DAMAGE" else 30
                     try:    fight_damage_done[_boss][src_name] += int(fields[idx])
-                    except: pass
+                    except (ValueError, IndexError): parse_skips += 1
                     # melee auto-attack swings (the Casts table omits these) — feeds the
                     # "Melee" row the spell-usage breakdown is otherwise missing
                     if ev == "SWING_DAMAGE":
@@ -531,7 +532,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                         if 0 <= _hpct <= 100:
                             _nm = src_name if fields[gi] == src_guid else dst_name
                             hp_samples[_nm][_boss].append((ts, _hpct, _kind))
-                    except: pass
+                    except (ValueError, IndexError): parse_skips += 1
 
             # Swing damage → crit
             if ev == "SWING_DAMAGE" and src_is_player and dst_is_boss:
@@ -540,7 +541,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                     dmg_totals[src_name] += amt
                     if fields[-3].strip() == "1": swing_crits[src_name] += 1
                     else: swing_hits[src_name] += 1
-                except: pass
+                except (ValueError, IndexError): parse_skips += 1
 
             # Spell damage → crit
             if ev == "SPELL_DAMAGE" and src_is_player and dst_is_boss:
@@ -552,7 +553,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                     # real engineering damage (sappers/bombs), tracked separately
                     if (fields[10].strip('"') if len(fields) > 10 else "") in ENG_DMG_NAMES:
                         eng_dmg[src_name] += amt
-                except: pass
+                except (ValueError, IndexError): parse_skips += 1
 
             # Interrupts: PLAYER (src) interrupts CREATURE (dst). A pet interrupt (Felhunter
             # Spell Lock) credits the OWNER via the SPELL_SUMMON map — matching the WCL headline
@@ -569,7 +570,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                     sid = int(fields[9])
                     if sid in ENG_SPELLS:
                         eng_usage[src_name][ENG_SPELLS[sid]] += 1
-                except: pass
+                except (ValueError, IndexError): parse_skips += 1
 
             # Drums cast count
             if ev == "SPELL_CAST_SUCCESS" and src_is_player:
@@ -577,7 +578,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                     sid = int(fields[9])
                     if sid in DRUM_SPELLS:
                         drums_cast[src_name] += 1
-                except: pass
+                except (ValueError, IndexError): parse_skips += 1
 
             # Drum buffs applied
             if ev == "SPELL_AURA_APPLIED" and "BUFF" in data:
@@ -585,7 +586,7 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                     sid = int(fields[9])
                     if sid in DRUM_SPELLS:
                         drums_buffs[src_name] += 1
-                except: pass
+                except (ValueError, IndexError): parse_skips += 1
 
             # Avoidable damage taken — matched by spell name (reliable across patches).
             # Tracked per mechanic and attributed to the boss whose kill window it lands in.
@@ -601,7 +602,12 @@ def parse_combat_log(log_path: str, allowed_bosses=None) -> dict:
                         boss = which_boss(ts)
                         if boss:
                             mech_boss[spell_name][boss] += amt
-                    except: pass
+                    except (ValueError, IndexError): parse_skips += 1
+
+    # A handful of skips is normal noise; a sudden jump means the client changed an event's
+    # field layout (a patch) and a KPI is silently under-counting — worth investigating.
+    if parse_skips:
+        print(f"  · combat log: {parse_skips} event line(s) skipped un-parsed (unexpected field layout)")
 
     # Resolve COMBATANT_INFO crit (keyed by GUID) to player names now that the
     # full GUID→name map is known.
