@@ -111,7 +111,11 @@ def from_wcl(report_code, token, *, log_path=None, report=None, history=None):
                              "(fresh.warcraftlogs.com/reports/<CODE>)")
     log_data = None
     if log_path and _log_covers_report(log_path, report):
-        allowed = {f["name"] for f in report["fights"] if f.get("kill")}
+        # Subtract off-content warmup bosses (Gruul/HKM bundled into the SAME report) so the
+        # log-only KPIs (avoidable, FF, drums, consum-use) match the WCL-side exclusion —
+        # otherwise a bundled Gruul's Shatter leaks into avoidable/FF while WCL sections drop it.
+        allowed = ({f["name"] for f in report["fights"] if f.get("kill")}
+                   - W.EXCLUDED_ENCOUNTERS)
         log_data = W.parse_combat_log(log_path, allowed_bosses=allowed)
     raw = W.build_week_data(report_code, token,
                             log_data=log_data, report=report, history=history)

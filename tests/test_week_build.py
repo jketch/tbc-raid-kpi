@@ -111,5 +111,31 @@ class TestFinalizeAndCommit(unittest.TestCase):
         self.assertEqual(order, ["dump"])                # stays DB-read-only
 
 
+class TestFromWclLogScope(unittest.TestCase):
+    """from_wcl must subtract EXCLUDED_ENCOUNTERS from the log parser's allowed-boss set.
+    Regression: a Gruul's-Lair warmup bundled INTO the same report leaked its log-only KPIs
+    (avoidable Shatter, FF, drums) even though every WCL-side section correctly dropped it."""
+
+    def test_bundled_off_content_kills_not_in_allowed_bosses(self):
+        import wcl_auto_dashboard as W
+        seen = {}
+        orig = (wb._log_covers_report, W.parse_combat_log, W.build_week_data, W.map_to_week_data)
+        wb._log_covers_report = lambda log_path, report: True
+        W.parse_combat_log = lambda p, allowed_bosses=None: seen.setdefault("allowed", allowed_bosses) and {}
+        W.build_week_data = lambda code, token, **kw: {"raw": True}
+        W.map_to_week_data = lambda raw: {"meta": {}}
+        try:
+            report = {"fights": [
+                {"name": "Lady Vashj", "kill": True},
+                {"name": "Gruul the Dragonkiller", "kill": True},
+                {"name": "High King Maulgar", "kill": True},
+                {"name": "trashy trash", "kill": False},
+            ]}
+            wb.from_wcl("CODE", "tok", log_path="some.txt", report=report)
+        finally:
+            wb._log_covers_report, W.parse_combat_log, W.build_week_data, W.map_to_week_data = orig
+        self.assertEqual(seen["allowed"], {"Lady Vashj"})
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
