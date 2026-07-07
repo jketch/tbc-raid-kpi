@@ -45,6 +45,7 @@ concurrency:
 jobs:
   weekly:
     runs-on: ubuntu-latest
+    timeout-minutes: 30       # a full-fat run is ~minutes; don't let a hung WCL/Dropbox call hold the runner for GitHub's 6h default
     env:
       # The runner is UTC, but the pipeline is raider-local throughout (combat-log timestamps are
       # naive local wall-clock, loot uses the local raid date, the dashboard shows local time).

@@ -423,6 +423,14 @@ def main():
     if url:
         print(f"  👉 {url}")
     print("  ──────────────────────────────────────────")
+    # Exit non-zero when a CONFIGURED deploy did not go live (guard blocked it or Netlify failed),
+    # so callers can tell "blocked" from "deployed": run_weekly.bat warns instead of printing Done!,
+    # and weekly.yml's publish step fails — which correctly skips the data-branch state push
+    # (a blocked week must not become next week's trend/guard baseline). The unconfigured local
+    # dev case (no Netlify token) stays a graceful exit-0 skip.
+    if url is None and _netlify_config():
+        print("  ✗ deploy did NOT go live — see the reason above")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

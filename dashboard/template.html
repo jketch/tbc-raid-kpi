@@ -2063,6 +2063,7 @@ function avStrip(rank, name, role, num, max, ability, ctxHTML, onclick, extraHTM
 let AV_BOSS = [], AV_SEL = 0;
 function avByPlayerRows(){
   const data = [...(WEEK_DATA.avoidableDmg||[])].filter(p=>p.dmg>0).sort((a,b)=>b.dmg-a.dmg);
+  if(!data.length) return "";
   const MAX = data[0].dmg;
   return data.slice(0,12).map((p,i)=>{
     const src = [...(p.sources||[])].sort((a,b)=>b.dmg-a.dmg);
@@ -3833,19 +3834,25 @@ function renderAll(){
 async function loadWeek(report){
   if (!report || report === _curWeek) return;
   const latestCode = ((LATEST_WEEK_DATA || {}).meta || {}).report_code;
+  const sel = document.querySelector(".week-select");
   let data;
   if (report === latestCode) { data = LATEST_WEEK_DATA; }
   else {
+    if (sel) sel.disabled = true;   // fetch feedback — the picker isn't dead, it's loading
     try {
       const r = await fetch(`weeks/${report}.json`, { cache: "no-cache" });
       if (!r.ok) throw new Error("HTTP " + r.status);
       data = await r.json();
     } catch (e) {
       console.warn("week load failed:", report, e);
-      const sel = document.querySelector(".week-select"); if (sel) sel.value = _curWeek;   // revert picker
+      if (sel) sel.value = _curWeek;   // revert picker
       return;
+    } finally {
+      if (sel) sel.disabled = false;
     }
   }
+  closeDrill();                       // a stale death-drill must not survive the week switch
+  if (_perfDrawerName) _perfHide();   // ditto the officer brief drawer
   const _activeBtn = document.querySelector(".tab-btn.active");
   const prevTab = _activeBtn ? _activeBtn.dataset.tab : "overview";
   _setActive(data); _curWeek = report;
