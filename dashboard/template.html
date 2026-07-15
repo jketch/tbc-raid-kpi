@@ -1381,8 +1381,14 @@ function renderCohortCards(){
   const roster = WEEK_DATA.roster || {};
   const roleOf = n => (roster[n]||{}).role;
   const C = { tank:"var(--tank)", healer:"var(--healer)", caster:"var(--caster)", physical:"var(--physical)" };
-  const totalDeathsDelta = (WEEK_DATA.deaths || []).reduce((s, p) => s + (p.delta_deaths || 0), 0);
-  const totalDrumsDelta  = (WEEK_DATA.drums || []).reduce((s, p) => s + (p.delta_drums || 0), 0);
+  // Aggregate deltas vs prev.totals (see renderStatTiles) — per-player delta sums miss churn.
+  const pt = (WEEK_DATA.prev || {}).totals || {};
+  const deathsSum = (WEEK_DATA.deaths || []).reduce((s, p) => s + (p.total || 0), 0);
+  const drumsSum  = (WEEK_DATA.drums || []).reduce((s, d) => s + (d.total || 0), 0);
+  const totalDeathsDelta = pt.deaths != null ? deathsSum - pt.deaths
+    : (WEEK_DATA.deaths || []).reduce((s, p) => s + (p.delta_deaths || 0), 0);
+  const totalDrumsDelta  = pt.drums != null ? drumsSum - pt.drums
+    : (WEEK_DATA.drums || []).reduce((s, p) => s + (p.delta_drums || 0), 0);
 
   // C1 — Avoidable split: melee (Physical) vs ranged (Caster). Role granularity can't
   // isolate ranged hunters, so tanks/healers are excluded from this DPS-positioning split.
@@ -1765,11 +1771,18 @@ function renderStatTiles() {
   document.getElementById("totalKillTime").textContent =
     `${Math.floor(killSecs / 60)}:${String(Math.round(killSecs % 60)).padStart(2, "0")}`;
 
-  // Week-over-week deltas — degrade silently when no prior week exists
-  const totalDeathsDelta = (WEEK_DATA.deaths || []).reduce((s, p) => s + (p.delta_deaths || 0), 0);
-  const totalAvoidDelta  = (WEEK_DATA.avoidableDmg || []).reduce((s, p) => s + (p.delta_dmg || 0), 0);
-  const totalDrumsDelta  = (WEEK_DATA.drums || []).reduce((s, p) => s + (p.delta_drums || 0), 0);
+  // Week-over-week deltas — Σ(this week) − the prior week's raid total (WEEK_DATA.prev.totals,
+  // injected by trends.py). Summing the per-player delta_* fields misses churn — a raider with
+  // no prior-week row carries no delta, and last week's dead who sat out aren't in this week's
+  // array at all — so that path survives only as the fallback for weeks staged before prev.totals.
   const prev = WEEK_DATA.prev;
+  const pt = (prev || {}).totals || {};
+  const totalDeathsDelta = pt.deaths != null ? totalDeaths - pt.deaths
+    : (WEEK_DATA.deaths || []).reduce((s, p) => s + (p.delta_deaths || 0), 0);
+  const totalAvoidDelta  = pt.avoidable != null ? avoidTotal - pt.avoidable
+    : (WEEK_DATA.avoidableDmg || []).reduce((s, p) => s + (p.delta_dmg || 0), 0);
+  const totalDrumsDelta  = pt.drums != null ? drumTotal - pt.drums
+    : (WEEK_DATA.drums || []).reduce((s, p) => s + (p.delta_drums || 0), 0);
 
   const dd = document.getElementById("deltaDeaths");
   if (dd) dd.innerHTML = fmtDelta(totalDeathsDelta, false);

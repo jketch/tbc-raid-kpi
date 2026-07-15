@@ -72,6 +72,7 @@ def _dsel(players_spec, durs=None):
 
 
 def _week(report, start_ms, *, dsel=None, healing=None, sunder=None, dispels=None,
+          deaths=None, avoid=None, drums=None,
           date=None, kills=1, zone="Serpentshrine Cavern"):
     wd = {
         "meta": {"report_code": report, "start_ms": start_ms,
@@ -87,6 +88,12 @@ def _week(report, start_ms, *, dsel=None, healing=None, sunder=None, dispels=Non
         wd["sunderArmor"] = {"players": sunder}
     if dispels is not None:
         wd["dispels"] = dispels
+    if deaths is not None:
+        wd["deaths"] = deaths
+    if avoid is not None:
+        wd["avoidableDmg"] = avoid
+    if drums is not None:
+        wd["drums"] = drums
     return wd
 
 
@@ -303,6 +310,51 @@ class TestPerSectionDeltaMath(unittest.TestCase):
                               "cleanse": 8, "purge": 3, "total": 11, "removed": []}])
         out = self._seed_prior_and_enrich(cur)
         self.assertEqual(out["dispels"][0]["delta_total"], 4.0)
+
+
+class TestPrevTotals(unittest.TestCase):
+    """prev.totals — raid-level prior sums for the aggregate stat-tile deltas.
+
+    Regression for the Jul-13 deaths tile (+65 shown on a true +90): the tile used to SUM the
+    per-player delta_deaths fields, which drops churn — a raider who died this week but has no
+    prior-week deaths row carries no delta, and last week's dead who sat out this week aren't
+    in this week's array at all. trends.py now injects prev.totals so the tile can compute
+    Σ(this week) − Σ(prev week) directly."""
+
+    def test_totals_reflect_full_prior_sums_despite_churn(self):
+        with temp_db() as dbp:
+            # Prior week: A died 2, B died 6 (Σ=8) — B sits out the current week entirely.
+            prior = _week("PRIOR", 1000,
+                          deaths=[{"name": "A", "role": "Caster", "total": 2, "trash": 1},
+                                  {"name": "B", "role": "Healer", "total": 6, "trash": 0}],
+                          avoid=[{"name": "A", "role": "Caster", "dmg": 40000}],
+                          drums=[{"name": "L", "casts": 5, "total": 10, "buffs": 30,
+                                  "buffs_per_drum": 3.0, "score": 30}])
+            _seed(dbp, prior)
+
+            # Current week: A died 1, C (new — no prior row) died 3 (Σ=4). True delta = 4−8 = −4;
+            # the per-player delta sum would be A's −1 only (C has no delta, B isn't here).
+            cur = _week("CUR", 2000,
+                        deaths=[{"name": "A", "role": "Caster", "total": 1, "trash": 0},
+                                {"name": "C", "role": "Physical", "total": 3, "trash": 2}])
+            out = enrich_with_trends(cur, dbp)
+
+            self.assertEqual(out["prev"]["totals"]["deaths"], 8)
+            self.assertEqual(out["prev"]["totals"]["avoidable"], 40000)
+            self.assertEqual(out["prev"]["totals"]["drums"], 10)
+            # Per-player deltas still only land on matched players (A), proving why the
+            # aggregate must NOT be built from them.
+            self.assertEqual(out["deaths"][0]["delta_deaths"], -1.0)     # A: 1 − 2
+            self.assertNotIn("delta_deaths", out["deaths"][1])           # C: no prior row
+
+    def test_sections_absent_last_week_are_omitted_from_totals(self):
+        with temp_db() as dbp:
+            # Prior week has deaths but NO avoidable/drums rows → SUM is NULL → key omitted
+            # (can't distinguish "no data" from a true zero, so no delta is the safe degrade).
+            _seed(dbp, _week("PRIOR", 1000,
+                             deaths=[{"name": "A", "role": "Caster", "total": 5, "trash": 0}]))
+            out = enrich_with_trends(_week("CUR", 2000, deaths=[]), dbp)
+            self.assertEqual(out["prev"]["totals"], {"deaths": 5})
 
 
 class TestNeverRaises(unittest.TestCase):
