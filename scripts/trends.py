@@ -237,6 +237,23 @@ def enrich_with_trends(week_data: dict, db_path) -> dict:
                 if b in prev_bt and meta.get("seconds") is not None:
                     meta["delta_seconds"] = round(meta["seconds"] - prev_bt[b], 1)
             prev_ctx = {"report_code": prev, "date": prev_date, "kills": prev_kills}
+            # Raid-level prior totals — power the aggregate "vs last week" deltas on the stat
+            # tiles / cohort cards as Σ(this week) − Σ(prev week). Summing the per-player
+            # delta_* fields there instead silently drops churn: a raider with no prior-week
+            # row carries no delta, and last week's dead who sat out this week aren't in this
+            # week's array at all (the Jul-13 deaths tile read +65 on a true +90).
+            def prev_sum(table, col):
+                try:
+                    r = con.execute(f"SELECT SUM({col}) FROM {table} WHERE report_code=?",
+                                    (prev,)).fetchone()
+                    return r[0] if r else None        # SUM over no rows → NULL → None
+                except sqlite3.OperationalError:
+                    return None                       # older DB without the table
+            prev_ctx["totals"] = {k: v for k, v in (
+                ("deaths",    prev_sum("deaths", "total")),
+                ("avoidable", prev_sum("avoidable_dmg", "dmg")),
+                ("drums",     prev_sum("drums", "total")),
+            ) if v is not None}
             if common:
                 prev_ctx["delta_kill_secs"] = round(
                     sum(cur_bt[b] for b in common) - sum(prev_bt[b] for b in common), 1)
