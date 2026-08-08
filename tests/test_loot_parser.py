@@ -3,8 +3,9 @@
 External, fragile input: CSV column drift + a raid-night date filter that matches awards to the WCL
 pull's LOCAL date, with a one-day adjacent fallback for ThatsBIS/runner timezone skew. Covers the
 loot_parser cases — exact-night parse, adjacent-night exclusion, the
-timezone fallback, the off-spec flag, item_id coercion, the missing-column guard, and the empty → {}
-(card hides) contract."""
+timezone fallback, the off-spec flag, item_id coercion, the missing-column guard, the empty → {}
+(card hides) contract, and the stale-export warning that separates "the CSV predates the raid" from
+"genuinely dry night" (both return {}, only one is actionable)."""
 import contextlib, csv, io, os, sys, tempfile, unittest
 from pathlib import Path
 
@@ -18,8 +19,15 @@ FIELDS = ["received_at", "character_name", "character_class", "item_id",
 def _parse(path, date):
     """parse_loot with stdout captured — its ⚠ warnings crash the cp1252 Windows console
     (the pipeline reconfigures stdout to UTF-8 via check.py:30; a bare unittest run doesn't)."""
-    with contextlib.redirect_stdout(io.StringIO()):
-        return parse_loot(path, date)
+    return _parse_out(path, date)[0]
+
+
+def _parse_out(path, date):
+    """As `_parse`, but also returns what it printed (the warnings are the contract under test)."""
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        out = parse_loot(path, date)
+    return out, buf.getvalue()
 
 
 def _row(name, item_id, when, *, cls="Warrior", item_name="Item", boss="Boss",
@@ -101,6 +109,34 @@ class TestParseLoot(unittest.TestCase):
     def test_no_matching_rows_returns_empty(self):
         path = self._csv([_row("Marvels", 30001, "2026-01-01 00:00:00")])  # far from any adjacent date
         self.assertEqual(_parse(path, "2026-06-08"), {})
+
+    def test_stale_export_warns(self):
+        # The whole ledger predates the raid → the CSV was exported before the night's loot was
+        # entered in ThatsBIS. Actionable, so it must say so rather than look like a dry night.
+        path = self._csv([_row("Marvels", 30001, "2026-07-27 00:00:00"),
+                          _row("Healz",   30002, "2026-07-20 00:00:00")])
+        out, printed = _parse_out(path, "2026-08-03")
+        self.assertEqual(out, {})
+        self.assertIn("STALE", printed)
+        self.assertIn("2026-07-27", printed)   # names the newest award it DOES have
+        self.assertIn("2026-08-03", printed)   # ...and the raid it was asked for
+
+    def test_dry_night_does_not_warn_stale(self):
+        # The ledger straddles the raid night but has nothing ON it — a real dry night, not a bad
+        # export. Still {}, but silent: a false "stale" cries wolf every week the raid drops nothing.
+        path = self._csv([_row("Marvels", 30001, "2026-06-01 00:00:00"),
+                          _row("Healz",   30002, "2026-06-15 00:00:00")])
+        out, printed = _parse_out(path, "2026-06-08")
+        self.assertEqual(out, {})
+        self.assertNotIn("STALE", printed)
+
+    def test_matched_night_never_warns_stale(self):
+        # Loot found for the night ⇒ nothing is stale, however old the rest of the ledger is.
+        path = self._csv([_row("Marvels", 30001, "2026-06-08 00:00:00"),
+                          _row("Olddrop", 29999, "2026-01-01 00:00:00")])
+        out, printed = _parse_out(path, "2026-06-08")
+        self.assertEqual(out["total"], 1)
+        self.assertNotIn("STALE", printed)
 
     def test_missing_column_header_returns_empty(self):
         # Drop a required column — every row becomes a silent no-op; the guard must bail, not pretend dry.
