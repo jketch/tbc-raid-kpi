@@ -8,11 +8,6 @@
     "log_missing": []
   },
   "roster": {
-    "Faeriefireqt": {
-      "class": "Druid",
-      "spec": "Warden",
-      "role": "Tank"
-    },
     "Dmbp": {
       "class": "Paladin",
       "spec": "Justicar",
@@ -23,22 +18,17 @@
       "spec": "Champion",
       "role": "Tank"
     },
-    "Wolly": {
+    "Faeriefireqt": {
       "class": "Druid",
-      "spec": "Restoration",
-      "role": "Healer"
+      "spec": "Warden",
+      "role": "Tank"
     },
-    "Shieldwagon": {
+    "Sweetheart": {
       "class": "Priest",
       "spec": "Holy",
       "role": "Healer"
     },
-    "Moojerked": {
-      "class": "Shaman",
-      "spec": "Restoration",
-      "role": "Healer"
-    },
-    "Sweetheart": {
+    "Shieldwagon": {
       "class": "Priest",
       "spec": "Holy",
       "role": "Healer"
@@ -48,40 +38,20 @@
       "spec": "Restoration",
       "role": "Healer"
     },
-    "Zetla": {
-      "class": "Mage",
-      "spec": "Arcane",
-      "role": "Caster"
+    "Moojerked": {
+      "class": "Shaman",
+      "spec": "Restoration",
+      "role": "Healer"
     },
-    "Skeptxo": {
-      "class": "Rogue",
-      "spec": "Combat",
-      "role": "Physical"
-    },
-    "Marvels": {
-      "class": "Warlock",
-      "spec": "Destruction",
-      "role": "Caster"
+    "Wolly": {
+      "class": "Druid",
+      "spec": "Restoration",
+      "role": "Healer"
     },
     "Blunderdin": {
       "class": "Paladin",
       "spec": "Retribution",
       "role": "Physical"
-    },
-    "Grabber": {
-      "class": "Warrior",
-      "spec": "Fury",
-      "role": "Physical"
-    },
-    "Shovelpriest": {
-      "class": "Priest",
-      "spec": "Shadow",
-      "role": "Caster"
-    },
-    "Xzanelol": {
-      "class": "Shaman",
-      "spec": "Elemental",
-      "role": "Caster"
     },
     "Cheesecurds": {
       "class": "Hunter",
@@ -93,24 +63,9 @@
       "spec": "Enhancement",
       "role": "Physical"
     },
-    "Cindybrooke": {
-      "class": "Rogue",
-      "spec": "Combat",
-      "role": "Physical"
-    },
-    "Zyph": {
-      "class": "Hunter",
-      "spec": "BeastMastery",
-      "role": "Physical"
-    },
-    "Philliam": {
-      "class": "Paladin",
-      "spec": "Retribution",
-      "role": "Physical"
-    },
-    "Seedemup": {
+    "Alldorin": {
       "class": "Warlock",
-      "spec": "Destruction",
+      "spec": "Affliction",
       "role": "Caster"
     },
     "Boogiez": {
@@ -118,20 +73,65 @@
       "spec": "Enhancement",
       "role": "Physical"
     },
-    "Alldorin": {
-      "class": "Warlock",
-      "spec": "Affliction",
+    "Philliam": {
+      "class": "Paladin",
+      "spec": "Retribution",
+      "role": "Physical"
+    },
+    "Shovelpriest": {
+      "class": "Priest",
+      "spec": "Shadow",
       "role": "Caster"
+    },
+    "Bahguul": {
+      "class": "Druid",
+      "spec": "Balance",
+      "role": "Caster"
+    },
+    "Zyph": {
+      "class": "Hunter",
+      "spec": "BeastMastery",
+      "role": "Physical"
+    },
+    "Grabber": {
+      "class": "Warrior",
+      "spec": "Fury",
+      "role": "Physical"
+    },
+    "Xzanelol": {
+      "class": "Shaman",
+      "spec": "Elemental",
+      "role": "Caster"
+    },
+    "Zetla": {
+      "class": "Mage",
+      "spec": "Arcane",
+      "role": "Caster"
+    },
+    "Skeptxo": {
+      "class": "Rogue",
+      "spec": "Combat",
+      "role": "Physical"
     },
     "Mmtoast": {
       "class": "Warrior",
       "spec": "Arms",
       "role": "Physical"
     },
-    "Bahguul": {
-      "class": "Druid",
-      "spec": "Balance",
+    "Marvels": {
+      "class": "Warlock",
+      "spec": "Destruction",
       "role": "Caster"
+    },
+    "Seedemup": {
+      "class": "Warlock",
+      "spec": "Destruction",
+      "role": "Caster"
+    },
+    "Cindybrooke": {
+      "class": "Rogue",
+      "spec": "Combat",
+      "role": "Physical"
     }
   },
   "consumables": [
@@ -11828,7 +11828,7 @@
       "fights_healed": 10,
       "fights_total": 10,
       "mana_eff": 6.2,
-      "vs_replacement": 89,
+      "vs_replacement": 88,
       "spells": [
         {
           "spell": "Circle of Healing",
@@ -12270,7 +12270,7 @@
         "Leotheras the Blind": 32,
         "Lady Vashj": 55
       },
-      "vs_replacement": 81,
+      "vs_replacement": 80,
       "survival": {
         "score": 85,
         "flags": [
@@ -12329,7 +12329,7 @@
         "Leotheras the Blind": 5,
         "Lady Vashj": 51
       },
-      "vs_replacement": 71,
+      "vs_replacement": 70,
       "survival": {
         "score": 40,
         "flags": [
@@ -12495,6 +12495,68 @@
     }
   ],
   "roleSpells": {
+    "Physical": [
+      {
+        "ability": "Melee",
+        "casts": 9864,
+        "players": 10
+      },
+      {
+        "ability": "Auto Shot",
+        "casts": 1491,
+        "players": 2
+      },
+      {
+        "ability": "Steady Shot",
+        "casts": 857,
+        "players": 2
+      },
+      {
+        "ability": "Stormstrike",
+        "casts": 538,
+        "players": 2
+      },
+      {
+        "ability": "Sinister Strike",
+        "casts": 485,
+        "players": 2
+      },
+      {
+        "ability": "Kill Command",
+        "casts": 453,
+        "players": 2
+      },
+      {
+        "ability": "Seal of Command",
+        "casts": 432,
+        "players": 2
+      },
+      {
+        "ability": "Seal of the Martyr",
+        "casts": 404,
+        "players": 2
+      },
+      {
+        "ability": "Heroic Strike",
+        "casts": 361,
+        "players": 1
+      },
+      {
+        "ability": "Crusader Strike",
+        "casts": 341,
+        "players": 2
+      },
+      {
+        "ability": "Windfury Totem",
+        "casts": 294,
+        "players": 2
+      },
+      {
+        "ability": "Judgment",
+        "casts": 287,
+        "players": 2
+      }
+    ],
     "Caster": [
       {
         "ability": "Shadow Bolt",
@@ -12619,68 +12681,6 @@
         "players": 1
       }
     ],
-    "Physical": [
-      {
-        "ability": "Melee",
-        "casts": 9864,
-        "players": 10
-      },
-      {
-        "ability": "Auto Shot",
-        "casts": 1491,
-        "players": 2
-      },
-      {
-        "ability": "Steady Shot",
-        "casts": 857,
-        "players": 2
-      },
-      {
-        "ability": "Stormstrike",
-        "casts": 538,
-        "players": 2
-      },
-      {
-        "ability": "Sinister Strike",
-        "casts": 485,
-        "players": 2
-      },
-      {
-        "ability": "Kill Command",
-        "casts": 453,
-        "players": 2
-      },
-      {
-        "ability": "Seal of Command",
-        "casts": 432,
-        "players": 2
-      },
-      {
-        "ability": "Seal of the Martyr",
-        "casts": 404,
-        "players": 2
-      },
-      {
-        "ability": "Heroic Strike",
-        "casts": 361,
-        "players": 1
-      },
-      {
-        "ability": "Crusader Strike",
-        "casts": 341,
-        "players": 2
-      },
-      {
-        "ability": "Windfury Totem",
-        "casts": 294,
-        "players": 2
-      },
-      {
-        "ability": "Judgment",
-        "casts": 287,
-        "players": 2
-      }
-    ],
     "Healer": [
       {
         "ability": "Flash Heal",
@@ -12745,350 +12745,6 @@
     ]
   },
   "playerSpells": {
-    "Caster": [
-      {
-        "name": "Zetla",
-        "role": "Caster",
-        "total": 1010,
-        "abilities": [
-          {
-            "ability": "Arcane Blast",
-            "casts": 859,
-            "icon": "spell_arcane_blast"
-          },
-          {
-            "ability": "Arcane Explosion",
-            "casts": 77,
-            "icon": "spell_nature_wispsplode"
-          },
-          {
-            "ability": "Fire Blast",
-            "casts": 38,
-            "icon": "spell_fire_fireball"
-          },
-          {
-            "ability": "Icy Veins",
-            "casts": 20,
-            "icon": "spell_frost_coldhearted"
-          },
-          {
-            "ability": "Blessing of the Silver Crescent",
-            "casts": 16,
-            "icon": "inv_trinket_naxxramas06"
-          }
-        ]
-      },
-      {
-        "name": "Xzanelol",
-        "role": "Caster",
-        "total": 815,
-        "abilities": [
-          {
-            "ability": "Lightning Bolt",
-            "casts": 586,
-            "icon": "spell_nature_lightning"
-          },
-          {
-            "ability": "Chain Lightning",
-            "casts": 106,
-            "icon": "spell_nature_chainlightning"
-          },
-          {
-            "ability": "Water Shield",
-            "casts": 66,
-            "icon": "ability_shaman_watershield"
-          },
-          {
-            "ability": "Frost Shock",
-            "casts": 24,
-            "icon": "spell_frost_frostshock"
-          },
-          {
-            "ability": "Flame Shock",
-            "casts": 21,
-            "icon": "spell_fire_flameshock"
-          },
-          {
-            "ability": "Melee",
-            "casts": 12,
-            "icon": "ability_meleedamage"
-          }
-        ]
-      },
-      {
-        "name": "Bahguul",
-        "role": "Caster",
-        "total": 729,
-        "abilities": [
-          {
-            "ability": "Starfire",
-            "casts": 340,
-            "icon": "spell_arcane_starfire"
-          },
-          {
-            "ability": "Moonfire",
-            "casts": 164,
-            "icon": "spell_nature_starfall"
-          },
-          {
-            "ability": "Insect Swarm",
-            "casts": 113,
-            "icon": "spell_nature_insectswarm"
-          },
-          {
-            "ability": "Faerie Fire",
-            "casts": 65,
-            "icon": "spell_nature_faeriefire"
-          },
-          {
-            "ability": "Wrath",
-            "casts": 47,
-            "icon": "spell_nature_abolishmagic"
-          }
-        ]
-      },
-      {
-        "name": "Alldorin",
-        "role": "Caster",
-        "total": 698,
-        "abilities": [
-          {
-            "ability": "Shadow Bolt",
-            "casts": 477,
-            "icon": "spell_shadow_shadowbolt"
-          },
-          {
-            "ability": "Corruption",
-            "casts": 84,
-            "icon": "spell_shadow_abominationexplosion"
-          },
-          {
-            "ability": "Life Tap",
-            "casts": 81,
-            "icon": "spell_shadow_burningspirit"
-          },
-          {
-            "ability": "Shadowburn",
-            "casts": 28,
-            "icon": "spell_shadow_scourgebuild"
-          },
-          {
-            "ability": "Curse of the Elements",
-            "casts": 28,
-            "icon": "spell_shadow_chilltouch"
-          }
-        ]
-      },
-      {
-        "name": "Shovelpriest",
-        "role": "Caster",
-        "total": 683,
-        "abilities": [
-          {
-            "ability": "Mind Flay",
-            "casts": 256,
-            "icon": "spell_shadow_siphonmana"
-          },
-          {
-            "ability": "Mind Blast",
-            "casts": 153,
-            "icon": "spell_shadow_unholyfrenzy"
-          },
-          {
-            "ability": "Vampiric Touch",
-            "casts": 130,
-            "icon": "spell_holy_stoicism"
-          },
-          {
-            "ability": "Shadow Word: Pain",
-            "casts": 89,
-            "icon": "spell_shadow_shadowwordpain"
-          },
-          {
-            "ability": "Shadow Word: Death",
-            "casts": 55,
-            "icon": "spell_shadow_demonicfortitude"
-          }
-        ]
-      },
-      {
-        "name": "Marvels",
-        "role": "Caster",
-        "total": 664,
-        "abilities": [
-          {
-            "ability": "Shadow Bolt",
-            "casts": 524,
-            "icon": "spell_shadow_shadowbolt"
-          },
-          {
-            "ability": "Life Tap",
-            "casts": 77,
-            "icon": "spell_shadow_burningspirit"
-          },
-          {
-            "ability": "Seed of Corruption",
-            "casts": 26,
-            "icon": "spell_shadow_seedofdestruction"
-          },
-          {
-            "ability": "Shadowburn",
-            "casts": 19,
-            "icon": "spell_shadow_scourgebuild"
-          },
-          {
-            "ability": "Curse of Recklessness",
-            "casts": 18,
-            "icon": "spell_shadow_unholystrength"
-          }
-        ]
-      },
-      {
-        "name": "Seedemup",
-        "role": "Caster",
-        "total": 658,
-        "abilities": [
-          {
-            "ability": "Shadow Bolt",
-            "casts": 521,
-            "icon": "spell_shadow_shadowbolt"
-          },
-          {
-            "ability": "Life Tap",
-            "casts": 74,
-            "icon": "spell_shadow_burningspirit"
-          },
-          {
-            "ability": "Seed of Corruption",
-            "casts": 25,
-            "icon": "spell_shadow_seedofdestruction"
-          },
-          {
-            "ability": "Searing Pain",
-            "casts": 20,
-            "icon": "spell_fire_soulburn"
-          },
-          {
-            "ability": "Shadowburn",
-            "casts": 18,
-            "icon": "spell_shadow_scourgebuild"
-          }
-        ]
-      }
-    ],
-    "Tank": [
-      {
-        "name": "Areso",
-        "role": "Tank",
-        "total": 1786,
-        "abilities": [
-          {
-            "ability": "Melee",
-            "casts": 975,
-            "icon": "ability_meleedamage"
-          },
-          {
-            "ability": "Heroic Strike",
-            "casts": 390,
-            "icon": "ability_rogue_ambush"
-          },
-          {
-            "ability": "Bloodthirst",
-            "casts": 175,
-            "icon": "spell_nature_bloodlust"
-          },
-          {
-            "ability": "Hamstring",
-            "casts": 106,
-            "icon": "ability_shockwave"
-          },
-          {
-            "ability": "Whirlwind",
-            "casts": 99,
-            "icon": "ability_gouge"
-          },
-          {
-            "ability": "Cleave",
-            "casts": 41,
-            "icon": "ability_warrior_cleave"
-          }
-        ]
-      },
-      {
-        "name": "Faeriefireqt",
-        "role": "Tank",
-        "total": 1474,
-        "abilities": [
-          {
-            "ability": "Melee",
-            "casts": 548,
-            "icon": "ability_meleedamage"
-          },
-          {
-            "ability": "Maul",
-            "casts": 272,
-            "icon": "ability_druid_maul"
-          },
-          {
-            "ability": "Lacerate",
-            "casts": 242,
-            "icon": "ability_druid_lacerate"
-          },
-          {
-            "ability": "Mangle (Bear)",
-            "casts": 167,
-            "icon": "ability_druid_mangle2"
-          },
-          {
-            "ability": "Swipe (Bear)",
-            "casts": 144,
-            "icon": "inv_misc_monsterclaw_03"
-          },
-          {
-            "ability": "Shred",
-            "casts": 101,
-            "icon": "spell_shadow_vampiricaura"
-          }
-        ]
-      },
-      {
-        "name": "Dmbp",
-        "role": "Tank",
-        "total": 1457,
-        "abilities": [
-          {
-            "ability": "Melee",
-            "casts": 872,
-            "icon": "ability_meleedamage"
-          },
-          {
-            "ability": "Seal of Righteousness",
-            "casts": 190,
-            "icon": "ability_thunderbolt"
-          },
-          {
-            "ability": "Judgment",
-            "casts": 169,
-            "icon": "spell_holy_righteousfury"
-          },
-          {
-            "ability": "Consecration",
-            "casts": 127,
-            "icon": "spell_holy_innerfire"
-          },
-          {
-            "ability": "Holy Shield",
-            "casts": 80,
-            "icon": "classic_spell_holy_blessingofprotection"
-          },
-          {
-            "ability": "Hammer of Wrath",
-            "casts": 19,
-            "icon": "ability_thunderclap"
-          }
-        ]
-      }
-    ],
     "Physical": [
       {
         "name": "Cindybrooke",
@@ -13451,6 +13107,350 @@
         ]
       }
     ],
+    "Caster": [
+      {
+        "name": "Zetla",
+        "role": "Caster",
+        "total": 1010,
+        "abilities": [
+          {
+            "ability": "Arcane Blast",
+            "casts": 859,
+            "icon": "spell_arcane_blast"
+          },
+          {
+            "ability": "Arcane Explosion",
+            "casts": 77,
+            "icon": "spell_nature_wispsplode"
+          },
+          {
+            "ability": "Fire Blast",
+            "casts": 38,
+            "icon": "spell_fire_fireball"
+          },
+          {
+            "ability": "Icy Veins",
+            "casts": 20,
+            "icon": "spell_frost_coldhearted"
+          },
+          {
+            "ability": "Blessing of the Silver Crescent",
+            "casts": 16,
+            "icon": "inv_trinket_naxxramas06"
+          }
+        ]
+      },
+      {
+        "name": "Xzanelol",
+        "role": "Caster",
+        "total": 815,
+        "abilities": [
+          {
+            "ability": "Lightning Bolt",
+            "casts": 586,
+            "icon": "spell_nature_lightning"
+          },
+          {
+            "ability": "Chain Lightning",
+            "casts": 106,
+            "icon": "spell_nature_chainlightning"
+          },
+          {
+            "ability": "Water Shield",
+            "casts": 66,
+            "icon": "ability_shaman_watershield"
+          },
+          {
+            "ability": "Frost Shock",
+            "casts": 24,
+            "icon": "spell_frost_frostshock"
+          },
+          {
+            "ability": "Flame Shock",
+            "casts": 21,
+            "icon": "spell_fire_flameshock"
+          },
+          {
+            "ability": "Melee",
+            "casts": 12,
+            "icon": "ability_meleedamage"
+          }
+        ]
+      },
+      {
+        "name": "Bahguul",
+        "role": "Caster",
+        "total": 729,
+        "abilities": [
+          {
+            "ability": "Starfire",
+            "casts": 340,
+            "icon": "spell_arcane_starfire"
+          },
+          {
+            "ability": "Moonfire",
+            "casts": 164,
+            "icon": "spell_nature_starfall"
+          },
+          {
+            "ability": "Insect Swarm",
+            "casts": 113,
+            "icon": "spell_nature_insectswarm"
+          },
+          {
+            "ability": "Faerie Fire",
+            "casts": 65,
+            "icon": "spell_nature_faeriefire"
+          },
+          {
+            "ability": "Wrath",
+            "casts": 47,
+            "icon": "spell_nature_abolishmagic"
+          }
+        ]
+      },
+      {
+        "name": "Alldorin",
+        "role": "Caster",
+        "total": 698,
+        "abilities": [
+          {
+            "ability": "Shadow Bolt",
+            "casts": 477,
+            "icon": "spell_shadow_shadowbolt"
+          },
+          {
+            "ability": "Corruption",
+            "casts": 84,
+            "icon": "spell_shadow_abominationexplosion"
+          },
+          {
+            "ability": "Life Tap",
+            "casts": 81,
+            "icon": "spell_shadow_burningspirit"
+          },
+          {
+            "ability": "Curse of the Elements",
+            "casts": 28,
+            "icon": "spell_shadow_chilltouch"
+          },
+          {
+            "ability": "Shadowburn",
+            "casts": 28,
+            "icon": "spell_shadow_scourgebuild"
+          }
+        ]
+      },
+      {
+        "name": "Shovelpriest",
+        "role": "Caster",
+        "total": 683,
+        "abilities": [
+          {
+            "ability": "Mind Flay",
+            "casts": 256,
+            "icon": "spell_shadow_siphonmana"
+          },
+          {
+            "ability": "Mind Blast",
+            "casts": 153,
+            "icon": "spell_shadow_unholyfrenzy"
+          },
+          {
+            "ability": "Vampiric Touch",
+            "casts": 130,
+            "icon": "spell_holy_stoicism"
+          },
+          {
+            "ability": "Shadow Word: Pain",
+            "casts": 89,
+            "icon": "spell_shadow_shadowwordpain"
+          },
+          {
+            "ability": "Shadow Word: Death",
+            "casts": 55,
+            "icon": "spell_shadow_demonicfortitude"
+          }
+        ]
+      },
+      {
+        "name": "Marvels",
+        "role": "Caster",
+        "total": 664,
+        "abilities": [
+          {
+            "ability": "Shadow Bolt",
+            "casts": 524,
+            "icon": "spell_shadow_shadowbolt"
+          },
+          {
+            "ability": "Life Tap",
+            "casts": 77,
+            "icon": "spell_shadow_burningspirit"
+          },
+          {
+            "ability": "Seed of Corruption",
+            "casts": 26,
+            "icon": "spell_shadow_seedofdestruction"
+          },
+          {
+            "ability": "Shadowburn",
+            "casts": 19,
+            "icon": "spell_shadow_scourgebuild"
+          },
+          {
+            "ability": "Curse of Recklessness",
+            "casts": 18,
+            "icon": "spell_shadow_unholystrength"
+          }
+        ]
+      },
+      {
+        "name": "Seedemup",
+        "role": "Caster",
+        "total": 658,
+        "abilities": [
+          {
+            "ability": "Shadow Bolt",
+            "casts": 521,
+            "icon": "spell_shadow_shadowbolt"
+          },
+          {
+            "ability": "Life Tap",
+            "casts": 74,
+            "icon": "spell_shadow_burningspirit"
+          },
+          {
+            "ability": "Seed of Corruption",
+            "casts": 25,
+            "icon": "spell_shadow_seedofdestruction"
+          },
+          {
+            "ability": "Searing Pain",
+            "casts": 20,
+            "icon": "spell_fire_soulburn"
+          },
+          {
+            "ability": "Shadowburn",
+            "casts": 18,
+            "icon": "spell_shadow_scourgebuild"
+          }
+        ]
+      }
+    ],
+    "Tank": [
+      {
+        "name": "Areso",
+        "role": "Tank",
+        "total": 1786,
+        "abilities": [
+          {
+            "ability": "Melee",
+            "casts": 975,
+            "icon": "ability_meleedamage"
+          },
+          {
+            "ability": "Heroic Strike",
+            "casts": 390,
+            "icon": "ability_rogue_ambush"
+          },
+          {
+            "ability": "Bloodthirst",
+            "casts": 175,
+            "icon": "spell_nature_bloodlust"
+          },
+          {
+            "ability": "Hamstring",
+            "casts": 106,
+            "icon": "ability_shockwave"
+          },
+          {
+            "ability": "Whirlwind",
+            "casts": 99,
+            "icon": "ability_gouge"
+          },
+          {
+            "ability": "Cleave",
+            "casts": 41,
+            "icon": "ability_warrior_cleave"
+          }
+        ]
+      },
+      {
+        "name": "Faeriefireqt",
+        "role": "Tank",
+        "total": 1474,
+        "abilities": [
+          {
+            "ability": "Melee",
+            "casts": 548,
+            "icon": "ability_meleedamage"
+          },
+          {
+            "ability": "Maul",
+            "casts": 272,
+            "icon": "ability_druid_maul"
+          },
+          {
+            "ability": "Lacerate",
+            "casts": 242,
+            "icon": "ability_druid_lacerate"
+          },
+          {
+            "ability": "Mangle (Bear)",
+            "casts": 167,
+            "icon": "ability_druid_mangle2"
+          },
+          {
+            "ability": "Swipe (Bear)",
+            "casts": 144,
+            "icon": "inv_misc_monsterclaw_03"
+          },
+          {
+            "ability": "Shred",
+            "casts": 101,
+            "icon": "spell_shadow_vampiricaura"
+          }
+        ]
+      },
+      {
+        "name": "Dmbp",
+        "role": "Tank",
+        "total": 1457,
+        "abilities": [
+          {
+            "ability": "Melee",
+            "casts": 872,
+            "icon": "ability_meleedamage"
+          },
+          {
+            "ability": "Seal of Righteousness",
+            "casts": 190,
+            "icon": "ability_thunderbolt"
+          },
+          {
+            "ability": "Judgment",
+            "casts": 169,
+            "icon": "spell_holy_righteousfury"
+          },
+          {
+            "ability": "Consecration",
+            "casts": 127,
+            "icon": "spell_holy_innerfire"
+          },
+          {
+            "ability": "Holy Shield",
+            "casts": 80,
+            "icon": "classic_spell_holy_blessingofprotection"
+          },
+          {
+            "ability": "Hammer of Wrath",
+            "casts": 19,
+            "icon": "ability_thunderclap"
+          }
+        ]
+      }
+    ],
     "Healer": [
       {
         "name": "Sweetheart",
@@ -13584,9 +13584,9 @@
             "icon": "spell_nature_skinofearth"
           },
           {
-            "ability": "Ancestral Swiftness",
+            "ability": "Mana Spring Totem",
             "casts": 11,
-            "icon": "spell_shaman_elementaloath"
+            "icon": "spell_nature_manaregentotem"
           }
         ]
       },
@@ -13616,9 +13616,9 @@
             "icon": "spell_nature_healingwavegreater"
           },
           {
-            "ability": "Wrath of Air Totem",
+            "ability": "Mana Spring Totem",
             "casts": 19,
-            "icon": "spell_nature_slowingtotem"
+            "icon": "spell_nature_manaregentotem"
           }
         ]
       }
@@ -16932,206 +16932,6 @@
       ]
     },
     {
-      "name": "Marvels",
-      "role": "Caster",
-      "total": 3,
-      "trash": 1,
-      "recap": [
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 2780,
-          "overkill": 1227,
-          "window_dmg": 10037,
-          "window_heal": 985,
-          "window_s": 14.0,
-          "timeline": [
-            {
-              "t": -10.7,
-              "type": "dmg",
-              "amt": 3044,
-              "over": 0,
-              "ability": "Shoot",
-              "src": "Tempest Falconer"
-            },
-            {
-              "t": -7.4,
-              "type": "dmg",
-              "amt": 2986,
-              "over": 0,
-              "ability": "Shoot",
-              "src": "Tempest Falconer"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 2780,
-              "over": 1227,
-              "ability": "Melee",
-              "src": "Phoenix-Hawk Hatchling",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Kael'thas Sunstrider",
-          "killer": "Melee",
-          "amount": 11989,
-          "overkill": 1189,
-          "window_dmg": 13178,
-          "window_heal": 0,
-          "window_s": 0.0,
-          "timeline": [
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 11989,
-              "over": 1189,
-              "ability": "Melee",
-              "src": "Kael'thas Sunstrider",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Lady Vashj",
-          "killer": "Shoot",
-          "amount": 11011,
-          "overkill": 2571,
-          "window_dmg": 13582,
-          "window_heal": 0,
-          "window_s": 0.0,
-          "timeline": [
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 11011,
-              "over": 2571,
-              "ability": "Shoot",
-              "src": "Lady Vashj",
-              "killing": true
-            }
-          ],
-          "hp_timeline": [
-            {
-              "t": -0.0,
-              "hp": 0,
-              "kind": "dmg",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Cindybrooke",
-      "role": "Physical",
-      "total": 3,
-      "trash": 3,
-      "recap": [
-        {
-          "boss": "Trash",
-          "killer": "Sweeping Strikes",
-          "amount": 2183,
-          "overkill": 164,
-          "window_dmg": 10782,
-          "window_heal": 0,
-          "window_s": 1.9,
-          "timeline": [
-            {
-              "t": -0.0,
-              "type": "dmg",
-              "amt": 1077,
-              "over": 0,
-              "ability": "Sweeping Strikes",
-              "src": "Mmtoast"
-            },
-            {
-              "t": -0.0,
-              "type": "dmg",
-              "amt": 880,
-              "over": 0,
-              "ability": "Sweeping Strikes",
-              "src": "Mmtoast"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 2183,
-              "over": 164,
-              "ability": "Sweeping Strikes",
-              "src": "Mmtoast",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 1972,
-          "overkill": 1048,
-          "window_dmg": 11999,
-          "window_heal": 2277,
-          "window_s": 11.1,
-          "timeline": [
-            {
-              "t": -6.0,
-              "type": "dmg",
-              "amt": 2277,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Phoenix-Hawk Hatchling"
-            },
-            {
-              "t": -4.0,
-              "type": "dmg",
-              "amt": 2952,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Phoenix-Hawk Hatchling"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 1972,
-              "over": 1048,
-              "ability": "Melee",
-              "src": "Phoenix-Hawk Hatchling",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Trash",
-          "killer": "Whirlwind",
-          "amount": 4889,
-          "overkill": 734,
-          "window_dmg": 11348,
-          "window_heal": 0,
-          "window_s": 1.0,
-          "timeline": [
-            {
-              "t": -1.0,
-              "type": "dmg",
-              "amt": 5725,
-              "over": 0,
-              "ability": "Whirlwind",
-              "src": "Bloodwarder Marshal"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 4889,
-              "over": 734,
-              "ability": "Whirlwind",
-              "src": "Bloodwarder Marshal",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
       "name": "Philliam",
       "role": "Physical",
       "total": 3,
@@ -17361,6 +17161,206 @@
       ]
     },
     {
+      "name": "Marvels",
+      "role": "Caster",
+      "total": 3,
+      "trash": 1,
+      "recap": [
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 2780,
+          "overkill": 1227,
+          "window_dmg": 10037,
+          "window_heal": 985,
+          "window_s": 14.0,
+          "timeline": [
+            {
+              "t": -10.7,
+              "type": "dmg",
+              "amt": 3044,
+              "over": 0,
+              "ability": "Shoot",
+              "src": "Tempest Falconer"
+            },
+            {
+              "t": -7.4,
+              "type": "dmg",
+              "amt": 2986,
+              "over": 0,
+              "ability": "Shoot",
+              "src": "Tempest Falconer"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 2780,
+              "over": 1227,
+              "ability": "Melee",
+              "src": "Phoenix-Hawk Hatchling",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Kael'thas Sunstrider",
+          "killer": "Melee",
+          "amount": 11989,
+          "overkill": 1189,
+          "window_dmg": 13178,
+          "window_heal": 0,
+          "window_s": 0.0,
+          "timeline": [
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 11989,
+              "over": 1189,
+              "ability": "Melee",
+              "src": "Kael'thas Sunstrider",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Lady Vashj",
+          "killer": "Shoot",
+          "amount": 11011,
+          "overkill": 2571,
+          "window_dmg": 13582,
+          "window_heal": 0,
+          "window_s": 0.0,
+          "timeline": [
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 11011,
+              "over": 2571,
+              "ability": "Shoot",
+              "src": "Lady Vashj",
+              "killing": true
+            }
+          ],
+          "hp_timeline": [
+            {
+              "t": -0.0,
+              "hp": 0,
+              "kind": "dmg",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cindybrooke",
+      "role": "Physical",
+      "total": 3,
+      "trash": 3,
+      "recap": [
+        {
+          "boss": "Trash",
+          "killer": "Sweeping Strikes",
+          "amount": 2183,
+          "overkill": 164,
+          "window_dmg": 10782,
+          "window_heal": 0,
+          "window_s": 1.9,
+          "timeline": [
+            {
+              "t": -0.0,
+              "type": "dmg",
+              "amt": 1077,
+              "over": 0,
+              "ability": "Sweeping Strikes",
+              "src": "Mmtoast"
+            },
+            {
+              "t": -0.0,
+              "type": "dmg",
+              "amt": 880,
+              "over": 0,
+              "ability": "Sweeping Strikes",
+              "src": "Mmtoast"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 2183,
+              "over": 164,
+              "ability": "Sweeping Strikes",
+              "src": "Mmtoast",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 1972,
+          "overkill": 1048,
+          "window_dmg": 11999,
+          "window_heal": 2277,
+          "window_s": 11.1,
+          "timeline": [
+            {
+              "t": -6.0,
+              "type": "dmg",
+              "amt": 2277,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Phoenix-Hawk Hatchling"
+            },
+            {
+              "t": -4.0,
+              "type": "dmg",
+              "amt": 2952,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Phoenix-Hawk Hatchling"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 1972,
+              "over": 1048,
+              "ability": "Melee",
+              "src": "Phoenix-Hawk Hatchling",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Trash",
+          "killer": "Whirlwind",
+          "amount": 4889,
+          "overkill": 734,
+          "window_dmg": 11348,
+          "window_heal": 0,
+          "window_s": 1.0,
+          "timeline": [
+            {
+              "t": -1.0,
+              "type": "dmg",
+              "amt": 5725,
+              "over": 0,
+              "ability": "Whirlwind",
+              "src": "Bloodwarder Marshal"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 4889,
+              "over": 734,
+              "ability": "Whirlwind",
+              "src": "Bloodwarder Marshal",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Faeriefireqt",
       "role": "Tank",
       "total": 2,
@@ -17558,78 +17558,6 @@
       ]
     },
     {
-      "name": "Seedemup",
-      "role": "Caster",
-      "total": 2,
-      "trash": 1,
-      "recap": [
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 3259,
-          "overkill": 1720,
-          "window_dmg": 13496,
-          "window_heal": 4794,
-          "window_s": 12.6,
-          "timeline": [
-            {
-              "t": -2.2,
-              "type": "dmg",
-              "amt": 258,
-              "over": 0,
-              "ability": "Fire Shield",
-              "src": "Tempest Falconer"
-            },
-            {
-              "t": -2.0,
-              "type": "dmg",
-              "amt": 4960,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Tempest Falconer"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 3259,
-              "over": 1720,
-              "ability": "Melee",
-              "src": "Tempest Falconer",
-              "killing": true
-            }
-          ]
-        },
-        {
-          "boss": "Leotheras the Blind",
-          "killer": "Melee",
-          "amount": 7228,
-          "overkill": 1843,
-          "window_dmg": 12462,
-          "window_heal": 0,
-          "window_s": 0.6,
-          "timeline": [
-            {
-              "t": -0.6,
-              "type": "dmg",
-              "amt": 3391,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Leotheras the Blind"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 7228,
-              "over": 1843,
-              "ability": "Melee",
-              "src": "Leotheras the Blind",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
       "name": "Mmtoast",
       "role": "Physical",
       "total": 2,
@@ -17763,6 +17691,78 @@
       ]
     },
     {
+      "name": "Seedemup",
+      "role": "Caster",
+      "total": 2,
+      "trash": 1,
+      "recap": [
+        {
+          "boss": "Trash",
+          "killer": "Melee",
+          "amount": 3259,
+          "overkill": 1720,
+          "window_dmg": 13496,
+          "window_heal": 4794,
+          "window_s": 12.6,
+          "timeline": [
+            {
+              "t": -2.2,
+              "type": "dmg",
+              "amt": 258,
+              "over": 0,
+              "ability": "Fire Shield",
+              "src": "Tempest Falconer"
+            },
+            {
+              "t": -2.0,
+              "type": "dmg",
+              "amt": 4960,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Tempest Falconer"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 3259,
+              "over": 1720,
+              "ability": "Melee",
+              "src": "Tempest Falconer",
+              "killing": true
+            }
+          ]
+        },
+        {
+          "boss": "Leotheras the Blind",
+          "killer": "Melee",
+          "amount": 7228,
+          "overkill": 1843,
+          "window_dmg": 12462,
+          "window_heal": 0,
+          "window_s": 0.6,
+          "timeline": [
+            {
+              "t": -0.6,
+              "type": "dmg",
+              "amt": 3391,
+              "over": 0,
+              "ability": "Melee",
+              "src": "Leotheras the Blind"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 7228,
+              "over": 1843,
+              "ability": "Melee",
+              "src": "Leotheras the Blind",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Dmbp",
       "role": "Tank",
       "total": 1,
@@ -17844,50 +17844,6 @@
               "over": 2354,
               "ability": "Flame Patch",
               "src": "—",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Moojerked",
-      "role": "Healer",
-      "total": 1,
-      "trash": 1,
-      "recap": [
-        {
-          "boss": "Trash",
-          "killer": "Melee",
-          "amount": 2997,
-          "overkill": 1080,
-          "window_dmg": 31978,
-          "window_heal": 20109,
-          "window_s": 14.1,
-          "timeline": [
-            {
-              "t": -2.0,
-              "type": "dmg",
-              "amt": 4589,
-              "over": 0,
-              "ability": "Melee",
-              "src": "Coilfang Serpentguard"
-            },
-            {
-              "t": -0.8,
-              "type": "dmg",
-              "amt": 1829,
-              "over": 0,
-              "ability": "Seed of Corruption",
-              "src": "Seedemup"
-            },
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 2997,
-              "over": 1080,
-              "ability": "Melee",
-              "src": "Coilfang Serpentguard",
               "killing": true
             }
           ]
@@ -18022,71 +17978,43 @@
       ]
     },
     {
-      "name": "Zetla",
-      "role": "Caster",
-      "total": 1,
-      "trash": 0,
-      "recap": [
-        {
-          "boss": "Al'ar",
-          "killer": "Melee",
-          "amount": 9063,
-          "overkill": 1321,
-          "window_dmg": 10661,
-          "window_heal": 0,
-          "window_s": 0.0,
-          "timeline": [
-            {
-              "t": 0.0,
-              "type": "dmg",
-              "amt": 9063,
-              "over": 1321,
-              "ability": "Melee",
-              "src": "Al'ar",
-              "killing": true
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Skeptxo",
-      "role": "Physical",
+      "name": "Moojerked",
+      "role": "Healer",
       "total": 1,
       "trash": 1,
       "recap": [
         {
           "boss": "Trash",
-          "killer": "Seed of Corruption",
-          "amount": 986,
-          "overkill": 1854,
-          "window_dmg": 16795,
-          "window_heal": 0,
-          "window_s": 5.0,
+          "killer": "Melee",
+          "amount": 2997,
+          "overkill": 1080,
+          "window_dmg": 31978,
+          "window_heal": 20109,
+          "window_s": 14.1,
           "timeline": [
             {
-              "t": -0.2,
+              "t": -2.0,
               "type": "dmg",
-              "amt": 1714,
+              "amt": 4589,
               "over": 0,
-              "ability": "Cleave",
-              "src": "Areso"
+              "ability": "Melee",
+              "src": "Coilfang Serpentguard"
             },
             {
-              "t": -0.1,
+              "t": -0.8,
               "type": "dmg",
-              "amt": 188,
+              "amt": 1829,
               "over": 0,
-              "ability": "Consecration",
-              "src": "Dmbp"
+              "ability": "Seed of Corruption",
+              "src": "Seedemup"
             },
             {
               "t": 0.0,
               "type": "dmg",
-              "amt": 986,
-              "over": 1854,
-              "ability": "Seed of Corruption",
-              "src": "Seedemup",
+              "amt": 2997,
+              "over": 1080,
+              "ability": "Melee",
+              "src": "Coilfang Serpentguard",
               "killing": true
             }
           ]
@@ -18094,27 +18022,63 @@
       ]
     },
     {
-      "name": "Grabber",
-      "role": "Physical",
+      "name": "Alldorin",
+      "role": "Caster",
       "total": 1,
       "trash": 0,
       "recap": [
         {
-          "boss": "Kael'thas Sunstrider",
+          "boss": "Leotheras the Blind",
           "killer": "Melee",
-          "amount": 11484,
-          "overkill": 1523,
-          "window_dmg": 13007,
+          "amount": 10470,
+          "overkill": 3074,
+          "window_dmg": 13544,
           "window_heal": 0,
           "window_s": 0.0,
           "timeline": [
             {
               "t": 0.0,
               "type": "dmg",
-              "amt": 11484,
-              "over": 1523,
+              "amt": 10470,
+              "over": 3074,
               "ability": "Melee",
-              "src": "Thaladred the Darkener",
+              "src": "Leotheras the Blind",
+              "killing": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Bahguul",
+      "role": "Caster",
+      "total": 1,
+      "trash": 0,
+      "recap": [
+        {
+          "boss": "Fathom-Lord Karathress",
+          "killer": "Cataclysmic Bolt",
+          "amount": 10924,
+          "overkill": 792,
+          "window_dmg": 11716,
+          "window_heal": 0,
+          "window_s": 0.0,
+          "timeline": [
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 10924,
+              "over": 792,
+              "ability": "Cataclysmic Bolt",
+              "src": "Fathom-Lord Karathress",
+              "killing": true
+            }
+          ],
+          "hp_timeline": [
+            {
+              "t": -0.0,
+              "hp": 0,
+              "kind": "dmg",
               "killing": true
             }
           ]
@@ -18199,27 +18163,27 @@
       ]
     },
     {
-      "name": "Alldorin",
-      "role": "Caster",
+      "name": "Grabber",
+      "role": "Physical",
       "total": 1,
       "trash": 0,
       "recap": [
         {
-          "boss": "Leotheras the Blind",
+          "boss": "Kael'thas Sunstrider",
           "killer": "Melee",
-          "amount": 10470,
-          "overkill": 3074,
-          "window_dmg": 13544,
+          "amount": 11484,
+          "overkill": 1523,
+          "window_dmg": 13007,
           "window_heal": 0,
           "window_s": 0.0,
           "timeline": [
             {
               "t": 0.0,
               "type": "dmg",
-              "amt": 10470,
-              "over": 3074,
+              "amt": 11484,
+              "over": 1523,
               "ability": "Melee",
-              "src": "Leotheras the Blind",
+              "src": "Thaladred the Darkener",
               "killing": true
             }
           ]
@@ -18227,35 +18191,71 @@
       ]
     },
     {
-      "name": "Bahguul",
+      "name": "Zetla",
       "role": "Caster",
       "total": 1,
       "trash": 0,
       "recap": [
         {
-          "boss": "Fathom-Lord Karathress",
-          "killer": "Cataclysmic Bolt",
-          "amount": 10924,
-          "overkill": 792,
-          "window_dmg": 11716,
+          "boss": "Al'ar",
+          "killer": "Melee",
+          "amount": 9063,
+          "overkill": 1321,
+          "window_dmg": 10661,
           "window_heal": 0,
           "window_s": 0.0,
           "timeline": [
             {
               "t": 0.0,
               "type": "dmg",
-              "amt": 10924,
-              "over": 792,
-              "ability": "Cataclysmic Bolt",
-              "src": "Fathom-Lord Karathress",
+              "amt": 9063,
+              "over": 1321,
+              "ability": "Melee",
+              "src": "Al'ar",
               "killing": true
             }
-          ],
-          "hp_timeline": [
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Skeptxo",
+      "role": "Physical",
+      "total": 1,
+      "trash": 1,
+      "recap": [
+        {
+          "boss": "Trash",
+          "killer": "Seed of Corruption",
+          "amount": 986,
+          "overkill": 1854,
+          "window_dmg": 16795,
+          "window_heal": 0,
+          "window_s": 5.0,
+          "timeline": [
             {
-              "t": -0.0,
-              "hp": 0,
-              "kind": "dmg",
+              "t": -0.2,
+              "type": "dmg",
+              "amt": 1714,
+              "over": 0,
+              "ability": "Cleave",
+              "src": "Areso"
+            },
+            {
+              "t": -0.1,
+              "type": "dmg",
+              "amt": 188,
+              "over": 0,
+              "ability": "Consecration",
+              "src": "Dmbp"
+            },
+            {
+              "t": 0.0,
+              "type": "dmg",
+              "amt": 986,
+              "over": 1854,
+              "ability": "Seed of Corruption",
+              "src": "Seedemup",
               "killing": true
             }
           ]
@@ -18696,28 +18696,6 @@
       "luck": 0.1
     },
     {
-      "name": "Seedemup",
-      "role": "Caster",
-      "actual": 32.2,
-      "expected": 30.57,
-      "baseline": 32.6,
-      "weeks": 8,
-      "std": 3.4,
-      "series": [
-        38.0,
-        30.3,
-        32.7,
-        35.7,
-        32.5,
-        28.0,
-        28.2,
-        35.1,
-        32.2
-      ],
-      "prev": 35.1,
-      "luck": -0.4
-    },
-    {
       "name": "Mmtoast",
       "role": "Physical",
       "actual": 43.8,
@@ -18737,6 +18715,28 @@
         43.8
       ],
       "prev": 43.9,
+      "luck": -0.4
+    },
+    {
+      "name": "Seedemup",
+      "role": "Caster",
+      "actual": 32.2,
+      "expected": 30.57,
+      "baseline": 32.6,
+      "weeks": 8,
+      "std": 3.4,
+      "series": [
+        38.0,
+        30.3,
+        32.7,
+        35.7,
+        32.5,
+        28.0,
+        28.2,
+        35.1,
+        32.2
+      ],
+      "prev": 35.1,
       "luck": -0.4
     },
     {
@@ -21472,13 +21472,33 @@
   "gearAudit": {
     "players": [
       {
-        "name": "Marvels",
-        "ilvl": 122,
+        "name": "Boogiez",
+        "ilvl": 126,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
-        "gems_filled": 15,
-        "sockets_total": 15,
+        "gems_filled": 13,
+        "sockets_total": 13,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Philliam",
+        "ilvl": 119,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 11,
+        "sockets_total": 11,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Bahguul",
+        "ilvl": 126,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 11,
+        "sockets_total": 11,
         "empty_sockets": 0
       },
       {
@@ -21489,16 +21509,6 @@
         "missing_enchants": [],
         "gems_filled": 9,
         "sockets_total": 9,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Blunderdin",
-        "ilvl": 122,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 13,
-        "sockets_total": 13,
         "empty_sockets": 0
       },
       {
@@ -21515,28 +21525,20 @@
         "empty_sockets": 0
       },
       {
-        "name": "Cheesecurds",
-        "ilvl": 129,
-        "ench_ok": 9,
+        "name": "Grabber",
+        "ilvl": 117,
+        "ench_ok": 8,
         "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 18,
-        "sockets_total": 18,
+        "missing_enchants": [
+          "Feet"
+        ],
+        "gems_filled": 16,
+        "sockets_total": 16,
         "empty_sockets": 0
       },
       {
-        "name": "Dmbp",
-        "ilvl": 125,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 12,
-        "sockets_total": 12,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Alldorin",
-        "ilvl": 125,
+        "name": "Sweetheart",
+        "ilvl": 128,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
@@ -21555,13 +21557,115 @@
         "empty_sockets": 0
       },
       {
-        "name": "Bahguul",
+        "name": "Areso",
+        "ilvl": 128,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 15,
+        "sockets_total": 15,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Moojerked",
         "ilvl": 126,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
         "gems_filled": 11,
         "sockets_total": 11,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Blunderdin",
+        "ilvl": 122,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 13,
+        "sockets_total": 13,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Cheesecurds",
+        "ilvl": 129,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 18,
+        "sockets_total": 18,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Juricc",
+        "ilvl": 128,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 11,
+        "sockets_total": 11,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Alldorin",
+        "ilvl": 125,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 12,
+        "sockets_total": 12,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Shieldwagon",
+        "ilvl": 128,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 12,
+        "sockets_total": 12,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Shovelpriest",
+        "ilvl": 117,
+        "ench_ok": 8,
+        "ench_total": 9,
+        "missing_enchants": [
+          "Back"
+        ],
+        "gems_filled": 17,
+        "sockets_total": 17,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Dmbp",
+        "ilvl": 125,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 12,
+        "sockets_total": 12,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Zyph",
+        "ilvl": 127,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 16,
+        "sockets_total": 16,
+        "empty_sockets": 0
+      },
+      {
+        "name": "Xzanelol",
+        "ilvl": 124,
+        "ench_ok": 9,
+        "ench_total": 9,
+        "missing_enchants": [],
+        "gems_filled": 13,
+        "sockets_total": 13,
         "empty_sockets": 0
       },
       {
@@ -21585,102 +21689,18 @@
         "empty_sockets": 0
       },
       {
-        "name": "Moojerked",
-        "ilvl": 126,
+        "name": "Marvels",
+        "ilvl": 122,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
-        "gems_filled": 11,
-        "sockets_total": 11,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Grabber",
-        "ilvl": 117,
-        "ench_ok": 8,
-        "ench_total": 9,
-        "missing_enchants": [
-          "Feet"
-        ],
-        "gems_filled": 16,
-        "sockets_total": 16,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Shovelpriest",
-        "ilvl": 117,
-        "ench_ok": 8,
-        "ench_total": 9,
-        "missing_enchants": [
-          "Back"
-        ],
-        "gems_filled": 17,
-        "sockets_total": 17,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Xzanelol",
-        "ilvl": 124,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 13,
-        "sockets_total": 13,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Juricc",
-        "ilvl": 128,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 11,
-        "sockets_total": 11,
+        "gems_filled": 15,
+        "sockets_total": 15,
         "empty_sockets": 0
       },
       {
         "name": "Cindybrooke",
         "ilvl": 127,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 13,
-        "sockets_total": 13,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Zyph",
-        "ilvl": 127,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 16,
-        "sockets_total": 16,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Philliam",
-        "ilvl": 119,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 11,
-        "sockets_total": 11,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Shieldwagon",
-        "ilvl": 128,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 12,
-        "sockets_total": 12,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Boogiez",
-        "ilvl": 126,
         "ench_ok": 9,
         "ench_total": 9,
         "missing_enchants": [],
@@ -21696,26 +21716,6 @@
         "missing_enchants": [
           "Back"
         ],
-        "gems_filled": 12,
-        "sockets_total": 12,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Areso",
-        "ilvl": 128,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
-        "gems_filled": 15,
-        "sockets_total": 15,
-        "empty_sockets": 0
-      },
-      {
-        "name": "Sweetheart",
-        "ilvl": 128,
-        "ench_ok": 9,
-        "ench_total": 9,
-        "missing_enchants": [],
         "gems_filled": 12,
         "sockets_total": 12,
         "empty_sockets": 0
@@ -22202,7 +22202,381 @@
       ]
     }
   },
-  "loot": {},
+  "loot": {
+    "players": [
+      {
+        "name": "Grabber",
+        "class": "Warrior",
+        "items": [
+          {
+            "item_id": 28824,
+            "item_name": "Gauntlets of Martial Perfection",
+            "boss": "Gruul",
+            "instance": "Gruul's Lair",
+            "offspec": true
+          },
+          {
+            "item_id": 30243,
+            "item_name": "Helm of the Vanquished Defender",
+            "boss": "Lady Vashj",
+            "instance": "Serpentshrine Cavern",
+            "offspec": true
+          },
+          {
+            "item_id": 30240,
+            "item_name": "Gloves of the Vanquished Defender",
+            "boss": "Leotheras",
+            "instance": "Serpentshrine Cavern",
+            "offspec": true
+          },
+          {
+            "item_id": 30101,
+            "item_name": "Bloodsea Brigand's Vest",
+            "boss": "Karathress",
+            "instance": "Serpentshrine Cavern",
+            "offspec": true
+          },
+          {
+            "item_id": 30246,
+            "item_name": "Leggings of the Vanquished Defender",
+            "boss": "Karathress",
+            "instance": "Serpentshrine Cavern",
+            "offspec": true
+          },
+          {
+            "item_id": 30053,
+            "item_name": "Pauldrons of the Wardancer",
+            "boss": "Hydross",
+            "instance": "Serpentshrine Cavern",
+            "offspec": true
+          }
+        ]
+      },
+      {
+        "name": "Areso",
+        "class": "Warrior",
+        "items": [
+          {
+            "item_id": 30237,
+            "item_name": "Chestguard of the Vanquished Defender",
+            "boss": "Kael'thas",
+            "instance": "Tempest Keep",
+            "offspec": true
+          },
+          {
+            "item_id": 30246,
+            "item_name": "Leggings of the Vanquished Defender",
+            "boss": "Karathress",
+            "instance": "Serpentshrine Cavern",
+            "offspec": true
+          },
+          {
+            "item_id": 30096,
+            "item_name": "Girdle of the Invulnerable",
+            "boss": "Leotheras",
+            "instance": "Serpentshrine Cavern",
+            "offspec": true
+          },
+          {
+            "item_id": 30096,
+            "item_name": "Girdle of the Invulnerable",
+            "boss": "Leotheras",
+            "instance": "Serpentshrine Cavern",
+            "offspec": true
+          },
+          {
+            "item_id": 30098,
+            "item_name": "Razor-Scale Battlecloak",
+            "boss": "Morogrim",
+            "instance": "Serpentshrine Cavern",
+            "offspec": false
+          }
+        ]
+      },
+      {
+        "name": "Xzanelol",
+        "class": "Shaman",
+        "items": [
+          {
+            "item_id": 29920,
+            "item_name": "Phoenix-Ring of Rebirth",
+            "boss": "Al'ar",
+            "instance": "Tempest Keep",
+            "offspec": true
+          },
+          {
+            "item_id": 29951,
+            "item_name": "Star-Strider Boots",
+            "boss": "Solarian",
+            "instance": "Tempest Keep",
+            "offspec": true
+          },
+          {
+            "item_id": 30236,
+            "item_name": "Chestguard of the Vanquished Champion",
+            "boss": "Kael'thas",
+            "instance": "Tempest Keep",
+            "offspec": true
+          },
+          {
+            "item_id": 33054,
+            "item_name": "The Seal of Danzalar",
+            "boss": "Lurker Below",
+            "instance": "Serpentshrine Cavern",
+            "offspec": false
+          },
+          {
+            "item_id": 29766,
+            "item_name": "Leggings of the Fallen Champion",
+            "boss": "Gruul",
+            "instance": "Gruul's Lair",
+            "offspec": true
+          }
+        ]
+      },
+      {
+        "name": "Blunderdin",
+        "class": "Paladin",
+        "items": [
+          {
+            "item_id": 30245,
+            "item_name": "Leggings of the Vanquished Champion",
+            "boss": "Karathress",
+            "instance": "Serpentshrine Cavern",
+            "offspec": false
+          },
+          {
+            "item_id": 30239,
+            "item_name": "Gloves of the Vanquished Champion",
+            "boss": "Leotheras",
+            "instance": "Serpentshrine Cavern",
+            "offspec": false
+          },
+          {
+            "item_id": 30242,
+            "item_name": "Helm of the Vanquished Champion",
+            "boss": "Lady Vashj",
+            "instance": "Serpentshrine Cavern",
+            "offspec": false
+          },
+          {
+            "item_id": 30098,
+            "item_name": "Razor-Scale Battlecloak",
+            "boss": "Morogrim",
+            "instance": "Serpentshrine Cavern",
+            "offspec": false
+          }
+        ]
+      },
+      {
+        "name": "Moojerked",
+        "class": "Shaman",
+        "items": [
+          {
+            "item_id": 29923,
+            "item_name": "Talisman of the Sun King",
+            "boss": "Al'ar",
+            "instance": "Tempest Keep",
+            "offspec": true
+          },
+          {
+            "item_id": 30030,
+            "item_name": "Girdle of Fallen Stars",
+            "boss": "Trash",
+            "instance": "Tempest Keep",
+            "offspec": true
+          },
+          {
+            "item_id": 29988,
+            "item_name": "The Nexus Key",
+            "boss": "Kael'thas",
+            "instance": "Tempest Keep",
+            "offspec": false
+          }
+        ]
+      },
+      {
+        "name": "Juricc",
+        "class": "Shaman",
+        "items": [
+          {
+            "item_id": 30248,
+            "item_name": "Pauldrons of the Vanquished Champion",
+            "boss": "Void Reaver",
+            "instance": "Tempest Keep",
+            "offspec": true
+          },
+          {
+            "item_id": 30052,
+            "item_name": "Ring of Lethality",
+            "boss": "Hydross",
+            "instance": "Serpentshrine Cavern",
+            "offspec": false
+          }
+        ]
+      },
+      {
+        "name": "Marvels",
+        "class": "Warlock",
+        "items": [
+          {
+            "item_id": 30250,
+            "item_name": "Pauldrons of the Vanquished Hero",
+            "boss": "Void Reaver",
+            "instance": "Tempest Keep",
+            "offspec": false
+          },
+          {
+            "item_id": 32405,
+            "item_name": "Verdant Sphere",
+            "boss": "Kael'thas",
+            "instance": "Tempest Keep",
+            "offspec": false
+          }
+        ]
+      },
+      {
+        "name": "Shieldwagon",
+        "class": "Priest",
+        "items": [
+          {
+            "item_id": 29981,
+            "item_name": "Ethereum Life-Staff",
+            "boss": "Solarian",
+            "instance": "Tempest Keep",
+            "offspec": false
+          },
+          {
+            "item_id": 30249,
+            "item_name": "Pauldrons of the Vanquished Defender",
+            "boss": "Void Reaver",
+            "instance": "Tempest Keep",
+            "offspec": true
+          }
+        ]
+      },
+      {
+        "name": "Alldorin",
+        "class": "Warlock",
+        "items": [
+          {
+            "item_id": 30238,
+            "item_name": "Chestguard of the Vanquished Hero",
+            "boss": "Kael'thas",
+            "instance": "Tempest Keep",
+            "offspec": true
+          }
+        ]
+      },
+      {
+        "name": "Boogiez",
+        "class": "Shaman",
+        "items": [
+          {
+            "item_id": 29997,
+            "item_name": "Band of the Ranger-General",
+            "boss": "Kael'thas",
+            "instance": "Tempest Keep",
+            "offspec": false
+          }
+        ]
+      },
+      {
+        "name": "Dmbp",
+        "class": "Paladin",
+        "items": [
+          {
+            "item_id": 33058,
+            "item_name": "Band of the Vigilant",
+            "boss": "Morogrim",
+            "instance": "Serpentshrine Cavern",
+            "offspec": false
+          }
+        ]
+      },
+      {
+        "name": "Philliam",
+        "class": "Paladin",
+        "items": [
+          {
+            "item_id": 30321,
+            "item_name": "Plans: Belt of the Guardian",
+            "boss": "Recipes",
+            "instance": "Serpentshrine Cavern",
+            "offspec": false
+          }
+        ]
+      },
+      {
+        "name": "Shovelpriest",
+        "class": "Priest",
+        "items": [
+          {
+            "item_id": 29972,
+            "item_name": "Trousers of the Astromancer",
+            "boss": "Solarian",
+            "instance": "Tempest Keep",
+            "offspec": false
+          }
+        ]
+      },
+      {
+        "name": "Shovelshield",
+        "class": "Paladin",
+        "items": [
+          {
+            "item_id": 28822,
+            "item_name": "Teeth of Gruul",
+            "boss": "Gruul",
+            "instance": "Gruul's Lair",
+            "offspec": true
+          }
+        ]
+      },
+      {
+        "name": "Sweetheart",
+        "class": "Priest",
+        "items": [
+          {
+            "item_id": 30110,
+            "item_name": "Coral Band of the Revived",
+            "boss": "Lady Vashj",
+            "instance": "Serpentshrine Cavern",
+            "offspec": false
+          }
+        ]
+      },
+      {
+        "name": "Zetla",
+        "class": "Mage",
+        "items": [
+          {
+            "item_id": 30244,
+            "item_name": "Helm of the Vanquished Hero",
+            "boss": "Lady Vashj",
+            "instance": "Serpentshrine Cavern",
+            "offspec": true
+          }
+        ]
+      },
+      {
+        "name": "ohshiz",
+        "class": "Shaman",
+        "items": [
+          {
+            "item_id": 30068,
+            "item_name": "Girdle of the Tidal Call",
+            "boss": "Morogrim",
+            "instance": "Serpentshrine Cavern",
+            "offspec": true
+          }
+        ]
+      }
+    ],
+    "total": 38,
+    "offspec": 22,
+    "date": "2026-08-03"
+  },
   "damageBySelection": {
     "durations": {
       "all": 4127,
@@ -22222,7 +22596,7 @@
           "num": 84.7,
           "off": "8/10"
         },
-        "vs_replacement": 71,
+        "vs_replacement": 70,
         "all": {
           "total": 5348189,
           "active": 3148725
@@ -22248,7 +22622,7 @@
           "num": 84.7,
           "off": "8/10"
         },
-        "vs_replacement": 52,
+        "vs_replacement": 51,
         "all": {
           "total": 2914522,
           "active": 2195081
@@ -22260,81 +22634,6 @@
         "trash": {
           "total": 1366110,
           "active": 991577
-        }
-      },
-      {
-        "name": "Zetla",
-        "role": "Caster",
-        "effective_role": "Caster",
-        "toolkit": {
-          "label": "Arcane Explosions",
-          "value": "423",
-          "title": "Arcane Explosion casts — whole night",
-          "icon": "spell_nature_wispsplode",
-          "num": 423
-        },
-        "vs_replacement": 83,
-        "all": {
-          "total": 6744192,
-          "active": 3104988
-        },
-        "boss": {
-          "total": 3341665,
-          "active": 1481019
-        },
-        "trash": {
-          "total": 3402527,
-          "active": 1623969
-        }
-      },
-      {
-        "name": "Skeptxo",
-        "role": "Physical",
-        "effective_role": "Physical",
-        "toolkit": {
-          "label": "Slice & Dice",
-          "value": "75.2%",
-          "title": "Slice and Dice uptime (87 casts)",
-          "icon": "ability_rogue_slicedice",
-          "num": 75.2
-        },
-        "vs_replacement": 65,
-        "all": {
-          "total": 4584448,
-          "active": 3276724
-        },
-        "boss": {
-          "total": 2326517,
-          "active": 1506577
-        },
-        "trash": {
-          "total": 2257931,
-          "active": 1770147
-        }
-      },
-      {
-        "name": "Marvels",
-        "role": "Caster",
-        "effective_role": "Caster",
-        "toolkit": {
-          "label": "Top SB crit",
-          "value": "11,229",
-          "title": "Biggest single Shadow Bolt critical hit",
-          "icon": "spell_shadow_shadowbolt",
-          "num": 11229
-        },
-        "vs_replacement": 71,
-        "all": {
-          "total": 6173208,
-          "active": 2911184
-        },
-        "boss": {
-          "total": 2778719,
-          "active": 1339870
-        },
-        "trash": {
-          "total": 3394489,
-          "active": 1571314
         }
       },
       {
@@ -22363,81 +22662,6 @@
         }
       },
       {
-        "name": "Grabber",
-        "role": "Physical",
-        "effective_role": "Physical",
-        "toolkit": {
-          "label": "Battle Shout",
-          "value": "0",
-          "title": "Battle Shout casts · 7 Sunders",
-          "icon": "ability_warrior_battleshout",
-          "num": 0
-        },
-        "vs_replacement": 62,
-        "all": {
-          "total": 5091848,
-          "active": 3219743
-        },
-        "boss": {
-          "total": 2417949,
-          "active": 1528078
-        },
-        "trash": {
-          "total": 2673899,
-          "active": 1691665
-        }
-      },
-      {
-        "name": "Shovelpriest",
-        "role": "Caster",
-        "effective_role": "Caster",
-        "toolkit": {
-          "label": "Mana battery",
-          "value": "433k",
-          "title": "432,694 mana returned to the raid via Vampiric Touch",
-          "icon": "spell_holy_stoicism",
-          "num": 433
-        },
-        "vs_replacement": 46,
-        "all": {
-          "total": 3195454,
-          "active": 2886298
-        },
-        "boss": {
-          "total": 1736815,
-          "active": 1492626
-        },
-        "trash": {
-          "total": 1458639,
-          "active": 1393672
-        }
-      },
-      {
-        "name": "Xzanelol",
-        "role": "Caster",
-        "effective_role": "Caster",
-        "toolkit": {
-          "label": "ToW uptime",
-          "value": "~80.7%",
-          "title": "Totem of Wrath uptime — modeled from recast cadence (totem buffs aren't logged as auras in 2.5)",
-          "icon": "spell_fire_totemofwrath",
-          "num": 80.7
-        },
-        "vs_replacement": 74,
-        "all": {
-          "total": 4294392,
-          "active": 2919733
-        },
-        "boss": {
-          "total": 2120788,
-          "active": 1501114
-        },
-        "trash": {
-          "total": 2173604,
-          "active": 1418619
-        }
-      },
-      {
         "name": "Cheesecurds",
         "role": "Physical",
         "effective_role": "Physical",
@@ -22448,7 +22672,7 @@
           "icon": "ability_hunter_misdirection",
           "num": 5
         },
-        "vs_replacement": 84,
+        "vs_replacement": 83,
         "all": {
           "total": 5384332,
           "active": 3583280
@@ -22492,135 +22716,6 @@
         }
       },
       {
-        "name": "Cindybrooke",
-        "role": "Physical",
-        "effective_role": "Physical",
-        "toolkit": {
-          "label": "Slice & Dice",
-          "value": "57.7%",
-          "title": "Slice and Dice uptime (94 casts)",
-          "icon": "ability_rogue_slicedice",
-          "num": 57.7
-        },
-        "vs_replacement": 81,
-        "all": {
-          "total": 4424122,
-          "active": 3039289
-        },
-        "boss": {
-          "total": 2722473,
-          "active": 1594254
-        },
-        "trash": {
-          "total": 1701649,
-          "active": 1445035
-        }
-      },
-      {
-        "name": "Zyph",
-        "role": "Physical",
-        "effective_role": "Physical",
-        "toolkit": {
-          "label": "MD · Tranq",
-          "value": "5 · 0",
-          "title": "5 Misdirections · 0 Tranquilizing Shots",
-          "icon": "ability_hunter_misdirection",
-          "num": 5
-        },
-        "vs_replacement": 53,
-        "all": {
-          "total": 4094797,
-          "active": 3010862
-        },
-        "boss": {
-          "total": 2291371,
-          "active": 1485789
-        },
-        "trash": {
-          "total": 1803426,
-          "active": 1525073
-        }
-      },
-      {
-        "name": "Philliam",
-        "role": "Physical",
-        "effective_role": "Physical",
-        "toolkit": {
-          "label": "Seal twists",
-          "value": "5/min",
-          "title": "166 Seal of Command casts — twist cadence",
-          "icon": "ability_warrior_innerrage",
-          "num": 5.0
-        },
-        "vs_replacement": 47,
-        "all": {
-          "total": 3427064,
-          "active": 2636631
-        },
-        "boss": {
-          "total": 1951609,
-          "active": 1378811
-        },
-        "trash": {
-          "total": 1475455,
-          "active": 1257820
-        }
-      },
-      {
-        "name": "Seedemup",
-        "role": "Caster",
-        "effective_role": "Caster",
-        "toolkit": {
-          "label": "Top SB crit",
-          "value": "10,648",
-          "title": "Biggest single Shadow Bolt critical hit",
-          "icon": "spell_shadow_shadowbolt",
-          "num": 10648
-        },
-        "vs_replacement": 66,
-        "all": {
-          "total": 5703345,
-          "active": 2738289
-        },
-        "boss": {
-          "total": 2638207,
-          "active": 1349886
-        },
-        "trash": {
-          "total": 3065138,
-          "active": 1388403
-        }
-      },
-      {
-        "name": "Boogiez",
-        "role": "Physical",
-        "effective_role": "Physical",
-        "toolkit": {
-          "label": "Party WF · twists",
-          "value": "~100% · 8.8/min",
-          "title": "Windfury Totem uptime PROVIDED TO HIS PARTY (148 drops, 8.8 twists/min; totem buffs aren't logged as auras in 2.5, so modeled from cast cadence). Twisting is OPTIMAL — the WF buff persists when swapped, so a twister keeps WF AND Grace of Air up. The shaman never benefits himself (WF weapon enchant suppresses it). · Grace of Air ~100% up · 293 WF↔GoA swaps (actively twisting both)",
-          "icon": "spell_nature_windfury",
-          "num": 100.0,
-          "tag": "🌀 twist",
-          "swaps_min": 8.8,
-          "wf_up": 100.0,
-          "goa_up": 100.0
-        },
-        "vs_replacement": 85,
-        "all": {
-          "total": 5528427,
-          "active": 3488749
-        },
-        "boss": {
-          "total": 2631977,
-          "active": 1604809
-        },
-        "trash": {
-          "total": 2896450,
-          "active": 1883940
-        }
-      },
-      {
         "name": "Alldorin",
         "role": "Caster",
         "effective_role": "Caster",
@@ -22643,6 +22738,235 @@
         "trash": {
           "total": 2626051,
           "active": 1379880
+        }
+      },
+      {
+        "name": "Boogiez",
+        "role": "Physical",
+        "effective_role": "Physical",
+        "toolkit": {
+          "label": "Party WF · twists",
+          "value": "~100% · 8.8/min",
+          "title": "Windfury Totem uptime PROVIDED TO HIS PARTY (148 drops, 8.8 twists/min; totem buffs aren't logged as auras in 2.5, so modeled from cast cadence). Twisting is OPTIMAL — the WF buff persists when swapped, so a twister keeps WF AND Grace of Air up. The shaman never benefits himself (WF weapon enchant suppresses it). · Grace of Air ~100% up · 293 WF↔GoA swaps (actively twisting both)",
+          "icon": "spell_nature_windfury",
+          "num": 100.0,
+          "tag": "🌀 twist",
+          "swaps_min": 8.8,
+          "wf_up": 100.0,
+          "goa_up": 100.0
+        },
+        "vs_replacement": 84,
+        "all": {
+          "total": 5528427,
+          "active": 3488749
+        },
+        "boss": {
+          "total": 2631977,
+          "active": 1604809
+        },
+        "trash": {
+          "total": 2896450,
+          "active": 1883940
+        }
+      },
+      {
+        "name": "Philliam",
+        "role": "Physical",
+        "effective_role": "Physical",
+        "toolkit": {
+          "label": "Seal twists",
+          "value": "5/min",
+          "title": "166 Seal of Command casts — twist cadence",
+          "icon": "ability_warrior_innerrage",
+          "num": 5.0
+        },
+        "vs_replacement": 46,
+        "all": {
+          "total": 3427064,
+          "active": 2636631
+        },
+        "boss": {
+          "total": 1951609,
+          "active": 1378811
+        },
+        "trash": {
+          "total": 1475455,
+          "active": 1257820
+        }
+      },
+      {
+        "name": "Shovelpriest",
+        "role": "Caster",
+        "effective_role": "Caster",
+        "toolkit": {
+          "label": "Mana battery",
+          "value": "433k",
+          "title": "432,694 mana returned to the raid via Vampiric Touch",
+          "icon": "spell_holy_stoicism",
+          "num": 433
+        },
+        "vs_replacement": 46,
+        "all": {
+          "total": 3195454,
+          "active": 2886298
+        },
+        "boss": {
+          "total": 1736815,
+          "active": 1492626
+        },
+        "trash": {
+          "total": 1458639,
+          "active": 1393672
+        }
+      },
+      {
+        "name": "Bahguul",
+        "role": "Caster",
+        "effective_role": "Caster",
+        "toolkit": {
+          "label": "Innervates",
+          "value": "7",
+          "title": "Innervates given · 3 Rez",
+          "icon": "spell_nature_lightning",
+          "num": 7
+        },
+        "vs_replacement": 82,
+        "all": {
+          "total": 4050963,
+          "active": 3186982
+        },
+        "boss": {
+          "total": 2219070,
+          "active": 1628169
+        },
+        "trash": {
+          "total": 1831893,
+          "active": 1558813
+        }
+      },
+      {
+        "name": "Zyph",
+        "role": "Physical",
+        "effective_role": "Physical",
+        "toolkit": {
+          "label": "MD · Tranq",
+          "value": "5 · 0",
+          "title": "5 Misdirections · 0 Tranquilizing Shots",
+          "icon": "ability_hunter_misdirection",
+          "num": 5
+        },
+        "vs_replacement": 52,
+        "all": {
+          "total": 4094797,
+          "active": 3010862
+        },
+        "boss": {
+          "total": 2291371,
+          "active": 1485789
+        },
+        "trash": {
+          "total": 1803426,
+          "active": 1525073
+        }
+      },
+      {
+        "name": "Grabber",
+        "role": "Physical",
+        "effective_role": "Physical",
+        "toolkit": {
+          "label": "Battle Shout",
+          "value": "0",
+          "title": "Battle Shout casts · 7 Sunders",
+          "icon": "ability_warrior_battleshout",
+          "num": 0
+        },
+        "vs_replacement": 62,
+        "all": {
+          "total": 5091848,
+          "active": 3219743
+        },
+        "boss": {
+          "total": 2417949,
+          "active": 1528078
+        },
+        "trash": {
+          "total": 2673899,
+          "active": 1691665
+        }
+      },
+      {
+        "name": "Xzanelol",
+        "role": "Caster",
+        "effective_role": "Caster",
+        "toolkit": {
+          "label": "ToW uptime",
+          "value": "~80.7%",
+          "title": "Totem of Wrath uptime — modeled from recast cadence (totem buffs aren't logged as auras in 2.5)",
+          "icon": "spell_fire_totemofwrath",
+          "num": 80.7
+        },
+        "vs_replacement": 74,
+        "all": {
+          "total": 4294392,
+          "active": 2919733
+        },
+        "boss": {
+          "total": 2120788,
+          "active": 1501114
+        },
+        "trash": {
+          "total": 2173604,
+          "active": 1418619
+        }
+      },
+      {
+        "name": "Zetla",
+        "role": "Caster",
+        "effective_role": "Caster",
+        "toolkit": {
+          "label": "Arcane Explosions",
+          "value": "423",
+          "title": "Arcane Explosion casts — whole night",
+          "icon": "spell_nature_wispsplode",
+          "num": 423
+        },
+        "vs_replacement": 82,
+        "all": {
+          "total": 6744192,
+          "active": 3104988
+        },
+        "boss": {
+          "total": 3341665,
+          "active": 1481019
+        },
+        "trash": {
+          "total": 3402527,
+          "active": 1623969
+        }
+      },
+      {
+        "name": "Skeptxo",
+        "role": "Physical",
+        "effective_role": "Physical",
+        "toolkit": {
+          "label": "Slice & Dice",
+          "value": "75.2%",
+          "title": "Slice and Dice uptime (87 casts)",
+          "icon": "ability_rogue_slicedice",
+          "num": 75.2
+        },
+        "vs_replacement": 65,
+        "all": {
+          "total": 4584448,
+          "active": 3276724
+        },
+        "boss": {
+          "total": 2326517,
+          "active": 1506577
+        },
+        "trash": {
+          "total": 2257931,
+          "active": 1770147
         }
       },
       {
@@ -22671,28 +22995,78 @@
         }
       },
       {
-        "name": "Bahguul",
+        "name": "Marvels",
         "role": "Caster",
         "effective_role": "Caster",
         "toolkit": {
-          "label": "Innervates",
-          "value": "7",
-          "title": "Innervates given · 3 Rez",
-          "icon": "spell_nature_lightning",
-          "num": 7
+          "label": "Top SB crit",
+          "value": "11,229",
+          "title": "Biggest single Shadow Bolt critical hit",
+          "icon": "spell_shadow_shadowbolt",
+          "num": 11229
         },
-        "vs_replacement": 83,
+        "vs_replacement": 70,
         "all": {
-          "total": 4050963,
-          "active": 3186982
+          "total": 6173208,
+          "active": 2911184
         },
         "boss": {
-          "total": 2219070,
-          "active": 1628169
+          "total": 2778719,
+          "active": 1339870
         },
         "trash": {
-          "total": 1831893,
-          "active": 1558813
+          "total": 3394489,
+          "active": 1571314
+        }
+      },
+      {
+        "name": "Seedemup",
+        "role": "Caster",
+        "effective_role": "Caster",
+        "toolkit": {
+          "label": "Top SB crit",
+          "value": "10,648",
+          "title": "Biggest single Shadow Bolt critical hit",
+          "icon": "spell_shadow_shadowbolt",
+          "num": 10648
+        },
+        "vs_replacement": 65,
+        "all": {
+          "total": 5703345,
+          "active": 2738289
+        },
+        "boss": {
+          "total": 2638207,
+          "active": 1349886
+        },
+        "trash": {
+          "total": 3065138,
+          "active": 1388403
+        }
+      },
+      {
+        "name": "Cindybrooke",
+        "role": "Physical",
+        "effective_role": "Physical",
+        "toolkit": {
+          "label": "Slice & Dice",
+          "value": "57.7%",
+          "title": "Slice and Dice uptime (94 casts)",
+          "icon": "ability_rogue_slicedice",
+          "num": 57.7
+        },
+        "vs_replacement": 81,
+        "all": {
+          "total": 4424122,
+          "active": 3039289
+        },
+        "boss": {
+          "total": 2722473,
+          "active": 1594254
+        },
+        "trash": {
+          "total": 1701649,
+          "active": 1445035
         }
       }
     ]
