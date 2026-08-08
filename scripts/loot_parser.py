@@ -58,6 +58,16 @@ def parse_loot(csv_path: str, raid_date: str) -> dict:
     use_date = next((c for c in (raid_date, _shift(raid_date, -1), _shift(raid_date, 1))
                      if c and by_date.get(c)), None)
     if use_date is None:
+        # A dry night and a STALE export both land here as {} → the Loot card silently vanishes,
+        # and the run log can't tell them apart. If EVERY award in the ledger predates the raid,
+        # the CSV was exported before the night's loot was entered in ThatsBIS — actionable (fetch
+        # a fresh export), unlike a genuinely lootless night. Warn only on that; stay quiet on the
+        # normal cases (dry night, or a week older than the ledger's coverage).
+        dated = [d for d in by_date if len(d) == 10 and d[4] == "-" and d[7] == "-"]
+        newest = max(dated, default="")
+        if newest and newest < raid_date:
+            print(f"  ⚠ loot: CSV is STALE — newest award {newest}, raid was {raid_date}; "
+                  f"re-export from ThatsBIS once the night's loot is entered")
         return {}
     if use_date != raid_date:
         print(f"  ⚠ loot: no awards on {raid_date}; using adjacent date {use_date} "
